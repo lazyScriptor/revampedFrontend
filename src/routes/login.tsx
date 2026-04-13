@@ -67,7 +67,7 @@ export default function LoginRoute() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "grey.100", // Clean, light SaaS background
+        backgroundColor: "background.default",
       }}
     >
       <Container maxWidth="xs">
