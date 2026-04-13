@@ -2,25 +2,33 @@ import { createRouter, createRoute, redirect } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { authenticatedRoute } from "@/routes/_authenticated";
 import LoginRoute from "@/routes/login";
+import { useAuthStore } from "@/stores/useAuthStore";
 
-// 1. Define the Index Route (The redirector)
+// --- 1. Helper Functions ---
+const requirePermission = (permissionCode: string) => {
+  const user = useAuthStore.getState().user;
+  if (!user?.permissions?.includes(permissionCode)) {
+    // If they don't have permission, bounce them back to the dashboard
+    throw redirect({ to: "/dashboard" });
+  }
+};
+
+// --- 2. Route Definitions ---
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    // Automatically push users from "/" to "/dashboard"
     throw redirect({ to: "/dashboard" });
   },
 });
 
-// 2. Define the Login Route
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
   component: LoginRoute,
 });
 
-// 3. Define the Dashboard Route
 const dashboardRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/dashboard",
@@ -34,14 +42,35 @@ const dashboardRoute = createRoute({
   ),
 });
 
-// Build the Route Tree (Make sure to add indexRoute here!)
+// NEW: Equipment Route (Protected by permission)
+const equipmentRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/equipment",
+  beforeLoad: () => requirePermission("view_equipment"),
+  component: () => <div>Equipment List Goes Here</div>,
+});
+
+// NEW: Invoices Route (Protected by permission)
+const invoicesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/invoices",
+  beforeLoad: () => requirePermission("view_invoices"),
+  component: () => <div>Invoices Go Here</div>,
+});
+
+// --- 3. Build the Route Tree ---
+// CRITICAL FIX: Add equipmentRoute and invoicesRoute to the children array!
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
-  authenticatedRoute.addChildren([dashboardRoute]),
+  authenticatedRoute.addChildren([
+    dashboardRoute,
+    equipmentRoute, // Added here!
+    invoicesRoute, // Added here!
+  ]),
 ]);
 
-// 4. Create a Global 404 Component
+// --- 4. Global 404 Component ---
 const NotFoundComponent = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-slate-300">
     <h1 className="text-6xl font-bold text-white mb-4">404</h1>
@@ -55,7 +84,7 @@ const NotFoundComponent = () => (
   </div>
 );
 
-// Create the router instance with the defaultNotFoundComponent attached
+// --- 5. Export Router ---
 export const router = createRouter({
   routeTree,
   defaultNotFoundComponent: NotFoundComponent,

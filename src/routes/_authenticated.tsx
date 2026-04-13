@@ -98,21 +98,42 @@ export const authenticatedRoute = createRoute({
 // --- The Layout Component ---
 function AuthenticatedLayout() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // Detect screens smaller than 'md'
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
 
-  // Navigation config array for easy rendering
-  const navItems = [
+  // 1. Attach a 'requiredPermission' to every route
+  const allNavItems = [
+    // Removed requiredPermission from Dashboard so everyone sees it by default
     { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
-    { text: "Inventory", icon: <InventoryIcon />, path: "/equipment" }, // We'll build this next!
-    { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
-    { text: "Invoices", icon: <ReceiptIcon />, path: "/invoices" },
+    {
+      text: "Inventory",
+      icon: <InventoryIcon />,
+      path: "/equipment",
+      requiredPermission: "view_equipment",
+    },
+    {
+      text: "Customers",
+      icon: <PeopleIcon />,
+      path: "/customers",
+      requiredPermission: "view_customers",
+    },
+    {
+      text: "Invoices",
+      icon: <ReceiptIcon />,
+      path: "/invoices",
+      requiredPermission: "view_invoices",
+    },
   ];
 
-  // If mobile, closing the sidebar should hide it completely. If desktop, it shrinks.
+  // 2. Filter the items based on the user's permission array
+  const visibleNavItems = allNavItems.filter((item) => {
+    if (!item.requiredPermission) return true;
+    return user?.permissions?.includes(item.requiredPermission) || false;
+  });
+
   const handleDrawerToggle = () => {
     toggleSidebar();
   };
@@ -120,7 +141,6 @@ function AuthenticatedLayout() {
   const drawerContent = (
     <>
       <DrawerHeader>
-        {/* Brand Name (Only visible when open) */}
         {isSidebarOpen && (
           <Typography
             variant="h6"
@@ -139,25 +159,23 @@ function AuthenticatedLayout() {
       <Divider />
 
       <List sx={{ flexGrow: 1, px: 1 }}>
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <Tooltip
             title={!isSidebarOpen ? item.text : ""}
             placement="right"
             key={item.text}
           >
-            {/* TanStack Router Link wrapped in MUI ListItem */}
             <ListItem disablePadding sx={{ display: "block", mb: 0.5 }}>
               <ListItemButton
                 component={Link}
                 to={item.path}
-                // Optional: Tailwind class for active states
                 activeProps={{
                   className: "bg-blue-50 text-blue-600 rounded-lg",
                 }}
                 inactiveProps={{
                   className: "text-slate-600 rounded-lg hover:bg-slate-50",
                 }}
-                onClick={() => isMobile && setSidebarOpen(false)} // Auto-close on mobile click
+                onClick={() => isMobile && setSidebarOpen(false)}
                 sx={{
                   minHeight: 48,
                   justifyContent: isSidebarOpen ? "initial" : "center",
@@ -169,7 +187,7 @@ function AuthenticatedLayout() {
                     minWidth: 0,
                     mr: isSidebarOpen ? 2 : "auto",
                     justifyContent: "center",
-                    color: "inherit", // Inherits active color from Tailwind class above
+                    color: "inherit",
                   }}
                 >
                   {item.icon}
@@ -226,7 +244,6 @@ function AuthenticatedLayout() {
         bgcolor: "background.default",
       }}
     >
-      {/* --- Top Navigation Bar --- */}
       <MuiAppBar
         position="fixed"
         elevation={0}
@@ -258,31 +275,31 @@ function AuthenticatedLayout() {
           >
             <MenuIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1 }} /> {/* Spacer */}
-          {/* User Profile Area */}
+          <Box sx={{ flexGrow: 1 }} />
+          {/* Inside _authenticated.tsx Toolbar */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography
               variant="body2"
               color="text.primary"
               sx={{ display: { xs: "none", sm: "block" } }}
             >
-              {user?.firstName} {user?.lastName}
+              {/* Use username instead of firstName/lastName */}
+              {user?.username}
             </Typography>
             <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
-              {user?.firstName?.charAt(0) || "U"}
+              {/* Grab the first letter of the username for the Avatar */}
+              {user?.username?.charAt(0).toUpperCase() || "U"}
             </Avatar>
           </Box>
         </Toolbar>
       </MuiAppBar>
 
-      {/* --- The Sidebar Drawer --- */}
       {isMobile ? (
-        // Mobile View: Temporary Drawer (Overlays the screen)
         <MuiDrawer
           variant="temporary"
           open={isSidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          ModalProps={{ keepMounted: true }} // Better open performance on mobile
+          ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: "block", md: "none" },
             "& .MuiDrawer-paper": {
@@ -294,16 +311,13 @@ function AuthenticatedLayout() {
           {drawerContent}
         </MuiDrawer>
       ) : (
-        // Desktop View: Permanent Mini-Variant Drawer
         <Drawer variant="permanent" open={isSidebarOpen}>
           {drawerContent}
         </Drawer>
       )}
 
-      {/* --- Main Content Area --- */}
       <Box component="main" sx={{ flexGrow: 1, p: 3, width: "100%" }}>
-        <DrawerHeader /> {/* Invisible spacer to push content below AppBar */}
-        {/* Child routes render here perfectly contained! */}
+        <DrawerHeader />
         <Outlet />
       </Box>
     </Box>
