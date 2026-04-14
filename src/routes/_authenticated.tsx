@@ -130,7 +130,6 @@ function AuthenticatedLayout() {
 
   // 2. Filter the items based on the user's permission array
   const visibleNavItems = allNavItems.filter((item) => {
-    console.log("Required permission section", item);
     if (!item.requiredPermission) return true;
     return user?.permissions?.includes(item.requiredPermission) || false;
   });

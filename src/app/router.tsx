@@ -2,6 +2,7 @@ import { createRouter, createRoute, redirect } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { authenticatedRoute } from "@/routes/_authenticated";
 import LoginRoute from "@/routes/login";
+import Equipment from "@/routes/equipment";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 // --- 1. Helper Functions ---
@@ -47,7 +48,7 @@ const equipmentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/equipment",
   beforeLoad: () => requirePermission("view_equipment"),
-  component: () => <div>Equipment List Goes Here</div>,
+  component: () => <div><Equipment/></div>,
 });
 
 // NEW: Invoices Route (Protected by permission)
