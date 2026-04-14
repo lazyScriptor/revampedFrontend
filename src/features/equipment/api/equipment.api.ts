@@ -31,5 +31,6 @@ export const deleteEquipment = async (id: number): Promise<void> => {
 // Add this below your createEquipment function
 export const updateEquipment = async ({ id, data }: { id: number; data: Partial<EquipmentFormData> }): Promise<Equipment> => {
   const response = await api.put(`/equipment/${id}`, data); // Change to .patch if your backend uses PATCH
+  console.log("response", response)
   return response.data;
 };
