@@ -6,15 +6,16 @@ export interface PaginatedEquipmentResponse {
   total: number;
 }
 
-// ✅ Notice we added (page: number, limit: number) here!
 export const fetchEquipment = async (page: number, limit: number): Promise<PaginatedEquipmentResponse> => {
   const response = await api.get('/equipment', {
     params: { page, limit }
   });
 
-  // Extract the array and the total count from your Express response
   const equipment = response.data?.equipment || response.data?.data || response.data || [];
-  const total = response.data?.total || response.data?.meta?.total || 0;
+
+  // ✅ FIX: Added `|| equipment.length` at the end. 
+  // If the backend doesn't send a total, it will just count the items currently returned!
+  const total = response.data?.total || response.data?.meta?.total || equipment.length;
 
   return { equipment, total };
 };
@@ -26,4 +27,9 @@ export const createEquipment = async (data: EquipmentFormData): Promise<Equipmen
 
 export const deleteEquipment = async (id: number): Promise<void> => {
   await api.delete(`/equipment/${id}`);
+};
+// Add this below your createEquipment function
+export const updateEquipment = async ({ id, data }: { id: number; data: Partial<EquipmentFormData> }): Promise<Equipment> => {
+  const response = await api.put(`/equipment/${id}`, data); // Change to .patch if your backend uses PATCH
+  return response.data;
 };

@@ -29,6 +29,7 @@ interface EquipmentTableProps {
   rowCount: number;
   paginationModel: { page: number; pageSize: number };
   onPaginationModelChange: (model: { page: number; pageSize: number }) => void;
+  onEdit: (equipmentRow: any) => void; // <--- ADD THIS
 }
 
 export function EquipmentTable({
@@ -37,6 +38,7 @@ export function EquipmentTable({
   rowCount,
   paginationModel,
   onPaginationModelChange,
+  onEdit, // <--- ADD THIS RIGHT HERE
 }: EquipmentTableProps) {
   const deleteMutation = useDeleteEquipment();
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -207,7 +209,7 @@ export function EquipmentTable({
             <IconButton
               size="small"
               color="primary"
-              onClick={() => console.log("Edit", params.row.equipment_id)}
+              onClick={() => onEdit(params.row)}
             >
               <EditIcon fontSize="small" />
             </IconButton>

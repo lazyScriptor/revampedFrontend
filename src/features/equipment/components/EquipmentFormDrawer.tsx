@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Drawer,
   Box,
@@ -10,20 +10,37 @@ import {
   Button,
   MenuItem,
   Divider,
-  CircularProgress
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+  CircularProgress,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
-import { equipmentSchema, EquipmentFormData } from '../schemas/equipment.schema';
-import { useCreateEquipment } from '../hooks/useEquipmentHooks';
+import {
+  equipmentSchema,
+  EquipmentFormData,
+  Equipment,
+} from "../schemas/equipment.schema";
+import {
+  useCreateEquipment,
+  useUpdateEquipment,
+} from "../hooks/useEquipmentHooks";
 
-interface AddEquipmentDrawerProps {
+interface EquipmentFormDrawerProps {
   open: boolean;
   onClose: () => void;
+  initialData?: Equipment | null; // If this exists, we are in "Edit" mode!
 }
 
-export function AddEquipmentDrawer({ open, onClose }: AddEquipmentDrawerProps) {
+export function EquipmentFormDrawer({
+  open,
+  onClose,
+  initialData,
+}: EquipmentFormDrawerProps) {
   const createMutation = useCreateEquipment();
+  const updateMutation = useUpdateEquipment();
+
+  // Determine if we are editing based on whether initialData was passed in
+  const isEditing = !!initialData;
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   const {
     register,
@@ -33,22 +50,41 @@ export function AddEquipmentDrawer({ open, onClose }: AddEquipmentDrawerProps) {
   } = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
-      status: 'Available',
-      condition: 'Excellent',
-    }
+      status: "Available",
+      condition: "Excellent",
+    },
   });
 
-  // Reset the form whenever the drawer is opened
+  // CRITICAL: When the drawer opens, populate the form
   useEffect(() => {
-    if (open) reset();
-  }, [open, reset]);
+    if (open) {
+      if (initialData) {
+        // We are editing: Fill the form with the database values
+        reset({
+          name: initialData.equipment_name, // Map backend keys to form keys
+          sku: initialData.serial_number,
+          category: initialData.category_id?.toString() || "",
+          daily_rate: Number(initialData.base_rental_price),
+          status: initialData.available_qty > 0 ? "Available" : "Rented Out", // Or use your actual status logic
+          condition: "Excellent", // Update this if your backend tracks condition
+          notes: "",
+        });
+      } else {
+        // We are creating: Clear the form completely
+        reset({ status: "Available", condition: "Excellent" });
+      }
+    }
+  }, [open, initialData, reset]);
 
   const onSubmit = (data: EquipmentFormData) => {
-    createMutation.mutate(data, {
-      onSuccess: () => {
-        onClose(); // Close drawer on success
-      },
-    });
+    if (isEditing && initialData) {
+      updateMutation.mutate(
+        { id: initialData.equipment_id, data },
+        { onSuccess: () => onClose() },
+      );
+    } else {
+      createMutation.mutate(data, { onSuccess: () => onClose() });
+    }
   };
 
   return (
@@ -56,43 +92,46 @@ export function AddEquipmentDrawer({ open, onClose }: AddEquipmentDrawerProps) {
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}
+      PaperProps={{ sx: { width: { xs: "100%", sm: 480 } } }}
     >
       <Box className="flex items-center justify-between p-6 bg-slate-50 border-b border-slate-200">
         <Typography variant="h6" fontWeight="bold" color="text.primary">
-          Add New Equipment
+          {isEditing ? "Edit Equipment" : "Add New Equipment"}
         </Typography>
         <IconButton onClick={onClose} size="small">
           <CloseIcon />
         </IconButton>
       </Box>
 
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
+      <Box
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col h-full"
+      >
         <Box className="flex-grow overflow-y-auto p-6 space-y-5">
+          {/* Form fields remain exactly the same as your previous Add Drawer */}
           <TextField
             fullWidth
             label="Equipment Name"
-            {...register('name')}
+            {...register("name")}
             error={!!errors.name}
             helperText={errors.name?.message}
-            placeholder="e.g. Caterpillar Excavator 320"
           />
 
           <div className="grid grid-cols-2 gap-4">
             <TextField
               fullWidth
-              label="SKU / Serial Number"
-              {...register('sku')}
+              label="SKU / Serial"
+              {...register("sku")}
               error={!!errors.sku}
               helperText={errors.sku?.message}
             />
             <TextField
               fullWidth
               label="Category"
-              {...register('category')}
+              {...register("category")}
               error={!!errors.category}
               helperText={errors.category?.message}
-              placeholder="Heavy Machinery"
             />
           </div>
 
@@ -102,7 +141,7 @@ export function AddEquipmentDrawer({ open, onClose }: AddEquipmentDrawerProps) {
               label="Daily Rate ($)"
               type="number"
               inputProps={{ step: "0.01", min: "0" }}
-              {...register('daily_rate')}
+              {...register("daily_rate")}
               error={!!errors.daily_rate}
               helperText={errors.daily_rate?.message}
             />
@@ -111,7 +150,7 @@ export function AddEquipmentDrawer({ open, onClose }: AddEquipmentDrawerProps) {
               select
               label="Condition"
               defaultValue="Excellent"
-              {...register('condition')}
+              {...register("condition")}
               error={!!errors.condition}
               helperText={errors.condition?.message}
             >
@@ -125,9 +164,9 @@ export function AddEquipmentDrawer({ open, onClose }: AddEquipmentDrawerProps) {
           <TextField
             fullWidth
             select
-            label="Initial Status"
+            label="Status"
             defaultValue="Available"
-            {...register('status')}
+            {...register("status")}
             error={!!errors.status}
             helperText={errors.status?.message}
           >
@@ -141,32 +180,35 @@ export function AddEquipmentDrawer({ open, onClose }: AddEquipmentDrawerProps) {
             fullWidth
             multiline
             rows={4}
-            label="Additional Notes (Optional)"
-            {...register('notes')}
+            label="Additional Notes"
+            {...register("notes")}
             error={!!errors.notes}
             helperText={errors.notes?.message}
           />
         </Box>
 
         <Divider />
-        
         <Box className="p-6 bg-slate-50 flex justify-end gap-3">
-          <Button variant="outlined" onClick={onClose} disabled={createMutation.isPending}>
+          <Button variant="outlined" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
           <Button
             type="submit"
             variant="contained"
             disableElevation
-            disabled={createMutation.isPending}
-            startIcon={createMutation.isPending && <CircularProgress size={20} color="inherit" />}
+            disabled={isPending}
+            startIcon={
+              isPending && <CircularProgress size={20} color="inherit" />
+            }
           >
-            {createMutation.isPending ? 'Saving...' : 'Save Equipment'}
+            {isPending
+              ? "Saving..."
+              : isEditing
+                ? "Save Changes"
+                : "Save Equipment"}
           </Button>
         </Box>
       </Box>
     </Drawer>
   );
 }
-
-export default AddEquipmentDrawer;
