@@ -46,8 +46,7 @@ export default function LoginRoute() {
   const loginMutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      console.log("first", data.user);
-      setAuth(data.user.auth);
+      setAuth(data.user);
       navigate({ to: "/dashboard" });
     },
   });
