@@ -32,6 +32,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import InventoryIcon from "@mui/icons-material/Inventory2";
 import PeopleIcon from "@mui/icons-material/Group";
 import ReceiptIcon from "@mui/icons-material/ReceiptLong";
+import StorageIcon from "@mui/icons-material/Storage";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -137,6 +138,12 @@ function AuthenticatedLayout() {
       icon: <ReceiptIcon />,
       path: "/invoices",
       requiredPermission: "view_invoices",
+    },
+    {
+      text: "Data Arena",
+      icon: <StorageIcon />,
+      path: "/data-arena",
+      requiredPermission: "view_equipment", // Ensure only admins can mass import/export!
     },
   ];
 

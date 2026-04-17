@@ -4,6 +4,7 @@ import { authenticatedRoute } from "@/routes/_authenticated";
 import LoginRoute from "@/routes/login";
 import Equipment from "@/routes/Equipment";
 import Categories from "@/routes/Categories";
+import DataArena from "@/routes/DataArena"; // <-- 1. Import the new Data Arena component
 import { useAuthStore } from "@/stores/useAuthStore";
 
 // --- 1. Helper Functions ---
@@ -44,7 +45,6 @@ const dashboardRoute = createRoute({
   ),
 });
 
-// NEW: Equipment Route (Protected by permission)
 const equipmentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/equipment",
@@ -58,7 +58,7 @@ const equipmentRoute = createRoute({
 
 const equipmentCategoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: "/equipment-category",
+  path: "/equipment-category", // Note: Ensure this matches the path in your _authenticated.tsx sidebar ("/equipment-categories" vs "/equipment-category")
   beforeLoad: () => requirePermission("view_equipment"),
   component: () => (
     <div>
@@ -67,7 +67,6 @@ const equipmentCategoryRoute = createRoute({
   ),
 });
 
-// NEW: Invoices Route (Protected by permission)
 const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
@@ -75,16 +74,28 @@ const invoicesRoute = createRoute({
   component: () => <div>This is the invoice route</div>,
 });
 
+// NEW: Data Arena Route (Protected by 'admin' permission)
+const dataArenaRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/data-arena",
+  beforeLoad: () => requirePermission("view_equipment"), // CRITICAL: Only admins should access bulk exports
+  component: () => (
+    <div>
+      <DataArena />
+    </div>
+  ),
+});
+
 // --- 3. Build the Route Tree ---
-// CRITICAL FIX: Add equipmentRoute and invoicesRoute to the children array!
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,
-    equipmentRoute, // Added here!
-    invoicesRoute, // Added here!
-    equipmentCategoryRoute
+    equipmentRoute,
+    invoicesRoute,
+    equipmentCategoryRoute,
+    dataArenaRoute, // <-- 2. Inject it into the authenticated children tree
   ]),
 ]);
 
