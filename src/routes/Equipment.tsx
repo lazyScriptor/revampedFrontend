@@ -3,8 +3,7 @@ import { useEquipmentList } from "@/features/equipment/hooks/useEquipmentHooks";
 
 // Feature Components
 import { EquipmentTable } from "@/features/equipment/components/EquipmentTable";
-import { EquipmentFormDrawer } from "@/features/equipment/components/EquipmentFormDrawer";
-
+import { EquipmentFormDialog } from "@/features/equipment/components/EquipmentFormDialog";
 // MUI Imports
 import {
   Box,
@@ -199,11 +198,11 @@ export default function EquipmentRoute() {
         />
       </Card>
 
-      {/* The Unified Add/Edit Form Drawer */}
-      <EquipmentFormDrawer
+      {/* Change EquipmentFormDrawer to EquipmentFormDialog */}
+      <EquipmentFormDialog
         open={isDrawerOpen}
         onClose={handleCloseDrawer}
-        initialData={editingItem} // If null, it creates. If data, it edits.
+        initialData={editingItem}
       />
     </div>
   );

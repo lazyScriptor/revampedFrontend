@@ -2,7 +2,8 @@ import { createRouter, createRoute, redirect } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { authenticatedRoute } from "@/routes/_authenticated";
 import LoginRoute from "@/routes/login";
-import Equipment from "@/routes/equipment";
+import Equipment from "@/routes/Equipment";
+import Categories from "@/routes/Categories";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 // --- 1. Helper Functions ---
@@ -48,7 +49,22 @@ const equipmentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/equipment",
   beforeLoad: () => requirePermission("view_equipment"),
-  component: () => <div><Equipment/></div>,
+  component: () => (
+    <div>
+      <Equipment />
+    </div>
+  ),
+});
+
+const equipmentCategoryRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/equipment-category",
+  beforeLoad: () => requirePermission("view_equipment"),
+  component: () => (
+    <div>
+      <Categories />
+    </div>
+  ),
 });
 
 // NEW: Invoices Route (Protected by permission)
@@ -56,7 +72,7 @@ const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
   beforeLoad: () => requirePermission("view_invoices"),
-  component: () => <div>Invoices Go Here</div>,
+  component: () => <div>This is the invoice route</div>,
 });
 
 // --- 3. Build the Route Tree ---
@@ -68,6 +84,7 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     equipmentRoute, // Added here!
     invoicesRoute, // Added here!
+    equipmentCategoryRoute
   ]),
 ]);
 

@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { createRoute, Outlet, redirect, Link } from "@tanstack/react-router";
 import { Route as rootRoute } from "./__root";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -21,6 +22,7 @@ import {
   useMediaQuery,
   Avatar,
   Tooltip,
+  Collapse,
 } from "@mui/material";
 
 // MUI Icons
@@ -31,6 +33,9 @@ import InventoryIcon from "@mui/icons-material/Inventory2";
 import PeopleIcon from "@mui/icons-material/Group";
 import ReceiptIcon from "@mui/icons-material/ReceiptLong";
 import LogoutIcon from "@mui/icons-material/Logout";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // For sub-menu bullets
 
 const drawerWidth = 260;
 
@@ -62,7 +67,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   alignItems: "center",
   justifyContent: "space-between",
   padding: theme.spacing(0, 2),
-  ...theme.mixins.toolbar, // Keeps height perfectly aligned with AppBar
+  ...theme.mixins.toolbar,
 }));
 
 const Drawer = styled(MuiDrawer, {
@@ -104,15 +109,22 @@ function AuthenticatedLayout() {
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
 
-  // 1. Attach a 'requiredPermission' to every route
+  // State to track which sub-menus are expanded
+  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({
+    Inventory: false,
+  });
+
+  // 1. Updated Nav Items with nested 'children'
   const allNavItems = [
-    // Removed requiredPermission from Dashboard so everyone sees it by default
     { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
     {
       text: "Inventory",
       icon: <InventoryIcon />,
-      path: "/equipment",
       requiredPermission: "view_equipment",
+      children: [
+        { text: "All Equipment", path: "/equipment" },
+        { text: "Categories", path: "/equipment-category" },
+      ],
     },
     {
       text: "Customers",
@@ -138,6 +150,16 @@ function AuthenticatedLayout() {
     toggleSidebar();
   };
 
+  // Smart handler: Opens sidebar if closed, otherwise toggles the collapse
+  const handleParentClick = (text: string) => {
+    if (!isSidebarOpen) {
+      setSidebarOpen(true);
+      setOpenMenus((prev) => ({ ...prev, [text]: true }));
+    } else {
+      setOpenMenus((prev) => ({ ...prev, [text]: !prev[text] }));
+    }
+  };
+
   const drawerContent = (
     <>
       <DrawerHeader>
@@ -160,46 +182,136 @@ function AuthenticatedLayout() {
 
       <List sx={{ flexGrow: 1, px: 1 }}>
         {visibleNavItems.map((item) => (
-          <Tooltip
-            title={!isSidebarOpen ? item.text : ""}
-            placement="right"
-            key={item.text}
-          >
-            <ListItem disablePadding sx={{ display: "block", mb: 0.5 }}>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                activeProps={{
-                  className: "bg-blue-50 text-blue-600 rounded-lg",
-                }}
-                inactiveProps={{
-                  className: "text-slate-600 rounded-lg hover:bg-slate-50",
-                }}
-                onClick={() => isMobile && setSidebarOpen(false)}
-                sx={{
-                  minHeight: 48,
-                  justifyContent: isSidebarOpen ? "initial" : "center",
-                  px: 2.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: isSidebarOpen ? 2 : "auto",
-                    justifyContent: "center",
-                    color: "inherit",
-                  }}
+          <React.Fragment key={item.text}>
+            {/* If the item has children, render an expandable parent */}
+            {item.children ? (
+              <>
+                <Tooltip
+                  title={!isSidebarOpen ? item.text : ""}
+                  placement="right"
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  sx={{ opacity: isSidebarOpen ? 1 : 0 }}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </Tooltip>
+                  <ListItem disablePadding sx={{ display: "block", mb: 0.5 }}>
+                    <ListItemButton
+                      onClick={() => handleParentClick(item.text)}
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: isSidebarOpen ? "initial" : "center",
+                        px: 2.5,
+                        borderRadius: 2,
+                        "&:hover": { bgcolor: "slate.50" },
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: isSidebarOpen ? 2 : "auto",
+                          justifyContent: "center",
+                          color: "inherit",
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.text}
+                        sx={{ opacity: isSidebarOpen ? 1 : 0 }}
+                        primaryTypographyProps={{ fontWeight: 500 }}
+                      />
+                      {isSidebarOpen &&
+                        (openMenus[item.text] ? (
+                          <ExpandLess color="action" />
+                        ) : (
+                          <ExpandMore color="action" />
+                        ))}
+                    </ListItemButton>
+                  </ListItem>
+                </Tooltip>
+
+                {/* The collapsible sub-menu */}
+                <Collapse
+                  in={openMenus[item.text] && isSidebarOpen}
+                  timeout="auto"
+                  unmountOnExit
+                >
+                  <List component="div" disablePadding>
+                    {item.children.map((child) => (
+                      <ListItemButton
+                        key={child.text}
+                        component={Link}
+                        to={child.path}
+                        onClick={() => isMobile && setSidebarOpen(false)}
+                        activeProps={{
+                          className: "bg-blue-50 text-blue-600 rounded-lg",
+                        }}
+                        inactiveProps={{
+                          className:
+                            "text-slate-600 rounded-lg hover:bg-slate-50",
+                        }}
+                        sx={{
+                          pl: 4, // Indent the sub-items
+                          mb: 0.5,
+                          minHeight: 40,
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 0, mr: 2 }}>
+                          <FiberManualRecordIcon
+                            sx={{ fontSize: 10, color: "inherit" }}
+                          />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={child.text}
+                          primaryTypographyProps={{
+                            fontSize: "0.875rem",
+                            fontWeight: 500,
+                          }}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Collapse>
+              </>
+            ) : (
+              /* Normal standalone items (Dashboard, Customers, etc) */
+              <Tooltip
+                title={!isSidebarOpen ? item.text : ""}
+                placement="right"
+              >
+                <ListItem disablePadding sx={{ display: "block", mb: 0.5 }}>
+                  <ListItemButton
+                    component={Link}
+                    to={item.path}
+                    activeProps={{
+                      className: "bg-blue-50 text-blue-600 rounded-lg",
+                    }}
+                    inactiveProps={{
+                      className: "text-slate-600 rounded-lg hover:bg-slate-50",
+                    }}
+                    onClick={() => isMobile && setSidebarOpen(false)}
+                    sx={{
+                      minHeight: 48,
+                      justifyContent: isSidebarOpen ? "initial" : "center",
+                      px: 2.5,
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 0,
+                        mr: isSidebarOpen ? 2 : "auto",
+                        justifyContent: "center",
+                        color: "inherit",
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      sx={{ opacity: isSidebarOpen ? 1 : 0 }}
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              </Tooltip>
+            )}
+          </React.Fragment>
         ))}
       </List>
 
@@ -276,18 +388,15 @@ function AuthenticatedLayout() {
             <MenuIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }} />
-          {/* Inside _authenticated.tsx Toolbar */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography
               variant="body2"
               color="text.primary"
               sx={{ display: { xs: "none", sm: "block" } }}
             >
-              {/* Use username instead of firstName/lastName */}
               {user?.username}
             </Typography>
             <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
-              {/* Grab the first letter of the username for the Avatar */}
               {user?.username?.charAt(0).toUpperCase() || "U"}
             </Avatar>
           </Box>

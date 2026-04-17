@@ -12,8 +12,8 @@ import {
 
 import { router } from "@/app/router";
 import { queryClient } from "@/app/queryClient";
-import "./index.css"; // Make sure Tailwind is imported here!
 import { theme } from "@/app/theme.ts";
+import './index.css'; // Make sure Tailwind is imported here!
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
