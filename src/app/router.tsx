@@ -6,6 +6,7 @@ import Equipment from "@/routes/Equipment";
 import Categories from "@/routes/Categories";
 import DataArena from "@/routes/DataArena"; // <-- 1. Import the new Data Arena component
 import { useAuthStore } from "@/stores/useAuthStore";
+import CustomersRoute from "@/routes/Customers";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -48,7 +49,7 @@ const dashboardRoute = createRoute({
 const equipmentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/equipment",
-  beforeLoad: () => requirePermission("view_equipment"),
+  beforeLoad: () => requirePermission("inventory_permission"),
   component: () => (
     <div>
       <Equipment />
@@ -59,7 +60,7 @@ const equipmentRoute = createRoute({
 const equipmentCategoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/equipment-category", // Note: Ensure this matches the path in your _authenticated.tsx sidebar ("/equipment-categories" vs "/equipment-category")
-  beforeLoad: () => requirePermission("view_equipment"),
+  beforeLoad: () => requirePermission("inventory_permission"),
   component: () => (
     <div>
       <Categories />
@@ -70,7 +71,7 @@ const equipmentCategoryRoute = createRoute({
 const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
-  beforeLoad: () => requirePermission("view_invoices"),
+  beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <div>This is the invoice route</div>,
 });
 
@@ -78,12 +79,19 @@ const invoicesRoute = createRoute({
 const dataArenaRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/data-arena",
-  beforeLoad: () => requirePermission("view_equipment"), // CRITICAL: Only admins should access bulk exports
+  beforeLoad: () => requirePermission("inventory_permission"), // CRITICAL: Only admins should access bulk exports
   component: () => (
     <div>
       <DataArena />
     </div>
   ),
+});
+
+const customersRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/customers",
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <CustomersRoute />, // Hook it up here!
 });
 
 // --- 3. Build the Route Tree ---
@@ -95,7 +103,8 @@ const routeTree = rootRoute.addChildren([
     equipmentRoute,
     invoicesRoute,
     equipmentCategoryRoute,
-    dataArenaRoute, // <-- 2. Inject it into the authenticated children tree
+    dataArenaRoute,
+    customersRoute,
   ]),
 ]);
 

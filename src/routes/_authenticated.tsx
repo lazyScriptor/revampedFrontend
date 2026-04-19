@@ -121,7 +121,7 @@ function AuthenticatedLayout() {
     {
       text: "Inventory",
       icon: <InventoryIcon />,
-      requiredPermission: "view_equipment",
+      requiredPermission: "inventory_permission",
       children: [
         { text: "All Equipment", path: "/equipment" },
         { text: "Categories", path: "/equipment-category" },
@@ -131,19 +131,19 @@ function AuthenticatedLayout() {
       text: "Customers",
       icon: <PeopleIcon />,
       path: "/customers",
-      requiredPermission: "view_customers",
+      requiredPermission: "inventory_permission",
     },
     {
       text: "Invoices",
       icon: <ReceiptIcon />,
       path: "/invoices",
-      requiredPermission: "view_invoices",
+      requiredPermission: "inventory_permission",
     },
     {
       text: "Data Arena",
       icon: <StorageIcon />,
       path: "/data-arena",
-      requiredPermission: "view_equipment", // Ensure only admins can mass import/export!
+      requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
     },
   ];
 
