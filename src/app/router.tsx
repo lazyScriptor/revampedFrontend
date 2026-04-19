@@ -4,7 +4,8 @@ import { authenticatedRoute } from "@/routes/_authenticated";
 import LoginRoute from "@/routes/login";
 import Equipment from "@/routes/Equipment";
 import Categories from "@/routes/Categories";
-import DataArena from "@/routes/DataArena"; // <-- 1. Import the new Data Arena component
+import DataArena from "@/routes/DataArena";
+import Invoices from "@/routes/Invoices";
 import { useAuthStore } from "@/stores/useAuthStore";
 import CustomersRoute from "@/routes/Customers";
 
@@ -72,7 +73,7 @@ const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => <div>This is the invoice route</div>,
+  component: () => <div><Invoices/></div>,
 });
 
 // NEW: Data Arena Route (Protected by 'admin' permission)
