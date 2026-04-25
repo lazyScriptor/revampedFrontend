@@ -145,6 +145,12 @@ function AuthenticatedLayout() {
       path: "/data-arena",
       requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
     },
+        {
+      text: "Rental History",
+      icon: <StorageIcon />,
+      path: "/rental-history",
+      requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
+    },
   ];
 
   // 2. Filter the items based on the user's permission array

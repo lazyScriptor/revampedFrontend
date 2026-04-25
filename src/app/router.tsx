@@ -6,6 +6,7 @@ import Equipment from "@/routes/Equipment";
 import Categories from "@/routes/Categories";
 import DataArena from "@/routes/DataArena";
 import Invoices from "@/routes/Invoices";
+import RentalHistoryRoute from "@/routes/RentalHistory";
 import { useAuthStore } from "@/stores/useAuthStore";
 import CustomersRoute from "@/routes/Customers";
 
@@ -73,7 +74,11 @@ const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => <div><Invoices/></div>,
+  component: () => (
+    <div>
+      <Invoices />
+    </div>
+  ),
 });
 
 // NEW: Data Arena Route (Protected by 'admin' permission)
@@ -92,7 +97,14 @@ const customersRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/customers",
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => <CustomersRoute />, // Hook it up here!
+  component: () => <CustomersRoute />,
+});
+
+const rentalHistoryRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/rental-history",
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <RentalHistoryRoute />,
 });
 
 // --- 3. Build the Route Tree ---
@@ -106,6 +118,7 @@ const routeTree = rootRoute.addChildren([
     equipmentCategoryRoute,
     dataArenaRoute,
     customersRoute,
+    rentalHistoryRoute,
   ]),
 ]);
 

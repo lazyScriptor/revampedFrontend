@@ -11,13 +11,14 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-// ... (keep your existing icon imports)
+
 import { PosCustomerPanel } from "@/features/invoices/components/PosCustomerPanel";
 import {
   PosLedgerPanel,
   CartItem,
 } from "@/features/invoices/components/PosLedgerPanel";
 import { PosCheckoutPanel } from "@/features/invoices/components/PosCheckoutPanel";
+
 import { api } from "@/lib/api";
 
 export default function InvoicesRoute() {
