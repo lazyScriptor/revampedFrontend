@@ -42,15 +42,22 @@ export const useTechnicianList = () => {
     });
 };
 
-// 3. Assign Technician
+// 3. Assign Technician (Now supports Partial Assignment)
 export const useAssignTechnician = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ defectId, technicianId }: { defectId: number, technicianId: number }) => {
-            const response = await api.patch(`/defects/${defectId}/assign`, { technician_id: technicianId });
+        // Add quantity to the mutation signature
+        mutationFn: async ({ defectId, technicianId, quantity }: { defectId: number, technicianId: number, quantity: number }) => {
+            const response = await api.patch(`/defects/${defectId}/assign`, {
+                technician_id: technicianId,
+                quantity
+            });
             return response.data;
         },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['defects'] });
+            queryClient.invalidateQueries({ queryKey: ['technician-roster'] }); // Update workload bars
+        },
     });
 };
 
@@ -66,5 +73,63 @@ export const useResolveDefect = () => {
             queryClient.invalidateQueries({ queryKey: ['defects'] });
             queryClient.invalidateQueries({ queryKey: ['equipment'] }); // Refresh inventory counts!
         },
+    });
+};
+export const useTechnicianRoster = () => {
+    return useQuery({
+        queryKey: ['technician-roster'],
+        queryFn: async () => {
+            const response = await api.get('/users/technicians/roster');
+
+            // Step 1: Normalize the response
+            const payload = response.data ? response.data : response;
+
+            // Step 2: Catch the array no matter the nesting level
+            const rosterData = payload?.data?.roster || payload?.roster || [];
+
+            // Step 3: Ensure it strictly returns an array
+            return Array.isArray(rosterData) ? rosterData : [];
+        },
+    });
+};
+
+// 2. Add New Technician
+export const useAddTechnician = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (techData: any) => {
+            const response = await api.post('/users/technicians', techData);
+            return response.data;
+        },
+        onSuccess: () => {
+            // Refresh the roster grid
+            queryClient.invalidateQueries({ queryKey: ['technician-roster'] });
+            // Refresh the dropdown list in the Maintenance Assignment Modal
+            queryClient.invalidateQueries({ queryKey: ['technicians'] });
+        },
+    });
+};
+// 3. Update Technician
+export const useUpdateTechnician = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, data }: { id: number, data: any }) => {
+            const response = await api.patch(`/users/technicians/${id}`, data);
+            return response.data;
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['technician-roster'] }),
+    });
+};
+
+// 4. Toggle Status (Soft Delete)
+export const useToggleTechnicianStatus = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, isActive }: { id: number, isActive: boolean }) => {
+            // Re-using the general user status toggle route we built earlier!
+            const response = await api.patch(`/users/${id}/status`, { isActive });
+            return response.data;
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['technician-roster'] }),
     });
 };

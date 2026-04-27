@@ -146,10 +146,16 @@ function AuthenticatedLayout() {
       path: "/data-arena",
       requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
     },
-        {
+    {
       text: "Rental History",
       icon: <StorageIcon />,
       path: "/rental-history",
+      requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
+    },
+    {
+      text: "Workforce",
+      icon: <StorageIcon />,
+      path: "/workforce",
       requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
     },
   ];

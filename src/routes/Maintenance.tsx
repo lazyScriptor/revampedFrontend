@@ -37,9 +37,9 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import {
   useDefectList,
-  useTechnicianList,
   useAssignTechnician,
   useResolveDefect,
+  useTechnicianRoster,
 } from "@/features/inventory/hooks/useDefectHooks";
 
 // --- KPI WIDGET ---
@@ -97,10 +97,10 @@ const KpiCard = ({
 
 export default function MaintenanceRoute() {
   const { data: defects = [], isLoading: defectsLoading } = useDefectList();
-  const { data: technicians = [] } = useTechnicianList();
+  const { data: technicians = [] } = useTechnicianRoster();
   const assignMutation = useAssignTechnician();
   const resolveMutation = useResolveDefect();
-
+  const [assignQty, setAssignQty] = useState<string>(""); // <-- ADD THIS
   const [currentTab, setCurrentTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [toast, setToast] = useState({
@@ -127,17 +127,27 @@ export default function MaintenanceRoute() {
 
   // --- ACTIONS ---
   const handleAssignSubmit = () => {
+    const qty = parseInt(assignQty);
     if (!selectedTechId || !assignModal.defect) return;
+    if (!qty || qty <= 0 || qty > assignModal.defect.pending_quantity) {
+      return showToast("Please enter a valid assignment quantity.", "error");
+    }
+
     assignMutation.mutate(
       {
         defectId: assignModal.defect.log_id,
         technicianId: parseInt(selectedTechId),
+        quantity: qty,
       },
       {
         onSuccess: () => {
-          showToast("Technician assigned successfully.", "success");
+          showToast(
+            `Successfully assigned ${qty} items to technician.`,
+            "success",
+          );
           setAssignModal({ open: false, defect: null });
           setSelectedTechId("");
+          setAssignQty("");
         },
         onError: (err: any) =>
           showToast(
@@ -548,20 +558,80 @@ export default function MaintenanceRoute() {
       </Paper>
 
       {/* --- MODAL 1: ASSIGN TECHNICIAN --- */}
+      {/* --- MODAL 1: COMPREHENSIVE ASSIGN TECHNICIAN --- */}
       <Dialog
         open={assignModal.open}
         onClose={() => setAssignModal({ open: false, defect: null })}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
-        <DialogTitle fontWeight="bold">Assign Technician</DialogTitle>
+        <DialogTitle fontWeight="bold">Assign Repair Task</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            Assign a worker to repair{" "}
-            <strong>{assignModal.defect?.Equipment?.equipment_name}</strong>{" "}
-            (Qty: {assignModal.defect?.defective_quantity}).
+          {/* Detailed Context Box */}
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: 2,
+              mb: 3,
+              mt: 1,
+            }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              textTransform="uppercase"
+              fontWeight="bold"
+              mb={1}
+            >
+              Equipment to Repair
+            </Typography>
+            <Typography variant="h6" fontWeight="bold" color="primary.main">
+              {assignModal.defect?.Equipment?.equipment_name}
+            </Typography>
+            <Typography
+              variant="body2"
+              color="error.main"
+              sx={{ mt: 0.5, fontStyle: "italic" }}
+            >
+              "{assignModal.defect?.defect_description}"
+            </Typography>
+
+            <Box
+              sx={{
+                display: "flex",
+                gap: 3,
+                mt: 2,
+                pt: 2,
+                borderTop: "1px dashed #cbd5e1",
+              }}
+            >
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Total In Queue
+                </Typography>
+                <Typography fontWeight="bold">
+                  {assignModal.defect?.pending_quantity} Units
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Source
+                </Typography>
+                <Typography fontWeight="bold">
+                  {assignModal.defect?.reported_on_invoice_id
+                    ? `INV-${assignModal.defect.reported_on_invoice_id}`
+                    : "Manual Entry"}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Typography variant="body2" fontWeight="bold" mb={1.5}>
+            1. Select Technician
           </Typography>
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" sx={{ mb: 3 }}>
             <InputLabel>Select Technician</InputLabel>
             <Select
               value={selectedTechId}
@@ -569,20 +639,49 @@ export default function MaintenanceRoute() {
               onChange={(e) => setSelectedTechId(e.target.value)}
             >
               {technicians.length === 0 ? (
-                <MenuItem disabled>No users found</MenuItem>
+                <MenuItem disabled>No technicians available</MenuItem>
               ) : null}
               {technicians.map((tech: any) => (
                 <MenuItem
                   key={tech.user_id || tech.id}
                   value={tech.user_id || tech.id}
                 >
-                  {tech.first_name} {tech.last_name} ({tech.email})
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: "100%",
+                    }}
+                  >
+                    <span>
+                      {tech.first_name} {tech.last_name}
+                    </span>
+                    <span style={{ color: "#64748b", fontSize: "0.85rem" }}>
+                      {tech.active_tickets} active tickets
+                    </span>
+                  </Box>
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
+
+          <Typography variant="body2" fontWeight="bold" mb={1.5}>
+            2. Assignment Quantity
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            type="number"
+            label="Quantity to Assign"
+            value={assignQty}
+            onChange={(e) => setAssignQty(e.target.value)}
+            helperText={`You can assign between 1 and ${assignModal.defect?.pending_quantity} units. Any unassigned units will remain in the Queue as a new ticket.`}
+            InputProps={{
+              inputProps: { min: 1, max: assignModal.defect?.pending_quantity },
+            }}
+          />
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
           <Button
             onClick={() => setAssignModal({ open: false, defect: null })}
             color="inherit"
@@ -593,7 +692,7 @@ export default function MaintenanceRoute() {
             onClick={handleAssignSubmit}
             variant="contained"
             disableElevation
-            disabled={!selectedTechId || assignMutation.isPending}
+            disabled={!selectedTechId || !assignQty || assignMutation.isPending}
           >
             Confirm Assignment
           </Button>

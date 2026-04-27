@@ -10,6 +10,7 @@ import RentalHistoryRoute from "@/routes/RentalHistory";
 import { useAuthStore } from "@/stores/useAuthStore";
 import CustomersRoute from "@/routes/Customers";
 import MaintenanceRoute from "@/routes/Maintenance";
+import WorkforceRoute from "@/routes/Workforce";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -114,6 +115,13 @@ const maintenanceRoute = createRoute({
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <MaintenanceRoute />,
 });
+//workforce
+const workforceRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/workforce",
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <WorkforceRoute/>,
+});
 
 // --- 3. Build the Route Tree ---
 const routeTree = rootRoute.addChildren([
@@ -128,6 +136,7 @@ const routeTree = rootRoute.addChildren([
     customersRoute,
     rentalHistoryRoute,
     maintenanceRoute,
+    workforceRoute,
   ]),
 ]);
 
