@@ -125,6 +125,7 @@ function AuthenticatedLayout() {
       children: [
         { text: "All Equipment", path: "/equipment" },
         { text: "Categories", path: "/equipment-category" },
+        { text: "Maintenance", path: "/maintenance" },
       ],
     },
     {

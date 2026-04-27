@@ -9,6 +9,7 @@ import Invoices from "@/routes/Invoices";
 import RentalHistoryRoute from "@/routes/RentalHistory";
 import { useAuthStore } from "@/stores/useAuthStore";
 import CustomersRoute from "@/routes/Customers";
+import MaintenanceRoute from "@/routes/Maintenance";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -106,6 +107,13 @@ const rentalHistoryRoute = createRoute({
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <RentalHistoryRoute />,
 });
+//maintenance
+const maintenanceRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/maintenance",
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <MaintenanceRoute />,
+});
 
 // --- 3. Build the Route Tree ---
 const routeTree = rootRoute.addChildren([
@@ -119,6 +127,7 @@ const routeTree = rootRoute.addChildren([
     dataArenaRoute,
     customersRoute,
     rentalHistoryRoute,
+    maintenanceRoute,
   ]),
 ]);
 

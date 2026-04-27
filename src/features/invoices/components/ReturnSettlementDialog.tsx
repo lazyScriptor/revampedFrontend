@@ -34,14 +34,34 @@ export function ReturnSettlementDialog({
   // Initialize the form when the dialog opens
   useMemo(() => {
     if (invoice && open) {
+      // 1. Bulletproof Array Catcher
+      const rawLines =
+        invoice.InvoiceLines ||
+        invoice.invoice_lines ||
+        invoice.InvoiceLine ||
+        invoice.lines ||
+        [];
+
+      // 2. Only map the ACTIVE lines into the return form
+      const activeRawLines = rawLines.filter(
+        (l: any) =>
+          l.line_status === "Active" ||
+          l.status === "Active" ||
+          (!l.line_status && l.status !== "Returned"),
+      );
+
       setReturnLines(
-        invoice.InvoiceLines.map((line: any) => ({
+        activeRawLines.map((line: any) => ({
           line_id: line.line_id,
-          equipment_name: line.Equipment.equipment_name,
+          // Bulletproof Equipment Catcher
+          equipment_name:
+            line.Equipment?.equipment_name ||
+            line.equipment?.equipment_name ||
+            "Unknown Item",
           borrow_qty: line.borrow_quantity,
           locked_extra_rate: Number(line.locked_extra_daily_rate),
           expected_return: line.expected_return_date,
-          good_qty: line.borrow_quantity, // Default to assuming they brought everything back safe
+          good_qty: line.borrow_quantity,
           defective_qty: 0,
           actual_return_date: new Date().toISOString().split("T")[0],
         })),
