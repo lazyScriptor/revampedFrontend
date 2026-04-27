@@ -18,21 +18,31 @@ import {
   Tab,
   TextField,
   InputAdornment,
-  IconButton,
-  Tooltip,
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
 } from "@mui/material";
-import BuildIcon from "@mui/icons-material/Build";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SearchIcon from "@mui/icons-material/Search";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import HandymanIcon from "@mui/icons-material/Handyman";
+import EngineeringIcon from "@mui/icons-material/Engineering";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+
 import {
   useDefectList,
-  useRepairDefect,
+  useTechnicianList,
+  useAssignTechnician,
+  useResolveDefect,
 } from "@/features/inventory/hooks/useDefectHooks";
 
-// --- ENTERPRISE KPI COMPONENT ---
+// --- KPI WIDGET ---
 const KpiCard = ({
   title,
   value,
@@ -86,8 +96,10 @@ const KpiCard = ({
 );
 
 export default function MaintenanceRoute() {
-  const { data: defects = [], isLoading } = useDefectList();
-  const repairMutation = useRepairDefect();
+  const { data: defects = [], isLoading: defectsLoading } = useDefectList();
+  const { data: technicians = [] } = useTechnicianList();
+  const assignMutation = useAssignTechnician();
+  const resolveMutation = useResolveDefect();
 
   const [currentTab, setCurrentTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,59 +109,120 @@ export default function MaintenanceRoute() {
     severity: "success" as "success" | "error",
   });
 
-  const handleRepair = (defectId: number) => {
-    repairMutation.mutate(defectId, {
-      onSuccess: () =>
-        setToast({
-          open: true,
-          message:
-            "Equipment marked as repaired and returned to active inventory.",
-          severity: "success",
-        }),
-      onError: (err: any) =>
-        setToast({
-          open: true,
-          message: err.response?.data?.message || "Repair failed",
-          severity: "error",
-        }),
-    });
+  // Modal States
+  const [assignModal, setAssignModal] = useState<{
+    open: boolean;
+    defect: any | null;
+  }>({ open: false, defect: null });
+  const [selectedTechId, setSelectedTechId] = useState<string>("");
+
+  const [resolveModal, setResolveModal] = useState<{
+    open: boolean;
+    defect: any | null;
+  }>({ open: false, defect: null });
+  const [resolveQty, setResolveQty] = useState<string>("");
+
+  const showToast = (message: string, severity: "success" | "error") =>
+    setToast({ open: true, message, severity });
+
+  // --- ACTIONS ---
+  const handleAssignSubmit = () => {
+    if (!selectedTechId || !assignModal.defect) return;
+    assignMutation.mutate(
+      {
+        defectId: assignModal.defect.log_id,
+        technicianId: parseInt(selectedTechId),
+      },
+      {
+        onSuccess: () => {
+          showToast("Technician assigned successfully.", "success");
+          setAssignModal({ open: false, defect: null });
+          setSelectedTechId("");
+        },
+        onError: (err: any) =>
+          showToast(
+            err.response?.data?.message || "Assignment failed",
+            "error",
+          ),
+      },
+    );
   };
 
-  // --- DATA PROCESSING (Bulletproof Filters) ---
+  const handleResolveSubmit = () => {
+    const qty = parseInt(resolveQty);
+    if (
+      !qty ||
+      !resolveModal.defect ||
+      qty <= 0 ||
+      qty > resolveModal.defect.pending_quantity
+    ) {
+      return showToast("Please enter a valid quantity.", "error");
+    }
+    resolveMutation.mutate(
+      { defectId: resolveModal.defect.log_id, quantity: qty },
+      {
+        onSuccess: () => {
+          showToast(`Successfully repaired ${qty} items!`, "success");
+          setResolveModal({ open: false, defect: null });
+          setResolveQty("");
+        },
+        onError: (err: any) =>
+          showToast(
+            err.response?.data?.message || "Resolution failed",
+            "error",
+          ),
+      },
+    );
+  };
 
-  // Safely ensure defects is an array before filtering
+  // --- DATA PIPELINES ---
+  // --- DATA PIPELINES (Bulletproof Edition) ---
   const safeDefects = Array.isArray(defects) ? defects : [];
 
-  // Catch both new ("Reported") and old ("Pending Repair") statuses, ignoring uppercase/lowercase
-  const pendingDefects = safeDefects.filter((d: any) => {
+  const queueDefects = safeDefects.filter((d: any) => {
     const status = (d.repair_status || d.status || "").toLowerCase();
     return (
+      status === "pending assignment" ||
       status === "reported" ||
-      status === "pending repair" ||
       status === "pending"
     );
   });
 
-  const repairedDefects = safeDefects.filter((d: any) => {
+  const workshopDefects = safeDefects.filter((d: any) => {
+    const status = (d.repair_status || d.status || "").toLowerCase();
+    return status === "in repair" || status === "partially resolved";
+  });
+
+  const historyDefects = safeDefects.filter((d: any) => {
     const status = (d.repair_status || d.status || "").toLowerCase();
     return (
       status === "resolved" || status === "repaired" || status === "completed"
     );
   });
 
-  // Filter based on search query
-  const filteredData = (
-    currentTab === 0 ? pendingDefects : repairedDefects
-  ).filter((d: any) => {
-    const term = searchQuery.toLowerCase();
-    const itemName = d.Equipment?.equipment_name?.toLowerCase() || "";
-    const invoiceStr = d.reported_on_invoice_id
-      ? `inv-${d.reported_on_invoice_id}`
-      : "";
-    return itemName.includes(term) || invoiceStr.includes(term);
-  });
+  const getFilteredData = () => {
+    let baseData =
+      currentTab === 0
+        ? queueDefects
+        : currentTab === 1
+          ? workshopDefects
+          : historyDefects;
 
-  if (isLoading)
+    // Safety bypass: If the search bar is empty, don't run the filter at all
+    const term = searchQuery.toLowerCase().trim();
+    if (!term) return baseData;
+
+    return baseData.filter(
+      (d: any) =>
+        (d.Equipment?.equipment_name || "").toLowerCase().includes(term) ||
+        (d.reported_on_invoice_id
+          ? `inv-${d.reported_on_invoice_id}`
+          : ""
+        ).includes(term),
+    );
+  };
+
+  if (defectsLoading)
     return (
       <Box p={5} display="flex" justifyContent="center">
         <CircularProgress />
@@ -167,7 +240,7 @@ export default function MaintenanceRoute() {
         gap: 4,
       }}
     >
-      {/* HEADER SECTION */}
+      {/* HEADER & KPIs */}
       <Box
         sx={{
           display: "flex",
@@ -182,11 +255,10 @@ export default function MaintenanceRoute() {
             color="text.primary"
             gutterBottom
           >
-            Maintenance & Repair
+            Workshop Command Center
           </Typography>
           <Typography color="text.secondary" variant="body1">
-            Manage defective returns, track workshop queue, and reinstate
-            inventory.
+            Allocate technicians, log partial repairs, and monitor fleet health.
           </Typography>
         </Box>
         <Button
@@ -198,29 +270,28 @@ export default function MaintenanceRoute() {
         </Button>
       </Box>
 
-      {/* KPI DASHBOARD */}
       <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
         <KpiCard
-          title="Items in Repair"
-          value={pendingDefects.length}
+          title="Awaiting Assignment"
+          value={queueDefects.length}
           icon={<HandymanIcon fontSize="large" />}
+          color="#f43f5e"
+        />
+        <KpiCard
+          title="Active in Workshop"
+          value={workshopDefects.length}
+          icon={<EngineeringIcon fontSize="large" />}
           color="#f59e0b"
         />
         <KpiCard
-          title="Repaired Today"
-          value={repairedDefects.length}
+          title="Fully Restored"
+          value={historyDefects.length}
           icon={<CheckCircleIcon fontSize="large" />}
           color="#10b981"
         />
-        <KpiCard
-          title="Critical Alerts"
-          value={pendingDefects.length > 5 ? "High Volume" : "Normal"}
-          icon={<WarningAmberIcon fontSize="large" />}
-          color={pendingDefects.length > 5 ? "#ef4444" : "#64748b"}
-        />
       </Box>
 
-      {/* MAIN DATA WORKSPACE */}
+      {/* MASTER DATA TABLE */}
       <Paper
         elevation={0}
         sx={{
@@ -230,7 +301,6 @@ export default function MaintenanceRoute() {
           bgcolor: "white",
         }}
       >
-        {/* Toolbar & Tabs */}
         <Box
           sx={{
             borderBottom: "1px solid #e2e8f0",
@@ -245,8 +315,6 @@ export default function MaintenanceRoute() {
           <Tabs
             value={currentTab}
             onChange={(e, v) => setCurrentTab(v)}
-            indicatorColor="primary"
-            textColor="primary"
             sx={{
               "& .MuiTab-root": {
                 fontWeight: 600,
@@ -255,15 +323,15 @@ export default function MaintenanceRoute() {
               },
             }}
           >
-            <Tab label={`Pending Repairs (${pendingDefects.length})`} />
-            <Tab label={`Repair History (${repairedDefects.length})`} />
+            <Tab label={`Queue (${queueDefects.length})`} />
+            <Tab label={`Workshop (${workshopDefects.length})`} />
+            <Tab label={`History (${historyDefects.length})`} />
           </Tabs>
-
           <Box sx={{ pb: 1.5, width: 300 }}>
             <TextField
               fullWidth
               size="small"
-              placeholder="Search by name or invoice..."
+              placeholder="Search item or invoice..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -278,175 +346,314 @@ export default function MaintenanceRoute() {
           </Box>
         </Box>
 
-        {/* DATA TABLE */}
         <TableContainer sx={{ maxHeight: 600 }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell
-                  sx={{
-                    fontWeight: "bold",
-                    bgcolor: "#f1f5f9",
-                    color: "#475569",
-                  }}
+                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "25%" }}
                 >
-                  Defect ID
+                  Equipment & Defect
                 </TableCell>
                 <TableCell
-                  sx={{
-                    fontWeight: "bold",
-                    bgcolor: "#f1f5f9",
-                    color: "#475569",
-                  }}
+                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "25%" }}
                 >
-                  Equipment Name
+                  Repair Progress
                 </TableCell>
                 <TableCell
-                  sx={{
-                    fontWeight: "bold",
-                    bgcolor: "#f1f5f9",
-                    color: "#475569",
-                  }}
+                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "20%" }}
                 >
-                  Defect Details
+                  Technician
                 </TableCell>
                 <TableCell
-                  sx={{
-                    fontWeight: "bold",
-                    bgcolor: "#f1f5f9",
-                    color: "#475569",
-                  }}
-                >
-                  Source
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: "bold",
-                    bgcolor: "#f1f5f9",
-                    color: "#475569",
-                  }}
+                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "15%" }}
                 >
                   Status
                 </TableCell>
                 <TableCell
                   align="right"
-                  sx={{
-                    fontWeight: "bold",
-                    bgcolor: "#f1f5f9",
-                    color: "#475569",
-                  }}
+                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "15%" }}
                 >
                   Action
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData.length === 0 && (
+              {getFilteredData().length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    align="center"
-                    sx={{ py: 6, color: "text.secondary" }}
-                  >
-                    <Typography variant="h6">No records found.</Typography>
-                    <Typography variant="body2">
-                      You're all caught up!
+                  <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                    <Typography color="text.secondary">
+                      No records found in this view.
                     </Typography>
                   </TableCell>
                 </TableRow>
               )}
-              {filteredData.map((row: any) => (
-                <TableRow
-                  key={row.log_id}
-                  hover
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      fontWeight="bold"
-                      color="text.secondary"
-                    >
-                      #{row.log_id}
-                    </Typography>
-                  </TableCell>
+              {getFilteredData().map((row: any) => {
+                // Calculate progress percentage
+                const progress =
+                  Math.round(
+                    (row.repaired_quantity / row.defective_quantity) * 100,
+                  ) || 0;
 
-                  <TableCell>
-                    <Typography fontWeight="600" color="primary.main">
-                      {row.Equipment?.equipment_name ||
-                        `Unknown ID: ${row.equipment_id}`}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Defective Qty: {row.defective_quantity}
-                    </Typography>
-                  </TableCell>
-
-                  <TableCell sx={{ maxWidth: 300 }}>
-                    <Typography
-                      variant="body2"
-                      color="error.dark"
-                      noWrap
-                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                    >
-                      <BuildIcon fontSize="inherit" /> {row.defect_description}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Reported:{" "}
-                      {new Date(row.reported_date).toLocaleDateString()}
-                    </Typography>
-                  </TableCell>
-
-                  <TableCell>
-                    {row.reported_on_invoice_id ? (
-                      <Chip
-                        label={`INV-${row.reported_on_invoice_id}`}
-                        size="small"
-                        variant="outlined"
-                      />
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        Manual Entry
+                return (
+                  <TableRow key={row.log_id} hover>
+                    {/* Column 1: Info */}
+                    <TableCell>
+                      <Typography fontWeight="700" color="primary.main">
+                        {row.Equipment?.equipment_name ||
+                          `Item #${row.equipment_id}`}
                       </Typography>
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    <Chip
-                      label={row.repair_status}
-                      color={
-                        row.repair_status === "Reported" ? "warning" : "success"
-                      }
-                      size="small"
-                      sx={{ fontWeight: "bold" }}
-                    />
-                  </TableCell>
-
-                  <TableCell align="right">
-                    {row.repair_status === "Reported" ? (
-                      <Button
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        disableElevation
-                        onClick={() => handleRepair(row.log_id)}
-                        disabled={repairMutation.isPending}
-                        sx={{ textTransform: "none", fontWeight: "bold" }}
+                      <Typography
+                        variant="body2"
+                        color="error.main"
+                        sx={{ mt: 0.5, mb: 0.5 }}
                       >
-                        Resolve
-                      </Button>
-                    ) : (
-                      <Typography variant="caption" color="text.disabled">
-                        Resolved{" "}
-                        {new Date(row.resolved_date).toLocaleDateString()}
+                        "{row.defect_description}"
                       </Typography>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                      <Typography variant="caption" color="text.secondary">
+                        Ticket #{row.log_id} • Reported on{" "}
+                        {new Date(row.reported_date).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* Column 2: Progress Math */}
+                    <TableCell>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mb: 0.5,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          color="text.secondary"
+                        >
+                          Total Broken: {row.defective_quantity}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          color="success.main"
+                        >
+                          {row.repaired_quantity} Fixed
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        color={progress === 100 ? "success" : "warning"}
+                        sx={{ height: 8, borderRadius: 4, bgcolor: "#e2e8f0" }}
+                      />
+                      {row.pending_quantity > 0 && (
+                        <Typography
+                          variant="caption"
+                          color="warning.dark"
+                          sx={{ mt: 0.5, display: "block" }}
+                        >
+                          {row.pending_quantity} items remaining in shop
+                        </Typography>
+                      )}
+                    </TableCell>
+
+                    {/* Column 3: Tech Assignment */}
+                    <TableCell>
+                      {row.Technician ? (
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          <Avatar
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              bgcolor: "primary.light",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            {row.Technician.first_name[0]}
+                          </Avatar>
+                          <Typography variant="body2" fontWeight="500">
+                            {row.Technician.first_name}{" "}
+                            {row.Technician.last_name}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.disabled"
+                          fontStyle="italic"
+                        >
+                          Unassigned
+                        </Typography>
+                      )}
+                    </TableCell>
+
+                    {/* Column 4: Status */}
+                    <TableCell>
+                      <Chip
+                        label={row.repair_status}
+                        color={
+                          row.repair_status === "Pending Assignment"
+                            ? "error"
+                            : row.repair_status === "Resolved"
+                              ? "success"
+                              : "warning"
+                        }
+                        size="small"
+                        sx={{ fontWeight: "bold" }}
+                      />
+                    </TableCell>
+
+                    {/* Column 5: Actions */}
+                    <TableCell align="right">
+                      {/* Render Assign button for ANY queue status */}
+                      {(row.repair_status === "Pending Assignment" ||
+                        row.repair_status === "Reported" ||
+                        row.repair_status === "Pending") && (
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          onClick={() =>
+                            setAssignModal({ open: true, defect: row })
+                          }
+                        >
+                          Assign Tech
+                        </Button>
+                      )}
+
+                      {/* Render Repair button for ANY workshop status */}
+                      {(row.repair_status === "In Repair" ||
+                        row.repair_status === "Partially Resolved") && (
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          disableElevation
+                          onClick={() =>
+                            setResolveModal({ open: true, defect: row })
+                          }
+                        >
+                          Log Repair
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* --- MODAL 1: ASSIGN TECHNICIAN --- */}
+      <Dialog
+        open={assignModal.open}
+        onClose={() => setAssignModal({ open: false, defect: null })}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle fontWeight="bold">Assign Technician</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Assign a worker to repair{" "}
+            <strong>{assignModal.defect?.Equipment?.equipment_name}</strong>{" "}
+            (Qty: {assignModal.defect?.defective_quantity}).
+          </Typography>
+          <FormControl fullWidth size="small">
+            <InputLabel>Select Technician</InputLabel>
+            <Select
+              value={selectedTechId}
+              label="Select Technician"
+              onChange={(e) => setSelectedTechId(e.target.value)}
+            >
+              {technicians.length === 0 ? (
+                <MenuItem disabled>No users found</MenuItem>
+              ) : null}
+              {technicians.map((tech: any) => (
+                <MenuItem
+                  key={tech.user_id || tech.id}
+                  value={tech.user_id || tech.id}
+                >
+                  {tech.first_name} {tech.last_name} ({tech.email})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={() => setAssignModal({ open: false, defect: null })}
+            color="inherit"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAssignSubmit}
+            variant="contained"
+            disableElevation
+            disabled={!selectedTechId || assignMutation.isPending}
+          >
+            Confirm Assignment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* --- MODAL 2: LOG PARTIAL/FULL REPAIR --- */}
+      <Dialog
+        open={resolveModal.open}
+        onClose={() => setResolveModal({ open: false, defect: null })}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle fontWeight="bold">Log Repair Progress</DialogTitle>
+        <DialogContent>
+          <Box sx={{ p: 2, bgcolor: "#f8fafc", borderRadius: 2, mb: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              Item:
+            </Typography>
+            <Typography fontWeight="bold" mb={1}>
+              {resolveModal.defect?.Equipment?.equipment_name}
+            </Typography>
+            <Typography variant="body2" color="warning.dark" fontWeight="bold">
+              Still Pending Fix: {resolveModal.defect?.pending_quantity}
+            </Typography>
+          </Box>
+          <TextField
+            autoFocus
+            fullWidth
+            type="number"
+            label="Quantity Fixed Today"
+            value={resolveQty}
+            onChange={(e) => setResolveQty(e.target.value)}
+            helperText={`Enter a number between 1 and ${resolveModal.defect?.pending_quantity}. These items will be returned to the shelf immediately.`}
+            InputProps={{
+              inputProps: {
+                min: 1,
+                max: resolveModal.defect?.pending_quantity,
+              },
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={() => setResolveModal({ open: false, defect: null })}
+            color="inherit"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleResolveSubmit}
+            variant="contained"
+            color="success"
+            disableElevation
+            disabled={!resolveQty || resolveMutation.isPending}
+          >
+            Commit to Inventory
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={toast.open}
