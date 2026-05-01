@@ -9,24 +9,32 @@ import {
   Divider,
   Chip,
   Button,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import SecurityIcon from "@mui/icons-material/Security";
-import PaymentIcon from "@mui/icons-material/Payment";
 import AssignmentReturnedIcon from "@mui/icons-material/AssignmentReturned";
-
+import HistoryIcon from "@mui/icons-material/History";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRight";
 import {
   useInvoiceSearch,
   useAddPayment,
   useToggleVault,
 } from "../hooks/useInvoiceHooks";
+
+// --- GLOWING DOT CSS COMPONENT ---
+const StatusDot = ({ color }: { color: string }) => (
+  <Box
+    sx={{
+      width: 10,
+      height: 10,
+      borderRadius: "50%",
+      backgroundColor: color,
+      boxShadow: `0 0 8px 2px ${color}80`, // The Glow
+      mr: 1.5,
+    }}
+  />
+);
 
 // --- PANE 1: INVOICE SEARCH ---
 export function ManageSearchPanel({
@@ -44,7 +52,7 @@ export function ManageSearchPanel({
       <Autocomplete
         options={searchResults}
         getOptionLabel={(option: any) =>
-          `INV-${option.invoice_id} • ${option.Customer?.first_name}`
+          `INV-${option.invoice_id}   ${option.Customer?.first_name}`
         }
         filterOptions={(x) => x}
         onChange={(event, newValue: any) => {
@@ -85,7 +93,7 @@ export function ManageSearchPanel({
                 INV-{option.invoice_id}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {option.Customer?.first_name} {option.Customer?.last_name} •{" "}
+                {option.Customer?.first_name} {option.Customer?.last_name}{" "}
                 {option.Customer?.phone_number}
               </Typography>
             </div>
@@ -101,7 +109,8 @@ export function ManageSearchPanel({
   );
 }
 
-// --- PANE 2: ACTIVE LEDGER (X-Ray Version) ---
+// --- PANE 2: PRO-LEVEL EQUIPMENT LEDGER (With Iteration Child Rows) ---
+// --- PANE 2: PRO-LEVEL EQUIPMENT LEDGER (With Iteration Child Rows) ---
 export function ManageLedgerPanel({
   invoice,
   onOpenReturn,
@@ -114,35 +123,22 @@ export function ManageLedgerPanel({
       <EmptyState text="Search and select an invoice to view its ledger." />
     );
 
-  // 1. The Ultimate Catcher
   const rawLines =
-    invoice.InvoiceLines ||
-    invoice.invoice_lines ||
-    invoice.InvoiceLine ||
-    invoice.lines ||
+    invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
+
+  // BULLETPROOF TRACE EXTRACTOR: Catch all possible names Sequelize might use
+  const rawTraces =
+    invoice.InvoiceTraces ||
+    invoice.InvoiceTrace ||
+    invoice.invoice_traces ||
+    invoice.traces ||
     [];
-
-  // 2. Case-Insensitive Filtering
-  const activeLines = rawLines.filter(
-    (l: any) =>
-      l.line_status?.toLowerCase() === "active" ||
-      l.status?.toLowerCase() === "active" ||
-      (!l.line_status && !l.status),
-  );
-
-  const returnedLines = rawLines.filter(
-    (l: any) =>
-      l.line_status?.toLowerCase() === "returned" ||
-      l.status?.toLowerCase() === "returned",
-  );
-
-  // 3. Catch lines that have weird statuses
-  const uncategorizedLines = rawLines.filter(
-    (l: any) => !activeLines.includes(l) && !returnedLines.includes(l),
+  const returnTraces = rawTraces.filter(
+    (t: any) => t.event_action === "RETURN_PROCESSED",
   );
 
   return (
-    <Box sx={{ p: 3, height: "100%", overflowY: "auto" }}>
+    <Box sx={{ p: 3, height: "100%", overflowY: "auto", bgcolor: "#f8fafc" }}>
       <Box
         sx={{
           display: "flex",
@@ -152,157 +148,278 @@ export function ManageLedgerPanel({
         }}
       >
         <Typography variant="h6" fontWeight="bold">
-          Current Ledger
+          Asset Tracking Board
         </Typography>
-        {activeLines.length > 0 && (
+        {invoice.status === "Active" && (
           <Button
             variant="contained"
-            color="warning"
+            color="primary"
             startIcon={<AssignmentReturnedIcon />}
             disableElevation
             onClick={onOpenReturn}
           >
-            Process Return
+            Process Handover
           </Button>
         )}
       </Box>
 
-      {/* --- X-RAY DIAGNOSTICS BAR --- */}
-      <Box
-        sx={{
-          p: 1.5,
-          mb: 3,
-          bgcolor: "#f1f5f9",
-          borderRadius: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: "0.85rem",
-          color: "#64748b",
-        }}
-      >
-        <span>
-          <strong>X-Ray:</strong> Total Lines Found in JSON: {rawLines.length}
-        </span>
-        <span>
-          (Active: {activeLines.length} | Returned: {returnedLines.length} |
-          Unknown: {uncategorizedLines.length})
-        </span>
-      </Box>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {rawLines.map((line: any) => {
+          const isActive =
+            line.line_status === "Active" || line.status === "Active";
+          const equipName = line.Equipment?.equipment_name || "Unknown Asset";
 
-      {/* Active Items */}
-      <Typography
-        variant="subtitle2"
-        color="warning.dark"
-        mb={1}
-        fontWeight="bold"
-      >
-        Currently Out on Rent ({activeLines.length})
-      </Typography>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 4 }}>
-        {activeLines.map((line: any) => {
-          const equipName =
-            line.Equipment?.equipment_name ||
-            line.equipment?.equipment_name ||
-            `Unknown Item (ID: ${line.equipment_id})`;
+          const alreadyReturned =
+            (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
+          const pending = line.borrow_quantity - alreadyReturned;
+
+          // LIVE MATH: Accrued Cost Till Today
+          const start = new Date(line.borrow_date).getTime();
+          const today = new Date().getTime();
+          let daysOut = Math.ceil((today - start) / (1000 * 60 * 60 * 24));
+          if (daysOut < 1) daysOut = 1;
+
+          let accruedCost = 0;
+          if (!isActive) {
+            accruedCost = Number(line.line_total_amount);
+          } else if (daysOut <= line.locked_minimum_days) {
+            accruedCost = line.locked_base_price * line.borrow_quantity;
+          } else {
+            const extraDays = daysOut - line.locked_minimum_days;
+            accruedCost =
+              (line.locked_base_price +
+                extraDays * line.locked_extra_daily_rate) *
+              line.borrow_quantity;
+          }
+
+          // EXTRACT SPECIFIC ITERATIONS: Safely parse JSON payload
+          const lineIterations = returnTraces
+            .map((trace: any) => {
+              let payload = trace.state_payload || {};
+
+              // Safely parse if backend sent it as a stringified JSON
+              if (typeof payload === "string") {
+                try {
+                  payload = JSON.parse(payload);
+                } catch (e) {
+                  payload = {};
+                }
+              }
+
+              const returnedLinesArray = payload.lines_returned || [];
+              const returnedLine = returnedLinesArray.find(
+                (l: any) => l.line_id === line.line_id,
+              );
+
+              if (
+                returnedLine &&
+                (Number(returnedLine.good_qty) > 0 ||
+                  Number(returnedLine.defective_qty) > 0)
+              ) {
+                return {
+                  date: trace.occurred_at || trace.createdAt, // Fallback if occurred_at is missing
+                  good: Number(returnedLine.good_qty) || 0,
+                  defective: Number(returnedLine.defective_qty) || 0,
+                };
+              }
+              return null;
+            })
+            .filter(Boolean); // Removes nulls
+
           return (
             <Paper
-              key={line.line_id || Math.random()}
+              key={line.line_id}
+              elevation={0}
               sx={{
-                p: 2,
-                border: "1px solid #fde047",
-                borderRadius: 2,
-                bgcolor: "#fefce8",
+                border: "1px solid",
+                borderColor: isActive ? "#fbbf24" : "#e2e8f0",
+                borderRadius: 3,
+                bgcolor: "white",
+                overflow: "hidden",
               }}
             >
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography fontWeight="bold">{equipName}</Typography>
-                <Typography fontWeight="bold">
-                  Qty: {line.borrow_quantity}
-                </Typography>
-              </Box>
-              <Typography variant="caption" color="text.secondary">
-                Expected Return:{" "}
-                {line.expected_return_date
-                  ? new Date(line.expected_return_date).toLocaleDateString()
-                  : "N/A"}
-              </Typography>
-            </Paper>
-          );
-        })}
-        {activeLines.length === 0 && (
-          <Typography variant="body2" color="text.secondary">
-            No active items.
-          </Typography>
-        )}
-      </Box>
+              {/* MASTER CARD (Top Level) */}
+              <Box sx={{ p: 2.5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <StatusDot color={isActive ? "#f59e0b" : "#10b981"} />
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      color="text.primary"
+                    >
+                      {equipName}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    size="small"
+                    variant={isActive ? "filled" : "outlined"}
+                    color={isActive ? "warning" : "default"}
+                    label={isActive ? "Out on Rent" : "Fully Returned"}
+                    sx={{ fontWeight: "bold" }}
+                  />
+                </Box>
 
-      {/* Uncategorized Items (If status is weird) */}
-      {uncategorizedLines.length > 0 && (
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="subtitle2"
-            color="error.main"
-            mb={1}
-            fontWeight="bold"
-          >
-            Status Unknown ({uncategorizedLines.length})
-          </Typography>
-          {uncategorizedLines.map((line: any, i: number) => (
-            <Paper
-              key={i}
-              sx={{
-                p: 2,
-                border: "1px solid #fca5a5",
-                borderRadius: 2,
-                bgcolor: "#fef2f2",
-              }}
-            >
-              <Typography fontWeight="bold">
-                Item ID: {line.equipment_id}
-              </Typography>
-              <Typography color="error.main">
-                Raw Status: "{line.line_status || line.status || "NULL"}"
-              </Typography>
-            </Paper>
-          ))}
-        </Box>
-      )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      textTransform="uppercase"
+                      fontWeight="bold"
+                    >
+                      Timeline
+                    </Typography>
+                    <Typography variant="body2" fontWeight="500" mt={0.5}>
+                      Out: {new Date(line.borrow_date).toLocaleDateString()}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="500"
+                      color={
+                        isActive && daysOut > line.locked_minimum_days
+                          ? "error.main"
+                          : "text.primary"
+                      }
+                    >
+                      Due:{" "}
+                      {new Date(line.expected_return_date).toLocaleDateString()}
+                    </Typography>
+                  </Box>
 
-      {/* Returned Items */}
-      <Typography
-        variant="subtitle2"
-        color="success.dark"
-        mb={1}
-        fontWeight="bold"
-      >
-        Already Returned ({returnedLines.length})
-      </Typography>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-        {returnedLines.map((line: any) => {
-          const equipName =
-            line.Equipment?.equipment_name ||
-            line.equipment?.equipment_name ||
-            "Unknown Item";
-          return (
-            <Paper
-              key={line.line_id || Math.random()}
-              sx={{
-                p: 2,
-                border: "1px solid #bbf7d0",
-                borderRadius: 2,
-                bgcolor: "#f0fdf4",
-                opacity: 0.8,
-              }}
-            >
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography fontWeight="bold" color="success.dark">
-                  {equipName}
-                </Typography>
-                <Typography>
-                  Safe: {line.good_returned_qty || 0} | Defective:{" "}
-                  {line.defective_returned_qty || 0}
-                </Typography>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      textTransform="uppercase"
+                      fontWeight="bold"
+                    >
+                      Total Stats
+                    </Typography>
+                    <Typography variant="body2" fontWeight="500" mt={0.5}>
+                      Borrowed: {line.borrow_quantity}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color={
+                        alreadyReturned > 0 ? "success.main" : "text.secondary"
+                      }
+                    >
+                      Returned: {alreadyReturned}
+                    </Typography>
+                    {isActive && (
+                      <Typography
+                        variant="body2"
+                        fontWeight="bold"
+                        color="warning.dark"
+                      >
+                        Pending: {pending}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Box sx={{ bgcolor: "#f8fafc", p: 1.5, borderRadius: 2 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      textTransform="uppercase"
+                      fontWeight="bold"
+                    >
+                      Cost Till Today
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      fontWeight="900"
+                      color="primary.main"
+                      mt={0.5}
+                    >
+                      Rs. {accruedCost.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </div>
               </Box>
+
+              {/* CHILD ROWS (Handover Iterations) */}
+              {lineIterations.length > 0 && (
+                <Box
+                  sx={{
+                    bgcolor: "#f8fafc",
+                    borderTop: "1px dashed #cbd5e1",
+                    p: 2,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                    mb={1}
+                    display="block"
+                  >
+                    Handover Iterations
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                  >
+                    {lineIterations.map((iteration: any, i: number) => (
+                      <Box
+                        key={i}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          p: 1,
+                          bgcolor: "white",
+                          borderRadius: 1,
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <SubdirectoryArrowRightIcon
+                          sx={{ color: "#94a3b8", fontSize: 18 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ width: 140 }}
+                        >
+                          {new Date(iteration.date).toLocaleString([], {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}{" "}
+                          {/* Shows exact Date + Time! */}
+                        </Typography>
+
+                        {iteration.good > 0 && (
+                          <Chip
+                            size="small"
+                            label={`${iteration.good} Safe`}
+                            color="success"
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: "0.7rem" }}
+                          />
+                        )}
+                        {iteration.defective > 0 && (
+                          <Chip
+                            size="small"
+                            label={`${iteration.defective} Broken`}
+                            color="error"
+                            variant="filled"
+                            sx={{ height: 20, fontSize: "0.7rem" }}
+                          />
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
             </Paper>
           );
         })}
@@ -310,7 +427,8 @@ export function ManageLedgerPanel({
     </Box>
   );
 }
-// --- PANE 3: FINANCIAL & VAULT TERMINAL ---
+
+// --- PANE 3: FINANCIAL SETTLEMENT & TRANSACTION LEDGER ---
 export function ManageFinancialPanel({
   invoice,
   showToast,
@@ -325,12 +443,22 @@ export function ManageFinancialPanel({
   if (!invoice)
     return <EmptyState text="Financial controls will appear here." />;
 
+  const payments = invoice.Payments || [];
   const totalPaid =
-    invoice.Payments?.reduce(
+    payments.reduce(
       (sum: number, p: any) => sum + Number(p.payment_amount),
       0,
     ) || 0;
-  const balance = Math.max(0, Number(invoice.total_amount) - totalPaid);
+
+  // Safely parse financial breakdown
+  const subTotal = Number(invoice.sub_total) || 0;
+  const transport = Number(invoice.transport_fee) || 0;
+  const discount = Number(invoice.discount_amount) || 0;
+  const grandTotal = Number(invoice.total_amount) || 0;
+
+  // Math: Grand Total = SubTotal + Transport - Discount + Late Fees
+  const lateFees = Math.max(0, grandTotal - (subTotal + transport - discount));
+  const balance = Math.max(0, grandTotal - totalPaid);
 
   const handlePayment = (isRefund: boolean) => {
     const amt = Number(paymentAmount);
@@ -366,86 +494,191 @@ export function ManageFinancialPanel({
         overflowY: "auto",
       }}
     >
-      {/* Financial Summary */}
+      {/* 1. Overall Balance Box */}
       <Paper
         elevation={0}
-        sx={{ p: 2, border: "1px solid #e2e8f0", borderRadius: 2 }}
+        sx={{
+          p: 2.5,
+          border: "1px solid #e2e8f0",
+          borderRadius: 3,
+          bgcolor: "#1e293b",
+          color: "white",
+        }}
       >
-        <Typography variant="subtitle2" color="text.secondary" mb={1}>
-          Financial Overview
+        <Typography
+          variant="subtitle2"
+          color="#94a3b8"
+          textTransform="uppercase"
+          fontWeight="bold"
+          mb={1}
+        >
+          Total Balance Due
         </Typography>
+        <Typography
+          variant="h3"
+          fontWeight="bold"
+          color={balance > 0 ? "#f87171" : "#4ade80"}
+        >
+          Rs. {balance.toLocaleString()}
+        </Typography>
+      </Paper>
+
+      {/* 2. Detailed Financial Breakdown */}
+      <Box sx={{ px: 1 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-          <Typography>Grand Total (incl. late fees)</Typography>
-          <Typography fontWeight="bold">
-            Rs. {Number(invoice.total_amount).toLocaleString()}
+          <Typography color="text.secondary">Base Subtotal</Typography>
+          <Typography fontWeight="500">
+            Rs. {subTotal.toLocaleString()}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Typography color="success.main">Total Paid</Typography>
-          <Typography color="success.main">
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography
+            color="text.secondary"
+            display="flex"
+            alignItems="center"
+            gap={0.5}
+          >
+            <LocalShippingIcon fontSize="small" /> Transport
+          </Typography>
+          <Typography fontWeight="500">
+            + Rs. {transport.toLocaleString()}
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography color="text.secondary">Discount</Typography>
+          <Typography fontWeight="500" color="error.main">
+            - Rs. {discount.toLocaleString()}
+          </Typography>
+        </Box>
+        {lateFees > 0 && (
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography color="error.main" fontWeight="bold">
+              Accrued Late Fees
+            </Typography>
+            <Typography fontWeight="bold" color="error.main">
+              + Rs. {lateFees.toLocaleString()}
+            </Typography>
+          </Box>
+        )}
+        <Divider sx={{ my: 1.5, borderStyle: "dashed" }} />
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography fontWeight="bold">Grand Total</Typography>
+          <Typography fontWeight="bold">
+            Rs. {grandTotal.toLocaleString()}
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography color="success.main" fontWeight="bold">
+            Total Paid
+          </Typography>
+          <Typography color="success.main" fontWeight="bold">
             - Rs. {totalPaid.toLocaleString()}
           </Typography>
         </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            p: 1.5,
-            bgcolor: balance > 0 ? "#fef2f2" : "#f0fdf4",
-            borderRadius: 1,
-          }}
-        >
-          <Typography fontWeight="bold">Remaining Balance</Typography>
-          <Typography
-            fontWeight="bold"
-            color={balance > 0 ? "error.main" : "success.dark"}
-          >
-            Rs. {balance.toLocaleString()}
-          </Typography>
-        </Box>
-      </Paper>
+      </Box>
 
-      {/* Terminal Actions */}
+      {/* 3. Transaction Action Area */}
       <Box>
         <TextField
           fullWidth
-          size="small"
           label="Amount (Rs.)"
           type="number"
           value={paymentAmount}
           onChange={(e) => setPaymentAmount(e.target.value)}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: 2 }}
         />
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             fullWidth
             variant="contained"
-            disableElevation
             color="success"
             onClick={() => handlePayment(false)}
-            disabled={paymentMutation.isPending}
+            disabled={paymentMutation.isPending || balance === 0}
+            disableElevation
           >
-            Add Payment
+            Collect
           </Button>
           <Button
             fullWidth
             variant="outlined"
             color="error"
             onClick={() => handlePayment(true)}
-            disabled={paymentMutation.isPending}
+            disabled={paymentMutation.isPending || totalPaid === 0}
           >
-            Issue Refund
+            Refund
           </Button>
         </Box>
       </Box>
 
       <Divider sx={{ borderStyle: "dashed" }} />
 
-      {/* Vault Status */}
+      {/* 4. Timestamped Payment Ledger */}
+      <Box>
+        <Typography
+          variant="subtitle2"
+          fontWeight="bold"
+          color="text.secondary"
+          display="flex"
+          alignItems="center"
+          gap={1}
+          mb={2}
+        >
+          <HistoryIcon fontSize="small" /> Transaction Ledger
+        </Typography>
+        {payments.length === 0 ? (
+          <Typography variant="body2" color="text.disabled" fontStyle="italic">
+            No payments recorded yet.
+          </Typography>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            {payments.map((p: any) => {
+              const isRefund = Number(p.payment_amount) < 0;
+              return (
+                <Box
+                  key={p.payment_id}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    p: 1.5,
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 2,
+                    bgcolor: "white",
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color={isRefund ? "error.main" : "success.main"}
+                    >
+                      {isRefund ? "Refund" : "Payment"} ({p.method})
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(p.payment_date).toLocaleString()}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    fontWeight="bold"
+                    color={isRefund ? "error.main" : "text.primary"}
+                  >
+                    {isRefund ? "" : "+"} Rs.{" "}
+                    {Math.abs(Number(p.payment_amount)).toLocaleString()}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+
+      {/* 5. Vault Action Area */}
       <Box
         sx={{
+          mt: "auto",
           p: 2,
-          border: "1px solid #e2e8f0",
+          border: "1px solid",
+          borderColor: invoice.id_card_status ? "#fde047" : "#e2e8f0",
           borderRadius: 2,
           bgcolor: invoice.id_card_status ? "#fffbeb" : "#f8fafc",
         }}
@@ -454,24 +687,22 @@ export function ManageFinancialPanel({
           <SecurityIcon
             color={invoice.id_card_status ? "warning" : "disabled"}
           />
-          <Typography fontWeight="bold">Physical ID Vault</Typography>
+          <Typography fontWeight="bold">Security Vault</Typography>
         </Box>
         <Typography variant="body2" color="text.secondary" mb={2}>
           {invoice.id_card_status
-            ? "ID Card is currently securely held in the vault."
-            : "ID Card has been released to the customer."}
+            ? "Client's ID is locked in the vault."
+            : "ID has been returned to client."}
         </Typography>
         <Button
           fullWidth
           variant={invoice.id_card_status ? "outlined" : "contained"}
-          color={invoice.id_card_status ? "warning" : "primary"}
-          disableElevation
+          color={invoice.id_card_status ? "warning" : "inherit"}
           onClick={() => vaultMutation.mutate(invoice.invoice_id)}
           disabled={vaultMutation.isPending}
+          disableElevation
         >
-          {invoice.id_card_status
-            ? "Release ID to Customer"
-            : "Retain ID in Vault"}
+          {invoice.id_card_status ? "Release ID" : "Retain ID in Vault"}
         </Button>
       </Box>
     </Box>

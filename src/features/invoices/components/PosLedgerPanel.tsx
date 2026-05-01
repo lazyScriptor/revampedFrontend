@@ -11,10 +11,9 @@ import {
   Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import HardwareIcon from "@mui/icons-material/Hardware";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
-
 import { usePosEquipmentSearch } from "../hooks/usePosEquipmentSearch";
 
 export interface CartItem {
@@ -31,11 +30,9 @@ export interface CartItem {
   locked_extra_daily_rate: number;
 }
 
-// EXPORT THE MATH ENGINE so the Checkout Panel can use it!
 export const calculateLineMath = (item: CartItem) => {
   const start = new Date(item.borrow_date).getTime();
   const end = new Date(item.expected_return_date).getTime();
-
   let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
   if (totalDays < 1 || isNaN(totalDays)) totalDays = 1;
 
@@ -51,19 +48,19 @@ export const calculateLineMath = (item: CartItem) => {
     lineCost = (item.locked_base_price + extraCost) * item.borrow_quantity;
     calculationText = `Base + ${extraDays} extra day(s)`;
   }
-
   return { totalDays, lineCost, calculationText };
 };
 
 interface PosLedgerPanelProps {
   cartItems: CartItem[];
   setCartItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
-  showToast: (msg: string, severity?: "error" | "success" | "warning") => void; // <-- ADD THIS
+  showToast: (msg: string, severity?: "error" | "success" | "warning") => void;
 }
 
 export function PosLedgerPanel({
   cartItems,
   setCartItems,
+  showToast,
 }: PosLedgerPanelProps) {
   const [inputValue, setInputValue] = useState("");
   const { data: searchResults = [], isLoading } =
@@ -78,14 +75,7 @@ export function PosLedgerPanel({
     if (!equipment) return;
 
     if (equipment.available_qty <= 0) {
-      alert("This item is currently out of stock!");
-      return;
-    }
-
-    // --- CRITICAL FIX: Duplicate Checking Engine ---
-
-    if (equipment.available_qty <= 0) {
-      showToast("This item is currently out of stock!", "error"); // <-- REPLACED ALERT
+      showToast("This item is currently out of stock!", "error");
       return;
     }
 
@@ -109,20 +99,19 @@ export function PosLedgerPanel({
           showToast(
             `Cannot add more. Only ${equipment.available_qty} in stock.`,
             "warning",
-          ); // <-- REPLACED ALERT
+          );
           return;
         }
       } else {
         showToast(
           "This specific serialized item is already in the cart.",
           "error",
-        ); // <-- REPLACED ALERT
+        );
         setInputValue("");
         return;
       }
     }
 
-    // Add new item logic...
     const newItem: CartItem = {
       cart_id: crypto.randomUUID(),
       equipment_id: equipment.equipment_id,
@@ -138,7 +127,7 @@ export function PosLedgerPanel({
     };
 
     setCartItems((prev) => [...prev, newItem]);
-    setInputValue(""); // Clear search after adding
+    setInputValue("");
   };
 
   const updateItem = (cartId: string, field: keyof CartItem, value: any) => {
@@ -153,36 +142,10 @@ export function PosLedgerPanel({
     setCartItems((prev) => prev.filter((item) => item.cart_id !== cartId));
   };
 
-  // --- LIVE MATH ENGINE ---
-  const calculateLineMath = (item: CartItem) => {
-    const start = new Date(item.borrow_date).getTime();
-    const end = new Date(item.expected_return_date).getTime();
-
-    // Calculate total days (minimum 1 day)
-    let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-    if (totalDays < 1 || isNaN(totalDays)) totalDays = 1;
-
-    let lineCost = 0;
-    let calculationText = "";
-
-    if (totalDays <= item.locked_minimum_days) {
-      lineCost = item.locked_base_price * item.borrow_quantity;
-      calculationText = `${item.locked_minimum_days} Day Base`;
-    } else {
-      const extraDays = totalDays - item.locked_minimum_days;
-      const extraCost = extraDays * item.locked_extra_daily_rate;
-      lineCost = (item.locked_base_price + extraCost) * item.borrow_quantity;
-      calculationText = `Base + ${extraDays} extra day(s)`;
-    }
-
-    return { totalDays, lineCost, calculationText };
-  };
-
   return (
     <Box
       sx={{ display: "flex", flexDirection: "column", gap: 2, height: "100%" }}
     >
-      {/* 1. Equipment Quick-Add Search Bar */}
       <Box
         sx={{
           px: 3,
@@ -198,7 +161,7 @@ export function PosLedgerPanel({
           options={searchResults}
           getOptionLabel={(option: any) => option.equipment_name}
           filterOptions={(x) => x}
-          value={null} // Always clear after selection
+          value={null}
           onChange={(event, newValue) => handleAddEquipment(newValue)}
           onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
           renderInput={(params) => (
@@ -271,7 +234,6 @@ export function PosLedgerPanel({
         />
       </Box>
 
-      {/* 2. The Interactive Ledger Rows */}
       <Box sx={{ px: 3, pb: 3, flexGrow: 1, overflowY: "auto" }}>
         {cartItems.length === 0 ? (
           <Box
@@ -302,7 +264,6 @@ export function PosLedgerPanel({
             {cartItems.map((item) => {
               const { totalDays, lineCost, calculationText } =
                 calculateLineMath(item);
-
               return (
                 <Paper
                   key={item.cart_id}
@@ -314,7 +275,6 @@ export function PosLedgerPanel({
                     bgcolor: "white",
                   }}
                 >
-                  {/* Row Header: Name & Delete */}
                   <Box
                     sx={{
                       display: "flex",
@@ -335,11 +295,10 @@ export function PosLedgerPanel({
                       color="error"
                       onClick={() => removeItem(item.cart_id)}
                     >
-                      {/* <DeleteOutlineIcon fontSize="small" /> */}delete
+                      <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
                   </Box>
 
-                  {/* Row Body: Controls */}
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-3">
                     <TextField
                       type="number"
@@ -347,17 +306,17 @@ export function PosLedgerPanel({
                       size="small"
                       className="sm:col-span-2"
                       value={item.borrow_quantity}
-                      onChange={(e) =>
-                        updateItem(
-                          item.cart_id,
-                          "borrow_quantity",
-                          parseInt(e.target.value) || 1,
-                        )
-                      }
+                      onChange={(e) => {
+                        let val = parseInt(e.target.value) || 1;
+                        // STRICT FRONTEND GUARD: Cap at Max Available
+                        if (val > item.available_qty) val = item.available_qty;
+                        if (val < 1) val = 1;
+                        updateItem(item.cart_id, "borrow_quantity", val);
+                      }}
                       InputProps={{
                         inputProps: { min: 1, max: item.available_qty },
                       }}
-                      disabled={!item.is_bulk_item} // Force Qty 1 if it's a serialized item
+                      disabled={!item.is_bulk_item}
                     />
                     <TextField
                       type="date"
@@ -385,8 +344,6 @@ export function PosLedgerPanel({
                         )
                       }
                     />
-
-                    {/* Inline Overrides for VIP negotiations */}
                     <TextField
                       type="number"
                       label="Base Price"
@@ -416,10 +373,7 @@ export function PosLedgerPanel({
                       }
                     />
                   </div>
-
                   <Divider sx={{ mb: 1.5, borderColor: "#f1f5f9" }} />
-
-                  {/* Row Footer: Live Math Display */}
                   <Box
                     sx={{
                       display: "flex",
@@ -435,7 +389,7 @@ export function PosLedgerPanel({
                       color="text.secondary"
                       fontWeight="500"
                     >
-                      {totalDays} Day(s) • {calculationText}
+                      {totalDays} Day(s) {calculationText}
                     </Typography>
                     <Typography
                       variant="subtitle1"
