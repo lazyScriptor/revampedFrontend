@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { useEquipmentList } from "@/features/equipment/hooks/useEquipmentHooks";
 
 // Feature Components
 import { EquipmentTable } from "@/features/equipment/components/EquipmentTable";
 import { EquipmentFormDialog } from "@/features/equipment/components/EquipmentFormDialog";
+
 // MUI Imports
 import {
   Box,
@@ -33,7 +36,7 @@ export default function EquipmentRoute() {
     pageSize: 20,
   });
 
-  // --- 2. Data Fetching ---
+  // --- 2. Data Fetching (Paginated for Table) ---
   const {
     data: response,
     isLoading,
@@ -44,7 +47,30 @@ export default function EquipmentRoute() {
   const equipmentList = response?.equipment || [];
   const totalRowCount = response?.total || 0;
 
-  // --- 3. Handlers ---
+  // --- 3. GLOBAL STATS ENGINE (For KPI Cards) ---
+  // We do a lightweight background fetch to calculate the true fleet health
+  // without messing up the paginated table data.
+  const { data: globalStats } = useQuery({
+    queryKey: ["equipment-global-stats"],
+    queryFn: async () => {
+      // Fetch a large limit just for math aggregation
+      const res = await api.get("/equipment", { params: { limit: 5000 } });
+      const allItems = res.data?.data?.equipment || res.data?.equipment || [];
+
+      let available = 0;
+      let maintenance = 0;
+
+      allItems.forEach((item: any) => {
+        available += Number(item.available_qty || 0);
+        maintenance += Number(item.defective_qty || 0);
+      });
+
+      return { available, maintenance };
+    },
+    staleTime: 1000 * 60 * 5, // Cache this math for 5 minutes so it stays snappy
+  });
+
+  // --- 4. Handlers ---
   const handleOpenAdd = () => {
     setEditingItem(null); // Clear any existing data
     setIsDrawerOpen(true);
@@ -57,11 +83,11 @@ export default function EquipmentRoute() {
 
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
-    // Optional delay to prevent seeing the form clear while the drawer is sliding shut
+    // Optional delay to prevent seeing the form clear while the modal/drawer closes
     setTimeout(() => setEditingItem(null), 300);
   };
 
-  // --- 4. Loading & Error States ---
+  // --- 5. Loading & Error States ---
   if (isLoading && equipmentList.length === 0) {
     return (
       <Box className="flex h-full items-center justify-center min-h-[400px]">
@@ -79,7 +105,7 @@ export default function EquipmentRoute() {
     );
   }
 
-  // --- 5. Main Render ---
+  // --- 6. Main Render ---
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -93,7 +119,6 @@ export default function EquipmentRoute() {
             maintenance.
           </Typography>
         </div>
-
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -131,14 +156,13 @@ export default function EquipmentRoute() {
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} md={4}>
           <Card
             elevation={0}
-            className="border border-slate-200 rounded-xl bg-white h-full"
+            className="border border-green-200 rounded-xl bg-green-50/30 h-full"
           >
             <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-green-50 text-green-600 rounded-lg">
+              <div className="p-3 bg-green-100 text-green-600 rounded-lg">
                 <CheckCircleIcon fontSize="large" />
               </div>
               <div>
@@ -149,21 +173,20 @@ export default function EquipmentRoute() {
                 >
                   Available for Rent
                 </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  -- {/* TODO: Fetch from a /stats API endpoint */}
+                <Typography variant="h5" fontWeight="bold" color="success.dark">
+                  {globalStats?.available || 0} Units
                 </Typography>
               </div>
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} md={4}>
           <Card
             elevation={0}
-            className="border border-slate-200 rounded-xl bg-white h-full"
+            className="border border-orange-200 rounded-xl bg-orange-50/30 h-full"
           >
             <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
+              <div className="p-3 bg-orange-100 text-orange-600 rounded-lg">
                 <BuildCircleIcon fontSize="large" />
               </div>
               <div>
@@ -174,8 +197,8 @@ export default function EquipmentRoute() {
                 >
                   In Maintenance
                 </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  -- {/* TODO: Fetch from a /stats API endpoint */}
+                <Typography variant="h5" fontWeight="bold" color="warning.dark">
+                  {globalStats?.maintenance || 0} Units
                 </Typography>
               </div>
             </CardContent>
@@ -194,11 +217,10 @@ export default function EquipmentRoute() {
           rowCount={totalRowCount}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
-          onEdit={handleOpenEdit} // Wires the Table's pencil icon to the Drawer!
+          onEdit={handleOpenEdit}
         />
       </Card>
 
-      {/* Change EquipmentFormDrawer to EquipmentFormDialog */}
       <EquipmentFormDialog
         open={isDrawerOpen}
         onClose={handleCloseDrawer}

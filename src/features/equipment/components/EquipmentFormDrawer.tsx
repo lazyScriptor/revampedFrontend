@@ -16,8 +16,10 @@ import {
   FormControlLabel,
   Switch,
   InputAdornment,
+  Grid,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import CalculateIcon from "@mui/icons-material/Calculate";
 
 import {
   equipmentSchema,
@@ -77,17 +79,44 @@ export function EquipmentFormDrawer({
     reset,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
+    mode: "onChange", // Instantly show validation errors
     defaultValues: {
       minimum_rental_days: 1,
       total_owned_qty: 1,
+      rented_qty: 0,
+      defective_qty: 0,
+      available_qty: 1,
       is_bulk_item: false,
     },
   });
 
+  // --- REAL-TIME INVENTORY MATH WATCHERS ---
   const isBulkItem = watch("is_bulk_item");
+  const totalOwned = watch("total_owned_qty") || 1;
+  const rentedQty = watch("rented_qty") || 0;
+  const defectiveQty = watch("defective_qty") || 0;
+
+  // Calculate Available Qty safely
+  const calculatedAvailable = Math.max(
+    0,
+    Number(totalOwned) - Number(rentedQty) - Number(defectiveQty),
+  );
+
+  // Keep the hidden available_qty field synced so Zod validation passes
+  useEffect(() => {
+    setValue("available_qty", calculatedAvailable, { shouldValidate: true });
+  }, [calculatedAvailable, setValue]);
+
+  // If Bulk is turned off, strictly lock Total Owned back to 1
+  useEffect(() => {
+    if (!isBulkItem) {
+      setValue("total_owned_qty", 1, { shouldValidate: true });
+    }
+  }, [isBulkItem, setValue]);
 
   useEffect(() => {
     if (open) {
@@ -106,7 +135,10 @@ export function EquipmentFormDrawer({
           purchase_cost: initialData.purchase_cost
             ? Number(initialData.purchase_cost)
             : undefined,
-          total_owned_qty: initialData.total_owned_qty,
+          total_owned_qty: initialData.total_owned_qty || 1,
+          rented_qty: initialData.rented_qty || 0,
+          defective_qty: initialData.defective_qty || 0,
+          available_qty: initialData.available_qty || 1,
           is_bulk_item: initialData.is_bulk_item,
           warranty_period_months:
             initialData.warranty_period_months || undefined,
@@ -117,9 +149,16 @@ export function EquipmentFormDrawer({
         });
       } else {
         reset({
+          equipment_name: "",
+          serial_number: "",
           minimum_rental_days: 1,
           total_owned_qty: 1,
+          rented_qty: 0,
+          defective_qty: 0,
+          available_qty: 1,
           is_bulk_item: false,
+          image_url: "",
+          end_of_warranty_date: "",
         });
       }
     }
@@ -128,16 +167,10 @@ export function EquipmentFormDrawer({
   const onSubmit = (data: EquipmentFormData) => {
     const payload: any = { ...data };
 
-    if (!payload.is_bulk_item) {
-      payload.total_owned_qty = 1;
-    }
-
-    if (payload.end_of_warranty_date === "") {
+    if (!payload.is_bulk_item) payload.total_owned_qty = 1;
+    if (payload.end_of_warranty_date === "")
       payload.end_of_warranty_date = null;
-    }
-    if (payload.image_url === "") {
-      payload.image_url = null;
-    }
+    if (payload.image_url === "") payload.image_url = null;
 
     if (isEditing && initialData) {
       updateMutation.mutate(
@@ -147,6 +180,10 @@ export function EquipmentFormDrawer({
     } else {
       createMutation.mutate(payload, { onSuccess: () => onClose() });
     }
+  };
+
+  const onValidationError = (errors: any) => {
+    console.error("Validation Failed:", errors);
   };
 
   return (
@@ -162,7 +199,7 @@ export function EquipmentFormDrawer({
         },
       }}
     >
-      {/* 1. Sticky Header - Converted to pure MUI sx */}
+      {/* 1. Sticky Header */}
       <Box
         sx={{
           px: 3,
@@ -193,7 +230,7 @@ export function EquipmentFormDrawer({
         <Tabs
           value={tabIndex}
           onChange={(_, v) => setTabIndex(v)}
-          aria-label="equipment form tabs"
+          variant="fullWidth" // Helps tabs stretch nicely in the Drawer
         >
           <Tab label="General Details" />
           <Tab label="Rental & Pricing" />
@@ -201,13 +238,14 @@ export function EquipmentFormDrawer({
         </Tabs>
       </Box>
 
-      {/* 2. Scrollable Form Body - Converted to pure MUI sx */}
+      {/* 2. Scrollable Form Body */}
       <Box
         component="form"
         id="equipment-form"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, onValidationError)}
         sx={{ flexGrow: 1, overflowY: "auto", p: 3, bgcolor: "#f8fafc" }}
       >
+        {/* --- TAB 1: GENERAL DETAILS --- */}
         <CustomTabPanel value={tabIndex} index={0}>
           <Box className="space-y-5">
             <TextField
@@ -232,7 +270,7 @@ export function EquipmentFormDrawer({
                 fullWidth
                 label="Category"
                 defaultValue=""
-                {...register("category_id")}
+                {...register("category_id", { valueAsNumber: true })}
                 error={!!errors.category_id}
                 helperText={errors.category_id?.message}
               >
@@ -246,7 +284,7 @@ export function EquipmentFormDrawer({
                 fullWidth
                 label="Warehouse Location"
                 defaultValue=""
-                {...register("warehouse_id")}
+                {...register("warehouse_id", { valueAsNumber: true })}
                 error={!!errors.warehouse_id}
                 helperText={errors.warehouse_id?.message}
               >
@@ -266,6 +304,7 @@ export function EquipmentFormDrawer({
           </Box>
         </CustomTabPanel>
 
+        {/* --- TAB 2: RENTAL & PRICING --- */}
         <CustomTabPanel value={tabIndex} index={1}>
           <Box className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
@@ -279,7 +318,7 @@ export function EquipmentFormDrawer({
                     <InputAdornment position="start">$</InputAdornment>
                   ),
                 }}
-                {...register("base_rental_price")}
+                {...register("base_rental_price", { valueAsNumber: true })}
                 error={!!errors.base_rental_price}
                 helperText={errors.base_rental_price?.message}
               />
@@ -293,7 +332,7 @@ export function EquipmentFormDrawer({
                     <InputAdornment position="start">$</InputAdornment>
                   ),
                 }}
-                {...register("extra_daily_rate")}
+                {...register("extra_daily_rate", { valueAsNumber: true })}
                 error={!!errors.extra_daily_rate}
                 helperText={
                   errors.extra_daily_rate?.message || "Applied if returned late"
@@ -307,7 +346,7 @@ export function EquipmentFormDrawer({
                 label="Minimum Rental Days"
                 type="number"
                 inputProps={{ min: "1" }}
-                {...register("minimum_rental_days")}
+                {...register("minimum_rental_days", { valueAsNumber: true })}
                 error={!!errors.minimum_rental_days}
                 helperText={errors.minimum_rental_days?.message}
               />
@@ -321,7 +360,7 @@ export function EquipmentFormDrawer({
                     <InputAdornment position="start">$</InputAdornment>
                   ),
                 }}
-                {...register("purchase_cost")}
+                {...register("purchase_cost", { valueAsNumber: true })}
                 error={!!errors.purchase_cost}
                 helperText={
                   errors.purchase_cost?.message || "For internal ROI tracking"
@@ -331,6 +370,7 @@ export function EquipmentFormDrawer({
           </Box>
         </CustomTabPanel>
 
+        {/* --- TAB 3: INVENTORY TRACKING --- */}
         <CustomTabPanel value={tabIndex} index={2}>
           <Box className="space-y-5">
             <Box
@@ -343,6 +383,7 @@ export function EquipmentFormDrawer({
                 justifyContent: "space-between",
                 alignItems: "center",
               }}
+              
             >
               <Box>
                 <Typography
@@ -376,17 +417,105 @@ export function EquipmentFormDrawer({
               />
             </Box>
 
-            {isBulkItem && (
-              <TextField
-                fullWidth
-                label="Total Owned Quantity"
-                type="number"
-                inputProps={{ min: "1" }}
-                {...register("total_owned_qty")}
-                error={!!errors.total_owned_qty}
-                helperText={errors.total_owned_qty?.message}
-              />
-            )}
+            {/* --- VISUAL MATH BOX (Adapted for the Drawer) --- */}
+            <Box
+              sx={{
+                p: 3,
+                border: "2px solid #e2e8f0",
+                borderRadius: 2,
+                bgcolor: "white",
+              }}
+            >
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
+              >
+                <CalculateIcon color="primary" />
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Live Stock Equation
+                </Typography>
+              </Box>
+
+              <Grid container spacing={2} alignItems="center">
+                {/* TOTAL OWNED */}
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Total Owned"
+                    type="number"
+                    {...register("total_owned_qty", { valueAsNumber: true })}
+                    disabled={!isBulkItem}
+                    inputProps={{
+                      min: isEditing ? rentedQty + defectiveQty : 1,
+                    }}
+                    error={!!errors.total_owned_qty}
+                    helperText={!isBulkItem ? "Locked at 1" : "Total stock"}
+                    InputProps={{ sx: { fontWeight: "bold" } }}
+                  />
+                </Grid>
+
+                {/* RENTED */}
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Out on Rent"
+                    type="number"
+                    {...register("rented_qty")}
+                    InputProps={{
+                      readOnly: true,
+                      sx: { bgcolor: "#f1f5f9", color: "text.secondary" },
+                    }}
+                    helperText="- Managed by POS"
+                  />
+                </Grid>
+
+                {/* DEFECTIVE */}
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="In Workshop"
+                    type="number"
+                    {...register("defective_qty")}
+                    InputProps={{
+                      readOnly: true,
+                      sx: { bgcolor: "#fef2f2", color: "error.main" },
+                    }}
+                    helperText="- Managed by Logs"
+                  />
+                </Grid>
+
+                {/* AVAILABLE (Full Width row inside the drawer) */}
+                <Grid item xs={12}>
+                  <Box
+                    sx={{
+                      bgcolor: "#eff6ff",
+                      border: "2px dashed #3b82f6",
+                      borderRadius: 1,
+                      p: 2,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mt: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      color="primary.dark"
+                      fontWeight="bold"
+                      textTransform="uppercase"
+                    >
+                      = Currently Available to Rent
+                    </Typography>
+                    <Typography
+                      variant="h4"
+                      color="primary.main"
+                      fontWeight="900"
+                    >
+                      {calculatedAvailable}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
 
             <Typography
               variant="subtitle2"
@@ -404,7 +533,7 @@ export function EquipmentFormDrawer({
                 label="Warranty Period (Months)"
                 type="number"
                 inputProps={{ min: "0" }}
-                {...register("warranty_period_months")}
+                {...register("warranty_period_months", { valueAsNumber: true })}
                 error={!!errors.warranty_period_months}
                 helperText={errors.warranty_period_months?.message}
               />
@@ -422,7 +551,7 @@ export function EquipmentFormDrawer({
         </CustomTabPanel>
       </Box>
 
-      {/* 3. Sticky Footer - Converted to pure MUI sx */}
+      {/* 3. Sticky Footer */}
       <Box
         sx={{
           p: 3,

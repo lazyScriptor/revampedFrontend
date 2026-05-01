@@ -29,6 +29,7 @@ import {
   CustomerFormData,
   Customer,
 } from "../schemas/customer.schema";
+import { useCreateCustomer, useUpdateCustomer } from "../hooks/useCustomerHooks";
 // import { useCreateCustomer, useUpdateCustomer, useBusinessCustomers } from "../hooks/useCustomerHooks";
 
 interface CustomerFormDialogProps {
@@ -44,10 +45,9 @@ export function CustomerFormDialog({
 }: CustomerFormDialogProps) {
   // const createMutation = useCreateCustomer();
   // const updateMutation = useUpdateCustomer();
-  // const { data: businessCustomers = [] } = useBusinessCustomers(); // Gets a list of 'Business' type customers
+  // const { data: businessCustomers = [] } = useBusinessCustomers();
 
   const isEditing = !!initialData;
-  const isPending = false; // Replace with mutation pending states
 
   const {
     register,
@@ -58,6 +58,7 @@ export function CustomerFormDialog({
     formState: { errors },
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
+    mode: "onChange", // <-- FIX 1: Triggers validation instantly as the user types
     defaultValues: {
       customer_type: "Individual",
       is_worker_for_company: false,
@@ -90,17 +91,34 @@ export function CustomerFormDialog({
     }
   }, [open, initialData, reset]);
 
-  const onSubmit = (data: CustomerFormData) => {
-    const payload: any = { ...data };
+// Inside CustomerFormDialog:
+const createMutation = useCreateCustomer();
+const updateMutation = useUpdateCustomer();
 
-    // Clean up payload before sending to backend
-    if (payload.customer_type === "Individual") payload.company_name = null;
-    if (!payload.is_worker_for_company) payload.parent_customer_id = null;
-    delete payload.is_worker_for_company; // Backend doesn't need this UI toggle
+const isPending = createMutation.isPending || updateMutation.isPending;
 
-    console.log("Submitting:", payload);
-    // Execute mutations here...
-    onClose();
+const onSubmit = (data: CustomerFormData) => {
+  const payload: any = { ...data };
+
+  if (payload.customer_type === "Individual") payload.company_name = null;
+  if (!payload.is_worker_for_company) payload.parent_customer_id = null;
+  delete payload.is_worker_for_company;
+
+  if (isEditing && initialData?.customer_id) {
+    updateMutation.mutate(
+      { id: initialData.customer_id, data: payload },
+      { onSuccess: () => onClose() }
+    );
+  } else {
+    createMutation.mutate(payload, {
+      onSuccess: () => onClose()
+    });
+  }
+};
+
+  // FIX 2: Debugger function to catch silent validation failures
+  const onValidationError = (errors: any) => {
+    console.error("Zod Validation Failed! Blocked submission. Errors:", errors);
   };
 
   return (
@@ -146,7 +164,8 @@ export function CustomerFormDialog({
         <Box
           component="form"
           id="customer-form"
-          onSubmit={handleSubmit(onSubmit)}
+          // We attach the error logger here as the second argument
+          onSubmit={handleSubmit(onSubmit, onValidationError)}
           sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}
         >
           {/* SECTION 1: Client Classification */}
@@ -167,6 +186,7 @@ export function CustomerFormDialog({
                 label="Customer Type"
                 {...register("customer_type")}
                 error={!!errors.customer_type}
+                helperText={errors.customer_type?.message}
               >
                 <MenuItem value="Individual">Individual Person</MenuItem>
                 <MenuItem value="Business">Business / Company</MenuItem>
@@ -183,7 +203,6 @@ export function CustomerFormDialog({
               )}
             </div>
 
-            {/* Hierarchical Logic: Only show if it's an Individual */}
             {customerType === "Individual" && (
               <Box
                 sx={{
@@ -243,7 +262,6 @@ export function CustomerFormDialog({
                     error={!!errors.parent_customer_id}
                     helperText={errors.parent_customer_id?.message}
                   >
-                    {/* Map through your businessCustomers hook data here */}
                     <MenuItem value={1}>Apex Construction Ltd</MenuItem>
                     <MenuItem value={2}>Silva Builders Co.</MenuItem>
                   </TextField>
@@ -300,11 +318,15 @@ export function CustomerFormDialog({
                 fullWidth
                 label="Address Line 1"
                 {...register("address_line1")}
+                error={!!errors.address_line1}
+                helperText={errors.address_line1?.message}
               />
               <TextField
                 fullWidth
                 label="Address Line 2 (Optional)"
                 {...register("address_line2")}
+                error={!!errors.address_line2}
+                helperText={errors.address_line2?.message}
               />
             </Box>
           </Paper>
@@ -327,6 +349,8 @@ export function CustomerFormDialog({
                 label="Account Status"
                 select
                 {...register("status")}
+                error={!!errors.status}
+                helperText={errors.status?.message}
               >
                 <MenuItem value="Active">Active (Good Standing)</MenuItem>
                 <MenuItem value="Blacklisted">
@@ -343,7 +367,8 @@ export function CustomerFormDialog({
                     <InputAdornment position="start">Rs.</InputAdornment>
                   ),
                 }}
-                {...register("deposit_balance")}
+                // FIX 3: Force RHF to treat this input as a Number, not a String
+                {...register("deposit_balance", { valueAsNumber: true })}
                 error={!!errors.deposit_balance}
                 helperText={
                   errors.deposit_balance?.message ||

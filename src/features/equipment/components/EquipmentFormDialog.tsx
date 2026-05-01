@@ -18,11 +18,13 @@ import {
   Switch,
   InputAdornment,
   Paper,
+  Grid,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import CalculateIcon from "@mui/icons-material/Calculate";
 import { useCategoryOptions } from "@/features/equipment/hooks/useCategoryHooks";
 import { useWarehouseOptions } from "@/features/warehouses/hooks/useWarehouseOptions";
 
@@ -64,65 +66,91 @@ export function EquipmentFormDialog({
     reset,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
+    mode: "onChange", // Instantly show validation errors
     defaultValues: {
       minimum_rental_days: 1,
       total_owned_qty: 1,
+      rented_qty: 0,
+      defective_qty: 0,
+      available_qty: 1,
       is_bulk_item: false,
     },
   });
 
+  // --- REAL-TIME INVENTORY MATH WATCHERS ---
   const isBulkItem = watch("is_bulk_item");
+  const totalOwned = watch("total_owned_qty") || 1;
+  const rentedQty = watch("rented_qty") || 0;
+  const defectiveQty = watch("defective_qty") || 0;
 
+  // Calculate Available Qty safely
+  const calculatedAvailable = Math.max(
+    0,
+    Number(totalOwned) - Number(rentedQty) - Number(defectiveQty),
+  );
+
+  // Keep the hidden available_qty field synced so Zod validation passes
+  useEffect(() => {
+    setValue("available_qty", calculatedAvailable, { shouldValidate: true });
+  }, [calculatedAvailable, setValue]);
+
+  // If Bulk is turned off, strictly lock Total Owned back to 1
+  useEffect(() => {
+    if (!isBulkItem) {
+      setValue("total_owned_qty", 1, { shouldValidate: true });
+    }
+  }, [isBulkItem, setValue]);
+
+  // --- INITIALIZATION ---
   useEffect(() => {
     if (open) {
       if (initialData) {
         reset({
-          equipment_name: initialData.equipment_name,
-          serial_number: initialData.serial_number,
-          category_id: initialData.category_id,
-          warehouse_id: initialData.warehouse_id,
+          ...initialData,
           base_rental_price: Number(initialData.base_rental_price),
           extra_daily_rate: initialData.extra_daily_rate
             ? Number(initialData.extra_daily_rate)
             : undefined,
-          minimum_rental_days: initialData.minimum_rental_days,
           purchase_cost: initialData.purchase_cost
             ? Number(initialData.purchase_cost)
             : undefined,
-          total_owned_qty: initialData.total_owned_qty,
-          is_bulk_item: initialData.is_bulk_item,
-          warranty_period_months:
-            initialData.warranty_period_months || undefined,
           end_of_warranty_date: initialData.end_of_warranty_date
             ? initialData.end_of_warranty_date.split("T")[0]
             : "",
           image_url: initialData.image_url || "",
+          // Map inventory stats (fallback to 0 if undefined)
+          total_owned_qty: initialData.total_owned_qty || 1,
+          rented_qty: initialData.rented_qty || 0,
+          defective_qty: initialData.defective_qty || 0,
+          available_qty: initialData.available_qty || 1,
         });
       } else {
         reset({
+          equipment_name: "",
+          serial_number: "",
           minimum_rental_days: 1,
           total_owned_qty: 1,
+          rented_qty: 0,
+          defective_qty: 0,
+          available_qty: 1,
           is_bulk_item: false,
         });
       }
     }
   }, [open, initialData, reset]);
 
+  // --- SUBMISSION ---
   const onSubmit = (data: EquipmentFormData) => {
     const payload: any = { ...data };
 
-    if (!payload.is_bulk_item) {
-      payload.total_owned_qty = 1;
-    }
-    if (payload.end_of_warranty_date === "") {
+    if (!payload.is_bulk_item) payload.total_owned_qty = 1;
+    if (payload.end_of_warranty_date === "")
       payload.end_of_warranty_date = null;
-    }
-    if (payload.image_url === "") {
-      payload.image_url = null;
-    }
+    if (payload.image_url === "") payload.image_url = null;
 
     if (isEditing && initialData) {
       updateMutation.mutate(
@@ -134,6 +162,10 @@ export function EquipmentFormDialog({
     }
   };
 
+  const onValidationError = (errors: any) => {
+    console.error("Validation Failed. Check fields:", errors);
+  };
+
   return (
     <Dialog
       open={open}
@@ -142,14 +174,9 @@ export function EquipmentFormDialog({
       fullWidth
       scroll="paper"
       PaperProps={{
-        sx: {
-          borderRadius: 3, // Classy rounded corners
-          bgcolor: "#f8fafc", // Subtle slate background so the white cards pop
-          maxHeight: "85vh",
-        },
+        sx: { borderRadius: 3, bgcolor: "#f8fafc", maxHeight: "85vh" },
       }}
     >
-      {/* Header */}
       <DialogTitle
         sx={{ p: 3, bgcolor: "white", borderBottom: "1px solid #e2e8f0" }}
       >
@@ -178,12 +205,11 @@ export function EquipmentFormDialog({
         </Box>
       </DialogTitle>
 
-      {/* Body: Form containing visually distinct cards */}
       <DialogContent dividers sx={{ p: 0, borderTop: "none" }}>
         <Box
           component="form"
           id="equipment-form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, onValidationError)}
           sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}
         >
           {/* SECTION 1: General Details */}
@@ -214,63 +240,47 @@ export function EquipmentFormDialog({
                 helperText={errors.serial_number?.message}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Dynamic Category Dropdown */}
                 <TextField
                   select
                   fullWidth
                   label="Category"
                   defaultValue=""
                   disabled={isLoadingCategories}
-                  {...register("category_id")}
+                  {...register("category_id", { valueAsNumber: true })}
                   error={!!errors.category_id}
                   helperText={errors.category_id?.message}
                 >
                   {isLoadingCategories ? (
                     <MenuItem value="" disabled>
-                      Loading categories...
-                    </MenuItem>
-                  ) : categories.length === 0 ? (
-                    <MenuItem value="" disabled>
-                      No categories found
+                      Loading...
                     </MenuItem>
                   ) : (
-                    categories.map((category) => (
-                      <MenuItem
-                        key={category.category_id}
-                        value={category.category_id}
-                      >
-                        {category.category_name}
+                    categories.map((c) => (
+                      <MenuItem key={c.category_id} value={c.category_id}>
+                        {c.category_name}
                       </MenuItem>
                     ))
                   )}
                 </TextField>
 
-                {/* Dynamic Warehouse Dropdown */}
                 <TextField
                   select
                   fullWidth
                   label="Warehouse Location"
                   defaultValue=""
                   disabled={isLoadingWarehouses}
-                  {...register("warehouse_id")}
+                  {...register("warehouse_id", { valueAsNumber: true })}
                   error={!!errors.warehouse_id}
                   helperText={errors.warehouse_id?.message}
                 >
                   {isLoadingWarehouses ? (
                     <MenuItem value="" disabled>
-                      Loading locations...
-                    </MenuItem>
-                  ) : warehouses.length === 0 ? (
-                    <MenuItem value="" disabled>
-                      No locations found
+                      Loading...
                     </MenuItem>
                   ) : (
-                    warehouses.map((warehouse) => (
-                      <MenuItem
-                        key={warehouse.warehouse_id}
-                        value={warehouse.warehouse_id}
-                      >
-                        {warehouse.location_name}
+                    warehouses.map((w) => (
+                      <MenuItem key={w.warehouse_id} value={w.warehouse_id}>
+                        {w.location_name}
                       </MenuItem>
                     ))
                   )}
@@ -307,10 +317,10 @@ export function EquipmentFormDialog({
                   inputProps={{ step: "0.01", min: "0" }}
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
+                      <InputAdornment position="start">Rs.</InputAdornment>
                     ),
                   }}
-                  {...register("base_rental_price")}
+                  {...register("base_rental_price", { valueAsNumber: true })}
                   error={!!errors.base_rental_price}
                   helperText={errors.base_rental_price?.message}
                 />
@@ -321,10 +331,10 @@ export function EquipmentFormDialog({
                   inputProps={{ step: "0.01", min: "0" }}
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
+                      <InputAdornment position="start">Rs.</InputAdornment>
                     ),
                   }}
-                  {...register("extra_daily_rate")}
+                  {...register("extra_daily_rate", { valueAsNumber: true })}
                   error={!!errors.extra_daily_rate}
                   helperText={
                     errors.extra_daily_rate?.message ||
@@ -338,7 +348,7 @@ export function EquipmentFormDialog({
                   label="Minimum Rental Days"
                   type="number"
                   inputProps={{ min: "1" }}
-                  {...register("minimum_rental_days")}
+                  {...register("minimum_rental_days", { valueAsNumber: true })}
                   error={!!errors.minimum_rental_days}
                   helperText={errors.minimum_rental_days?.message}
                 />
@@ -349,10 +359,10 @@ export function EquipmentFormDialog({
                   inputProps={{ step: "0.01", min: "0" }}
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
+                      <InputAdornment position="start">Rs.</InputAdornment>
                     ),
                   }}
-                  {...register("purchase_cost")}
+                  {...register("purchase_cost", { valueAsNumber: true })}
                   error={!!errors.purchase_cost}
                   helperText={
                     errors.purchase_cost?.message || "For internal ROI tracking"
@@ -362,7 +372,7 @@ export function EquipmentFormDialog({
             </Box>
           </Paper>
 
-          {/* SECTION 3: Inventory Tracking */}
+          {/* SECTION 3: Inventory Tracking & Math Box */}
           <Paper
             elevation={0}
             sx={{ p: 3, border: "1px solid #e2e8f0", borderRadius: 2 }}
@@ -370,10 +380,12 @@ export function EquipmentFormDialog({
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
               <Inventory2OutlinedIcon color="secondary" />
               <Typography variant="h6" fontWeight="600">
-                Inventory & Warranty
+                Inventory Management
               </Typography>
             </Box>
+
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {/* Toggle Bulk/Serialized */}
               <Box
                 sx={{
                   p: 2,
@@ -391,10 +403,11 @@ export function EquipmentFormDialog({
                     fontWeight="bold"
                     color="primary.dark"
                   >
-                    Bulk Item Tracking
+                    Bulk Asset Status
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Is this a serialized asset or a bulk asset?
+                    Is this a unique serialized item, or do you own many
+                    identical units?
                   </Typography>
                 </Box>
                 <Controller
@@ -409,7 +422,7 @@ export function EquipmentFormDialog({
                           color="primary"
                         />
                       }
-                      label={value ? "Bulk" : "Serialized"}
+                      label={value ? "Bulk (Multiple)" : "Serialized (One)"}
                       labelPlacement="start"
                       sx={{ m: 0 }}
                     />
@@ -417,17 +430,153 @@ export function EquipmentFormDialog({
                 />
               </Box>
 
-              {isBulkItem && (
-                <TextField
-                  fullWidth
-                  label="Total Owned Quantity"
-                  type="number"
-                  inputProps={{ min: "1" }}
-                  {...register("total_owned_qty")}
-                  error={!!errors.total_owned_qty}
-                  helperText={errors.total_owned_qty?.message}
-                />
-              )}
+              {/* VISUAL MATH BOX */}
+              <Box
+                sx={{
+                  p: 3,
+                  border: "2px solid #e2e8f0",
+                  borderRadius: 2,
+                  bgcolor: "white",
+                }}
+              >
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
+                >
+                  <CalculateIcon color="primary" />
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    Live Stock Equation
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={2} alignItems="center">
+                  {/* TOTAL OWNED */}
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      fullWidth
+                      label="Total Owned"
+                      type="number"
+                      {...register("total_owned_qty", { valueAsNumber: true })}
+                      disabled={!isBulkItem} // Locked to 1 if serialized
+                      inputProps={{
+                        min: isEditing ? rentedQty + defectiveQty : 1,
+                      }}
+                      error={!!errors.total_owned_qty}
+                      helperText={
+                        !isBulkItem
+                          ? "Locked at 1 for serialized"
+                          : "Total stock"
+                      }
+                      InputProps={{ sx: { fontWeight: "bold" } }}
+                    />
+                  </Grid>
+
+                  <Grid
+                    item
+                    xs={12}
+                    sm={1}
+                    sx={{ display: "flex", justifyContent: "center" }}
+                  >
+                    <Typography
+                      variant="h5"
+                      color="text.secondary"
+                      fontWeight="bold"
+                    >
+                      -
+                    </Typography>
+                  </Grid>
+
+                  {/* RENTED */}
+                  <Grid item xs={12} sm={2.5}>
+                    <TextField
+                      fullWidth
+                      label="Out on Rent"
+                      type="number"
+                      {...register("rented_qty")}
+                      InputProps={{
+                        readOnly: true,
+                        sx: { bgcolor: "#f1f5f9", color: "text.secondary" },
+                      }}
+                      helperText="By POS"
+                    />
+                  </Grid>
+
+                  <Grid
+                    item
+                    xs={12}
+                    sm={1}
+                    sx={{ display: "flex", justifyContent: "center" }}
+                  >
+                    <Typography
+                      variant="h5"
+                      color="text.secondary"
+                      fontWeight="bold"
+                    >
+                      -
+                    </Typography>
+                  </Grid>
+
+                  {/* DEFECTIVE */}
+                  <Grid item xs={12} sm={2.5}>
+                    <TextField
+                      fullWidth
+                      label="In Workshop"
+                      type="number"
+                      {...register("defective_qty")}
+                      InputProps={{
+                        readOnly: true,
+                        sx: { bgcolor: "#fef2f2", color: "error.main" },
+                      }}
+                      helperText="By Logs"
+                    />
+                  </Grid>
+
+                  <Grid
+                    item
+                    xs={12}
+                    sm={0.5}
+                    sx={{ display: "flex", justifyContent: "center" }}
+                  >
+                    <Typography
+                      variant="h5"
+                      color="primary.main"
+                      fontWeight="bold"
+                    >
+                      =
+                    </Typography>
+                  </Grid>
+
+                  {/* AVAILABLE */}
+                  <Grid item xs={12} sm={1.5}>
+                    <Box
+                      sx={{
+                        bgcolor: "#eff6ff",
+                        border: "2px solid #3b82f6",
+                        borderRadius: 1,
+                        p: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        color="primary.dark"
+                        fontWeight="bold"
+                        textTransform="uppercase"
+                      >
+                        Available
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        color="primary.main"
+                        fontWeight="900"
+                      >
+                        {calculatedAvailable}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
 
               <Divider />
 
@@ -437,7 +586,9 @@ export function EquipmentFormDialog({
                   label="Warranty Period (Months)"
                   type="number"
                   inputProps={{ min: "0" }}
-                  {...register("warranty_period_months")}
+                  {...register("warranty_period_months", {
+                    valueAsNumber: true,
+                  })}
                   error={!!errors.warranty_period_months}
                   helperText={errors.warranty_period_months?.message}
                 />

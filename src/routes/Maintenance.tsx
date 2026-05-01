@@ -557,7 +557,6 @@ export default function MaintenanceRoute() {
         </TableContainer>
       </Paper>
 
-      {/* --- MODAL 1: ASSIGN TECHNICIAN --- */}
       {/* --- MODAL 1: COMPREHENSIVE ASSIGN TECHNICIAN --- */}
       <Dialog
         open={assignModal.open}
