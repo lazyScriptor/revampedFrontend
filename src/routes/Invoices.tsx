@@ -236,7 +236,7 @@ export default function InvoicesRoute() {
         <Paper
           elevation={0}
           sx={{
-            flex: { lg: "0 0 320px", xl: "0 0 380px" },
+            flex: { lg: "0 0 320px", xl: "0 0 500px" },
             display: "flex",
             flexDirection: "column",
             border: "1px solid #e2e8f0",
