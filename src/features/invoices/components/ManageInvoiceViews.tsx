@@ -10,6 +10,11 @@ import {
   Chip,
   Button,
   InputAdornment,
+  IconButton,
+  Tooltip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import SecurityIcon from "@mui/icons-material/Security";
@@ -20,6 +25,9 @@ import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRig
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import PaymentIcon from "@mui/icons-material/Payment";
 import EditIcon from "@mui/icons-material/Edit";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   useInvoiceSearch,
   useAddPayment,
@@ -35,13 +43,12 @@ const StatusDot = ({ color }: { color: string }) => (
       height: 10,
       borderRadius: "50%",
       backgroundColor: color,
-      boxShadow: `0 0 8px 2px ${color}80`, // The Glow
+      boxShadow: `0 0 8px 2px ${color}80`,
       mr: 1.5,
     }}
   />
 );
 
-// --- PRO SCROLLBAR STYLING ---
 const customScrollbar = {
   "&::-webkit-scrollbar": { width: "6px" },
   "&::-webkit-scrollbar-track": { background: "transparent" },
@@ -81,6 +88,7 @@ export function ManageSearchPanel({
             if (newValue) onSelectInvoice(newValue.invoice_id);
           }}
           onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
+          ListboxProps={{ sx: { p: 1, bgcolor: "#f8fafc" } }}
           renderInput={(params) => (
             <TextField
               {...params}
@@ -104,32 +112,50 @@ export function ManageSearchPanel({
               }}
             />
           )}
-          renderOption={(props, option: any) => (
-            <li
-              {...props}
-              key={option.invoice_id}
-              className="flex items-center gap-3 p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50"
-            >
-              <div className="flex-grow">
-                <Typography
-                  variant="body1"
-                  fontWeight="600"
-                  color="primary.main"
-                >
-                  INV-{option.invoice_id}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {option.Customer?.first_name} {option.Customer?.last_name}{" "}
-                  {option.Customer?.phone_number}
-                </Typography>
-              </div>
-              <Chip
-                size="small"
-                label={option.status}
-                color={option.status === "Active" ? "warning" : "success"}
-              />
-            </li>
-          )}
+          renderOption={(props, option: any) => {
+            const { key, ...otherProps } = props as any;
+            return (
+              <Box
+                component="li"
+                key={key}
+                {...otherProps}
+                sx={{
+                  p: 2,
+                  mb: 1,
+                  borderRadius: 2,
+                  bgcolor: "white",
+                  border: "1px solid #e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  cursor: "pointer",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                  },
+                }}
+              >
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography
+                    variant="body1"
+                    fontWeight="600"
+                    color="primary.main"
+                  >
+                    INV-{option.invoice_id}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {option.Customer?.first_name} {option.Customer?.last_name}{" "}
+                    {option.Customer?.phone_number}
+                  </Typography>
+                </Box>
+                <Chip
+                  size="small"
+                  label={option.status}
+                  color={option.status === "Active" ? "warning" : "success"}
+                />
+              </Box>
+            );
+          }}
         />
       </Box>
     </Box>
@@ -137,7 +163,7 @@ export function ManageSearchPanel({
 }
 
 // ============================================================================
-// PANE 2: EQUIPMENT TRACKING BOARD (Strict Scrollable Layout)
+// PANE 2: EQUIPMENT TRACKING BOARD
 // ============================================================================
 export function ManageLedgerPanel({
   invoice,
@@ -173,10 +199,9 @@ export function ManageLedgerPanel({
         overflow: "hidden",
       }}
     >
-      {/* 1. LOCKED HEADER */}
       <Box
         sx={{
-          flexShrink: 0, // CRITICAL: Prevents header from shrinking when list gets long
+          flexShrink: 0,
           p: 3,
           bgcolor: "white",
           borderBottom: "1px solid #e2e8f0",
@@ -201,14 +226,12 @@ export function ManageLedgerPanel({
           </Button>
         )}
       </Box>
-
-      {/* 2. SCROLLABLE CONTENT BODY */}
       <Box
         sx={{
           p: 3,
-          flexGrow: 1, // CRITICAL: Takes up the rest of the available height
-          minHeight: 0, // CRITICAL: Firefox/Safari flexbox bug fix
-          overflowY: "auto", // CRITICAL: Enables native scrolling
+          flexGrow: 1,
+          minHeight: 0,
+          overflowY: "auto",
           display: "flex",
           flexDirection: "column",
           gap: 3,
@@ -219,7 +242,6 @@ export function ManageLedgerPanel({
           const isActive =
             line.line_status === "Active" || line.status === "Active";
           const equipName = line.Equipment?.equipment_name || "Unknown Asset";
-
           const alreadyReturned =
             (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
           const pending = line.borrow_quantity - alreadyReturned;
@@ -230,17 +252,15 @@ export function ManageLedgerPanel({
           if (daysOut < 1) daysOut = 1;
 
           let accruedCost = 0;
-          if (!isActive) {
-            accruedCost = Number(line.line_total_amount);
-          } else if (daysOut <= line.locked_minimum_days) {
+          if (!isActive) accruedCost = Number(line.line_total_amount);
+          else if (daysOut <= line.locked_minimum_days)
             accruedCost = line.locked_base_price * line.borrow_quantity;
-          } else {
-            const extraDays = daysOut - line.locked_minimum_days;
+          else
             accruedCost =
               (line.locked_base_price +
-                extraDays * line.locked_extra_daily_rate) *
+                (daysOut - line.locked_minimum_days) *
+                  line.locked_extra_daily_rate) *
               line.borrow_quantity;
-          }
 
           const lineIterations = returnTraces
             .map((trace: any) => {
@@ -252,12 +272,9 @@ export function ManageLedgerPanel({
                   payload = {};
                 }
               }
-
-              const returnedLinesArray = payload.lines_returned || [];
-              const returnedLine = returnedLinesArray.find(
+              const returnedLine = (payload.lines_returned || []).find(
                 (l: any) => l.line_id === line.line_id,
               );
-
               if (
                 returnedLine &&
                 (Number(returnedLine.good_qty) > 0 ||
@@ -283,7 +300,7 @@ export function ManageLedgerPanel({
                 borderRadius: 3,
                 bgcolor: "white",
                 overflow: "hidden",
-                flexShrink: 0, // Prevent cards from crushing each other
+                flexShrink: 0,
               }}
             >
               <Box sx={{ p: 2.5 }}>
@@ -297,11 +314,7 @@ export function ManageLedgerPanel({
                 >
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <StatusDot color={isActive ? "#f59e0b" : "#10b981"} />
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight="bold"
-                      color="text.primary"
-                    >
+                    <Typography variant="subtitle1" fontWeight="bold">
                       {equipName}
                     </Typography>
                   </Box>
@@ -313,7 +326,6 @@ export function ManageLedgerPanel({
                     sx={{ fontWeight: "bold" }}
                   />
                 </Box>
-
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Box>
                     <Typography
@@ -391,7 +403,6 @@ export function ManageLedgerPanel({
                   </Box>
                 </div>
               </Box>
-
               {lineIterations.length > 0 && (
                 <Box
                   sx={{
@@ -479,25 +490,31 @@ export function ManageLedgerPanel({
 }
 
 // ============================================================================
-// PANE 3: REDESIGNED POS TERMINAL & UNIFIED FINANCIAL LEDGER
+// PANE 3: REDESIGNED POS TERMINAL & UNIFIED FINANCIAL LEDGER (Collapsible)
 // ============================================================================
 export function ManageFinancialPanel({
   invoice,
   showToast,
+  isCollapsed,
+  onToggleCollapse,
 }: {
   invoice: any;
   showToast: any;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   const paymentMutation = useAddPayment();
   const vaultMutation = useToggleVault();
   const updateFeesMutation = useUpdateFees();
-
   const [paymentAmount, setPaymentAmount] = useState("");
   const [isEditingFees, setIsEditingFees] = useState(false);
 
+  // Accordion Expand States (Open by default)
+  const [receiptExpanded, setReceiptExpanded] = useState(true);
+  const [timelineExpanded, setTimelineExpanded] = useState(true);
+
   const initialTransport = Number(invoice?.transport_fee) || 0;
   const initialDiscount = Number(invoice?.discount_amount) || 0;
-
   const [fees, setFees] = useState({
     transport: initialTransport,
     discount: initialDiscount,
@@ -517,7 +534,6 @@ export function ManageFinancialPanel({
       (sum: number, p: any) => sum + Number(p.payment_amount),
       0,
     ) || 0;
-
   const subTotal = Number(invoice.sub_total) || 0;
   const grandTotal = Number(invoice.total_amount) || 0;
   const lateFees = Math.max(
@@ -527,6 +543,44 @@ export function ManageFinancialPanel({
   const balance = Math.max(0, grandTotal - totalPaid);
   const isCompleted = invoice.status === "Completed";
 
+  // --- COLLAPSED VERTICAL BAR ---
+  if (isCollapsed) {
+    return (
+      <Box
+        onClick={onToggleCollapse}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          alignItems: "center",
+          py: 3,
+          cursor: "pointer",
+          color: "white",
+          "&:hover": { bgcolor: "#1e293b" },
+        }}
+      >
+        <Tooltip title="Expand Terminal" placement="left">
+          <IconButton color="inherit" sx={{ mb: 4 }}>
+            <ChevronLeftIcon />
+          </IconButton>
+        </Tooltip>
+        <Typography
+          sx={{
+            writingMode: "vertical-rl",
+            transform: "rotate(180deg)",
+            fontWeight: "bold",
+            letterSpacing: 2,
+            fontSize: "1.2rem",
+            whiteSpace: "nowrap",
+          }}
+        >
+          BALANCE DUE: Rs. {balance.toLocaleString()}
+        </Typography>
+      </Box>
+    );
+  }
+
+  // --- EXPANDED TERMINAL VIEW ---
   const paymentEvents = payments.map((p: any) => ({
     id: `pay-${p.payment_id}`,
     type: Number(p.payment_amount) < 0 ? "REFUND" : "PAYMENT",
@@ -609,11 +663,11 @@ export function ManageFinancialPanel({
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        bgcolor: "#f8fafc",
+        bgcolor: "#f1f5f9",
         overflow: "hidden",
       }}
     >
-      {/* 1. LOCKED HEADER: HERO TERMINAL ACTION CARD */}
+      {/* 1. LOCKED HEADER */}
       <Box
         sx={{
           flexShrink: 0,
@@ -621,6 +675,30 @@ export function ManageFinancialPanel({
           bgcolor: "white",
           borderBottom: "1px solid #e2e8f0",
           zIndex: 10,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h6" fontWeight="bold">
+          Financial Terminal
+        </Typography>
+        <IconButton onClick={onToggleCollapse} size="small" color="primary">
+          <ChevronRightIcon />
+        </IconButton>
+      </Box>
+
+      {/* SCROLLABLE CONTENT BODY */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+          p: 3,
+          ...customScrollbar,
         }}
       >
         <Paper
@@ -631,6 +709,7 @@ export function ManageFinancialPanel({
             bgcolor: "#0f172a",
             color: "white",
             textAlign: "center",
+            flexShrink: 0,
           }}
         >
           <Typography
@@ -649,7 +728,6 @@ export function ManageFinancialPanel({
           >
             Rs. {balance.toLocaleString()}
           </Typography>
-
           <Box
             sx={{
               display: "flex",
@@ -702,40 +780,26 @@ export function ManageFinancialPanel({
             </Button>
           </Box>
         </Paper>
-      </Box>
 
-      {/* 2. SCROLLABLE CONTENT BODY */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          overflowY: "auto",
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          gap: 3,
-          p: 3,
-          ...customScrollbar,
-        }}
-      >
-        {/* DYNAMIC RECEIPT BREAKDOWN */}
-        <Paper
+        {/* --- ACCORDION 1: RECEIPT BREAKDOWN --- */}
+        <Accordion
+          expanded={receiptExpanded}
+          onChange={() => setReceiptExpanded(!receiptExpanded)}
+          disableGutters
           elevation={0}
           sx={{
             border: "1px solid #e2e8f0",
-            borderRadius: 3,
-            bgcolor: "white",
+            borderRadius: "12px !important",
             overflow: "hidden",
+            "&:before": { display: "none" },
             flexShrink: 0,
           }}
         >
-          <Box
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
             sx={{
-              p: 2,
-              borderBottom: "1px solid #e2e8f0",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
               bgcolor: "#f8fafc",
+              borderBottom: receiptExpanded ? "1px solid #e2e8f0" : "none",
             }}
           >
             <Typography
@@ -746,27 +810,29 @@ export function ManageFinancialPanel({
             >
               <ReceiptLongIcon fontSize="small" /> Receipt Breakdown
             </Typography>
-            {!isEditingFees && !isCompleted && (
-              <Button
-                size="small"
-                onClick={() => setIsEditingFees(true)}
-                sx={{ fontWeight: "bold" }}
-              >
-                Edit Fees
-              </Button>
-            )}
-          </Box>
-
-          <Box
+          </AccordionSummary>
+          <AccordionDetails
             sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5 }}
           >
+            {/* INLINE EDIT BUTTON */}
+            {!isEditingFees && !isCompleted && (
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: -1 }}>
+                <Button
+                  size="small"
+                  onClick={() => setIsEditingFees(true)}
+                  sx={{ fontWeight: "bold" }}
+                >
+                  Edit Fees
+                </Button>
+              </Box>
+            )}
+
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography color="text.secondary">Base Subtotal</Typography>
               <Typography fontWeight="500">
                 Rs. {subTotal.toLocaleString()}
               </Typography>
             </Box>
-
             {isEditingFees ? (
               <Box
                 sx={{
@@ -897,22 +963,29 @@ export function ManageFinancialPanel({
                 - Rs. {totalPaid.toLocaleString()}
               </Typography>
             </Box>
-          </Box>
-        </Paper>
+          </AccordionDetails>
+        </Accordion>
 
-        {/* UNIFIED FINANCIAL AUDIT LEDGER */}
-        <Paper
+        {/* --- ACCORDION 2: FINANCIAL TIMELINE --- */}
+        <Accordion
+          expanded={timelineExpanded}
+          onChange={() => setTimelineExpanded(!timelineExpanded)}
+          disableGutters
           elevation={0}
           sx={{
             border: "1px solid #e2e8f0",
-            borderRadius: 3,
-            bgcolor: "white",
+            borderRadius: "12px !important",
             overflow: "hidden",
+            "&:before": { display: "none" },
             flexShrink: 0,
           }}
         >
-          <Box
-            sx={{ p: 2, borderBottom: "1px solid #e2e8f0", bgcolor: "#f8fafc" }}
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              bgcolor: "#f8fafc",
+              borderBottom: timelineExpanded ? "1px solid #e2e8f0" : "none",
+            }}
           >
             <Typography
               fontWeight="bold"
@@ -922,9 +995,8 @@ export function ManageFinancialPanel({
             >
               <HistoryIcon fontSize="small" /> Financial Timeline
             </Typography>
-          </Box>
-
-          <Box sx={{ p: 0 }}>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 0 }}>
             {unifiedLedger.length === 0 ? (
               <Box sx={{ p: 3, textAlign: "center" }}>
                 <Typography variant="body2" color="text.secondary">
@@ -1001,7 +1073,6 @@ export function ManageFinancialPanel({
                         </Typography>
                       </>
                     )}
-                    <br/>
                     <Typography
                       variant="caption"
                       color="#cbd5e1"
@@ -1016,8 +1087,8 @@ export function ManageFinancialPanel({
                 </Box>
               ))
             )}
-          </Box>
-        </Paper>
+          </AccordionDetails>
+        </Accordion>
 
         {/* VAULT STATUS */}
         <Box

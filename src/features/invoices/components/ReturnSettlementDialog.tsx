@@ -12,6 +12,7 @@ import {
   CircularProgress,
   FormControlLabel,
   Switch,
+  Rating,
 } from "@mui/material";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import { useProcessReturn } from "../hooks/useInvoiceHooks";
@@ -24,6 +25,7 @@ export function ReturnSettlementDialog({
 }: any) {
   const returnMutation = useProcessReturn();
   const [releaseId, setReleaseId] = useState(true);
+  const [customerRating, setCustomerRating] = useState<number | null>(5);
   const [returnLines, setReturnLines] = useState<any[]>([]);
 
   useMemo(() => {
@@ -73,6 +75,7 @@ export function ReturnSettlementDialog({
       final_payment_amount: 0, // Stripped out of UI, handled purely in the Financial Pane now
       release_id_card: releaseId,
       lines_returned: returnLines,
+      customer_rating: customerRating,
     };
     returnMutation.mutate(
       { id: invoice.invoice_id, data: payload },
@@ -187,10 +190,35 @@ export function ReturnSettlementDialog({
           ))}
         </Box>
 
-        {invoice.Customer.is_id_retained_currently && (
+        {/* CUSTOMER RATING UI */}
+        <Box
+          sx={{
+            mt: 3,
+            p: 2,
+            bgcolor: "white",
+            border: "1px solid #e2e8f0",
+            borderRadius: 2,
+          }}
+        >
+          <Typography fontWeight="bold" color="primary.dark" mb={0.5}>
+            Client Trust Rating
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={1.5}>
+            How was the condition of the returned tools and the client's
+            promptness?
+          </Typography>
+          <Rating
+            value={customerRating}
+            onChange={(event, newValue) => setCustomerRating(newValue)}
+            size="large"
+          />
+        </Box>
+
+        {/* VAULT UI */}
+        {invoice.Customer?.is_id_retained_currently && (
           <Box
             sx={{
-              mt: 4,
+              mt: 3,
               p: 2,
               bgcolor: "#fffbeb",
               border: "1px solid #fde047",

@@ -12,6 +12,7 @@ import {
   DialogActions,
   ToggleButtonGroup,
   ToggleButton,
+  Divider,
 } from "@mui/material";
 
 // Components
@@ -19,6 +20,7 @@ import { PosCustomerPanel } from "@/features/invoices/components/PosCustomerPane
 import {
   PosLedgerPanel,
   CartItem,
+  calculateLineMath,
 } from "@/features/invoices/components/PosLedgerPanel";
 import { PosCheckoutPanel } from "@/features/invoices/components/PosCheckoutPanel";
 import {
@@ -33,28 +35,29 @@ import { api } from "@/lib/api";
 import { useInvoiceDetails } from "@/features/invoices/hooks/useInvoiceHooks";
 
 export default function InvoicesRoute() {
-  // --- MASTER MODE STATE ---
   const [posMode, setPosMode] = useState<"dispatch" | "manage">("dispatch");
+  const [isTerminalOpen, setIsTerminalOpen] = useState(true);
 
-  // --- DISPATCH STATE ---
+  // Dispatch State
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [fees, setFees] = useState({ transport: 0, discount: 0, advance: 0 });
 
-  // --- MANAGE STATE ---
+  // Manage State
   const [selectedManageInvoiceId, setSelectedManageInvoiceId] = useState<
     number | null
   >(null);
   const { data: activeInvoice } = useInvoiceDetails(selectedManageInvoiceId);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
-  // --- UX STATE ---
+  // UX State
   const [toast, setToast] = useState({
     open: false,
     message: "",
     severity: "error" as "error" | "success" | "warning",
   });
   const [isClearCartOpen, setIsClearCartOpen] = useState(false);
+  const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false); // NEW: Pre-flight modal
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const showToast = (
@@ -64,10 +67,8 @@ export default function InvoicesRoute() {
     setToast({ open: true, message, severity });
   };
 
-  const handleConfirmDispatch = async () => {
-    if (!selectedCustomer)
-      return showToast("Please select a customer first.", "error");
-    if (cartItems.length === 0) return showToast("The cart is empty.", "error");
+  // The actual API call is now separated from the button click
+  const executeDispatch = async () => {
     setIsSubmitting(true);
     try {
       const payload = {
@@ -80,6 +81,7 @@ export default function InvoicesRoute() {
       setSelectedCustomer(null);
       setCartItems([]);
       setFees({ transport: 0, discount: 0, advance: 0 });
+      setIsConfirmDispatchOpen(false); // Close modal on success
     } catch (error: any) {
       showToast(
         error.response?.data?.message || "Failed to create invoice.",
@@ -88,6 +90,15 @@ export default function InvoicesRoute() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Helper to calculate grand total for the confirmation modal
+  const getCartGrandTotal = () => {
+    const subTotal = cartItems.reduce(
+      (total, item) => total + calculateLineMath(item).lineCost,
+      0,
+    );
+    return Math.max(0, subTotal + fees.transport - fees.discount);
   };
 
   return (
@@ -100,12 +111,13 @@ export default function InvoicesRoute() {
         overflow: "hidden",
       }}
     >
-      {/* --- NEW: THE HEADER & MODE TOGGLE --- */}
+      {/* HEADER & MODE TOGGLE */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexShrink: 0,
         }}
       >
         <Box>
@@ -118,7 +130,6 @@ export default function InvoicesRoute() {
               : "Manage returns, payments, and vaults for active orders."}
           </Typography>
         </Box>
-
         <ToggleButtonGroup
           color="primary"
           value={posMode}
@@ -144,6 +155,7 @@ export default function InvoicesRoute() {
           flexDirection: { xs: "column", lg: "row" },
           gap: 3,
           flexGrow: 1,
+          minHeight: 0,
           overflow: "hidden",
         }}
       >
@@ -157,16 +169,22 @@ export default function InvoicesRoute() {
             border: "1px solid #e2e8f0",
             borderRadius: 3,
             bgcolor: "#f8fafc",
+            overflow: "hidden",
           }}
         >
           <Box
-            sx={{ p: 3, bgcolor: "white", borderBottom: "1px solid #e2e8f0" }}
+            sx={{
+              p: 3,
+              bgcolor: "white",
+              borderBottom: "1px solid #e2e8f0",
+              flexShrink: 0,
+            }}
           >
             <Typography variant="h6" fontWeight="bold">
               {posMode === "dispatch" ? "Lookup Client" : "Find Invoice"}
             </Typography>
           </Box>
-          <Box sx={{ p: 3, flexGrow: 1, overflowY: "auto" }}>
+          <Box sx={{ flexGrow: 1, overflowY: "auto", minHeight: 0 }}>
             {posMode === "dispatch" ? (
               <PosCustomerPanel
                 selectedCustomer={selectedCustomer}
@@ -188,22 +206,24 @@ export default function InvoicesRoute() {
             border: "1px solid #e2e8f0",
             borderRadius: 3,
             bgcolor: "#f8fafc",
+            overflow: "hidden",
           }}
         >
-          <Box
-            sx={{
-              p: 3,
-              bgcolor: "white",
-              borderBottom: "1px solid #e2e8f0",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h6" fontWeight="bold">
-              {posMode === "dispatch" ? "Dispatch Cart" : "Order Ledger"}
-            </Typography>
-            {posMode === "dispatch" && (
+          {posMode === "dispatch" && (
+            <Box
+              sx={{
+                flexShrink: 0,
+                p: 3,
+                bgcolor: "white",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="h6" fontWeight="bold">
+                Dispatch Cart
+              </Typography>
               <Button
                 variant="outlined"
                 size="small"
@@ -214,9 +234,9 @@ export default function InvoicesRoute() {
               >
                 Clear Cart
               </Button>
-            )}
-          </Box>
-          <Box sx={{ flexGrow: 1, overflowY: "hidden" }}>
+            </Box>
+          )}
+          <Box sx={{ flexGrow: 1, overflowY: "hidden", minHeight: 0 }}>
             {posMode === "dispatch" ? (
               <PosLedgerPanel
                 cartItems={cartItems}
@@ -236,79 +256,144 @@ export default function InvoicesRoute() {
         <Paper
           elevation={0}
           sx={{
-            flex: { lg: "0 0 320px", xl: "0 0 500px" },
+            flex: isTerminalOpen
+              ? { lg: "0 0 320px", xl: "0 0 450px" }
+              : "0 0 70px",
             display: "flex",
             flexDirection: "column",
             border: "1px solid #e2e8f0",
             borderRadius: 3,
-            bgcolor: "#f8fafc",
+            bgcolor: isTerminalOpen ? "#f8fafc" : "#0f172a",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            overflow: "hidden",
           }}
         >
-          <Box
-            sx={{ p: 3, bgcolor: "white", borderBottom: "1px solid #e2e8f0" }}
-          >
-            <Typography variant="h6" fontWeight="bold">
-              {posMode === "dispatch" ? "Financials" : "Terminal"}
-            </Typography>
-          </Box>
-          <Box sx={{ flexGrow: 1, overflowY: "hidden" }}>
-            {posMode === "dispatch" ? (
-              <PosCheckoutPanel
-                cartItems={cartItems}
-                selectedCustomer={selectedCustomer}
-                fees={fees}
-                setFees={setFees}
-              />
-            ) : (
-              <ManageFinancialPanel
-                invoice={activeInvoice}
-                showToast={showToast}
-              />
-            )}
-          </Box>
-          {posMode === "dispatch" && (
-            <Box
-              sx={{ p: 3, bgcolor: "white", borderTop: "1px solid #e2e8f0" }}
-            >
-              <Button
-                variant="contained"
-                color="success"
-                fullWidth
-                size="large"
-                disableElevation
-                disabled={
-                  !selectedCustomer || cartItems.length === 0 || isSubmitting
-                }
-                onClick={handleConfirmDispatch}
-                sx={{
-                  py: 2,
-                  borderRadius: 2,
-                  fontSize: "1.1rem",
-                  fontWeight: "bold",
-                }}
-              >
-                {isSubmitting ? "Processing..." : "Confirm Dispatch"}
-              </Button>
-            </Box>
+          {posMode === "dispatch" ? (
+            <PosCheckoutPanel
+              cartItems={cartItems}
+              selectedCustomer={selectedCustomer}
+              fees={fees}
+              setFees={setFees}
+              isCollapsed={!isTerminalOpen}
+              onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
+              // Pass the function to OPEN the modal, not to submit directly
+              onConfirmDispatch={() => setIsConfirmDispatchOpen(true)}
+              isSubmitting={isSubmitting}
+            />
+          ) : (
+            <ManageFinancialPanel
+              invoice={activeInvoice}
+              showToast={showToast}
+              isCollapsed={!isTerminalOpen}
+              onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
+            />
           )}
         </Paper>
       </Box>
 
-      {/* OVERLAYS */}
-      <Snackbar
-        open={toast.open}
-        autoHideDuration={4000}
-        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      {/* --- PRE-FLIGHT DISPATCH CONFIRMATION MODAL --- */}
+      <Dialog
+        open={isConfirmDispatchOpen}
+        onClose={() => setIsConfirmDispatchOpen(false)}
+        maxWidth="sm"
+        fullWidth
       >
-        <Alert
-          severity={toast.severity}
-          variant="filled"
-          sx={{ width: "100%", fontWeight: 500, boxShadow: 3 }}
-        >
-          {toast.message}
-        </Alert>
-      </Snackbar>
+        <DialogTitle fontWeight="bold">Confirm Dispatch Details</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Please review the order details before committing to the inventory
+            ledger.
+          </Typography>
+
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: "#f8fafc",
+              borderRadius: 2,
+              border: "1px solid #e2e8f0",
+              mb: 3,
+            }}
+          >
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight="bold"
+              textTransform="uppercase"
+            >
+              Client
+            </Typography>
+            <Typography variant="h6" color="primary.main" fontWeight="bold">
+              {selectedCustomer?.customer_type === "Business"
+                ? selectedCustomer?.company_name
+                : `${selectedCustomer?.first_name} ${selectedCustomer?.last_name}`}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedCustomer?.phone_number}
+            </Typography>
+          </Box>
+
+          <Typography variant="subtitle2" fontWeight="bold" mb={1}>
+            Items ({cartItems.length})
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 3 }}>
+            {cartItems.map((item, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  p: 1.5,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  {item.equipment_name}
+                </Typography>
+                <Typography variant="body2">
+                  Qty: {item.borrow_quantity}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="h6" fontWeight="bold">
+              Grand Total
+            </Typography>
+            <Typography variant="h5" fontWeight="900" color="success.main">
+              Rs. {getCartGrandTotal().toLocaleString()}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => setIsConfirmDispatchOpen(false)}
+            color="inherit"
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={executeDispatch}
+            color="success"
+            variant="contained"
+            disableElevation
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Processing..." : "Submit Dispatch"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={isClearCartOpen} onClose={() => setIsClearCartOpen(false)}>
         <DialogTitle fontWeight="bold">Clear Cart?</DialogTitle>
@@ -334,7 +419,6 @@ export default function InvoicesRoute() {
         </DialogActions>
       </Dialog>
 
-      {/* THE MASTER RETURN DIALOG (Reused beautifully for Manage Mode!) */}
       {posMode === "manage" && (
         <ReturnSettlementDialog
           open={isReturnModalOpen}
@@ -343,6 +427,21 @@ export default function InvoicesRoute() {
           showToast={showToast}
         />
       )}
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          severity={toast.severity}
+          variant="filled"
+          sx={{ width: "100%", fontWeight: 500, boxShadow: 3 }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
