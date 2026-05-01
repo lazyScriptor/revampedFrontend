@@ -88,3 +88,18 @@ export const useToggleVault = () => {
         },
     });
 };
+
+// 7. NEW: Update Dynamic Fees
+export const useUpdateFees = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: { id: number, data: { transport_fee: number, discount_amount: number } }) => {
+            const response = await api.patch(`/invoices/${payload.id}/fees`, payload.data);
+            return response.data;
+        },
+        onSuccess: (_, variables) => {
+            // Instantly refresh the right pane when the fee saves!
+            queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
+        },
+    });
+};

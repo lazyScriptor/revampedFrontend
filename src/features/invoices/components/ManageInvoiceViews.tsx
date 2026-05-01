@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -9,6 +9,7 @@ import {
   Divider,
   Chip,
   Button,
+  InputAdornment,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import SecurityIcon from "@mui/icons-material/Security";
@@ -20,6 +21,7 @@ import {
   useInvoiceSearch,
   useAddPayment,
   useToggleVault,
+  useUpdateFees,
 } from "../hooks/useInvoiceHooks";
 
 // --- GLOWING DOT CSS COMPONENT ---
@@ -109,7 +111,6 @@ export function ManageSearchPanel({
   );
 }
 
-// --- PANE 2: PRO-LEVEL EQUIPMENT LEDGER (With Iteration Child Rows) ---
 // --- PANE 2: PRO-LEVEL EQUIPMENT LEDGER (With Iteration Child Rows) ---
 export function ManageLedgerPanel({
   invoice,
@@ -394,7 +395,6 @@ export function ManageLedgerPanel({
                             dateStyle: "short",
                             timeStyle: "short",
                           })}{" "}
-                          {/* Shows exact Date + Time! */}
                         </Typography>
 
                         {iteration.good > 0 && (
@@ -436,10 +436,30 @@ export function ManageFinancialPanel({
   invoice: any;
   showToast: any;
 }) {
+  // 1. ALL HOOKS MUST GO HERE AT THE VERY TOP
   const paymentMutation = useAddPayment();
   const vaultMutation = useToggleVault();
+  const updateFeesMutation = useUpdateFees();
+
   const [paymentAmount, setPaymentAmount] = useState("");
 
+  // Safely grab initial values (fallback to 0 if invoice is null)
+  const initialTransport = Number(invoice?.transport_fee) || 0;
+  const initialDiscount = Number(invoice?.discount_amount) || 0;
+
+  const [fees, setFees] = useState({
+    transport: initialTransport,
+    discount: initialDiscount,
+  });
+
+  // Keep local state in sync if a user clicks a different invoice on the left
+  useEffect(() => {
+    setFees({ transport: initialTransport, discount: initialDiscount });
+  }, [invoice?.invoice_id, initialTransport, initialDiscount]);
+
+  // ---------------------------------------------------------
+  // 2. NOW IT IS SAFE TO DO THE EARLY RETURN
+  // ---------------------------------------------------------
   if (!invoice)
     return <EmptyState text="Financial controls will appear here." />;
 
@@ -452,13 +472,27 @@ export function ManageFinancialPanel({
 
   // Safely parse financial breakdown
   const subTotal = Number(invoice.sub_total) || 0;
-  const transport = Number(invoice.transport_fee) || 0;
-  const discount = Number(invoice.discount_amount) || 0;
   const grandTotal = Number(invoice.total_amount) || 0;
 
   // Math: Grand Total = SubTotal + Transport - Discount + Late Fees
-  const lateFees = Math.max(0, grandTotal - (subTotal + transport - discount));
+  const lateFees = Math.max(
+    0,
+    grandTotal - (subTotal + initialTransport - initialDiscount),
+  );
   const balance = Math.max(0, grandTotal - totalPaid);
+
+  const handleUpdateFees = () => {
+    updateFeesMutation.mutate(
+      {
+        id: invoice.invoice_id,
+        data: {
+          transport_fee: fees.transport,
+          discount_amount: fees.discount,
+        },
+      },
+      { onSuccess: () => showToast("Fees updated successfully.", "success") },
+    );
+  };
 
   const handlePayment = (isRefund: boolean) => {
     const amt = Number(paymentAmount);
@@ -482,6 +516,10 @@ export function ManageFinancialPanel({
       },
     );
   };
+
+  const hasFeeChanges =
+    fees.transport !== initialTransport || fees.discount !== initialDiscount;
+  const isCompleted = invoice.status === "Completed";
 
   return (
     <Box
@@ -523,35 +561,85 @@ export function ManageFinancialPanel({
         </Typography>
       </Paper>
 
-      {/* 2. Detailed Financial Breakdown */}
-      <Box sx={{ px: 1 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+      {/* 2. Editable Financial Breakdown */}
+      <Box>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+            px: 1,
+          }}
+        >
           <Typography color="text.secondary">Base Subtotal</Typography>
           <Typography fontWeight="500">
             Rs. {subTotal.toLocaleString()}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-          <Typography
-            color="text.secondary"
-            display="flex"
-            alignItems="center"
-            gap={0.5}
+
+        <TextField
+          label="Transport / Delivery Fee"
+          type="number"
+          size="small"
+          fullWidth
+          value={fees.transport}
+          onChange={(e) =>
+            setFees({ ...fees, transport: Number(e.target.value) || 0 })
+          }
+          sx={{ mb: 2 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">Rs.</InputAdornment>
+            ),
+          }}
+          disabled={isCompleted}
+        />
+
+        <TextField
+          label="Discount Applied"
+          type="number"
+          size="small"
+          fullWidth
+          value={fees.discount}
+          onChange={(e) =>
+            setFees({ ...fees, discount: Number(e.target.value) || 0 })
+          }
+          sx={{ mb: 2 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">Rs.</InputAdornment>
+            ),
+          }}
+          disabled={isCompleted}
+        />
+
+        {hasFeeChanges && (
+          <Button
+            size="small"
+            variant="contained"
+            color="warning"
+            fullWidth
+            sx={{ mb: 2 }}
+            onClick={handleUpdateFees}
+            disabled={updateFeesMutation.isPending}
+            disableElevation
           >
-            <LocalShippingIcon fontSize="small" /> Transport
-          </Typography>
-          <Typography fontWeight="500">
-            + Rs. {transport.toLocaleString()}
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-          <Typography color="text.secondary">Discount</Typography>
-          <Typography fontWeight="500" color="error.main">
-            - Rs. {discount.toLocaleString()}
-          </Typography>
-        </Box>
+            {updateFeesMutation.isPending
+              ? "Saving..."
+              : "Save Fee Adjustments"}
+          </Button>
+        )}
+
         {lateFees > 0 && (
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              mb: 1,
+              px: 1,
+            }}
+          >
             <Typography color="error.main" fontWeight="bold">
               Accrued Late Fees
             </Typography>
@@ -561,13 +649,27 @@ export function ManageFinancialPanel({
           </Box>
         )}
         <Divider sx={{ my: 1.5, borderStyle: "dashed" }} />
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            mb: 1,
+            px: 1,
+          }}
+        >
           <Typography fontWeight="bold">Grand Total</Typography>
           <Typography fontWeight="bold">
             Rs. {grandTotal.toLocaleString()}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            mb: 1,
+            px: 1,
+          }}
+        >
           <Typography color="success.main" fontWeight="bold">
             Total Paid
           </Typography>
@@ -586,6 +688,7 @@ export function ManageFinancialPanel({
           value={paymentAmount}
           onChange={(e) => setPaymentAmount(e.target.value)}
           sx={{ mb: 2 }}
+          disabled={isCompleted && balance === 0}
         />
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
@@ -596,7 +699,7 @@ export function ManageFinancialPanel({
             disabled={paymentMutation.isPending || balance === 0}
             disableElevation
           >
-            Collect
+            Collect Payment
           </Button>
           <Button
             fullWidth
@@ -605,7 +708,7 @@ export function ManageFinancialPanel({
             onClick={() => handlePayment(true)}
             disabled={paymentMutation.isPending || totalPaid === 0}
           >
-            Refund
+            Issue Refund
           </Button>
         </Box>
       </Box>
