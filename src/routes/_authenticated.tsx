@@ -36,7 +36,12 @@ import StorageIcon from "@mui/icons-material/Storage";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // For sub-menu bullets
+import HistoryIcon from "@mui/icons-material/History";
+import BadgeIcon from "@mui/icons-material/Badge";
+import ConstructionIcon from "@mui/icons-material/Construction";
+import CategoryIcon from "@mui/icons-material/Category";
+import HandymanIcon from "@mui/icons-material/Handyman";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // Fallback bullet
 
 const drawerWidth = 260;
 
@@ -115,7 +120,7 @@ function AuthenticatedLayout() {
     Inventory: false,
   });
 
-  // 1. Updated Nav Items with nested 'children'
+  // 1. Updated Nav Items with distinct icons and nested children
   const allNavItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
     {
@@ -123,9 +128,21 @@ function AuthenticatedLayout() {
       icon: <InventoryIcon />,
       requiredPermission: "inventory_permission",
       children: [
-        { text: "All Equipment", path: "/equipment" },
-        { text: "Categories", path: "/equipment-category" },
-        { text: "Maintenance", path: "/maintenance" },
+        {
+          text: "All Equipment",
+          path: "/equipment",
+          icon: <ConstructionIcon fontSize="small" />,
+        },
+        {
+          text: "Categories",
+          path: "/equipment-category",
+          icon: <CategoryIcon fontSize="small" />,
+        },
+        {
+          text: "Maintenance",
+          path: "/maintenance",
+          icon: <HandymanIcon fontSize="small" />,
+        },
       ],
     },
     {
@@ -144,19 +161,19 @@ function AuthenticatedLayout() {
       text: "Data Arena",
       icon: <StorageIcon />,
       path: "/data-arena",
-      requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
+      requiredPermission: "inventory_permission",
     },
     {
       text: "Rental History",
-      icon: <StorageIcon />,
+      icon: <HistoryIcon />,
       path: "/rental-history",
-      requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
+      requiredPermission: "inventory_permission",
     },
     {
       text: "Workforce",
-      icon: <StorageIcon />,
+      icon: <BadgeIcon />,
       path: "/workforce",
-      requiredPermission: "inventory_permission", // Ensure only admins can mass import/export!
+      requiredPermission: "inventory_permission",
     },
   ];
 
@@ -272,10 +289,16 @@ function AuthenticatedLayout() {
                           minHeight: 40,
                         }}
                       >
-                        <ListItemIcon sx={{ minWidth: 0, mr: 2 }}>
-                          <FiberManualRecordIcon
-                            sx={{ fontSize: 10, color: "inherit" }}
-                          />
+                        <ListItemIcon
+                          sx={{ minWidth: 0, mr: 2, color: "inherit" }}
+                        >
+                          {child.icon ? (
+                            child.icon
+                          ) : (
+                            <FiberManualRecordIcon
+                              sx={{ fontSize: 10, color: "inherit" }}
+                            />
+                          )}
                         </ListItemIcon>
                         <ListItemText
                           primary={child.text}

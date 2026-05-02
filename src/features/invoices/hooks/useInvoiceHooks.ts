@@ -2,12 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useDebounce } from './usePosSearch';
 
-// 1. Existing List Hook
-export const useInvoiceList = (page: number, limit: number) => {
+// features/invoices/hooks/useInvoiceHooks.ts
+export const useInvoiceList = (page: number, limit: number, status?: string) => {
     return useQuery({
-        queryKey: ['invoices', page, limit],
+        // CRITICAL: Add status to the queryKey so changing tabs triggers a refetch
+        queryKey: ['invoices', page, limit, status],
         queryFn: async () => {
-            const response = await api.get('/invoices', { params: { page, limit } });
+            // Build the params object. If status is "All", we just don't send it.
+            const params: any = { page, limit };
+            if (status && status !== 'All') {
+                params.status = status;
+            }
+
+            const response = await api.get('/invoices', { params });
             return response?.data || { invoices: [], totalItems: 0 };
         },
     });
