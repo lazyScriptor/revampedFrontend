@@ -9,13 +9,19 @@ import {
   Divider,
   Paper,
   Chip,
+  Button,
+  InputAdornment,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import HardwareIcon from "@mui/icons-material/Hardware";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
+
 import { usePosEquipmentSearch } from "../hooks/usePosEquipmentSearch";
 
+// 1. We extend the CartItem interface to track the UI mode
 export interface CartItem {
   cart_id: string;
   equipment_id: number;
@@ -28,6 +34,7 @@ export interface CartItem {
   locked_base_price: number;
   locked_minimum_days: number;
   locked_extra_daily_rate: number;
+  pricing_mode: "daily" | "tiered"; // UI State Only (Backend ignores this)
 }
 
 export const calculateLineMath = (item: CartItem) => {
@@ -41,13 +48,17 @@ export const calculateLineMath = (item: CartItem) => {
 
   if (totalDays <= item.locked_minimum_days) {
     lineCost = item.locked_base_price * item.borrow_quantity;
-    calculationText = `${item.locked_minimum_days} Day Base`;
+    calculationText =
+      item.pricing_mode === "daily"
+        ? `${totalDays} Days`
+        : `${item.locked_minimum_days} Day Base Cover`;
   } else {
     const extraDays = totalDays - item.locked_minimum_days;
     const extraCost = extraDays * item.locked_extra_daily_rate;
     lineCost = (item.locked_base_price + extraCost) * item.borrow_quantity;
     calculationText = `Base + ${extraDays} extra day(s)`;
   }
+
   return { totalDays, lineCost, calculationText };
 };
 
@@ -85,7 +96,6 @@ export function PosLedgerPanel({
 
     if (existingItemIndex > -1) {
       const existingItem = cartItems[existingItemIndex];
-
       if (existingItem.is_bulk_item) {
         if (existingItem.borrow_quantity < equipment.available_qty) {
           updateItem(
@@ -112,6 +122,12 @@ export function PosLedgerPanel({
       }
     }
 
+    // SMART DETECTION: Is this item set up as a pure daily rental in the database?
+    const isDaily =
+      Number(equipment.minimum_rental_days) <= 1 &&
+      Number(equipment.base_rental_price) ===
+        Number(equipment.extra_daily_rate);
+
     const newItem: CartItem = {
       cart_id: crypto.randomUUID(),
       equipment_id: equipment.equipment_id,
@@ -124,6 +140,7 @@ export function PosLedgerPanel({
       locked_base_price: Number(equipment.base_rental_price) || 0,
       locked_minimum_days: Number(equipment.minimum_rental_days) || 1,
       locked_extra_daily_rate: Number(equipment.extra_daily_rate) || 0,
+      pricing_mode: isDaily ? "daily" : "tiered", // Assign UI mode
     };
 
     setCartItems((prev) => [...prev, newItem]);
@@ -138,14 +155,38 @@ export function PosLedgerPanel({
     );
   };
 
+  // Helper to update multiple fields at once (crucial for syncing Daily mode)
+  const updateItemBatch = (cartId: string, updates: Partial<CartItem>) => {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.cart_id === cartId ? { ...item, ...updates } : item,
+      ),
+    );
+  };
+
   const removeItem = (cartId: string) => {
     setCartItems((prev) => prev.filter((item) => item.cart_id !== cartId));
+  };
+
+  const togglePricingMode = (item: CartItem) => {
+    if (item.pricing_mode === "tiered") {
+      // Switch to Daily: Force Extra Rate to equal Base Price, and Min Days to 1
+      updateItemBatch(item.cart_id, {
+        pricing_mode: "daily",
+        locked_extra_daily_rate: item.locked_base_price,
+        locked_minimum_days: 1,
+      });
+    } else {
+      // Switch to Tiered: Just change the UI mode, leave numbers as they are
+      updateItemBatch(item.cart_id, { pricing_mode: "tiered" });
+    }
   };
 
   return (
     <Box
       sx={{ display: "flex", flexDirection: "column", gap: 2, height: "100%" }}
     >
+      {/* SEARCH BAR */}
       <Box
         sx={{
           px: 3,
@@ -187,13 +228,17 @@ export function PosLedgerPanel({
                   borderRadius: 2,
                   bgcolor: "white",
                   border: "2px solid #e2e8f0",
-                  "&:hover": { borderColor: "#cbd5e1" },
                 },
               }}
             />
           )}
           renderOption={(props, option: any) => {
             const inStock = option.available_qty > 0;
+            const isDaily =
+              Number(option.minimum_rental_days) <= 1 &&
+              Number(option.base_rental_price) ===
+                Number(option.extra_daily_rate);
+
             return (
               <li
                 {...props}
@@ -213,8 +258,9 @@ export function PosLedgerPanel({
                       {option.equipment_name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Base: Rs.{option.base_rental_price} | Extra: Rs.
-                      {option.extra_daily_rate}/day
+                      {isDaily
+                        ? `Rs.${option.base_rental_price} / day`
+                        : `Rs.${option.base_rental_price} for ${option.minimum_rental_days} days (+Rs.${option.extra_daily_rate}/day)`}
                     </Typography>
                   </div>
                 </div>
@@ -234,6 +280,7 @@ export function PosLedgerPanel({
         />
       </Box>
 
+      {/* CART ITEMS */}
       <Box sx={{ px: 3, pb: 3, flexGrow: 1, overflowY: "auto" }}>
         {cartItems.length === 0 ? (
           <Box
@@ -260,27 +307,32 @@ export function PosLedgerPanel({
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {cartItems.map((item) => {
               const { totalDays, lineCost, calculationText } =
                 calculateLineMath(item);
+              const isDailyMode = item.pricing_mode === "daily";
+
               return (
                 <Paper
                   key={item.cart_id}
                   elevation={0}
                   sx={{
-                    p: 2,
+                    p: 0,
                     border: "1px solid #e2e8f0",
-                    borderRadius: 2,
+                    borderRadius: 3,
                     bgcolor: "white",
+                    overflow: "hidden",
                   }}
                 >
+                  {/* ITEM HEADER */}
                   <Box
                     sx={{
+                      p: 2,
+                      borderBottom: "1px solid #f1f5f9",
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      mb: 2,
+                      alignItems: "center",
                     }}
                   >
                     <Typography
@@ -299,102 +351,217 @@ export function PosLedgerPanel({
                     </IconButton>
                   </Box>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-3">
-                    <TextField
-                      type="number"
-                      label="Qty"
-                      size="small"
-                      className="sm:col-span-2"
-                      value={item.borrow_quantity}
-                      onChange={(e) => {
-                        let val = parseInt(e.target.value) || 1;
-                        // STRICT FRONTEND GUARD: Cap at Max Available
-                        if (val > item.available_qty) val = item.available_qty;
-                        if (val < 1) val = 1;
-                        updateItem(item.cart_id, "borrow_quantity", val);
+                  <Box
+                    sx={{
+                      p: 2,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 3,
+                    }}
+                  >
+                    {/* ROW 1: LOGISTICS */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                      <TextField
+                        type="number"
+                        label="Qty"
+                        size="small"
+                        className="sm:col-span-2"
+                        value={item.borrow_quantity}
+                        onChange={(e) => {
+                          let val = parseInt(e.target.value) || 1;
+                          if (val > item.available_qty)
+                            val = item.available_qty;
+                          if (val < 1) val = 1;
+                          updateItem(item.cart_id, "borrow_quantity", val);
+                        }}
+                        InputProps={{
+                          inputProps: { min: 1, max: item.available_qty },
+                        }}
+                        disabled={!item.is_bulk_item}
+                      />
+                      <TextField
+                        type="date"
+                        label="Out Date"
+                        size="small"
+                        className="sm:col-span-5"
+                        InputLabelProps={{ shrink: true }}
+                        value={item.borrow_date}
+                        onChange={(e) =>
+                          updateItem(
+                            item.cart_id,
+                            "borrow_date",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <TextField
+                        type="date"
+                        label="Due Date"
+                        size="small"
+                        className="sm:col-span-5"
+                        InputLabelProps={{ shrink: true }}
+                        value={item.expected_return_date}
+                        onChange={(e) =>
+                          updateItem(
+                            item.cart_id,
+                            "expected_return_date",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+
+                    {/* ROW 2: SMART FINANCIALS */}
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: "#f8fafc",
+                        borderRadius: 2,
+                        border: "1px solid #e2e8f0",
                       }}
-                      InputProps={{
-                        inputProps: { min: 1, max: item.available_qty },
-                      }}
-                      disabled={!item.is_bulk_item}
-                    />
-                    <TextField
-                      type="date"
-                      label="Out Date"
-                      size="small"
-                      className="sm:col-span-3"
-                      InputLabelProps={{ shrink: true }}
-                      value={item.borrow_date}
-                      onChange={(e) =>
-                        updateItem(item.cart_id, "borrow_date", e.target.value)
-                      }
-                    />
-                    <TextField
-                      type="date"
-                      label="Due Date"
-                      size="small"
-                      className="sm:col-span-3"
-                      InputLabelProps={{ shrink: true }}
-                      value={item.expected_return_date}
-                      onChange={(e) =>
-                        updateItem(
-                          item.cart_id,
-                          "expected_return_date",
-                          e.target.value,
-                        )
-                      }
-                    />
-                    <TextField
-                      type="number"
-                      label="Base Price"
-                      size="small"
-                      className="sm:col-span-2"
-                      value={item.locked_base_price}
-                      onChange={(e) =>
-                        updateItem(
-                          item.cart_id,
-                          "locked_base_price",
-                          parseFloat(e.target.value) || 0,
-                        )
-                      }
-                    />
-                    <TextField
-                      type="number"
-                      label="Extra/Day"
-                      size="small"
-                      className="sm:col-span-2"
-                      value={item.locked_extra_daily_rate}
-                      onChange={(e) =>
-                        updateItem(
-                          item.cart_id,
-                          "locked_extra_daily_rate",
-                          parseFloat(e.target.value) || 0,
-                        )
-                      }
-                    />
-                  </div>
-                  <Divider sx={{ mb: 1.5, borderColor: "#f1f5f9" }} />
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          mb: 2,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          color="text.secondary"
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                        >
+                          <RequestQuoteOutlinedIcon fontSize="small" />
+                          {isDailyMode
+                            ? "FLAT DAILY RATE"
+                            : "TIERED RENTAL PRICING"}
+                        </Typography>
+                        <Button
+                          size="small"
+                          variant="text"
+                          startIcon={<SwapHorizIcon />}
+                          onClick={() => togglePricingMode(item)}
+                          sx={{
+                            textTransform: "none",
+                            fontSize: "0.75rem",
+                            color: "primary.main",
+                          }}
+                        >
+                          Switch to {isDailyMode ? "Tiered" : "Daily"}
+                        </Button>
+                      </Box>
+
+                      {isDailyMode ? (
+                        <TextField
+                          type="number"
+                          label="Rate Per Day"
+                          size="small"
+                          fullWidth
+                          value={item.locked_base_price}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                Rs.
+                              </InputAdornment>
+                            ),
+                          }}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            // SYNCS ALL VALUES INSTANTLY FOR BACKEND
+                            updateItemBatch(item.cart_id, {
+                              locked_base_price: val,
+                              locked_extra_daily_rate: val,
+                              locked_minimum_days: 1,
+                            });
+                          }}
+                        />
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <TextField
+                            type="number"
+                            label="Upfront Base Fee"
+                            size="small"
+                            value={item.locked_base_price}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  Rs.
+                                </InputAdornment>
+                              ),
+                            }}
+                            onChange={(e) =>
+                              updateItem(
+                                item.cart_id,
+                                "locked_base_price",
+                                parseFloat(e.target.value) || 0,
+                              )
+                            }
+                          />
+                          <TextField
+                            type="number"
+                            label="Covered Days"
+                            size="small"
+                            value={item.locked_minimum_days}
+                            onChange={(e) =>
+                              updateItem(
+                                item.cart_id,
+                                "locked_minimum_days",
+                                parseInt(e.target.value) || 1,
+                              )
+                            }
+                          />
+                          <TextField
+                            type="number"
+                            label="Extra / Day"
+                            size="small"
+                            value={item.locked_extra_daily_rate}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  Rs.
+                                </InputAdornment>
+                              ),
+                            }}
+                            onChange={(e) =>
+                              updateItem(
+                                item.cart_id,
+                                "locked_extra_daily_rate",
+                                parseFloat(e.target.value) || 0,
+                              )
+                            }
+                          />
+                        </div>
+                      )}
+                    </Box>
+                  </Box>
+
+                  {/* ITEM FOOTER (MATH TOTAL) */}
                   <Box
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      bgcolor: "#f8fafc",
-                      p: 1,
-                      borderRadius: 1,
+                      bgcolor: "#eff6ff",
+                      p: 2,
+                      borderTop: "1px solid #bfdbfe",
                     }}
                   >
                     <Typography
                       variant="caption"
-                      color="text.secondary"
-                      fontWeight="500"
+                      color="primary.main"
+                      fontWeight="bold"
                     >
-                      {totalDays} Day(s) {calculationText}
+                      {calculationText}
                     </Typography>
                     <Typography
                       variant="subtitle1"
-                      fontWeight="bold"
-                      color="success.main"
+                      fontWeight="900"
+                      color="primary.dark"
                     >
                       Rs. {lineCost.toLocaleString()}
                     </Typography>

@@ -163,7 +163,7 @@ export function ManageSearchPanel({
 }
 
 // ============================================================================
-// PANE 2: EQUIPMENT TRACKING BOARD
+// PANE 2: EQUIPMENT TRACKING BOARD (Upgraded UX with Pricing Breakdown)
 // ============================================================================
 export function ManageLedgerPanel({
   invoice,
@@ -185,6 +185,7 @@ export function ManageLedgerPanel({
     invoice.invoice_traces ||
     invoice.traces ||
     [];
+
   const returnTraces = rawTraces.filter(
     (t: any) => t.event_action === "RETURN_PROCESSED",
   );
@@ -226,6 +227,7 @@ export function ManageLedgerPanel({
           </Button>
         )}
       </Box>
+
       <Box
         sx={{
           p: 3,
@@ -242,6 +244,7 @@ export function ManageLedgerPanel({
           const isActive =
             line.line_status === "Active" || line.status === "Active";
           const equipName = line.Equipment?.equipment_name || "Unknown Asset";
+
           const alreadyReturned =
             (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
           const pending = line.borrow_quantity - alreadyReturned;
@@ -251,16 +254,50 @@ export function ManageLedgerPanel({
           let daysOut = Math.ceil((today - start) / (1000 * 60 * 60 * 24));
           if (daysOut < 1) daysOut = 1;
 
+          // --- 1. THE CORE MATH ENGINE ---
           let accruedCost = 0;
-          if (!isActive) accruedCost = Number(line.line_total_amount);
-          else if (daysOut <= line.locked_minimum_days)
-            accruedCost = line.locked_base_price * line.borrow_quantity;
-          else
+          const lockedBase = Number(line.locked_base_price) || 0;
+          const lockedExtra = Number(line.locked_extra_daily_rate) || 0;
+          const lockedMinDays = Number(line.locked_minimum_days) || 1;
+          const borrowQty = Number(line.borrow_quantity) || 1;
+
+          if (!isActive) {
+            accruedCost = Number(line.line_total_amount) || 0;
+          } else if (daysOut <= lockedMinDays) {
+            accruedCost = lockedBase * borrowQty;
+          } else {
             accruedCost =
-              (line.locked_base_price +
-                (daysOut - line.locked_minimum_days) *
-                  line.locked_extra_daily_rate) *
-              line.borrow_quantity;
+              (lockedBase + (daysOut - lockedMinDays) * lockedExtra) *
+              borrowQty;
+          }
+
+          // --- 2. UX INTELLIGENCE: Pricing Mode & Breakdown Formula ---
+          const isDailyMode = lockedMinDays <= 1 && lockedBase === lockedExtra;
+
+          let breakdownBadge = "";
+          let breakdownFormula = "";
+
+          if (!isActive) {
+            breakdownBadge = "Settled";
+            breakdownFormula = "Final computed cost locked at return.";
+          } else if (isDailyMode) {
+            breakdownBadge = "Flat Daily Rate";
+            breakdownFormula = `Rs. ${lockedBase.toLocaleString()} × ${daysOut} Day(s) × ${borrowQty} Qty`;
+          } else {
+            breakdownBadge = `Tiered (${lockedMinDays} Day Base)`;
+            if (daysOut <= lockedMinDays) {
+              breakdownFormula = `Base Rs. ${lockedBase.toLocaleString()} × ${borrowQty} Qty (Covers ${lockedMinDays} Days)`;
+            } else {
+              const extraDays = daysOut - lockedMinDays;
+              breakdownFormula = `[Base Rs. ${lockedBase.toLocaleString()} + (${extraDays} Extra Days × Rs. ${lockedExtra.toLocaleString()})] × ${borrowQty} Qty`;
+            }
+          }
+
+          // Calculate formatting safely to prevent floating point artifacts (e.g. 3500.001)
+          const formattedCost = Number(accruedCost.toFixed(2)).toLocaleString(
+            undefined,
+            { minimumFractionDigits: 0, maximumFractionDigits: 2 },
+          );
 
           const lineIterations = returnTraces
             .map((trace: any) => {
@@ -275,6 +312,7 @@ export function ManageLedgerPanel({
               const returnedLine = (payload.lines_returned || []).find(
                 (l: any) => l.line_id === line.line_id,
               );
+
               if (
                 returnedLine &&
                 (Number(returnedLine.good_qty) > 0 ||
@@ -304,6 +342,7 @@ export function ManageLedgerPanel({
               }}
             >
               <Box sx={{ p: 2.5 }}>
+                {/* Header Area */}
                 <Box
                   sx={{
                     display: "flex",
@@ -326,8 +365,11 @@ export function ManageLedgerPanel({
                     sx={{ fontWeight: "bold" }}
                   />
                 </Box>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Box>
+
+                {/* Data Grid Area */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                  {/* Timeline (3 columns) */}
+                  <Box className="md:col-span-3">
                     <Typography
                       variant="caption"
                       color="text.secondary"
@@ -343,7 +385,7 @@ export function ManageLedgerPanel({
                       variant="body2"
                       fontWeight="500"
                       color={
-                        isActive && daysOut > line.locked_minimum_days
+                        isActive && daysOut > lockedMinDays
                           ? "error.main"
                           : "text.primary"
                       }
@@ -352,7 +394,9 @@ export function ManageLedgerPanel({
                       {new Date(line.expected_return_date).toLocaleDateString()}
                     </Typography>
                   </Box>
-                  <Box>
+
+                  {/* Stats (3 columns) */}
+                  <Box className="md:col-span-3">
                     <Typography
                       variant="caption"
                       color="text.secondary"
@@ -362,7 +406,7 @@ export function ManageLedgerPanel({
                       Total Stats
                     </Typography>
                     <Typography variant="body2" fontWeight="500" mt={0.5}>
-                      Borrowed: {line.borrow_quantity}
+                      Borrowed: {borrowQty}
                     </Typography>
                     <Typography
                       variant="body2"
@@ -383,26 +427,76 @@ export function ManageLedgerPanel({
                       </Typography>
                     )}
                   </Box>
-                  <Box sx={{ bgcolor: "#f8fafc", p: 1.5, borderRadius: 2 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      textTransform="uppercase"
-                      fontWeight="bold"
+
+                  {/* Financial Breakdown (6 columns - Takes up half the row) */}
+                  <Box
+                    className="md:col-span-6"
+                    sx={{
+                      bgcolor: "#f8fafc",
+                      p: 1.5,
+                      borderRadius: 2,
+                      border: "1px solid #e2e8f0",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 0.5,
+                      }}
                     >
-                      Cost Till Today
-                    </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        textTransform="uppercase"
+                        fontWeight="bold"
+                      >
+                        Cost Till Today
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={breakdownBadge}
+                        color={isActive ? "primary" : "default"}
+                        variant={isActive ? "outlined" : "filled"}
+                        sx={{
+                          height: 20,
+                          fontSize: "0.65rem",
+                          fontWeight: "bold",
+                        }}
+                      />
+                    </Box>
+
                     <Typography
                       variant="h6"
                       fontWeight="900"
-                      color="primary.main"
-                      mt={0.5}
+                      color={isActive ? "primary.main" : "text.primary"}
                     >
-                      Rs. {accruedCost.toLocaleString()}
+                      Rs. {formattedCost}
+                    </Typography>
+
+                    {/* The Explainer Math Formula */}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        mt: 0.5,
+                        display: "block",
+                        borderTop: "1px dashed #cbd5e1",
+                        pt: 0.5,
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {breakdownFormula}
                     </Typography>
                   </Box>
                 </div>
               </Box>
+
+              {/* Event Iteration Log */}
               {lineIterations.length > 0 && (
                 <Box
                   sx={{
