@@ -15,7 +15,6 @@ import {
   Divider,
 } from "@mui/material";
 
-// Components
 import { PosCustomerPanel } from "@/features/invoices/components/PosCustomerPanel";
 import {
   PosLedgerPanel,
@@ -29,8 +28,6 @@ import {
   ManageFinancialPanel,
 } from "@/features/invoices/components/ManageInvoiceViews";
 import { ReturnSettlementDialog } from "@/features/invoices/components/ReturnSettlementDialog";
-
-// Hooks
 import { api } from "@/lib/api";
 import { useInvoiceDetails } from "@/features/invoices/hooks/useInvoiceHooks";
 
@@ -57,7 +54,7 @@ export default function InvoicesRoute() {
     severity: "error" as "error" | "success" | "warning",
   });
   const [isClearCartOpen, setIsClearCartOpen] = useState(false);
-  const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false); // NEW: Pre-flight modal
+  const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const showToast = (
@@ -67,7 +64,6 @@ export default function InvoicesRoute() {
     setToast({ open: true, message, severity });
   };
 
-  // The actual API call is now separated from the button click
   const executeDispatch = async () => {
     setIsSubmitting(true);
     try {
@@ -81,7 +77,7 @@ export default function InvoicesRoute() {
       setSelectedCustomer(null);
       setCartItems([]);
       setFees({ transport: 0, discount: 0, advance: 0 });
-      setIsConfirmDispatchOpen(false); // Close modal on success
+      setIsConfirmDispatchOpen(false);
     } catch (error: any) {
       showToast(
         error.response?.data?.message || "Failed to create invoice.",
@@ -92,22 +88,21 @@ export default function InvoicesRoute() {
     }
   };
 
-  // Helper to calculate grand total for the confirmation modal
-  const getCartGrandTotal = () => {
-    const subTotal = cartItems.reduce(
-      (total, item) => total + calculateLineMath(item).lineCost,
-      0,
-    );
-    return Math.max(0, subTotal + fees.transport - fees.discount);
-  };
+  const subTotal = cartItems.reduce(
+    (total, item) => total + calculateLineMath(item).lineCost,
+    0,
+  );
+  const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
+  const balanceDue = Math.max(0, grandTotal - fees.advance);
 
   return (
+    // STRICT HEIGHT LOCK PREVENTS CONTENT FROM BEING PUSHED OFF SCREEN
     <Box
       sx={{
         display: "flex",
         flexDirection: "column",
         gap: 3,
-        height: { lg: "calc(100vh - 100px)" },
+        height: "calc(100vh - 100px)",
         overflow: "hidden",
       }}
     >
@@ -266,6 +261,7 @@ export default function InvoicesRoute() {
             bgcolor: isTerminalOpen ? "#f8fafc" : "#0f172a",
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             overflow: "hidden",
+            height: "100%",
           }}
         >
           {posMode === "dispatch" ? (
@@ -276,7 +272,6 @@ export default function InvoicesRoute() {
               setFees={setFees}
               isCollapsed={!isTerminalOpen}
               onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
-              // Pass the function to OPEN the modal, not to submit directly
               onConfirmDispatch={() => setIsConfirmDispatchOpen(true)}
               isSubmitting={isSubmitting}
             />
@@ -335,27 +330,117 @@ export default function InvoicesRoute() {
           <Typography variant="subtitle2" fontWeight="bold" mb={1}>
             Items ({cartItems.length})
           </Typography>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 3 }}>
-            {cartItems.map((item, index) => (
-              <Box
-                key={index}
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  p: 1.5,
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="body2" fontWeight="bold">
-                  {item.equipment_name}
-                </Typography>
-                <Typography variant="body2">
-                  Qty: {item.borrow_quantity}
+
+          {/* Detailed Item Breakdown */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              mb: 3,
+              maxHeight: 220,
+              overflowY: "auto",
+              pr: 1,
+            }}
+          >
+            {cartItems.map((item, index) => {
+              const { totalDays, lineCost } = calculateLineMath(item);
+              return (
+                <Box
+                  key={index}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    p: 1.5,
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 0.5,
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight="bold">
+                      {item.equipment_name}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color="primary.main"
+                    >
+                      Rs. {lineCost.toLocaleString()}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary">
+                      {item.borrow_date} to {item.expected_return_date} (
+                      {totalDays} Days)
+                    </Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      Qty: {item.borrow_quantity}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+
+          <Typography variant="subtitle2" fontWeight="bold" mb={1}>
+            Financial Breakdown
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              mb: 2,
+              p: 2,
+              bgcolor: "#f8fafc",
+              borderRadius: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography color="text.secondary">Base Subtotal</Typography>
+              <Typography fontWeight="bold">
+                Rs. {subTotal.toLocaleString()}
+              </Typography>
+            </Box>
+            {fees.transport > 0 && (
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography color="text.secondary">Transport Fee</Typography>
+                <Typography fontWeight="bold">
+                  + Rs. {fees.transport.toLocaleString()}
                 </Typography>
               </Box>
-            ))}
+            )}
+            {fees.discount > 0 && (
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography color="text.secondary">Discount Applied</Typography>
+                <Typography fontWeight="bold" color="error.main">
+                  - Rs. {fees.discount.toLocaleString()}
+                </Typography>
+              </Box>
+            )}
+            {fees.advance > 0 && (
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography color="text.secondary">
+                  Advance Paid Today
+                </Typography>
+                <Typography fontWeight="bold" color="success.main">
+                  - Rs. {fees.advance.toLocaleString()}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <Divider sx={{ my: 2 }} />
@@ -368,10 +453,10 @@ export default function InvoicesRoute() {
             }}
           >
             <Typography variant="h6" fontWeight="bold">
-              Grand Total
+              Total Balance Due
             </Typography>
             <Typography variant="h5" fontWeight="900" color="success.main">
-              Rs. {getCartGrandTotal().toLocaleString()}
+              Rs. {balanceDue.toLocaleString()}
             </Typography>
           </Box>
         </DialogContent>
@@ -390,7 +475,7 @@ export default function InvoicesRoute() {
             disableElevation
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Processing..." : "Submit Dispatch"}
+            {isSubmitting ? "Processing..." : "Confirm & Dispatch"}
           </Button>
         </DialogActions>
       </Dialog>

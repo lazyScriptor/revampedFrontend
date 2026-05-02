@@ -321,7 +321,7 @@ export function PosCheckoutPanel({
         </Box>
       </Box>
 
-      {/* LOCKED FOOTER ACTION */}
+      {/* LOCKED FOOTER ACTION (flexShrink ensures it stays at the bottom!) */}
       <Box
         sx={{
           flexShrink: 0,
