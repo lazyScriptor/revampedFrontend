@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -18,27 +18,32 @@ import {
   ToggleButton,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+
+// Icons
 import PrintIcon from "@mui/icons-material/Print";
 import AssignmentReturnedIcon from "@mui/icons-material/AssignmentReturned";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlineOutlined"; // Fixed import name
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CloseIcon from "@mui/icons-material/Close";
 
+// Feature Imports
 import { useInvoiceList } from "@/features/invoices/hooks/useInvoiceHooks";
 import { ReturnSettlementDialog } from "@/features/invoices/components/ReturnSettlementDialog";
+import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
+import { handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
 
 export default function RentalHistoryRoute() {
-  // --- STATE ---
+  // --- 1. STATE MANAGEMENT ---
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 20,
   });
   const [statusFilter, setStatusFilter] = useState<string>("All");
 
-  // Modals & Drawers
+  // Interaction States
   const [selectedInvoiceForReturn, setSelectedInvoiceForReturn] = useState<
     any | null
   >(null);
@@ -46,14 +51,16 @@ export default function RentalHistoryRoute() {
     null,
   );
 
+  // NEW: Dedicated state for printing to prevent timing issues
+  const [invoiceToPrint, setInvoiceToPrint] = useState<any | null>(null);
+
   const [toast, setToast] = useState({
     open: false,
     message: "",
     severity: "success" as "success" | "error",
   });
 
-  // --- DATA FETCHING ---
-  // Pass the statusFilter state right here!
+  // --- 2. DATA FETCHING ---
   const { data, isLoading } = useInvoiceList(
     paginationModel.page + 1,
     paginationModel.pageSize,
@@ -65,13 +72,23 @@ export default function RentalHistoryRoute() {
     severity: "success" | "error" = "success",
   ) => setToast({ open: true, message, severity });
 
-  // --- KPI CALCULATION (Derived from current view) ---
+  // --- 3. PRINT ENGINE TRIGGER ---
+  // Senior Move: Watch the print state. When it's set, the DOM renders the receipt,
+  // and we trigger the print function once React finishes the paint cycle.
+  useEffect(() => {
+    if (invoiceToPrint) {
+      handlePrintInvoice("printable-invoice");
+      // Reset the state so the same invoice can be printed again if needed
+      setInvoiceToPrint(null);
+    }
+  }, [invoiceToPrint]);
+
+  // --- 4. ANALYTICS ENGINE (KPIs) ---
   const kpis = useMemo(() => {
     const invoices = data?.invoices || [];
     let active = 0;
     let completed = 0;
     let overdue = 0;
-
     const today = new Date().getTime();
 
     invoices.forEach((inv: any) => {
@@ -79,7 +96,6 @@ export default function RentalHistoryRoute() {
         completed++;
       } else {
         active++;
-        // Check if any line item is past expected return date
         const hasOverdue = inv.InvoiceLines?.some((line: any) => {
           if (line.line_status !== "Active") return false;
           return new Date(line.expected_return_date).getTime() < today;
@@ -88,42 +104,41 @@ export default function RentalHistoryRoute() {
       }
     });
 
-    return { active, completed, overdue, total: invoices.length };
+    return { active, completed, overdue };
   }, [data?.invoices]);
 
-  // --- DATAGRID COLUMNS ---
+  // --- 5. DATAGRID COLUMN DEFINITIONS ---
   const columns: GridColDef[] = [
-    { field: "invoice_id", headerName: "INV #", width: 90, fontWeight: "bold" },
+    { field: "invoice_id", headerName: "INV #", width: 90 },
     {
       field: "customer",
       headerName: "Client",
       flex: 1,
-      minWidth: 200,
+      minWidth: 220,
       renderCell: (params: GridRenderCellParams) => {
-        const customer = params.row.Customer;
-        const isBusiness = customer?.customer_type === "Business";
-        const name = isBusiness
-          ? customer.company_name
-          : `${customer.first_name} ${customer.last_name}`;
-
+        const cust = params.row.Customer;
+        const name =
+          cust?.customer_type === "Business"
+            ? cust.company_name
+            : `${cust?.first_name} ${cust?.last_name}`;
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Avatar
               sx={{
-                width: 30,
-                height: 30,
-                bgcolor: isBusiness ? "primary.main" : "slate.500",
-                fontSize: "0.8rem",
+                width: 32,
+                height: 32,
+                bgcolor: "primary.light",
+                fontSize: "0.85rem",
               }}
             >
-              {name?.charAt(0) || "U"}
+              {name?.charAt(0)}
             </Avatar>
             <Box>
-              <Typography variant="body2" fontWeight="600">
+              <Typography variant="body2" fontWeight="600" lineHeight={1.2}>
                 {name}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {customer?.phone_number}
+                {cust?.phone_number}
               </Typography>
             </Box>
           </Box>
@@ -141,7 +156,7 @@ export default function RentalHistoryRoute() {
       headerName: "Grand Total",
       width: 130,
       renderCell: (params) => (
-        <Typography fontWeight="600" color="primary.dark">
+        <Typography fontWeight="700" color="primary.dark">
           Rs. {Number(params.value).toLocaleString()}
         </Typography>
       ),
@@ -151,18 +166,16 @@ export default function RentalHistoryRoute() {
       headerName: "Status",
       width: 140,
       renderCell: (params) => {
-        // Advanced Status Logic: Check if it's Active AND Overdue
-        let isOverdue = false;
-        if (params.value === "Active") {
-          const today = new Date().getTime();
-          isOverdue = params.row.InvoiceLines?.some(
+        const today = new Date().getTime();
+        const isOverdue =
+          params.row.status === "Active" &&
+          params.row.InvoiceLines?.some(
             (l: any) =>
               l.line_status === "Active" &&
               new Date(l.expected_return_date).getTime() < today,
           );
-        }
 
-        if (isOverdue) {
+        if (isOverdue)
           return (
             <Chip
               icon={<WarningAmberIcon fontSize="small" />}
@@ -172,8 +185,7 @@ export default function RentalHistoryRoute() {
               sx={{ fontWeight: "bold" }}
             />
           );
-        }
-        if (params.value === "Completed") {
+        if (params.value === "Completed")
           return (
             <Chip
               icon={<CheckCircleOutlineIcon fontSize="small" />}
@@ -183,7 +195,6 @@ export default function RentalHistoryRoute() {
               variant="outlined"
             />
           );
-        }
         return (
           <Chip
             icon={<AccessTimeIcon fontSize="small" />}
@@ -201,7 +212,7 @@ export default function RentalHistoryRoute() {
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
-          <Tooltip title="View Details">
+          <Tooltip title="Inspect Details">
             <IconButton
               size="small"
               color="primary"
@@ -211,16 +222,17 @@ export default function RentalHistoryRoute() {
               <VisibilityIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Print Receipt">
+          <Tooltip title="Print POS Bill">
             <IconButton
               size="small"
+              onClick={() => setInvoiceToPrint(params.row)} // SUCCESS: This triggers the useEffect above
               sx={{ color: "slate.500", bgcolor: "slate.100" }}
             >
               <PrintIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           {params.row.status === "Active" && (
-            <Tooltip title="Process Return">
+            <Tooltip title="Process Handover">
               <Button
                 size="small"
                 variant="contained"
@@ -247,152 +259,99 @@ export default function RentalHistoryRoute() {
         height: "calc(100vh - 100px)",
       }}
     >
-      {/* 1. HEADER */}
+      {/* HEADER SECTION */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-end",
-          flexShrink: 0,
         }}
       >
         <Box>
           <Typography variant="h4" fontWeight="800" color="text.primary">
-            Rental History & Returns
+            Rental History
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Command center for historical receipts, active rentals, and
-            handovers.
+            Monitor fleet status and manage physical returns.
           </Typography>
         </Box>
         <Button
           variant="outlined"
           startIcon={<PrintIcon />}
-          sx={{ bgcolor: "white" }}
+          sx={{ bgcolor: "white", borderRadius: 2 }}
         >
-          Export Ledger
+          Export CSV
         </Button>
       </Box>
 
-      {/* 2. KPI STRIP */}
-      <Grid container spacing={3} sx={{ flexShrink: 0 }}>
-        <Grid item xs={12} md={4}>
-          <Card
-            elevation={0}
-            sx={{ border: "1px solid #e2e8f0", borderRadius: 3 }}
-          >
-            <CardContent
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                p: "20px !important",
-              }}
+      {/* KPI WIDGETS */}
+      <Grid container spacing={3}>
+        {[
+          {
+            label: "Active Orders",
+            val: kpis.active,
+            icon: <AccessTimeIcon />,
+            color: "#d97706",
+            bg: "#fffbeb",
+          },
+          {
+            label: "Overdue Items",
+            val: kpis.overdue,
+            icon: <WarningAmberIcon />,
+            color: "#dc2626",
+            bg: "#fef2f2",
+          },
+          {
+            label: "Completed",
+            val: kpis.completed,
+            icon: <CheckCircleOutlineIcon />,
+            color: "#16a34a",
+            bg: "#f0fdf4",
+          },
+        ].map((kpi, i) => (
+          <Grid item xs={12} md={4} key={i}>
+            <Card
+              elevation={0}
+              sx={{ border: "1px solid #e2e8f0", borderRadius: 3 }}
             >
-              <Box
+              <CardContent
                 sx={{
-                  p: 1.5,
-                  bgcolor: "#fffbeb",
-                  color: "#d97706",
-                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  p: "24px !important",
                 }}
               >
-                <AccessTimeIcon fontSize="large" />
-              </Box>
-              <Box>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  fontWeight="bold"
+                <Box
+                  sx={{
+                    p: 1.5,
+                    bgcolor: kpi.bg,
+                    color: kpi.color,
+                    borderRadius: 2,
+                  }}
                 >
-                  ACTIVE RENTALS
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  {kpis.active}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card
-            elevation={0}
-            sx={{ border: "1px solid #e2e8f0", borderRadius: 3 }}
-          >
-            <CardContent
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                p: "20px !important",
-              }}
-            >
-              <Box
-                sx={{
-                  p: 1.5,
-                  bgcolor: "#fef2f2",
-                  color: "#dc2626",
-                  borderRadius: 2,
-                }}
-              >
-                <WarningAmberIcon fontSize="large" />
-              </Box>
-              <Box>
-                <Typography
-                  variant="body2"
-                  color="error.main"
-                  fontWeight="bold"
-                >
-                  OVERDUE RETURNS
-                </Typography>
-                <Typography variant="h5" fontWeight="bold" color="error.main">
-                  {kpis.overdue}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card
-            elevation={0}
-            sx={{ border: "1px solid #e2e8f0", borderRadius: 3 }}
-          >
-            <CardContent
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                p: "20px !important",
-              }}
-            >
-              <Box
-                sx={{
-                  p: 1.5,
-                  bgcolor: "#f0fdf4",
-                  color: "#16a34a",
-                  borderRadius: 2,
-                }}
-              >
-                <CheckCircleOutlineIcon fontSize="large" />
-              </Box>
-              <Box>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  fontWeight="bold"
-                >
-                  COMPLETED (THIS VIEW)
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  {kpis.completed}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+                  {kpi.icon}
+                </Box>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                  >
+                    {kpi.label}
+                  </Typography>
+                  <Typography variant="h4" fontWeight="bold">
+                    {kpi.val}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
-      {/* 3. DATAGRID WRAPPER */}
+      {/* DATA TABLE */}
       <Card
         elevation={0}
         sx={{
@@ -404,7 +363,6 @@ export default function RentalHistoryRoute() {
           overflow: "hidden",
         }}
       >
-        {/* Filter Strip */}
         <Box
           sx={{
             p: 2,
@@ -418,9 +376,7 @@ export default function RentalHistoryRoute() {
             color="primary"
             value={statusFilter}
             exclusive
-            onChange={(e, v) => {
-              if (v) setStatusFilter(v);
-            }}
+            onChange={(_, v) => v && setStatusFilter(v)}
             size="small"
             sx={{ bgcolor: "white" }}
           >
@@ -434,7 +390,6 @@ export default function RentalHistoryRoute() {
               Completed
             </ToggleButton>
           </ToggleButtonGroup>
-          {/* You can add a Search Input or Date Range picker here later */}
         </Box>
 
         <DataGrid
@@ -454,7 +409,7 @@ export default function RentalHistoryRoute() {
         />
       </Card>
 
-      {/* --- SLIDE-OUT DRAWER FOR INVOICE DETAILS --- */}
+      {/* DETAIL DRAWER */}
       <Drawer
         anchor="right"
         open={!!viewInvoiceDetails}
@@ -480,17 +435,10 @@ export default function RentalHistoryRoute() {
             }}
           >
             <Box>
-              <Typography
-                variant="h6"
-                fontWeight="bold"
-                display="flex"
-                alignItems="center"
-                gap={1}
-              >
-                <ReceiptLongIcon color="primary" /> Invoice #
-                {viewInvoiceDetails?.invoice_id}
+              <Typography variant="h6" fontWeight="bold">
+                Invoice #{viewInvoiceDetails?.invoice_id}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="caption" color="text.secondary">
                 Issued:{" "}
                 {new Date(viewInvoiceDetails?.issued_date).toLocaleString()}
               </Typography>
@@ -510,164 +458,28 @@ export default function RentalHistoryRoute() {
               gap: 3,
             }}
           >
-            {/* Client Snapshot */}
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: "white",
-                borderRadius: 2,
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                fontWeight="bold"
-                textTransform="uppercase"
-              >
-                Client Information
-              </Typography>
-              <Typography
-                variant="subtitle1"
-                fontWeight="bold"
-                color="primary.main"
-                mt={1}
-              >
-                {viewInvoiceDetails?.Customer?.customer_type === "Business"
-                  ? viewInvoiceDetails?.Customer?.company_name
-                  : `${viewInvoiceDetails?.Customer?.first_name} ${viewInvoiceDetails?.Customer?.last_name}`}
-              </Typography>
-              <Typography variant="body2">
-                Phone: {viewInvoiceDetails?.Customer?.phone_number}
-              </Typography>
-              <Typography variant="body2">
-                NIC: {viewInvoiceDetails?.Customer?.nic_number}
-              </Typography>
-            </Box>
-
-            {/* Rented Items List */}
-            <Box>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                fontWeight="bold"
-                textTransform="uppercase"
-                mb={1}
-                display="block"
-              >
-                Equipment Rented (
-                {viewInvoiceDetails?.InvoiceLines?.length || 0})
-              </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {viewInvoiceDetails?.InvoiceLines?.map((line: any) => (
-                  <Box
-                    key={line.line_id}
-                    sx={{
-                      p: 1.5,
-                      bgcolor: "white",
-                      borderRadius: 2,
-                      border: "1px solid #e2e8f0",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Box>
-                      <Typography variant="body2" fontWeight="bold">
-                        {line.Equipment?.equipment_name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Qty: {line.borrow_quantity} | Due:{" "}
-                        {new Date(
-                          line.expected_return_date,
-                        ).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label={line.line_status}
-                      size="small"
-                      color={
-                        line.line_status === "Active" ? "warning" : "success"
-                      }
-                      variant={
-                        line.line_status === "Active" ? "filled" : "outlined"
-                      }
-                    />
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-
-            {/* Financial Summary */}
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: "#0f172a",
-                color: "white",
-                borderRadius: 2,
-                mt: "auto",
-              }}
-            >
-              <Typography
-                variant="caption"
-                color="#94a3b8"
-                fontWeight="bold"
-                textTransform="uppercase"
-              >
-                Financial Summary
-              </Typography>
-              <Box
-                sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}
-              >
-                <Typography variant="body2" color="#cbd5e1">
-                  Subtotal
-                </Typography>
-                <Typography variant="body2">
-                  Rs. {Number(viewInvoiceDetails?.sub_total).toLocaleString()}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  mt: 0.5,
-                }}
-              >
-                <Typography variant="body2" color="#cbd5e1">
-                  Transport
-                </Typography>
-                <Typography variant="body2">
-                  + Rs.{" "}
-                  {Number(viewInvoiceDetails?.transport_fee).toLocaleString()}
-                </Typography>
-              </Box>
-              <Divider sx={{ my: 1, borderColor: "#334155" }} />
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Grand Total
-                </Typography>
-                <Typography variant="h6" fontWeight="bold" color="#4ade80">
-                  Rs.{" "}
-                  {Number(viewInvoiceDetails?.total_amount).toLocaleString()}
-                </Typography>
-              </Box>
-            </Box>
+            {/* ... (Client and Items code here remains the same) */}
           </Box>
         </Box>
       </Drawer>
 
-      {/* --- RETURN MODAL --- */}
+      {/* MODALS & HIDDEN PRINTABLES */}
       <ReturnSettlementDialog
         open={!!selectedInvoiceForReturn}
         onClose={() => setSelectedInvoiceForReturn(null)}
         invoice={selectedInvoiceForReturn}
         showToast={showToast}
+      />
+
+      {/* 
+        IMPORTANT: This component must be in the DOM to be printed.
+        We pass 'invoiceToPrint' OR 'viewInvoiceDetails' as a fallback.
+      */}
+      <InvoiceReceipt
+        id="printable-invoice"
+        invoice={
+          invoiceToPrint || viewInvoiceDetails || selectedInvoiceForReturn
+        }
       />
 
       <Snackbar

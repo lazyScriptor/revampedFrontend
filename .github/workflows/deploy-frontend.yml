@@ -1,0 +1,38 @@
+name: CI/CD Frontend Deployment
+
+on:
+  push:
+    branches: [ main ] # This triggers the build whenever you push to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 3. Install dependencies
+        run: npm install
+
+      - name: 4. Build production assets
+        # We pass the secret API URL here so Vite can bake it into the JS files
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: 5. Sync files to Droplet
+        uses: Burnett01/rsync-deployments@7.0.0
+        with:
+          switches: -avzr --delete
+          path: dist/
+          remote_path: /var/www/rental-app/frontend # Destination on your server[cite: 1]
+          remote_host: ${{ secrets.REMOTE_HOST }}
+          remote_user: ${{ secrets.REMOTE_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}

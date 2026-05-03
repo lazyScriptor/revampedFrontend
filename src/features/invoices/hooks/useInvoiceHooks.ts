@@ -110,3 +110,78 @@ export const useUpdateFees = () => {
         },
     });
 };
+
+// features/invoices/hooks/useInvoicePrint.ts
+
+export const handlePrintInvoice = (printContentId: string) => {
+    const contentElement = document.getElementById(printContentId);
+
+    if (!contentElement) {
+        console.error(`Print element with ID ${printContentId} not found.`);
+        return;
+    }
+
+    // 1. Create an invisible iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.width = "0px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentWindow?.document;
+    if (!iframeDoc) return;
+
+    // 2. Inject Thermal Printer Specific CSS and the Receipt HTML
+    iframeDoc.open();
+    iframeDoc.write(`
+    <html>
+      <head>
+        <title>Receipt</title>
+        <style>
+          /* CRITICAL: Tells the browser this is an 80mm thermal roll */
+          @page {
+            margin: 0;
+            size: 80mm auto; 
+          }
+          
+          body {
+            margin: 0;
+            padding: 4mm; /* Slight padding so text doesn't touch the exact edge */
+            width: 80mm;
+            font-family: 'Courier New', Courier, monospace; /* Best for thermal clarity */
+            color: #000;
+            font-size: 12px; /* Standard thermal legibility size */
+          }
+
+          /* Force all borders/dividers to be stark black for thermal printing */
+          hr {
+            border: none;
+            border-top: 1px dashed #000;
+            margin: 8px 0;
+          }
+
+          /* Strip out MUI specific scaling artifacts inside the iframe */
+          * {
+            box-sizing: border-box;
+          }
+        </style>
+      </head>
+      <body>
+        ${contentElement.innerHTML}
+      </body>
+    </html>
+  `);
+    iframeDoc.close();
+
+    // 3. Wait slightly for the iframe to paint, then trigger the printer
+    setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+
+        // 4. Clean up the DOM after the print dialog closes
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 1000);
+    }, 250);
+};
