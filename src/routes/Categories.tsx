@@ -74,7 +74,7 @@ export default function CategoriesRoute() {
             Equipment Categories
           </Typography>
           <Typography variant="body2" color="text.secondary" className="mt-1">
-            Organize your inventory into logical groupings.
+            Organize your inventory into logical groupings.bla
           </Typography>
         </div>
         <Button
