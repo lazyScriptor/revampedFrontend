@@ -122,7 +122,7 @@ export default function InvoicesRoute() {
           <Typography variant="body2" color="text.secondary">
             {posMode === "dispatch"
               ? "Draft a new dispatch order."
-              : "Manage returns, payments, and vaults for active orders."}
+              : "Manage returns, payments, and vaults for active orders.umesha"}
           </Typography>
         </Box>
         <ToggleButtonGroup
