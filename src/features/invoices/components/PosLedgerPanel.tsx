@@ -128,8 +128,14 @@ export function PosLedgerPanel({
       Number(equipment.base_rental_price) ===
         Number(equipment.extra_daily_rate);
 
+    //Since HTTP connection doesnot allow to run crypto function wince it is not secure
+    const fallbackUUID = `cart-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     const newItem: CartItem = {
-      cart_id: crypto.randomUUID(),
+      cart_id:
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : fallbackUUID,
       equipment_id: equipment.equipment_id,
       equipment_name: equipment.equipment_name,
       available_qty: equipment.available_qty || 1,
