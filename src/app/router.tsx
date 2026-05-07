@@ -25,7 +25,7 @@ const requirePermission = (permissionCode: string) => {
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/login",
+  path: "/",
   component: LoginRoute,
 });
 
