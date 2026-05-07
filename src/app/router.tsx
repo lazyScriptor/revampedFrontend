@@ -23,14 +23,6 @@ const requirePermission = (permissionCode: string) => {
 
 // --- 2. Route Definitions ---
 
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: "/dashboard" });
-  },
-});
-
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
@@ -120,7 +112,7 @@ const workforceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/workforce",
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => <WorkforceRoute/>,
+  component: () => <WorkforceRoute />,
 });
 
 // --- 3. Build the Route Tree ---
