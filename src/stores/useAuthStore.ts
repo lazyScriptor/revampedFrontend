@@ -5,10 +5,10 @@ import { persist } from 'zustand/middleware';
 interface User {
     id: number;
     email: string;
-    username: string; 
+    username: string;
     warehouseId?: number | null;
     roles: string[];
-    permissions: string[]; 
+    permissions: string[];
 }
 
 interface AuthState {
@@ -25,16 +25,21 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             user: null,
             setAuth: (user) => set({ isAuthenticated: true, user }),
+
             logout: () => {
-                // When logging out, wipe the state
+                // 1. Wipe the Zustand state
                 set({ isAuthenticated: false, user: null });
+
                 // Note: You should also call your backend /logout endpoint here eventually 
                 // to clear the HttpOnly cookie!
-            },
+
+                // 2. Hard redirect to the login page (cleans out the browser memory)
+                window.location.href = '/login';
+            }
         }),
         {
             // This is the key name it will use in your browser's Local Storage
-            name: 'geargrid-auth-storage', 
+            name: 'geargrid-auth-storage',
         }
     )
 );
