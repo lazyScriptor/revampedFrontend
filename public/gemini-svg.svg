@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Clip path to keep the shadow contained within the circle -->
+    <clipPath id="circle-clip">
+      <circle cx="256" cy="256" r="240" />
+    </clipPath>
+
+    <!-- The mathematical path for the letter G -->
+    <path id="g-letter" d="M 256,120 C 180,120 120,180 120,256 C 120,332 180,392 256,392 C 320,392 374,348 388,288 L 256,288 L 256,224 L 452,224 C 454,236 456,248 456,260 C 456,370 380,456 256,456 C 145,456 56,366 56,256 C 56,145 145,56 256,56 C 310,56 360,76 398,110 L 350,158 C 326,136 294,120 256,120 Z" />
+
+    <!-- Exponential duplication to build a solid 45-degree long shadow efficiently -->
+    <g id="s1">
+      <use href="#g-letter" x="1" y="1" />
+      <use href="#g-letter" x="2" y="2" />
+    </g>
+    <g id="s2">
+      <use href="#s1" />
+      <use href="#s1" x="2" y="2" />
+    </g>
+    <g id="s4">
+      <use href="#s2" />
+      <use href="#s2" x="4" y="4" />
+    </g>
+    <g id="s8">
+      <use href="#s4" />
+      <use href="#s4" x="8" y="8" />
+    </g>
+    <g id="s16">
+      <use href="#s8" />
+      <use href="#s8" x="16" y="16" />
+    </g>
+    <g id="s32">
+      <use href="#s16" />
+      <use href="#s16" x="32" y="32" />
+    </g>
+    <g id="s64">
+      <use href="#s32" />
+      <use href="#s32" x="64" y="64" />
+    </g>
+    <g id="s128">
+      <use href="#s64" />
+      <use href="#s64" x="128" y="128" />
+    </g>
+    <g id="s256">
+      <use href="#s128" />
+      <use href="#s128" x="256" y="256" />
+    </g>
+  </defs>
+
+  <!-- Background Orange Circle -->
+  <circle cx="256" cy="256" r="240" fill="#F5A623" />
+
+  <!-- Render the 512-layer long shadow inside the circle clip -->
+  <use href="#s256" clip-path="url(#circle-clip)" fill="#D98A1F" />
+
+  <!-- The Main White Letter G -->
+  <use href="#g-letter" fill="#FFFFFF" />
+</svg>
