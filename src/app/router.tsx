@@ -22,10 +22,23 @@ const requirePermission = (permissionCode: string) => {
 };
 
 // --- 2. Route Definitions ---
+// Add this right above your loginRoute definition
+const indexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/",
+  beforeLoad: () => {
+    const user = useAuthStore.getState().user;
+    if (user) {
+      throw redirect({ to: "/dashboard" });
+    } else {
+      throw redirect({ to: "/login" });
+    }
+  },
+});
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
+  path: "/login", // <--- Updated to match your landing page redirect
   component: LoginRoute,
 });
 

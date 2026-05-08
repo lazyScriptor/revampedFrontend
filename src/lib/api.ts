@@ -10,6 +10,8 @@ interface ApiErrorResponse {
 export const api = axios.create({
     // Point this to your Express server's base URL
     baseURL: 'https://geargrid.live/api',
+    // baseURL: 'http://localhost:8086/api',
+
 
     // CRITICAL: This tells the browser to automatically include the 
     // HttpOnly JWT cookie in every single request!
