@@ -42,6 +42,7 @@ import ConstructionIcon from "@mui/icons-material/Construction";
 import CategoryIcon from "@mui/icons-material/Category";
 import HandymanIcon from "@mui/icons-material/Handyman";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // Fallback bullet
 
 const drawerWidth = 260;
@@ -180,6 +181,12 @@ function AuthenticatedLayout() {
       text: "Accounting",
       icon: <AccountBalanceIcon />,
       path: "/accounting",
+      requiredPermission: "inventory_permission",
+    },
+    {
+      text: "Permissions",
+      icon: <AdminPanelSettingsIcon />,
+      path: "/permissions",
       requiredPermission: "inventory_permission",
     },
   ];

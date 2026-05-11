@@ -12,6 +12,10 @@ import CustomersRoute from "@/routes/Customers";
 import MaintenanceRoute from "@/routes/Maintenance";
 import WorkforceRoute from "@/routes/Workforce";
 import AccountingRoute from "@/routes/Accounting";
+import PermissionsPage from "@/routes/Permissions";
+import SuperAdminLogin from "@/routes/SuperAdminLogin";
+import SuperAdminDashboard from "@/routes/SuperAdmin";
+import { useSuperAdminStore } from "@/stores/useSuperAdminStore";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -137,6 +141,33 @@ const accountingRoute = createRoute({
   component: () => <AccountingRoute />,
 });
 
+// Permissions Matrix (Admin only)
+const permissionsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/permissions",
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <PermissionsPage />,
+});
+
+// Super Admin Routes (standalone, separate auth)
+const superAdminLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/super-admin/login",
+  component: SuperAdminLogin,
+});
+
+const superAdminDashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/super-admin/dashboard",
+  beforeLoad: () => {
+    const sa = useSuperAdminStore.getState();
+    if (!sa.isAuthenticated) {
+      throw redirect({ to: "/super-admin/login" });
+    }
+  },
+  component: SuperAdminDashboard,
+});
+
 // --- 3. Build the Route Tree ---
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -152,7 +183,10 @@ const routeTree = rootRoute.addChildren([
     maintenanceRoute,
     workforceRoute,
     accountingRoute,
+    permissionsRoute,
   ]),
+  superAdminLoginRoute,
+  superAdminDashboardRoute,
 ]);
 
 // --- 4. Global 404 Component ---

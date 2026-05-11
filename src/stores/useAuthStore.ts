@@ -9,6 +9,7 @@ interface User {
     warehouseId?: number | null;
     roles: string[];
     permissions: string[];
+    configData?: Record<string, unknown> | null;
 }
 
 interface AuthState {
@@ -16,12 +17,15 @@ interface AuthState {
     user: User | null;
     setAuth: (user: User) => void;
     logout: () => void;
+    hasPermission: (code: string) => boolean;
+    hasAnyPermission: (...codes: string[]) => boolean;
+    hasRole: (role: string) => boolean;
 }
 
 // 2. Wrap the store in the `persist` middleware
 export const useAuthStore = create<AuthState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             isAuthenticated: false,
             user: null,
             setAuth: (user) => set({ isAuthenticated: true, user }),
@@ -35,7 +39,32 @@ export const useAuthStore = create<AuthState>()(
 
                 // 2. Hard redirect to the login page (cleans out the browser memory)
                 window.location.href = '/login';
-            }
+            },
+
+            /**
+             * Check if the user has a specific granular permission.
+             * Usage: useAuthStore.getState().hasPermission('invoice:field:edit_discount')
+             */
+            hasPermission: (code: string) => {
+                const permissions = get().user?.permissions || [];
+                return permissions.includes(code);
+            },
+
+            /**
+             * Check if the user has ANY of the listed permissions.
+             */
+            hasAnyPermission: (...codes: string[]) => {
+                const permissions = get().user?.permissions || [];
+                return codes.some((code) => permissions.includes(code));
+            },
+
+            /**
+             * Check if the user has a specific role (case-insensitive).
+             */
+            hasRole: (role: string) => {
+                const roles = get().user?.roles || [];
+                return roles.some((r) => r.toLowerCase() === role.toLowerCase());
+            },
         }),
         {
             // This is the key name it will use in your browser's Local Storage
