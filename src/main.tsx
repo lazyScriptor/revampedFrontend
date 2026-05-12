@@ -13,6 +13,7 @@ import {
 import { router } from "@/app/router";
 import { queryClient } from "@/app/queryClient";
 import { theme } from "@/app/theme.ts";
+import { ToastProvider } from "@/components/ui/AppToast";
 import './index.css'; // Make sure Tailwind is imported here!
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -20,9 +21,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <ReactQueryDevtools position="bottom" />
-
-        <RouterProvider router={router} />
+        <ToastProvider>
+          <ReactQueryDevtools position="bottom" />
+          <RouterProvider router={router} />
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>,

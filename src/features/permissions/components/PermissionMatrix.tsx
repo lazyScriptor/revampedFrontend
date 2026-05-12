@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import {
     Box, Paper, Typography, Checkbox, Chip, Button, Tooltip,
-    IconButton, Select, MenuItem, FormControl, InputLabel, Alert,
+    Select, MenuItem, FormControl, InputLabel, Divider, Badge,
 } from '@mui/material';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/AppToast';
 
 interface Permission {
     permission_id: number;
@@ -17,6 +21,7 @@ interface Permission {
 interface RoleData {
     role_id: number;
     role_name: string;
+    is_system_default?: boolean;
     Permissions: Permission[];
 }
 interface Override {
@@ -37,6 +42,7 @@ interface UserData {
 
 const PermissionMatrix: React.FC = () => {
     const qc = useQueryClient();
+    const { showSuccess, showError, showWarning, showInfo } = useToast();
 
     const { data, isLoading } = useQuery({
         queryKey: ['permission-matrix'],
@@ -46,25 +52,54 @@ const PermissionMatrix: React.FC = () => {
         },
     });
 
+    // --- Mutations with toast feedback ---
     const overrideMutation = useMutation({
         mutationFn: async (body: { userId: number; permissionId: number; grantType: string }) => {
             await api.post('/permission-management/user-override', body);
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['permission-matrix'] }),
+        onSuccess: (_data, variables) => {
+            qc.invalidateQueries({ queryKey: ['permission-matrix'] });
+            const action = variables.grantType === 'grant' ? 'granted to' : 'revoked from';
+            const user = users.find((u) => u.user_id === variables.userId);
+            showSuccess(
+                `Permission ${action} ${user?.username || 'user'}.`,
+                'Override Applied',
+            );
+        },
+        onError: (err: Error) => {
+            showError(err.message, 'Override Failed');
+        },
     });
 
     const removeOverrideMutation = useMutation({
         mutationFn: async (body: { userId: number; permissionId: number }) => {
             await api.delete('/permission-management/user-override', { data: body });
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['permission-matrix'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['permission-matrix'] });
+            showInfo('Override removed. Permission will follow the role assignment.', 'Override Cleared');
+        },
+        onError: (err: Error) => {
+            showError(err.message, 'Remove Override Failed');
+        },
     });
 
     const cloneMutation = useMutation({
         mutationFn: async (body: { sourceRoleId: number; targetRoleId: number }) => {
             await api.post('/permission-management/clone-role', body);
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['permission-matrix'] }),
+        onSuccess: (_data, variables) => {
+            qc.invalidateQueries({ queryKey: ['permission-matrix'] });
+            const from = roles.find((r) => r.role_id === variables.sourceRoleId)?.role_name;
+            const to = roles.find((r) => r.role_id === variables.targetRoleId)?.role_name;
+            showSuccess(
+                `All permissions from "${from}" have been copied to "${to}".`,
+                'Role Cloned Successfully',
+            );
+        },
+        onError: (err: Error) => {
+            showError(err.message, 'Clone Failed');
+        },
     });
 
     const [cloneFrom, setCloneFrom] = useState<number | ''>('');
@@ -105,7 +140,6 @@ const PermissionMatrix: React.FC = () => {
     }, [overrides]);
 
     const selectedUserData = users.find((u) => u.user_id === selectedUser);
-    const selectedUserRoles = selectedUserData?.Roles?.map((r) => r.role_id) || [];
 
     // Check if a user has permission from their roles
     const userHasFromRole = (userId: number, permId: number) => {
@@ -115,20 +149,40 @@ const PermissionMatrix: React.FC = () => {
     };
 
     const handleRolePermToggle = async (roleId: number, permissionIds: number[], checked: boolean) => {
-        // Update role permissions via existing API
         const role = roles.find((r) => r.role_id === roleId);
         if (!role) return;
-        const currentPerms = new Set(role.Permissions?.map((p: Permission) => p.permission_id) || []);
 
+        // Warn early if system default
+        if (role.is_system_default) {
+            showWarning(
+                `The "${role.role_name}" role is a system default and cannot be modified. Use "User-Level Overrides" on the right to customize permissions for individual users.`,
+                'System Role Protected',
+            );
+            return;
+        }
+
+        const currentPerms = new Set(role.Permissions?.map((p: Permission) => p.permission_id) || []);
         permissionIds.forEach((id) => {
             if (checked) currentPerms.add(id);
             else currentPerms.delete(id);
         });
 
-        await api.post(`/roles/${roleId}/permissions`, {
-            permissionIds: Array.from(currentPerms),
-        });
-        qc.invalidateQueries({ queryKey: ['permission-matrix'] });
+        try {
+            await api.post(`/roles/${roleId}/permissions`, {
+                permissionIds: Array.from(currentPerms),
+            });
+            qc.invalidateQueries({ queryKey: ['permission-matrix'] });
+            const action = checked ? 'added to' : 'removed from';
+            showSuccess(
+                `Permission ${action} the "${role.role_name}" role.`,
+                'Role Updated',
+            );
+        } catch (err: any) {
+            showError(
+                err.message || 'Failed to update role permissions.',
+                'Role Update Failed',
+            );
+        }
     };
 
     if (isLoading) {
@@ -141,7 +195,7 @@ const PermissionMatrix: React.FC = () => {
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Clone & User Select Toolbar */}
+            {/* ─── Toolbar ─── */}
             <Paper
                 elevation={0}
                 sx={{
@@ -149,88 +203,110 @@ const PermissionMatrix: React.FC = () => {
                     border: '1px solid #e2e8f0',
                     borderRadius: 2,
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'stretch',
                     gap: 2,
                     flexWrap: 'wrap',
                 }}
             >
-                {/* Clone Permissions */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <ContentCopyOutlinedIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
-                        Clone:
+                {/* ── Clone Role Permissions ── */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <ContentCopyOutlinedIcon sx={{ fontSize: 14, color: '#3b82f6' }} />
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Clone Role Permissions
+                        </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.65rem', lineHeight: 1.2 }}>
+                        Copy all permissions from one role to another
                     </Typography>
-                    <FormControl size="small" sx={{ minWidth: 120 }}>
-                        <InputLabel sx={{ fontSize: '0.75rem' }}>From Role</InputLabel>
-                        <Select
-                            value={cloneFrom}
-                            label="From Role"
-                            onChange={(e) => setCloneFrom(e.target.value as number)}
-                            sx={{ fontSize: '0.75rem' }}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FormControl size="small" sx={{ minWidth: 130 }}>
+                            <InputLabel sx={{ fontSize: '0.75rem' }}>Source Role</InputLabel>
+                            <Select
+                                value={cloneFrom}
+                                label="Source Role"
+                                onChange={(e) => setCloneFrom(e.target.value as number)}
+                                sx={{ fontSize: '0.75rem' }}
+                            >
+                                {roles.map((r) => (
+                                    <MenuItem key={r.role_id} value={r.role_id} sx={{ fontSize: '0.75rem' }}>
+                                        {r.role_name}
+                                        {r.is_system_default && (
+                                            <LockOutlinedIcon sx={{ fontSize: 12, ml: 0.5, color: '#94a3b8' }} />
+                                        )}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 700 }}>→</Typography>
+                        <FormControl size="small" sx={{ minWidth: 130 }}>
+                            <InputLabel sx={{ fontSize: '0.75rem' }}>Target Role</InputLabel>
+                            <Select
+                                value={cloneTo}
+                                label="Target Role"
+                                onChange={(e) => setCloneTo(e.target.value as number)}
+                                sx={{ fontSize: '0.75rem' }}
+                            >
+                                {roles.filter((r) => !r.is_system_default).map((r) => (
+                                    <MenuItem key={r.role_id} value={r.role_id} sx={{ fontSize: '0.75rem' }}>
+                                        {r.role_name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={!cloneFrom || !cloneTo || cloneFrom === cloneTo || cloneMutation.isPending}
+                            onClick={() => {
+                                if (cloneFrom && cloneTo) {
+                                    cloneMutation.mutate({
+                                        sourceRoleId: cloneFrom as number,
+                                        targetRoleId: cloneTo as number,
+                                    });
+                                }
+                            }}
+                            sx={{ fontSize: '0.7rem', textTransform: 'none', minWidth: 60 }}
                         >
-                            {roles.map((r) => (
-                                <MenuItem key={r.role_id} value={r.role_id} sx={{ fontSize: '0.75rem' }}>
-                                    {r.role_name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>→</Typography>
-                    <FormControl size="small" sx={{ minWidth: 120 }}>
-                        <InputLabel sx={{ fontSize: '0.75rem' }}>To Role</InputLabel>
-                        <Select
-                            value={cloneTo}
-                            label="To Role"
-                            onChange={(e) => setCloneTo(e.target.value as number)}
-                            sx={{ fontSize: '0.75rem' }}
-                        >
-                            {roles.map((r) => (
-                                <MenuItem key={r.role_id} value={r.role_id} sx={{ fontSize: '0.75rem' }}>
-                                    {r.role_name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        disabled={!cloneFrom || !cloneTo || cloneFrom === cloneTo}
-                        onClick={() => {
-                            if (cloneFrom && cloneTo) {
-                                cloneMutation.mutate({
-                                    sourceRoleId: cloneFrom as number,
-                                    targetRoleId: cloneTo as number,
-                                });
-                            }
-                        }}
-                        sx={{ fontSize: '0.7rem', textTransform: 'none' }}
-                    >
-                        Clone
-                    </Button>
+                            {cloneMutation.isPending ? '...' : 'Clone'}
+                        </Button>
+                    </Box>
                 </Box>
 
-                <Box sx={{ borderLeft: '1px solid #e2e8f0', height: 24 }} />
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-                {/* User Override Selector */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PersonOutlinedIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
-                        User Override:
+                {/* ── User-Level Override Selector ── */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <PersonOutlinedIcon sx={{ fontSize: 14, color: '#8b5cf6' }} />
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            User-Level Overrides
+                        </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.65rem', lineHeight: 1.2 }}>
+                        Grant or revoke permissions for a specific user, bypassing their role
                     </Typography>
-                    <FormControl size="small" sx={{ minWidth: 180 }}>
-                        <InputLabel sx={{ fontSize: '0.75rem' }}>Select User</InputLabel>
+                    <FormControl size="small" sx={{ minWidth: 220 }}>
+                        <InputLabel sx={{ fontSize: '0.75rem' }}>Select a User</InputLabel>
                         <Select
                             value={selectedUser}
-                            label="Select User"
+                            label="Select a User"
                             onChange={(e) => setSelectedUser(e.target.value as number)}
                             sx={{ fontSize: '0.75rem' }}
                         >
                             <MenuItem value="" sx={{ fontSize: '0.75rem' }}>
-                                <em>None</em>
+                                <em>None — hide user column</em>
                             </MenuItem>
                             {users.map((u) => (
                                 <MenuItem key={u.user_id} value={u.user_id} sx={{ fontSize: '0.75rem' }}>
-                                    {u.username} ({u.first_name} {u.last_name})
+                                    {u.username} — {u.first_name} {u.last_name}
+                                    {u.Roles?.length > 0 && (
+                                        <Chip
+                                            label={u.Roles.map((r) => r.role_name).join(', ')}
+                                            size="small"
+                                            sx={{ ml: 1, fontSize: '0.6rem', height: 18 }}
+                                        />
+                                    )}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -238,7 +314,51 @@ const PermissionMatrix: React.FC = () => {
                 </Box>
             </Paper>
 
-            {/* Matrix Table */}
+            {/* ─── Legend ─── */}
+            <Paper
+                elevation={0}
+                sx={{
+                    px: 2,
+                    py: 1,
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    flexWrap: 'wrap',
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <InfoOutlinedIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#475569', fontSize: '0.68rem' }}>Legend:</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 14, height: 14, borderRadius: '3px', border: '2px solid #3b82f6', backgroundColor: '#3b82f6' }} />
+                    <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>Role has permission</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <LockOutlinedIcon sx={{ fontSize: 14, color: '#f59e0b' }} />
+                    <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>System role (read-only)</Typography>
+                </Box>
+                {selectedUser && (
+                    <>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ width: 14, height: 14, borderRadius: '3px', border: '2px solid #10b981', backgroundColor: '#10b981' }} />
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>Explicitly granted</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ width: 14, height: 14, borderRadius: '3px', border: '2px solid #ef4444', backgroundColor: '#ef4444' }} />
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>Explicitly revoked</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box sx={{ width: 14, height: 14, borderRadius: '3px', border: '2px solid #94a3b8', backgroundColor: '#94a3b8' }} />
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>Inherited from role</Typography>
+                        </Box>
+                    </>
+                )}
+            </Paper>
+
+            {/* ─── Matrix Table ─── */}
             <Paper
                 elevation={0}
                 sx={{
@@ -251,7 +371,7 @@ const PermissionMatrix: React.FC = () => {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: `2.5fr repeat(${roles.length}, 1fr) ${selectedUser ? '1fr' : ''}`,
+                        gridTemplateColumns: `2.5fr repeat(${roles.length}, 1fr) ${selectedUser ? '1.2fr' : ''}`,
                         borderBottom: '2px solid #e2e8f0',
                         backgroundColor: '#f8fafc',
                         position: 'sticky',
@@ -266,22 +386,29 @@ const PermissionMatrix: React.FC = () => {
                     </Box>
                     {roles.map((r) => (
                         <Box key={r.role_id} sx={{ p: 1.5, textAlign: 'center' }}>
-                            <Chip
-                                label={r.role_name}
-                                size="small"
-                                sx={{ fontSize: '0.65rem', fontWeight: 600, height: 22 }}
-                            />
+                            <Tooltip title={r.is_system_default ? `"${r.role_name}" is a system role and cannot be edited. Use user-level overrides instead.` : `Click checkboxes below to toggle permissions for "${r.role_name}"`}>
+                                <Chip
+                                    icon={r.is_system_default ? <LockOutlinedIcon sx={{ fontSize: 12 }} /> : <ShieldOutlinedIcon sx={{ fontSize: 12 }} />}
+                                    label={r.role_name}
+                                    size="small"
+                                    color={r.is_system_default ? 'warning' : 'default'}
+                                    variant={r.is_system_default ? 'outlined' : 'filled'}
+                                    sx={{ fontSize: '0.65rem', fontWeight: 600, height: 24 }}
+                                />
+                            </Tooltip>
                         </Box>
                     ))}
                     {selectedUser && selectedUserData && (
                         <Box sx={{ p: 1.5, textAlign: 'center' }}>
-                            <Chip
-                                icon={<PersonOutlinedIcon sx={{ fontSize: 12 }} />}
-                                label={selectedUserData.username}
-                                size="small"
-                                color="primary"
-                                sx={{ fontSize: '0.65rem', fontWeight: 600, height: 22 }}
-                            />
+                            <Tooltip title={`Per-user overrides for ${selectedUserData.username}. Green = explicitly granted. Red = explicitly revoked. Grey = inherited from role.`}>
+                                <Chip
+                                    icon={<PersonOutlinedIcon sx={{ fontSize: 12 }} />}
+                                    label={`${selectedUserData.username} overrides`}
+                                    size="small"
+                                    color="secondary"
+                                    sx={{ fontSize: '0.63rem', fontWeight: 600, height: 24 }}
+                                />
+                            </Tooltip>
                         </Box>
                     )}
                 </Box>
@@ -297,12 +424,15 @@ const PermissionMatrix: React.FC = () => {
                                 backgroundColor: '#f1f5f9',
                                 borderBottom: '1px solid #e2e8f0',
                                 display: 'grid',
-                                gridTemplateColumns: `2.5fr repeat(${roles.length}, 1fr) ${selectedUser ? '1fr' : ''}`,
+                                gridTemplateColumns: `2.5fr repeat(${roles.length}, 1fr) ${selectedUser ? '1.2fr' : ''}`,
                             }}
                         >
-                            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem', color: '#475569', textTransform: 'uppercase' }}>
-                                {module}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.7rem', color: '#475569', textTransform: 'uppercase' }}>
+                                    {module}
+                                </Typography>
+                                <Badge badgeContent={perms.length} color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.55rem', height: 16, minWidth: 16 } }} />
+                            </Box>
                         </Box>
 
                         {/* Individual Permissions */}
@@ -311,14 +441,14 @@ const PermissionMatrix: React.FC = () => {
                                 key={perm.permission_id}
                                 sx={{
                                     display: 'grid',
-                                    gridTemplateColumns: `2.5fr repeat(${roles.length}, 1fr) ${selectedUser ? '1fr' : ''}`,
+                                    gridTemplateColumns: `2.5fr repeat(${roles.length}, 1fr) ${selectedUser ? '1.2fr' : ''}`,
                                     borderBottom: '1px solid #f1f5f9',
                                     '&:hover': { backgroundColor: '#fafbfc' },
                                     alignItems: 'center',
                                 }}
                             >
                                 <Box sx={{ px: 2, py: 0.5 }}>
-                                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#334155' }}>
+                                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#334155', fontFamily: 'monospace' }}>
                                         {perm.permission_code}
                                     </Typography>
                                     {perm.description && (
@@ -331,21 +461,36 @@ const PermissionMatrix: React.FC = () => {
                                 {/* Role Checkboxes */}
                                 {roles.map((role) => {
                                     const checked = rolePermMap[role.role_id]?.has(perm.permission_id) || false;
+                                    const isSystemDefault = role.is_system_default;
                                     return (
                                         <Box key={role.role_id} sx={{ textAlign: 'center' }}>
-                                            <Checkbox
-                                                size="small"
-                                                checked={checked}
-                                                onChange={(e) =>
-                                                    handleRolePermToggle(role.role_id, [perm.permission_id], e.target.checked)
+                                            <Tooltip
+                                                title={
+                                                    isSystemDefault
+                                                        ? `"${role.role_name}" is a system role. Permissions can only be adjusted via user-level overrides.`
+                                                        : checked
+                                                            ? `Remove this permission from "${role.role_name}"`
+                                                            : `Grant this permission to "${role.role_name}"`
                                                 }
-                                                sx={{
-                                                    p: 0.5,
-                                                    '& .MuiSvgIcon-root': { fontSize: 16 },
-                                                    color: '#cbd5e1',
-                                                    '&.Mui-checked': { color: '#3b82f6' },
-                                                }}
-                                            />
+                                            >
+                                                <span>
+                                                    <Checkbox
+                                                        size="small"
+                                                        checked={checked}
+                                                        disabled={isSystemDefault}
+                                                        onChange={(e) =>
+                                                            handleRolePermToggle(role.role_id, [perm.permission_id], e.target.checked)
+                                                        }
+                                                        sx={{
+                                                            p: 0.5,
+                                                            '& .MuiSvgIcon-root': { fontSize: 16 },
+                                                            color: isSystemDefault ? '#e2e8f0' : '#cbd5e1',
+                                                            '&.Mui-checked': { color: isSystemDefault ? '#fbbf24' : '#3b82f6' },
+                                                            '&.Mui-disabled': { color: isSystemDefault && checked ? '#fbbf24' : undefined },
+                                                        }}
+                                                    />
+                                                </span>
+                                            </Tooltip>
                                         </Box>
                                     );
                                 })}
@@ -360,12 +505,13 @@ const PermissionMatrix: React.FC = () => {
 
                                             if (override) {
                                                 // Has explicit override
+                                                const isGrant = override.grant_type === 'grant';
                                                 return (
-                                                    <Tooltip title={`Override: ${override.grant_type}. Click to remove.`}>
+                                                    <Tooltip title={`${isGrant ? 'Explicitly GRANTED' : 'Explicitly REVOKED'} for ${selectedUserData.username}. Click to remove this override and revert to role default.`}>
                                                         <Checkbox
                                                             size="small"
-                                                            checked={override.grant_type === 'grant'}
-                                                            indeterminate={override.grant_type === 'revoke'}
+                                                            checked={isGrant}
+                                                            indeterminate={!isGrant}
                                                             onChange={() => {
                                                                 removeOverrideMutation.mutate({
                                                                     userId: selectedUser as number,
@@ -375,7 +521,7 @@ const PermissionMatrix: React.FC = () => {
                                                             sx={{
                                                                 p: 0.5,
                                                                 '& .MuiSvgIcon-root': { fontSize: 16 },
-                                                                color: override.grant_type === 'revoke' ? '#ef4444' : '#10b981',
+                                                                color: isGrant ? '#10b981' : '#ef4444',
                                                                 '&.Mui-checked': { color: '#10b981' },
                                                                 '&.MuiCheckbox-indeterminate': { color: '#ef4444' },
                                                             }}
@@ -386,7 +532,7 @@ const PermissionMatrix: React.FC = () => {
 
                                             // No override — show role-inherited state
                                             return (
-                                                <Tooltip title={fromRole ? 'From role. Click to revoke.' : 'Not granted. Click to grant.'}>
+                                                <Tooltip title={fromRole ? `Inherited from role. Click to explicitly REVOKE for ${selectedUserData.username}.` : `Not granted by any role. Click to explicitly GRANT for ${selectedUserData.username}.`}>
                                                     <Checkbox
                                                         size="small"
                                                         checked={fromRole}
