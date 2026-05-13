@@ -7,24 +7,29 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { roleApi } from "../api/admin.api";
 import RoleFormDrawer from "./RoleFormDrawer";
 import AssignUsersModal from "./AssignUsersModal";
+import { useToast } from "@/components/ui/AppToast";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState<any[]>([]);
   const [showInactive, setShowInactive] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  // Drawer & Modal States
+
+  // Dialog & Modal States
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [roleToEdit, setRoleToEdit] = useState<any>(null);
   const [userAssignRole, setUserAssignRole] = useState<any>(null);
+
+  const { showSuccess, showError } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const fetchRoles = async () => {
     setLoading(true);
     try {
       const response = await roleApi.getRoles(showInactive);
       setRoles(response.data.roles || []);
-    } catch (error) {
-      console.error("Failed to fetch roles:", error);
+    } catch (error: any) {
+      showError(error.message || "Failed to fetch roles.");
     }
     setLoading(false);
   };
@@ -44,14 +49,20 @@ export default function RoleManagement() {
     setDrawerOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to deactivate this role?")) {
-      try {
-        await roleApi.deleteRole(id);
-        fetchRoles();
-      } catch (error: any) {
-        alert(error.message || "Failed to delete role.");
-      }
+  const handleDelete = async (id: number, roleName: string) => {
+    const confirmed = await confirm({
+      title: "Deactivate Role",
+      message: `Are you sure you want to deactivate the role "${roleName}"? Users assigned to this role will lose its permissions.`,
+      confirmLabel: "Deactivate",
+      severity: "error",
+    });
+    if (!confirmed) return;
+    try {
+      await roleApi.deleteRole(id);
+      showSuccess(`Role "${roleName}" has been deactivated.`);
+      fetchRoles();
+    } catch (error: any) {
+      showError(error.message || "Failed to deactivate role.");
     }
   };
 
@@ -59,25 +70,25 @@ export default function RoleManagement() {
     { field: "role_id", headerName: "ID", width: 70 },
     { field: "role_name", headerName: "Role Name", width: 200 },
     { field: "hierarchy_level", headerName: "Hierarchy Level", width: 150 },
-    { 
-      field: "is_system_default", 
-      headerName: "System Default", 
+    {
+      field: "is_system_default",
+      headerName: "System Default",
       width: 150,
       renderCell: (params) => (
         params.value ? <Chip label="Yes" color="warning" size="small" /> : <Chip label="No" size="small" />
-      )
+      ),
     },
-    { 
-      field: "is_active", 
-      headerName: "Status", 
+    {
+      field: "is_active",
+      headerName: "Status",
       width: 120,
       renderCell: (params) => (
-        <Chip 
-          label={params.value ? "Active" : "Inactive"} 
-          color={params.value ? "success" : "default"} 
-          size="small" 
+        <Chip
+          label={params.value ? "Active" : "Inactive"}
+          color={params.value ? "success" : "default"}
+          size="small"
         />
-      )
+      ),
     },
     {
       field: "actions",
@@ -98,24 +109,24 @@ export default function RoleManagement() {
           </Tooltip>
           {params.row.is_active && !params.row.is_system_default && (
             <Tooltip title="Deactivate Role">
-              <IconButton color="error" onClick={() => handleDelete(params.row.role_id)}>
+              <IconButton color="error" onClick={() => handleDelete(params.row.role_id, params.row.role_name)}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
         </Box>
-      )
-    }
+      ),
+    },
   ];
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, margin: "0 auto" }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 3 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>Role Management</Typography>
           <Typography variant="body2" color="text.secondary">Create and manage access levels and enterprise hierarchies.</Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <FormControlLabel
             control={<Switch checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />}
             label="Show Inactive"
@@ -126,7 +137,7 @@ export default function RoleManagement() {
         </Box>
       </Box>
 
-      <Paper sx={{ height: 600, width: '100%', boxShadow: 2, borderRadius: 2 }}>
+      <Paper sx={{ height: 600, width: "100%", boxShadow: 2, borderRadius: 2 }}>
         <DataGrid
           rows={roles}
           columns={columns}
@@ -154,6 +165,8 @@ export default function RoleManagement() {
           onSuccess={() => { setUserAssignRole(null); fetchRoles(); }}
         />
       )}
+
+      <ConfirmDialog />
     </Box>
   );
 }

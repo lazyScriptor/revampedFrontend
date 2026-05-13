@@ -9,6 +9,8 @@ import UserFormDrawer from "./UserFormDrawer";
 import BulkAssignModal from "./BulkAssignModal";
 import CsvUploadDropzone from "./CsvUploadDropzone";
 import AssignRolesModal from "./AssignRolesModal";
+import { useToast } from "@/components/ui/AppToast";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
@@ -21,17 +23,19 @@ export default function UserManagement() {
   const [userToEdit, setUserToEdit] = useState<any>(null);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [csvUploadOpen, setCsvUploadOpen] = useState(false);
-  // Store selection as a plain number array to avoid MUI v9 Set issues
   const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
   const [roleAssignUser, setRoleAssignUser] = useState<any>(null);
+
+  const { showSuccess, showError, showInfo } = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const response = await userApi.getUsers(showInactive);
       setUsers(response.data.users || []);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
+    } catch (error: any) {
+      showError(error.message || "Failed to fetch users.");
     }
     setLoading(false);
   };
@@ -40,8 +44,8 @@ export default function UserManagement() {
     try {
       const response = await roleApi.getRoles(false);
       setRoles(response.data.roles || []);
-    } catch (error) {
-      console.error("Failed to fetch roles:", error);
+    } catch (error: any) {
+      showError(error.message || "Failed to fetch roles.");
     }
   };
 
@@ -61,14 +65,20 @@ export default function UserManagement() {
     setDrawerOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to deactivate this user?")) {
-      try {
-        await userApi.deleteUser(id);
-        fetchUsers();
-      } catch (error: any) {
-        alert(error.message || "Failed to delete user.");
-      }
+  const handleDelete = async (id: number, username: string) => {
+    const confirmed = await confirm({
+      title: "Deactivate User",
+      message: `Are you sure you want to deactivate "${username}"? They will no longer be able to log in.`,
+      confirmLabel: "Deactivate",
+      severity: "error",
+    });
+    if (!confirmed) return;
+    try {
+      await userApi.deleteUser(id);
+      showSuccess(`User "${username}" has been deactivated.`);
+      fetchUsers();
+    } catch (error: any) {
+      showError(error.message || "Failed to deactivate user.");
     }
   };
 
@@ -80,16 +90,17 @@ export default function UserManagement() {
       }
       setBulkAssignOpen(false);
       setSelectedRowIds([]);
+      showSuccess(`Role assigned to ${selectedRowIds.length} user(s) successfully.`);
       fetchUsers();
     } catch (error: any) {
-      alert(error.message || "Bulk assignment failed.");
+      showError(error.message || "Bulk assignment failed.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleFileUpload = (file: File) => {
-    alert(`File selected: ${file.name}. CSV Bulk Import feature is ready to be wired up to the backend parser!`);
+    showInfo(`File "${file.name}" selected. CSV Bulk Import will be wired up to the backend parser.`);
     setCsvUploadOpen(false);
   };
 
@@ -145,7 +156,7 @@ export default function UserManagement() {
           </Tooltip>
           {params.row.is_active && (
             <Tooltip title="Deactivate User">
-              <IconButton color="error" onClick={() => handleDelete(params.row.user_id)}>
+              <IconButton color="error" onClick={() => handleDelete(params.row.user_id, params.row.username)}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -180,10 +191,7 @@ export default function UserManagement() {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => {
-              setUserToEdit(null);
-              setDrawerOpen(true);
-            }}
+            onClick={() => { setUserToEdit(null); setDrawerOpen(true); }}
           >
             Create User
           </Button>
@@ -205,7 +213,6 @@ export default function UserManagement() {
           checkboxSelection
           disableRowSelectionOnClick
           onRowSelectionModelChange={(newSelection) => {
-            // MUI v9 returns a Set-like object; convert to plain array for our state
             const ids = Array.from(newSelection as unknown as Iterable<number>);
             setSelectedRowIds(ids);
           }}
@@ -217,10 +224,7 @@ export default function UserManagement() {
         <UserFormDrawer
           open={drawerOpen}
           userToEdit={userToEdit}
-          onClose={() => {
-            setDrawerOpen(false);
-            setUserToEdit(null);
-          }}
+          onClose={() => { setDrawerOpen(false); setUserToEdit(null); }}
           onSuccess={handleSuccess}
         />
       )}
@@ -243,6 +247,8 @@ export default function UserManagement() {
           onSuccess={() => { setRoleAssignUser(null); fetchUsers(); }}
         />
       )}
+
+      <ConfirmDialog />
     </Box>
   );
 }
