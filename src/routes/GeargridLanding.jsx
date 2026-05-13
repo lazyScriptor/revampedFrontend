@@ -42,9 +42,11 @@ const GearGridLanding = () => {
     setIsSubmitting(true);
 
     try {
-      // THE REAL BACKEND CALL: Change localhost to your production URL when deployed
+      // Use the correct production endpoint when deployed
       const response = await fetch(
-        "http://localhost:5000/api/contact/request-demo",
+        import.meta.env.PROD 
+          ? "https://api.geargrid.live/api/contact/request-demo"
+          : "http://localhost:8086/api/contact/request-demo",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

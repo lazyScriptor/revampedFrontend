@@ -8,11 +8,10 @@ interface ApiErrorResponse {
 
 //2. Create the custom Axios Instance
 export const api = axios.create({
-    // Point this to your Express server's base URL
-
-    // baseURL: '/api',
-    baseURL: 'http://localhost:8086/api',
-
+    // Dynamic baseURL based on environment
+    baseURL: import.meta.env.PROD 
+        ? 'https://api.geargrid.live/api' 
+        : 'http://localhost:8086/api',
 
     // CRITICAL: This tells the browser to automatically include the 
     // HttpOnly JWT cookie in every single request!
