@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { Box, Typography, Button, Switch, FormControlLabel, Paper, Chip } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Box, Typography, Button, Switch, FormControlLabel, Paper, Chip, IconButton, Tooltip } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { roleApi } from "../api/admin.api";
 import RoleFormDrawer from "./RoleFormDrawer";
+import AssignUsersModal from "./AssignUsersModal";
 
 export default function RoleManagement() {
-  const [roles, setRoles] = useState([]);
+  const [roles, setRoles] = useState<any[]>([]);
   const [showInactive, setShowInactive] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Drawer & Modal States
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [roleToEdit, setRoleToEdit] = useState<any>(null);
+  const [userAssignRole, setUserAssignRole] = useState<any>(null);
 
   const fetchRoles = async () => {
     setLoading(true);
@@ -16,7 +24,7 @@ export default function RoleManagement() {
       const response = await roleApi.getRoles(showInactive);
       setRoles(response.data.roles || []);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to fetch roles:", error);
     }
     setLoading(false);
   };
@@ -27,7 +35,24 @@ export default function RoleManagement() {
 
   const handleSuccess = () => {
     setDrawerOpen(false);
+    setRoleToEdit(null);
     fetchRoles();
+  };
+
+  const handleEdit = (role: any) => {
+    setRoleToEdit(role);
+    setDrawerOpen(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm("Are you sure you want to deactivate this role?")) {
+      try {
+        await roleApi.deleteRole(id);
+        fetchRoles();
+      } catch (error: any) {
+        alert(error.message || "Failed to delete role.");
+      }
+    }
   };
 
   const columns: GridColDef[] = [
@@ -53,38 +78,80 @@ export default function RoleManagement() {
           size="small" 
         />
       )
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <Box>
+          <Tooltip title="Assign Users">
+            <IconButton color="secondary" onClick={() => setUserAssignRole(params.row)}>
+              <GroupAddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit Role">
+            <IconButton color="primary" onClick={() => handleEdit(params.row)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {params.row.is_active && !params.row.is_system_default && (
+            <Tooltip title="Deactivate Role">
+              <IconButton color="error" onClick={() => handleDelete(params.row.role_id)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      )
     }
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" fontWeight="bold">Role Management</Typography>
+    <Box sx={{ p: 3, maxWidth: 1200, margin: "0 auto" }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>Role Management</Typography>
+          <Typography variant="body2" color="text.secondary">Create and manage access levels and enterprise hierarchies.</Typography>
+        </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <FormControlLabel
             control={<Switch checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />}
             label="Show Inactive"
           />
-          <Button variant="contained" color="primary" onClick={() => setDrawerOpen(true)}>Create Role</Button>
+          <Button variant="contained" color="primary" onClick={() => { setRoleToEdit(null); setDrawerOpen(true); }}>
+            Create Role
+          </Button>
         </Box>
       </Box>
 
-      <Paper sx={{ height: 600, width: '100%' }}>
+      <Paper sx={{ height: 600, width: '100%', boxShadow: 2, borderRadius: 2 }}>
         <DataGrid
           rows={roles}
           columns={columns}
           getRowId={(row) => row.role_id}
           loading={loading}
-          checkboxSelection
           disableRowSelectionOnClick
+          sx={{ border: 0 }}
         />
       </Paper>
 
       {drawerOpen && (
         <RoleFormDrawer
           open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          roleToEdit={roleToEdit}
+          onClose={() => { setDrawerOpen(false); setRoleToEdit(null); }}
           onSuccess={handleSuccess}
+        />
+      )}
+
+      {userAssignRole && (
+        <AssignUsersModal
+          open={Boolean(userAssignRole)}
+          onClose={() => setUserAssignRole(null)}
+          role={userAssignRole}
+          onSuccess={() => { setUserAssignRole(null); fetchRoles(); }}
         />
       )}
     </Box>

@@ -15,4 +15,6 @@ export const roleApi = {
   updateRole: (id: string | number, data: any) => api.put(`/roles/${id}`, data),
   deleteRole: (id: string | number) => api.delete(`/roles/${id}`),
   assignPermissions: (id: string | number, permissionIds: number[]) => api.post(`/roles/${id}/assign-permissions`, { permissionIds }),
+  getUsersForRole: (id: string | number) => api.get(`/roles/${id}/users`),
+  assignUsers: (id: string | number, userIds: number[]) => api.post(`/roles/${id}/assign-users`, { userIds }),
 };
