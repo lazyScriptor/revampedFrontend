@@ -12,6 +12,8 @@ import CustomersRoute from "@/routes/Customers";
 import MaintenanceRoute from "@/routes/Maintenance";
 import WorkforceRoute from "@/routes/Workforce";
 import AccountingRoute from "@/routes/Accounting";
+import { adminUsersRoute } from "@/routes/admin/users";
+import { adminRolesRoute } from "@/routes/admin/roles";
 import PermissionsPage from "@/routes/Permissions";
 import SuperAdminLogin from "@/routes/SuperAdminLogin";
 import SuperAdminDashboard from "@/routes/SuperAdmin";
@@ -184,6 +186,8 @@ const routeTree = rootRoute.addChildren([
     workforceRoute,
     accountingRoute,
     permissionsRoute,
+    adminUsersRoute,
+    adminRolesRoute,
   ]),
   superAdminLoginRoute,
   superAdminDashboardRoute,

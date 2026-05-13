@@ -184,10 +184,20 @@ function AuthenticatedLayout() {
       requiredPermission: "inventory_permission",
     },
     {
-      text: "Permissions",
+      text: "User Configuration",
       icon: <AdminPanelSettingsIcon />,
-      path: "/permissions",
-      requiredPermission: "inventory_permission",
+      children: [
+        {
+          text: "Users",
+          path: "/admin/users",
+          icon: <PeopleIcon fontSize="small" />,
+        },
+        {
+          text: "Roles",
+          path: "/admin/roles",
+          icon: <AdminPanelSettingsIcon fontSize="small" />,
+        },
+      ],
     },
   ];
 
