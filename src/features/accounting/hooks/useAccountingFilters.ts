@@ -30,7 +30,7 @@ const DEFAULT_FILTERS: AccountingFilters = {
   warehouseId: "",
   type: "",
   page: 1,
-  pageSize: 25,
+  pageSize: 50,
   sortField: "",
   sortOrder: "desc",
 };

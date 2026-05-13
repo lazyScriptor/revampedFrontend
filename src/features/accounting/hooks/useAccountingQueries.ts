@@ -56,3 +56,17 @@ export const useTransactionJournal = (params: Record<string, string>) => {
     staleTime: 1000 * 60,
   });
 };
+
+// ============================================================================
+// ACCOUNTING CHARTS DATA
+// ============================================================================
+export const useAccountingCharts = (params: Record<string, string>) => {
+  return useQuery({
+    queryKey: ["accounting-charts", params],
+    queryFn: async () => {
+      const response: any = await api.get("/accounting/charts", { params });
+      return response?.data || response;
+    },
+    staleTime: 1000 * 60,
+  });
+};

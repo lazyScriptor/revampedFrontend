@@ -95,12 +95,12 @@ export default function JournalTab() {
           paginationMode="server"
           paginationModel={{ page: filters.page - 1, pageSize: filters.pageSize }}
           onPaginationModelChange={(model) => {
-            setPage(model.page + 1);
-            setPageSize(model.pageSize);
+            updateMultiple({ page: model.page + 1, pageSize: model.pageSize });
           }}
           pageSizeOptions={[10, 25, 50, 100]}
           disableRowSelectionOnClick
           autoHeight
+          density="compact"
           sx={{
             border: 0,
             "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
