@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
   Select,
   MenuItem,
-  FormControl,
-  InputLabel,
   CircularProgress,
-  Paper,
   useTheme,
   Fade,
+  ToggleButton,
+  ToggleButtonGroup,
+  Divider,
+  Button,
+  Stack,
+  Tooltip as MuiTooltip,
 } from "@mui/material";
+import {
+  PieChart as PieIcon,
+  BarChart as BarIcon,
+  Timeline as LineIcon,
+  Refresh as RefreshIcon,
+  Today as DayIcon,
+  DateRange as WeekIcon,
+  CalendarMonth as MonthIcon,
+} from "@mui/icons-material";
 import {
   AreaChart,
   Area,
@@ -40,46 +52,52 @@ export default function AccountingChartsPanel() {
   const { format } = useCurrencyFormatter();
   const { activeTab } = useReportStore();
   
+  // Chart Configuration States
+  const [chartType, setChartType] = useState<"pie" | "bar" | "area">("bar");
+  const [timeGrain, setTimeGrain] = useState<"day" | "week" | "month">("day");
+  
   // Map active tab to default chart view
-  // 0: Overview, 1: Invoices, 2: Payments, 3: Expenses, 4: Receivables, 5: Journal
-  const tabToChart: Record<number, string> = {
+  const tabToChart: Record<number, string> = useMemo(() => ({
     0: "cashFlow",
     1: "invoicesByStatus",
     2: "paymentsByMethod",
     3: "expensesByCategory",
     4: "invoicesByStatus",
     5: "cashFlow"
-  };
+  }), []);
 
   const [activeChart, setActiveChart] = useState(tabToChart[activeTab] || "cashFlow");
 
-  // Sync chart type when tab changes
+  // Sync chart type and preferred illustration when tab changes
   useEffect(() => {
-    setActiveChart(tabToChart[activeTab] || "cashFlow");
-  }, [activeTab]);
+    const newChart = tabToChart[activeTab] || "cashFlow";
+    setActiveChart(newChart);
+    if (newChart === "cashFlow") setChartType("area");
+    else if (newChart === "expensesByCategory") setChartType("pie");
+    else setChartType("bar");
+  }, [activeTab, tabToChart]);
 
-  const chartParams = { ...toQueryParams(), page: undefined, pageSize: undefined };
-  const { data, isLoading, isError } = useAccountingCharts(chartParams as any);
+  // Combine global filters with local chart config
+  const chartParams = useMemo(() => ({
+    ...toQueryParams(),
+    timeGrain,
+    // Add a cache buster if user clicks "Refresh" (handled by react-query refetch)
+  }), [toQueryParams, timeGrain]);
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", minHeight: 400 }}>
-        <CircularProgress size={30} />
-      </Box>
-    );
-  }
+  const { data, isLoading, isError, refetch, isFetching } = useAccountingCharts(chartParams as any);
 
-  if (isError || !data) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", minHeight: 400 }}>
-        <Typography color="error" variant="body2">Unable to load analytics for this view.</Typography>
-      </Box>
-    );
-  }
-
-  const { cashFlow, expensesByCategory, invoicesByStatus, paymentsByMethod } = data;
+  const getStatusColor = (name: string) => {
+    const status = name.toLowerCase();
+    if (status === "paid" || status === "completed" || status === "success") return "#10b981";
+    if (status === "pending" || status === "partially paid") return "#f59e0b";
+    if (status === "overdue" || status === "failed") return "#ef4444";
+    return "#94a3b8";
+  };
 
   const renderChart = () => {
+    if (!data) return null;
+    const { cashFlow, expensesByCategory, invoicesByStatus, paymentsByMethod } = data;
+
     switch (activeChart) {
       case "cashFlow":
         return (
@@ -98,137 +116,162 @@ export default function AccountingChartsPanel() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis 
                 dataKey="date" 
-                tickFormatter={(tick) => dayjs(tick).format("MMM DD")}
+                tickFormatter={(t) => {
+                  if (timeGrain === "month") return dayjs(t).format("MMM YY");
+                  if (timeGrain === "week") return t.split("-w")[1] ? `W${t.split("-w")[1]}` : t;
+                  return dayjs(t).format("MMM DD");
+                }}
                 style={{ fontSize: "10px", fill: "#64748b" }}
-                axisLine={false}
-                tickLine={false}
+                axisLine={false} tickLine={false}
               />
-              <YAxis 
-                tickFormatter={(tick) => format(tick).replace(/\.00$/, "")}
-                style={{ fontSize: "10px", fill: "#64748b" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip 
-                contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                formatter={(value: number) => format(value)}
-                labelFormatter={(label) => dayjs(label).format("MMMM DD, YYYY")}
-              />
+              <YAxis tickFormatter={(t) => format(t).replace(/\.00$/, "")} style={{ fontSize: "10px", fill: "#64748b" }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v: number) => format(v)} labelFormatter={(l) => {
+                if (timeGrain === "month") return dayjs(l).format("MMMM YYYY");
+                return l;
+              }} />
               <Area type="monotone" dataKey="income" name="Income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
               <Area type="monotone" dataKey="expense" name="Expense" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         );
 
-      case "expensesByCategory":
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={expensesByCategory}
-                cx="50%" cy="50%"
-                innerRadius={60} outerRadius={85}
-                paddingAngle={5}
-                dataKey="value" nameKey="name"
-              >
-                {expensesByCategory?.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => format(value)} />
-              <Legend iconType="circle" wrapperStyle={{ fontSize: "12px" }} />
-            </PieChart>
-          </ResponsiveContainer>
-        );
+      default:
+        const currentData = activeChart === "invoicesByStatus" ? invoicesByStatus 
+                          : activeChart === "expensesByCategory" ? expensesByCategory 
+                          : paymentsByMethod;
 
-      case "invoicesByStatus":
+        if (chartType === "pie") {
+          return (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={currentData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" nameKey="name">
+                  {currentData?.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={activeChart === "invoicesByStatus" ? getStatusColor(entry.name) : COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => format(v)} />
+                <Legend iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          );
+        }
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={invoicesByStatus} layout="vertical" margin={{ left: 20, right: 30 }}>
-              <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" style={{ fontSize: "11px" }} axisLine={false} tickLine={false} />
-              <Tooltip formatter={(value: number) => format(value)} cursor={{ fill: "#f8fafc" }} />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {invoicesByStatus?.map((entry: any, index: number) => {
-                  let color = "#94a3b8";
-                  if (entry.name === "Paid") color = "#10b981";
-                  if (entry.name === "Pending" || entry.name === "Partially Paid") color = "#f59e0b";
-                  if (entry.name === "Overdue") color = "#ef4444";
-                  return <Cell key={`cell-${index}`} fill={color} />;
-                })}
+            <BarChart data={currentData} layout={currentData.length > 6 ? "vertical" : "horizontal"} margin={{ left: 20, right: 30 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={currentData.length > 6} vertical={currentData.length <= 6} stroke="#f1f5f9" />
+              <XAxis dataKey={currentData.length > 6 ? "value" : "name"} type={currentData.length > 6 ? "number" : "category"} hide={currentData.length > 6} style={{ fontSize: "10px" }} />
+              <YAxis dataKey={currentData.length > 6 ? "name" : "value"} type={currentData.length > 6 ? "category" : "number"} style={{ fontSize: "10px" }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v: number) => format(v)} cursor={{ fill: "#f8fafc" }} />
+              <Bar dataKey="value" radius={currentData.length > 6 ? [0, 4, 4, 0] : [4, 4, 0, 0]}>
+                {currentData?.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={activeChart === "invoicesByStatus" ? getStatusColor(entry.name) : COLORS[index % COLORS.length]} />
+                ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         );
-
-      case "paymentsByMethod":
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={paymentsByMethod}
-                cx="50%" cy="50%"
-                innerRadius={0} outerRadius={80}
-                dataKey="value" nameKey="name"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {paymentsByMethod?.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => format(value)} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-
-      default:
-        return null;
     }
   };
 
   const chartTitleMap: Record<string, string> = {
-    cashFlow: "Cash Flow Performance",
-    expensesByCategory: "Expense Distribution",
-    invoicesByStatus: "Invoice Aging & Status",
-    paymentsByMethod: "Payment Methods",
+    cashFlow: "Financial Performance",
+    expensesByCategory: "Spending Distribution",
+    invoicesByStatus: "Receivables Status",
+    paymentsByMethod: "Collection Channels",
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2.5 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 3 }}>
+      {/* PROFESSIONAL CHART HEADER & CONFIG */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="overline" color="primary" fontWeight="700" sx={{ letterSpacing: 1.2 }}>
-          Section Analytics
-        </Typography>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h6" fontWeight="800" color="text.primary">
-            {chartTitleMap[activeChart]}
-          </Typography>
-          <FormControl size="small" variant="standard" sx={{ minWidth: 40 }}>
-            <Select
-              value={activeChart}
-              onChange={(e) => setActiveChart(e.target.value)}
-              disableUnderline
-              sx={{ "& .MuiSelect-select": { py: 0.5, fontSize: "0.75rem", color: "text.secondary" } }}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Box>
+            <Typography variant="overline" color="primary.main" fontWeight="800" sx={{ letterSpacing: 1.5, display: "block", mb: 0.5 }}>
+              BUSINESS INTELLIGENCE
+            </Typography>
+            <Typography variant="h6" fontWeight="900" color="text.primary">
+              {chartTitleMap[activeChart]}
+            </Typography>
+          </Box>
+          <MuiTooltip title="Refresh Illustration">
+            <Button 
+              size="small" variant="outlined" 
+              onClick={() => refetch()} 
+              disabled={isFetching}
+              sx={{ minWidth: 40, p: 0.5, borderRadius: 2 }}
             >
-              <MenuItem value="cashFlow">Cash Flow</MenuItem>
-              <MenuItem value="expensesByCategory">Expenses</MenuItem>
-              <MenuItem value="invoicesByStatus">Invoices</MenuItem>
-              <MenuItem value="paymentsByMethod">Payments</MenuItem>
+              <RefreshIcon sx={{ fontSize: 18 }} />
+            </Button>
+          </MuiTooltip>
+        </Stack>
+
+        <Divider sx={{ mb: 2 }} />
+
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: "wrap", gap: 1 }}>
+          {/* X-AXIS / TIME GRAIN CONTROL */}
+          {activeChart === "cashFlow" && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>GROUP BY (X-AXIS)</Typography>
+              <ToggleButtonGroup
+                size="small" value={timeGrain} exclusive
+                onChange={(_, v) => v && setTimeGrain(v)}
+                sx={{ bgcolor: "#f8fafc", p: 0.5, borderRadius: 2 }}
+              >
+                <ToggleButton value="day" sx={{ px: 1.5 }}><DayIcon sx={{ fontSize: 16, mr: 0.5 }} /> Day</ToggleButton>
+                <ToggleButton value="week" sx={{ px: 1.5 }}><WeekIcon sx={{ fontSize: 16, mr: 0.5 }} /> Week</ToggleButton>
+                <ToggleButton value="month" sx={{ px: 1.5 }}><MonthIcon sx={{ fontSize: 16, mr: 0.5 }} /> Month</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          )}
+
+          {/* ILLUSTRATION TYPE */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>ILLUSTRATION STYLE</Typography>
+            <ToggleButtonGroup
+              size="small" value={chartType} exclusive
+              onChange={(_, v) => v && setChartType(v)}
+              sx={{ bgcolor: "#f8fafc", p: 0.5, borderRadius: 2 }}
+            >
+              <ToggleButton value="bar"><BarIcon sx={{ fontSize: 16, mr: 0.5 }} /> Bar</ToggleButton>
+              <ToggleButton value="pie" disabled={activeChart === "cashFlow"}><PieIcon sx={{ fontSize: 16, mr: 0.5 }} /> Pie</ToggleButton>
+              <ToggleButton value="area" disabled={activeChart !== "cashFlow"}><LineIcon sx={{ fontSize: 16, mr: 0.5 }} /> Trend</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {/* VIEW SELECTOR */}
+          <Box sx={{ flexGrow: 1, minWidth: 140 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>DATA PERSPECTIVE</Typography>
+            <Select
+              fullWidth value={activeChart} size="small"
+              onChange={(e) => setActiveChart(e.target.value)}
+              sx={{ borderRadius: 2, bgcolor: "#f8fafc", fontSize: "0.85rem", fontWeight: 600 }}
+            >
+              <MenuItem value="cashFlow">Cash Flow (Performance)</MenuItem>
+              <MenuItem value="expensesByCategory">Expenses (By Category)</MenuItem>
+              <MenuItem value="invoicesByStatus">Invoices (By Status)</MenuItem>
+              <MenuItem value="paymentsByMethod">Payments (By Channel)</MenuItem>
             </Select>
-          </FormControl>
-        </Box>
+          </Box>
+        </Stack>
       </Box>
 
-      <Fade in={!isLoading} timeout={500}>
-        <Box sx={{ flexGrow: 1, minHeight: 350 }}>
-          {renderChart()}
-        </Box>
-      </Fade>
+      {/* CHART CONTENT */}
+      <Box sx={{ flexGrow: 1, minHeight: 400, position: "relative" }}>
+        {(isLoading || isFetching) && (
+          <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", alignItems: "center", zIndex: 10, bgcolor: "rgba(255,255,255,0.7)" }}>
+            <CircularProgress size={30} />
+          </Box>
+        )}
+        <Fade in={!isLoading} timeout={600}>
+          <Box sx={{ height: "100%" }}>{renderChart()}</Box>
+        </Fade>
+      </Box>
       
-      <Box sx={{ mt: 2, p: 1.5, bgcolor: "#f8fafc", borderRadius: 2, border: "1px dashed #e2e8f0" }}>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center" }}>
-          Filtering based on {filters.dateFrom ? dayjs(filters.dateFrom).format("MMM DD") : "Start"} — {filters.dateTo ? dayjs(filters.dateTo).format("MMM DD") : "Today"}
+      {/* FILTER SYNC STATUS */}
+      <Box sx={{ mt: 3, p: 2, bgcolor: "primary.light", borderRadius: 2, display: "flex", alignItems: "center", gap: 1.5, border: "1px solid", borderColor: "primary.main" }}>
+        <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "primary.main", animation: "pulse 2s infinite" }} />
+        <Typography variant="caption" color="primary.main" fontWeight="700">
+          LIVE SYNC ACTIVE: {filters.search ? `Filtering for "${filters.search}"` : "Global Data Stream"}
         </Typography>
       </Box>
     </Box>
