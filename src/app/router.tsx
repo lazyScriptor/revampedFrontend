@@ -1,6 +1,7 @@
 import { createRouter, createRoute, redirect } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { authenticatedRoute } from "@/routes/_authenticated";
+import DashboardEngine from "@/features/dashboard/DashboardEngine";
 import LoginRoute from "@/routes/login";
 import Equipment from "@/routes/Equipment";
 import Categories from "@/routes/Categories";
@@ -52,14 +53,7 @@ const loginRoute = createRoute({
 const dashboardRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/dashboard",
-  component: () => (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-      <h3 className="text-xl font-semibold mb-4">Inventory Overview</h3>
-      <p className="text-slate-600">
-        Your SaaS dashboard widgets will go here.
-      </p>
-    </div>
-  ),
+  component: DashboardEngine,
 });
 
 const equipmentRoute = createRoute({
