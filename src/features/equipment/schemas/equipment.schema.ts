@@ -17,6 +17,9 @@ export const equipmentSchema = z.object({
   // --- Inventory & Warranty ---
   is_bulk_item: z.boolean().default(false),
   total_owned_qty: z.coerce.number().min(1, 'Must own at least 1').default(1),
+  rented_qty: z.coerce.number().min(0).default(0),
+  defective_qty: z.coerce.number().min(0).default(0),
+  available_qty: z.coerce.number().min(0).default(0),
   warranty_period_months: z.coerce.number().min(0).optional(),
   end_of_warranty_date: z.string().optional().or(z.literal('')),
 });
@@ -36,6 +39,7 @@ export interface Equipment {
   purchase_cost?: string;
   total_owned_qty: number;
   rented_qty: number;
+  defective_qty: number;
   available_qty: number;
   is_bulk_item: boolean;
   warranty_period_months?: number;

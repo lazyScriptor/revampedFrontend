@@ -69,8 +69,9 @@ export function EquipmentFormDialog({
     setValue,
     formState: { errors },
   } = useForm<EquipmentFormData>({
-    resolver: zodResolver(equipmentSchema),
-    mode: "onChange", // Instantly show validation errors
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(equipmentSchema) as any,
+    mode: "onChange",
     defaultValues: {
       minimum_rental_days: 1,
       total_owned_qty: 1,
@@ -81,31 +82,26 @@ export function EquipmentFormDialog({
     },
   });
 
-  // --- REAL-TIME INVENTORY MATH WATCHERS ---
   const isBulkItem = watch("is_bulk_item");
   const totalOwned = watch("total_owned_qty") || 1;
   const rentedQty = watch("rented_qty") || 0;
   const defectiveQty = watch("defective_qty") || 0;
 
-  // Calculate Available Qty safely
   const calculatedAvailable = Math.max(
     0,
     Number(totalOwned) - Number(rentedQty) - Number(defectiveQty),
   );
 
-  // Keep the hidden available_qty field synced so Zod validation passes
   useEffect(() => {
     setValue("available_qty", calculatedAvailable, { shouldValidate: true });
   }, [calculatedAvailable, setValue]);
 
-  // If Bulk is turned off, strictly lock Total Owned back to 1
   useEffect(() => {
     if (!isBulkItem) {
       setValue("total_owned_qty", 1, { shouldValidate: true });
     }
   }, [isBulkItem, setValue]);
 
-  // --- INITIALIZATION ---
   useEffect(() => {
     if (open) {
       if (initialData) {
@@ -122,7 +118,6 @@ export function EquipmentFormDialog({
             ? initialData.end_of_warranty_date.split("T")[0]
             : "",
           image_url: initialData.image_url || "",
-          // Map inventory stats (fallback to 0 if undefined)
           total_owned_qty: initialData.total_owned_qty || 1,
           rented_qty: initialData.rented_qty || 0,
           defective_qty: initialData.defective_qty || 0,
@@ -143,7 +138,6 @@ export function EquipmentFormDialog({
     }
   }, [open, initialData, reset]);
 
-  // --- SUBMISSION ---
   const onSubmit = (data: EquipmentFormData) => {
     const payload: any = { ...data };
 
@@ -173,8 +167,10 @@ export function EquipmentFormDialog({
       maxWidth="md"
       fullWidth
       scroll="paper"
-      PaperProps={{
-        sx: { borderRadius: 3, bgcolor: "#f8fafc", maxHeight: "85vh" },
+      slotProps={{
+        paper: {
+          sx: { borderRadius: 3, bgcolor: "#f8fafc", maxHeight: "85vh" },
+        },
       }}
     >
       <DialogTitle
@@ -188,10 +184,18 @@ export function EquipmentFormDialog({
           }}
         >
           <Box>
-            <Typography variant="h5" fontWeight="bold" color="text.primary">
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: "bold" }}
+              color="text.primary"
+            >
               {isEditing ? "Edit Asset Profile" : "Register New Equipment"}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 0.5 }}
+            >
               Fill in the specifications, pricing, and tracking details below.
             </Typography>
           </Box>
@@ -219,7 +223,7 @@ export function EquipmentFormDialog({
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
               <InfoOutlinedIcon color="primary" />
-              <Typography variant="h6" fontWeight="600">
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 General Information
               </Typography>
             </Box>
@@ -240,51 +244,63 @@ export function EquipmentFormDialog({
                 helperText={errors.serial_number?.message}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <TextField
-                  select
-                  fullWidth
-                  label="Category"
-                  defaultValue=""
-                  disabled={isLoadingCategories}
-                  {...register("category_id", { valueAsNumber: true })}
-                  error={!!errors.category_id}
-                  helperText={errors.category_id?.message}
-                >
-                  {isLoadingCategories ? (
-                    <MenuItem value="" disabled>
-                      Loading...
-                    </MenuItem>
-                  ) : (
-                    categories.map((c) => (
-                      <MenuItem key={c.category_id} value={c.category_id}>
-                        {c.category_name}
-                      </MenuItem>
-                    ))
+                <Controller
+                  name="category_id"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Category"
+                      {...field}
+                      value={field.value ?? ""}
+                      disabled={isLoadingCategories}
+                      error={!!errors.category_id}
+                      helperText={errors.category_id?.message}
+                    >
+                      {isLoadingCategories ? (
+                        <MenuItem value="" disabled>
+                          Loading...
+                        </MenuItem>
+                      ) : (
+                        categories.map((c) => (
+                          <MenuItem key={c.category_id} value={c.category_id}>
+                            {c.category_name}
+                          </MenuItem>
+                        ))
+                      )}
+                    </TextField>
                   )}
-                </TextField>
+                />
 
-                <TextField
-                  select
-                  fullWidth
-                  label="Warehouse Location"
-                  defaultValue=""
-                  disabled={isLoadingWarehouses}
-                  {...register("warehouse_id", { valueAsNumber: true })}
-                  error={!!errors.warehouse_id}
-                  helperText={errors.warehouse_id?.message}
-                >
-                  {isLoadingWarehouses ? (
-                    <MenuItem value="" disabled>
-                      Loading...
-                    </MenuItem>
-                  ) : (
-                    warehouses.map((w) => (
-                      <MenuItem key={w.warehouse_id} value={w.warehouse_id}>
-                        {w.location_name}
-                      </MenuItem>
-                    ))
+                <Controller
+                  name="warehouse_id"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Warehouse Location"
+                      {...field}
+                      value={field.value ?? ""}
+                      disabled={isLoadingWarehouses}
+                      error={!!errors.warehouse_id}
+                      helperText={errors.warehouse_id?.message}
+                    >
+                      {isLoadingWarehouses ? (
+                        <MenuItem value="" disabled>
+                          Loading...
+                        </MenuItem>
+                      ) : (
+                        warehouses.map((w) => (
+                          <MenuItem key={w.warehouse_id} value={w.warehouse_id}>
+                            {w.location_name}
+                          </MenuItem>
+                        ))
+                      )}
+                    </TextField>
                   )}
-                </TextField>
+                />
               </div>
               <TextField
                 fullWidth
@@ -304,7 +320,7 @@ export function EquipmentFormDialog({
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
               <AttachMoneyIcon color="success" />
-              <Typography variant="h6" fontWeight="600">
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Rental & Pricing
               </Typography>
             </Box>
@@ -314,11 +330,13 @@ export function EquipmentFormDialog({
                   fullWidth
                   label="Base Daily Rate"
                   type="number"
-                  inputProps={{ step: "0.01", min: "0" }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">Rs.</InputAdornment>
-                    ),
+                  slotProps={{
+                    htmlInput: { step: "0.01", min: "0" },
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">Rs.</InputAdornment>
+                      ),
+                    },
                   }}
                   {...register("base_rental_price", { valueAsNumber: true })}
                   error={!!errors.base_rental_price}
@@ -328,11 +346,13 @@ export function EquipmentFormDialog({
                   fullWidth
                   label="Overdue / Extra Daily Rate"
                   type="number"
-                  inputProps={{ step: "0.01", min: "0" }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">Rs.</InputAdornment>
-                    ),
+                  slotProps={{
+                    htmlInput: { step: "0.01", min: "0" },
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">Rs.</InputAdornment>
+                      ),
+                    },
                   }}
                   {...register("extra_daily_rate", { valueAsNumber: true })}
                   error={!!errors.extra_daily_rate}
@@ -347,7 +367,7 @@ export function EquipmentFormDialog({
                   fullWidth
                   label="Minimum Rental Days"
                   type="number"
-                  inputProps={{ min: "1" }}
+                  slotProps={{ htmlInput: { min: "1" } }}
                   {...register("minimum_rental_days", { valueAsNumber: true })}
                   error={!!errors.minimum_rental_days}
                   helperText={errors.minimum_rental_days?.message}
@@ -356,11 +376,13 @@ export function EquipmentFormDialog({
                   fullWidth
                   label="Original Purchase Cost"
                   type="number"
-                  inputProps={{ step: "0.01", min: "0" }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">Rs.</InputAdornment>
-                    ),
+                  slotProps={{
+                    htmlInput: { step: "0.01", min: "0" },
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">Rs.</InputAdornment>
+                      ),
+                    },
                   }}
                   {...register("purchase_cost", { valueAsNumber: true })}
                   error={!!errors.purchase_cost}
@@ -379,7 +401,7 @@ export function EquipmentFormDialog({
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
               <Inventory2OutlinedIcon color="secondary" />
-              <Typography variant="h6" fontWeight="600">
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Inventory Management
               </Typography>
             </Box>
@@ -400,7 +422,7 @@ export function EquipmentFormDialog({
                 <Box>
                   <Typography
                     variant="subtitle2"
-                    fontWeight="bold"
+                    sx={{ fontWeight: "bold" }}
                     color="primary.dark"
                   >
                     Bulk Asset Status
@@ -443,22 +465,25 @@ export function EquipmentFormDialog({
                   sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
                 >
                   <CalculateIcon color="primary" />
-                  <Typography variant="subtitle1" fontWeight="bold">
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                     Live Stock Equation
                   </Typography>
                 </Box>
 
-                <Grid container spacing={2} alignItems="center">
+                <Grid container spacing={2} sx={{ alignItems: "center" }}>
                   {/* TOTAL OWNED */}
-                  <Grid item xs={12} sm={3}>
+                  <Grid size={{ xs: 12, sm: 3 }}>
                     <TextField
                       fullWidth
                       label="Total Owned"
                       type="number"
                       {...register("total_owned_qty", { valueAsNumber: true })}
-                      disabled={!isBulkItem} // Locked to 1 if serialized
-                      inputProps={{
-                        min: isEditing ? rentedQty + defectiveQty : 1,
+                      disabled={!isBulkItem}
+                      slotProps={{
+                        htmlInput: {
+                          min: isEditing ? rentedQty + defectiveQty : 1,
+                        },
+                        input: { sx: { fontWeight: "bold" } },
                       }}
                       error={!!errors.total_owned_qty}
                       helperText={
@@ -466,87 +491,84 @@ export function EquipmentFormDialog({
                           ? "Locked at 1 for serialized"
                           : "Total stock"
                       }
-                      InputProps={{ sx: { fontWeight: "bold" } }}
                     />
                   </Grid>
 
                   <Grid
-                    item
-                    xs={12}
-                    sm={1}
+                    size={{ xs: 12, sm: 1 }}
                     sx={{ display: "flex", justifyContent: "center" }}
                   >
                     <Typography
                       variant="h5"
                       color="text.secondary"
-                      fontWeight="bold"
+                      sx={{ fontWeight: "bold" }}
                     >
                       -
                     </Typography>
                   </Grid>
 
                   {/* RENTED */}
-                  <Grid item xs={12} sm={2.5}>
+                  <Grid size={{ xs: 12, sm: 2.5 }}>
                     <TextField
                       fullWidth
                       label="Out on Rent"
                       type="number"
                       {...register("rented_qty")}
-                      InputProps={{
-                        readOnly: true,
-                        sx: { bgcolor: "#f1f5f9", color: "text.secondary" },
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: { bgcolor: "#f1f5f9", color: "text.secondary" },
+                        },
                       }}
                       helperText="By POS"
                     />
                   </Grid>
 
                   <Grid
-                    item
-                    xs={12}
-                    sm={1}
+                    size={{ xs: 12, sm: 1 }}
                     sx={{ display: "flex", justifyContent: "center" }}
                   >
                     <Typography
                       variant="h5"
                       color="text.secondary"
-                      fontWeight="bold"
+                      sx={{ fontWeight: "bold" }}
                     >
                       -
                     </Typography>
                   </Grid>
 
                   {/* DEFECTIVE */}
-                  <Grid item xs={12} sm={2.5}>
+                  <Grid size={{ xs: 12, sm: 2.5 }}>
                     <TextField
                       fullWidth
                       label="In Workshop"
                       type="number"
                       {...register("defective_qty")}
-                      InputProps={{
-                        readOnly: true,
-                        sx: { bgcolor: "#fef2f2", color: "error.main" },
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: { bgcolor: "#fef2f2", color: "error.main" },
+                        },
                       }}
                       helperText="By Logs"
                     />
                   </Grid>
 
                   <Grid
-                    item
-                    xs={12}
-                    sm={0.5}
+                    size={{ xs: 12, sm: 0.5 }}
                     sx={{ display: "flex", justifyContent: "center" }}
                   >
                     <Typography
                       variant="h5"
                       color="primary.main"
-                      fontWeight="bold"
+                      sx={{ fontWeight: "bold" }}
                     >
                       =
                     </Typography>
                   </Grid>
 
                   {/* AVAILABLE */}
-                  <Grid item xs={12} sm={1.5}>
+                  <Grid size={{ xs: 12, sm: 1.5 }}>
                     <Box
                       sx={{
                         bgcolor: "#eff6ff",
@@ -561,15 +583,17 @@ export function EquipmentFormDialog({
                       <Typography
                         variant="caption"
                         color="primary.dark"
-                        fontWeight="bold"
-                        textTransform="uppercase"
+                        sx={{
+                          fontWeight: "bold",
+                          textTransform: "uppercase",
+                        }}
                       >
                         Available
                       </Typography>
                       <Typography
                         variant="h5"
                         color="primary.main"
-                        fontWeight="900"
+                        sx={{ fontWeight: 900 }}
                       >
                         {calculatedAvailable}
                       </Typography>
@@ -585,7 +609,7 @@ export function EquipmentFormDialog({
                   fullWidth
                   label="Warranty Period (Months)"
                   type="number"
-                  inputProps={{ min: "0" }}
+                  slotProps={{ htmlInput: { min: "0" } }}
                   {...register("warranty_period_months", {
                     valueAsNumber: true,
                   })}
@@ -596,7 +620,7 @@ export function EquipmentFormDialog({
                   fullWidth
                   label="Warranty Expiry Date"
                   type="date"
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                   {...register("end_of_warranty_date")}
                   error={!!errors.end_of_warranty_date}
                   helperText={errors.end_of_warranty_date?.message}
