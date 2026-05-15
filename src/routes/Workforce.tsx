@@ -17,10 +17,12 @@ import {
   LinearProgress,
   Chip,
   IconButton,
-  Tooltip,
+  InputAdornment,
   Menu,
   MenuItem,
 } from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import SpeedIcon from "@mui/icons-material/Speed";
@@ -58,6 +60,8 @@ export default function WorkforceRoute() {
     [key: number]: HTMLElement | null;
   }>({});
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -65,6 +69,7 @@ export default function WorkforceRoute() {
     first_name: "",
     last_name: "",
     phone_number: "",
+    password: "",
   });
 
   const showToast = (message: string, severity: "success" | "error") =>
@@ -81,7 +86,9 @@ export default function WorkforceRoute() {
       first_name: "",
       last_name: "",
       phone_number: "",
+      password: "",
     });
+    setShowPassword(false);
     setIsModalOpen(true);
   };
 
@@ -95,6 +102,7 @@ export default function WorkforceRoute() {
       first_name: tech.first_name,
       last_name: tech.last_name,
       phone_number: tech.phone_number || "",
+      password: "",
     });
     setAnchorEl({ ...anchorEl, [tech.user_id || tech.id]: null }); // Close menu
     setIsModalOpen(true);
@@ -103,6 +111,12 @@ export default function WorkforceRoute() {
   const handleSubmit = () => {
     if (!formData.first_name || !formData.email)
       return showToast("Name and Email are required.", "error");
+
+    if (!isEditMode && !formData.password)
+      return showToast("Password is required.", "error");
+
+    if (!isEditMode && formData.password.length < 8)
+      return showToast("Password must be at least 8 characters.", "error");
 
     if (isEditMode && selectedTechId) {
       updateMutation.mutate(
@@ -153,7 +167,7 @@ export default function WorkforceRoute() {
 
   if (isLoading)
     return (
-      <Box p={5} display="flex" justifyContent="center">
+      <Box sx={{ p: 5, display: "flex", justifyContent: "center" }}>
         <CircularProgress />
       </Box>
     );
@@ -172,7 +186,7 @@ export default function WorkforceRoute() {
         <Box>
           <Typography
             variant="h4"
-            fontWeight="800"
+            sx={{ fontWeight: 800 }}
             color="text.primary"
             gutterBottom
           >
@@ -214,7 +228,7 @@ export default function WorkforceRoute() {
           const techId = tech.user_id || tech.id;
 
           return (
-            <Grid item xs={12} md={6} lg={4} key={techId}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={techId}>
               <Paper
                 elevation={0}
                 sx={{
@@ -252,8 +266,7 @@ export default function WorkforceRoute() {
                     <Box>
                       <Typography
                         variant="h6"
-                        fontWeight="bold"
-                        lineHeight={1.2}
+                        sx={{ fontWeight: "bold", lineHeight: 1.2 }}
                       >
                         {tech.first_name} {tech.last_name}
                       </Typography>
@@ -320,13 +333,12 @@ export default function WorkforceRoute() {
                   >
                     <Typography
                       variant="body2"
-                      fontWeight="bold"
                       color="text.secondary"
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      sx={{ fontWeight: "bold", display: "flex", alignItems: "center", gap: 1 }}
                     >
                       <EngineeringIcon fontSize="small" /> Active Tickets
                     </Typography>
-                    <Typography variant="body2" fontWeight="bold">
+                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
                       {tech.active_tickets}
                     </Typography>
                   </Box>
@@ -339,13 +351,12 @@ export default function WorkforceRoute() {
                   >
                     <Typography
                       variant="body2"
-                      fontWeight="bold"
                       color="text.secondary"
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      sx={{ fontWeight: "bold", display: "flex", alignItems: "center", gap: 1 }}
                     >
                       <SpeedIcon fontSize="small" /> Total Items Pending
                     </Typography>
-                    <Typography variant="body2" fontWeight="bold">
+                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
                       {tech.total_items_pending}
                     </Typography>
                   </Box>
@@ -375,7 +386,7 @@ export default function WorkforceRoute() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle fontWeight="bold">
+        <DialogTitle sx={{ fontWeight: "bold" }}>
           {isEditMode ? "Edit Technician Details" : "Register New Technician"}
         </DialogTitle>
         <DialogContent>
@@ -399,26 +410,57 @@ export default function WorkforceRoute() {
               />
             </Box>
 
-            {/* We only allow editing username/nic on Add. On Edit, these are usually locked for enterprise identity. */}
+            {/* Username, NIC and password are only set on creation — locked for edits */}
             {!isEditMode && (
-              <Box sx={{ display: "flex", gap: 2 }}>
+              <>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Username"
+                    value={formData.username}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                  />
+                  <TextField
+                    fullWidth
+                    label="NIC Number"
+                    value={formData.nic_no}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nic_no: e.target.value })
+                    }
+                  />
+                </Box>
                 <TextField
                   fullWidth
-                  label="Username"
-                  value={formData.username}
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
                   onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
+                    setFormData({ ...formData, password: e.target.value })
                   }
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                          >
+                            {showPassword ? (
+                              <VisibilityOffIcon fontSize="small" />
+                            ) : (
+                              <VisibilityIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  helperText="Minimum 8 characters"
                 />
-                <TextField
-                  fullWidth
-                  label="NIC Number"
-                  value={formData.nic_no}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nic_no: e.target.value })
-                  }
-                />
-              </Box>
+              </>
             )}
 
             <TextField

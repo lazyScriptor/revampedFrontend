@@ -79,15 +79,9 @@ export const useTechnicianRoster = () => {
     return useQuery({
         queryKey: ['technician-roster'],
         queryFn: async () => {
-            const response = await api.get('/users/technicians/roster');
-
-            // Step 1: Normalize the response
+            const response = await api.get('/users/technicians');
             const payload = response.data ? response.data : response;
-
-            // Step 2: Catch the array no matter the nesting level
             const rosterData = payload?.data?.roster || payload?.roster || [];
-
-            // Step 3: Ensure it strictly returns an array
             return Array.isArray(rosterData) ? rosterData : [];
         },
     });
@@ -114,7 +108,7 @@ export const useUpdateTechnician = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ id, data }: { id: number, data: any }) => {
-            const response = await api.patch(`/users/technicians/${id}`, data);
+            const response = await api.put(`/users/technicians/${id}`, data);
             return response.data;
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['technician-roster'] }),
@@ -126,8 +120,7 @@ export const useToggleTechnicianStatus = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ id, isActive }: { id: number, isActive: boolean }) => {
-            // Re-using the general user status toggle route we built earlier!
-            const response = await api.patch(`/users/${id}/status`, { isActive });
+            const response = await api.patch(`/users/${id}/toggle-status`, { isActive });
             return response.data;
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['technician-roster'] }),
