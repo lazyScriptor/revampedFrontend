@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import {
-    Box, Typography, Tooltip, IconButton,
+    Box, Typography, Tooltip, IconButton, Button,
 } from '@mui/material';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
@@ -17,6 +18,7 @@ import AuditLogTable from '@/features/super-admin/components/AuditLogTable';
 import TenantListPanel from '@/features/super-admin/components/TenantListPanel';
 import TenantDetailPanel from '@/features/super-admin/components/TenantDetailPanel';
 import CorsManagerPanel from '@/features/super-admin/components/CorsManagerPanel';
+import CreateTenantDialog from '@/features/super-admin/components/CreateTenantDialog';
 
 import { usePlatformDashboard, useTenants } from '@/features/super-admin/hooks/useSuperAdminHooks';
 import { useSuperAdminStore } from '@/stores/useSuperAdminStore';
@@ -135,10 +137,12 @@ function DashboardView() {
 export default function SuperAdminDashboard() {
     const [activeNav, setActiveNav] = useState<NavKey>('dashboard');
     const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const logout = useSuperAdminStore((s) => s.logout);
     const admin = useSuperAdminStore((s) => s.admin);
 
     return (
+        <>
         <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#020617', overflow: 'hidden' }}>
             {/* ── Left Sidebar ─────────────────────────────────────── */}
             <Box
@@ -256,10 +260,26 @@ export default function SuperAdminDashboard() {
                         {/* Tenant List — fixed width */}
                         <Box sx={{ width: 280, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             {/* Panel header */}
-                            <Box sx={{ px: 2.5, py: 1.75, borderBottom: '1px solid #1e293b', bgcolor: '#0f172a', flexShrink: 0 }}>
+                            <Box sx={{ px: 2, py: 1.25, borderBottom: '1px solid #1e293b', bgcolor: '#0f172a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.82rem' }}>
                                     All Tenants
                                 </Typography>
+                                <Button
+                                    size="small"
+                                    startIcon={<AddOutlinedIcon sx={{ fontSize: 14 }} />}
+                                    onClick={() => setCreateDialogOpen(true)}
+                                    sx={{
+                                        color: '#ef4444',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700,
+                                        px: 1,
+                                        py: 0.5,
+                                        minWidth: 0,
+                                        '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' },
+                                    }}
+                                >
+                                    New
+                                </Button>
                             </Box>
                             <Box sx={{ flex: 1, overflow: 'hidden' }}>
                                 <TenantListPanel
@@ -295,5 +315,16 @@ export default function SuperAdminDashboard() {
                 )}
             </Box>
         </Box>
+
+        <CreateTenantDialog
+            open={createDialogOpen}
+            onClose={() => setCreateDialogOpen(false)}
+            onCreated={(id) => {
+                setCreateDialogOpen(false);
+                setActiveNav('tenants');
+                setSelectedTenantId(id);
+            }}
+        />
+        </>
     );
 }

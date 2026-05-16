@@ -56,9 +56,10 @@ export const useSuspendTenant = () => {
             const res = await api.post(`/super-admin/tenants/${tenantId}/suspend`);
             return res.data.tenant;
         },
-        onSuccess: () => {
+        onSuccess: (_, tenantId) => {
             qc.invalidateQueries({ queryKey: ['sa-tenants'] });
             qc.invalidateQueries({ queryKey: ['sa-dashboard'] });
+            qc.invalidateQueries({ queryKey: ['sa-tenant', tenantId] });
         },
     });
 };
@@ -70,9 +71,10 @@ export const useActivateTenant = () => {
             const res = await api.post(`/super-admin/tenants/${tenantId}/activate`);
             return res.data.tenant;
         },
-        onSuccess: () => {
+        onSuccess: (_, tenantId) => {
             qc.invalidateQueries({ queryKey: ['sa-tenants'] });
             qc.invalidateQueries({ queryKey: ['sa-dashboard'] });
+            qc.invalidateQueries({ queryKey: ['sa-tenant', tenantId] });
         },
     });
 };
@@ -83,6 +85,47 @@ export const useMarkTenantOverdue = () => {
         mutationFn: async (tenantId: string) => {
             const res = await api.post(`/super-admin/tenants/${tenantId}/mark-overdue`);
             return res.data.tenant;
+        },
+        onSuccess: (_, tenantId) => {
+            qc.invalidateQueries({ queryKey: ['sa-tenants'] });
+            qc.invalidateQueries({ queryKey: ['sa-dashboard'] });
+            qc.invalidateQueries({ queryKey: ['sa-tenant', tenantId] });
+        },
+    });
+};
+
+export const useUploadTenantLogo = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ tenantId, file }: { tenantId: string; file: File }) => {
+            const formData = new FormData();
+            formData.append('logo', file);
+            const res = await api.post(`/super-admin/tenants/${tenantId}/logo`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            return res.data as { tenant: Record<string, unknown>; logoUrl: string };
+        },
+        onSuccess: (_, { tenantId }) => {
+            qc.invalidateQueries({ queryKey: ['sa-tenant', tenantId] });
+            qc.invalidateQueries({ queryKey: ['sa-tenants'] });
+        },
+    });
+};
+
+export const useCreateTenant = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: {
+            display_name: string;
+            contact_email: string;
+            admin_username: string;
+            admin_password: string;
+            db_name_slug: string;
+            tier: string;
+            monthly_rate: number;
+        }) => {
+            const res = await api.post('/super-admin/tenants', data);
+            return res.data.tenant as Record<string, unknown>;
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['sa-tenants'] });
@@ -128,10 +171,68 @@ export const useTenantUsers = (tenantId: string | null) =>
         queryKey: ['sa-tenant-users', tenantId],
         queryFn: async () => {
             const res = await api.get(`/super-admin/tenants/${tenantId}/users`);
-            return res.data.users as Array<{ user_id: number; username: string; email: string; status: string; roles: string[] }>;
+            return res.data.users as Array<{
+                user_id: number;
+                username: string;
+                email: string;
+                first_name: string;
+                last_name: string;
+                status: string;
+                is_active: boolean;
+                roles: string[];
+                role_ids: number[];
+            }>;
         },
         enabled: !!tenantId,
     });
+
+export const useTenantRoles = (tenantId: string | null) =>
+    useQuery({
+        queryKey: ['sa-tenant-roles', tenantId],
+        queryFn: async () => {
+            const res = await api.get(`/super-admin/tenants/${tenantId}/roles`);
+            return res.data.roles as Array<{ role_id: number; role_name: string; hierarchy_level: number }>;
+        },
+        enabled: !!tenantId,
+    });
+
+export const useCreateTenantUser = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ tenantId, data }: { tenantId: string; data: Record<string, unknown> }) => {
+            const res = await api.post(`/super-admin/tenants/${tenantId}/users`, data);
+            return res.data.user;
+        },
+        onSuccess: (_, { tenantId }) => {
+            qc.invalidateQueries({ queryKey: ['sa-tenant-users', tenantId] });
+        },
+    });
+};
+
+export const useUpdateTenantUser = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ tenantId, userId, data }: { tenantId: string; userId: number; data: Record<string, unknown> }) => {
+            const res = await api.patch(`/super-admin/tenants/${tenantId}/users/${userId}`, data);
+            return res.data.user;
+        },
+        onSuccess: (_, { tenantId }) => {
+            qc.invalidateQueries({ queryKey: ['sa-tenant-users', tenantId] });
+        },
+    });
+};
+
+export const useDeleteTenantUser = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ tenantId, userId }: { tenantId: string; userId: number }) => {
+            await api.delete(`/super-admin/tenants/${tenantId}/users/${userId}`);
+        },
+        onSuccess: (_, { tenantId }) => {
+            qc.invalidateQueries({ queryKey: ['sa-tenant-users', tenantId] });
+        },
+    });
+};
 
 // ============================================================================
 // IMPERSONATION

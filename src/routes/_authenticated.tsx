@@ -76,6 +76,9 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   alignItems: "center",
   justifyContent: "space-between",
   padding: theme.spacing(0, 2),
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+  color: theme.palette.primary.contrastText,
+  borderBottom: `1px solid ${theme.palette.primary.main}`,
   ...theme.mixins.toolbar,
 }));
 
@@ -86,13 +89,16 @@ const Drawer = styled(MuiDrawer, {
   flexShrink: 0,
   whiteSpace: "nowrap",
   boxSizing: "border-box",
+  "& .MuiDrawer-paper": {
+    borderRight: `1px solid ${theme.palette.divider}`,
+  },
   ...(open && {
     ...openedMixin(theme),
-    "& .MuiDrawer-paper": openedMixin(theme),
+    "& .MuiDrawer-paper": { ...openedMixin(theme), borderRight: `1px solid ${theme.palette.divider}` },
   }),
   ...(!open && {
     ...closedMixin(theme),
-    "& .MuiDrawer-paper": closedMixin(theme),
+    "& .MuiDrawer-paper": { ...closedMixin(theme), borderRight: `1px solid ${theme.palette.divider}` },
   }),
 }));
 
@@ -117,6 +123,18 @@ function AuthenticatedLayout() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
+
+  const config = (user as any)?.configData ?? null;
+  const businessName: string =
+    (config?.business_display_name as string) || "GearGrid";
+  const rawLogo = (config?.logo_url as string) || null;
+  // Server-side uploads come back as relative paths like `/uploads/logos/foo.png`
+  const apiOrigin = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/api\/?$/, "") || "";
+  const logoUrl: string | null = rawLogo
+    ? (rawLogo.startsWith("http") || rawLogo.startsWith("data:")
+        ? rawLogo
+        : `${apiOrigin}${rawLogo}`)
+    : null;
 
   // State to track which sub-menus are expanded
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({
@@ -231,16 +249,29 @@ function AuthenticatedLayout() {
     <>
       <DrawerHeader>
         {isSidebarOpen && (
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-            color="primary"
-            sx={{ ml: 1 }}
-          >
-            GearGrid
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: 0.5, minWidth: 0 }}>
+            {logoUrl ? (
+              <Box
+                component="img"
+                src={logoUrl}
+                alt={businessName}
+                sx={{ width: 30, height: 30, borderRadius: 1, objectFit: "contain", flexShrink: 0, bgcolor: "rgba(255,255,255,0.95)", p: 0.25 }}
+              />
+            ) : (
+              <Avatar sx={{ width: 30, height: 30, bgcolor: "rgba(255,255,255,0.18)", color: "primary.contrastText", fontSize: "0.85rem", fontWeight: 700 }}>
+                {businessName.charAt(0).toUpperCase()}
+              </Avatar>
+            )}
+            <Typography
+              variant="subtitle1"
+              noWrap
+              sx={{ fontSize: "0.95rem", fontWeight: 700, color: "primary.contrastText" }}
+            >
+              {businessName}
+            </Typography>
+          </Box>
         )}
-        <IconButton onClick={handleDrawerToggle}>
+        <IconButton onClick={handleDrawerToggle} sx={{ color: "primary.contrastText", "&:hover": { bgcolor: "rgba(255,255,255,0.15)" } }}>
           <ChevronLeftIcon />
         </IconButton>
       </DrawerHeader>
@@ -265,7 +296,8 @@ function AuthenticatedLayout() {
                         justifyContent: isSidebarOpen ? "initial" : "center",
                         px: 2.5,
                         borderRadius: 2,
-                        "&:hover": { bgcolor: "slate.50" },
+                        color: "text.secondary",
+                        "&:hover": { bgcolor: "action.hover" },
                       }}
                     >
                       <ListItemIcon
@@ -307,11 +339,20 @@ function AuthenticatedLayout() {
                         to={child.path}
                         onClick={() => isMobile && setSidebarOpen(false)}
                         activeProps={{
-                          className: "bg-blue-50 text-blue-600 rounded-lg",
+                          sx: {
+                            bgcolor: (t: Theme) => `${t.palette.primary.main}1a`, // ~10% primary
+                            color: "primary.main",
+                            borderRadius: 2,
+                            "&:hover": { bgcolor: (t: Theme) => `${t.palette.primary.main}26` },
+                            "& .MuiListItemIcon-root": { color: "primary.main" },
+                          },
                         }}
                         inactiveProps={{
-                          className:
-                            "text-slate-600 rounded-lg hover:bg-slate-50",
+                          sx: {
+                            color: "text.secondary",
+                            borderRadius: 2,
+                            "&:hover": { bgcolor: "action.hover" },
+                          },
                         }}
                         sx={{
                           pl: 4, // Indent the sub-items
@@ -353,10 +394,20 @@ function AuthenticatedLayout() {
                     component={Link}
                     to={item.path}
                     activeProps={{
-                      className: "bg-blue-50 text-blue-600 rounded-lg",
+                      sx: {
+                        bgcolor: (t: Theme) => `${t.palette.primary.main}1a`,
+                        color: "primary.main",
+                        borderRadius: 2,
+                        "&:hover": { bgcolor: (t: Theme) => `${t.palette.primary.main}26` },
+                        "& .MuiListItemIcon-root": { color: "primary.main" },
+                      },
                     }}
                     inactiveProps={{
-                      className: "text-slate-600 rounded-lg hover:bg-slate-50",
+                      sx: {
+                        color: "text.secondary",
+                        borderRadius: 2,
+                        "&:hover": { bgcolor: "action.hover" },
+                      },
                     }}
                     onClick={() => isMobile && setSidebarOpen(false)}
                     sx={{
@@ -460,6 +511,26 @@ function AuthenticatedLayout() {
           >
             <MenuIcon />
           </IconButton>
+          {(!isSidebarOpen || isMobile) && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              {logoUrl && (
+                <Box
+                  component="img"
+                  src={logoUrl}
+                  alt={businessName}
+                  sx={{ width: 26, height: 26, borderRadius: 1, objectFit: "contain", flexShrink: 0 }}
+                />
+              )}
+              <Typography
+                variant="subtitle1"
+                color="text.primary"
+                noWrap
+                sx={{ fontSize: "0.95rem", fontWeight: 700 }}
+              >
+                {businessName}
+              </Typography>
+            </Box>
+          )}
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography

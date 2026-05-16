@@ -11,12 +11,15 @@ import PersonSearchOutlinedIcon from '@mui/icons-material/PersonSearchOutlined';
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import {
     useTenantDetails, useUpdateTenant, useSuspendTenant, useActivateTenant,
     useMarkTenantOverdue, usePaymentHistory, useTenantUsers, useImpersonate,
+    useDeleteTenantUser, useUploadTenantLogo,
 } from '../hooks/useSuperAdminHooks';
 import RecordPaymentDialog from './RecordPaymentDialog';
+import TenantUserDialog from './TenantUserDialog';
 
 const STATUS_META: Record<string, { color: string; bg: string }> = {
     Active: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
@@ -57,8 +60,13 @@ export default function TenantDetailPanel({ tenantId }: Props) {
     const overdueMutation = useMarkTenantOverdue();
     const impersonateMutation = useImpersonate();
 
+    const deleteTenantUser = useDeleteTenantUser();
+    const uploadLogo = useUploadTenantLogo();
+
     const [tab, setTab] = useState(0);
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+    const [userDialogOpen, setUserDialogOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<any | null>(null);
     const [saveOk, setSaveOk] = useState('');
 
     // --- Form state for each tab ---
@@ -73,6 +81,15 @@ export default function TenantDetailPanel({ tenantId }: Props) {
     const [corsOrigins, setCorsOrigins] = useState<string[]>([]);
     const [newCorsOrigin, setNewCorsOrigin] = useState('');
 
+    // Defensive parse: backend normalizes JSON columns, but tolerate raw strings just in case
+    const parseJson = <T,>(val: unknown, fallback: T): T => {
+        if (val == null || val === '') return fallback;
+        if (typeof val === 'string') {
+            try { return JSON.parse(val) as T; } catch { return fallback; }
+        }
+        return val as T;
+    };
+
     // Sync from server data
     useEffect(() => {
         if (!data?.tenant) return;
@@ -86,14 +103,14 @@ export default function TenantDetailPanel({ tenantId }: Props) {
         setConfigForm({
             tier: t.tier || 'Basic',
             max_users: t.max_users || 25,
-            feature_flags: t.feature_flags || { continuous_return: true, accounting_module: true, bulk_import: true, maintenance_module: true },
-            branding: t.branding || { primaryColor: '#1e40af', secondaryColor: '#0f172a', accentColor: '#3b82f6', logoUrl: '', businessName: '' },
+            feature_flags: parseJson(t.feature_flags, { continuous_return: true, accounting_module: true, bulk_import: true, maintenance_module: true }),
+            branding: parseJson(t.branding, { primaryColor: '#1e40af', secondaryColor: '#0f172a', accentColor: '#3b82f6', logoUrl: '', businessName: '' }),
         });
         setBillingForm({
             monthly_rate: String(t.monthly_rate || '0'),
             next_billing_date: t.next_billing_date || '',
         });
-        setCorsOrigins(t.cors_whitelist || []);
+        setCorsOrigins(parseJson<string[]>(t.cors_whitelist, []));
     }, [data]);
 
     const tenant = data?.tenant as any;
@@ -305,12 +322,81 @@ export default function TenantDetailPanel({ tenantId }: Props) {
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
                         <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Branding</Typography>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                            <TextField size="small" label="Business Name" value={(configForm.branding as any).businessName || ''}
-                                onChange={(e) => setConfigForm(f => ({ ...f, branding: { ...f.branding, businessName: e.target.value } }))} sx={DARK_INPUT} />
-                            <TextField size="small" label="Logo URL" value={(configForm.branding as any).logoUrl || ''}
-                                onChange={(e) => setConfigForm(f => ({ ...f, branding: { ...f.branding, logoUrl: e.target.value } }))} sx={DARK_INPUT} />
+                        <TextField size="small" label="Business Name" value={(configForm.branding as any).businessName || ''}
+                            onChange={(e) => setConfigForm(f => ({ ...f, branding: { ...f.branding, businessName: e.target.value } }))} sx={DARK_INPUT} />
+
+                        {/* Logo upload */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, bgcolor: '#0f172a', borderRadius: 1.5, border: '1px solid #1e293b' }}>
+                            <Box
+                                sx={{
+                                    width: 64, height: 64, borderRadius: 1.5, flexShrink: 0,
+                                    bgcolor: '#1e293b', border: '1px solid #334155',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                {(configForm.branding as any).logoUrl ? (
+                                    <Box
+                                        component="img"
+                                        src={(configForm.branding as any).logoUrl.startsWith('http') || (configForm.branding as any).logoUrl.startsWith('data:')
+                                            ? (configForm.branding as any).logoUrl
+                                            : `${import.meta.env.VITE_API_URL?.replace(/\/api$/, '')}${(configForm.branding as any).logoUrl}`}
+                                        alt="Logo"
+                                        sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    />
+                                ) : (
+                                    <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.65rem' }}>No logo</Typography>
+                                )}
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }}>Tenant Logo</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b', fontFamily: 'monospace', wordBreak: 'break-all', display: 'block', mt: 0.25 }}>
+                                    {(configForm.branding as any).logoUrl || 'PNG, JPG, SVG · max 5MB'}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                                <Button
+                                    size="small"
+                                    component="label"
+                                    variant="outlined"
+                                    disabled={uploadLogo.isPending}
+                                    sx={{ borderColor: '#3b82f6', color: '#3b82f6', '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' }, fontSize: '0.72rem', fontWeight: 700 }}
+                                >
+                                    {uploadLogo.isPending ? <CircularProgress size={14} color="inherit" /> : 'Upload'}
+                                    <input
+                                        type="file"
+                                        hidden
+                                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            uploadLogo.mutate({ tenantId, file }, {
+                                                onSuccess: (resp) => {
+                                                    setConfigForm(f => ({ ...f, branding: { ...f.branding, logoUrl: resp.logoUrl } }));
+                                                    setSaveOk('config');
+                                                    setTimeout(() => setSaveOk(''), 3000);
+                                                },
+                                            });
+                                            e.target.value = '';
+                                        }}
+                                    />
+                                </Button>
+                                {(configForm.branding as any).logoUrl && (
+                                    <Button
+                                        size="small"
+                                        onClick={() => setConfigForm(f => ({ ...f, branding: { ...f.branding, logoUrl: '' } }))}
+                                        sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' }, fontSize: '0.72rem', fontWeight: 700, minWidth: 'auto', px: 1 }}
+                                    >
+                                        Clear
+                                    </Button>
+                                )}
+                            </Box>
                         </Box>
+                        {uploadLogo.isError && (
+                            <Alert severity="error" sx={{ fontSize: '0.78rem' }}>
+                                {uploadLogo.error instanceof Error ? uploadLogo.error.message : 'Logo upload failed'}
+                            </Alert>
+                        )}
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
                             {(['primaryColor', 'secondaryColor', 'accentColor'] as const).map((key) => (
                                 <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -450,28 +536,50 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                 {/* ── TAB 4: USERS ─────────────────────────────────── */}
                 {tab === 4 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {/* Header row */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
+                                Tenant Users ({(users as any[]).length})
+                            </Typography>
+                            <Button
+                                size="small"
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={() => { setEditingUser(null); setUserDialogOpen(true); }}
+                                sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700, fontSize: '0.72rem', height: 28 }}
+                            >
+                                New User
+                            </Button>
+                        </Box>
+
                         {usersLoading ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={20} sx={{ color: '#3b82f6' }} /></Box>
-                        ) : users.length === 0 ? (
+                        ) : (users as any[]).length === 0 ? (
                             <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 4 }}>No users in this tenant database.</Typography>
                         ) : (
-                            users.map((u) => (
+                            (users as any[]).map((u) => (
                                 <Box key={u.user_id} sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 1.5, bgcolor: '#0f172a', borderRadius: 1.5, border: '1px solid #1e293b' }}>
                                     <Avatar sx={{ width: 32, height: 32, bgcolor: '#1e293b', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
                                         {u.username?.charAt(0)?.toUpperCase()}
                                     </Avatar>
                                     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                         <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }} noWrap>
-                                            {u.username}
+                                            {u.first_name || u.last_name ? `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() : u.username}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: '#475569' }} noWrap>{u.email}</Typography>
+                                        <Typography variant="caption" sx={{ color: '#64748b', fontFamily: 'monospace', fontSize: '0.7rem' }} noWrap>
+                                            @{u.username} · {u.email}
+                                        </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: 150, justifyContent: 'flex-end' }}>
-                                        {u.roles.map((r) => (
+                                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: 140, justifyContent: 'flex-end' }}>
+                                        {u.roles.map((r: string) => (
                                             <Chip key={r} label={r} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: '#1e293b', color: '#94a3b8', fontWeight: 600 }} />
                                         ))}
                                     </Box>
-                                    <Chip label={u.status} size="small" sx={{ height: 20, fontSize: '0.62rem', bgcolor: u.status === 'Active' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: u.status === 'Active' ? '#10b981' : '#ef4444', fontWeight: 600 }} />
+                                    <Chip
+                                        label={u.status}
+                                        size="small"
+                                        sx={{ height: 20, fontSize: '0.62rem', bgcolor: u.status === 'Active' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: u.status === 'Active' ? '#10b981' : '#ef4444', fontWeight: 600 }}
+                                    />
                                     <Tooltip title={`Impersonate ${u.username} (15 min session)`}>
                                         <IconButton
                                             size="small"
@@ -480,6 +588,29 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                             sx={{ color: '#3b82f6', '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' }, width: 28, height: 28 }}
                                         >
                                             <PersonSearchOutlinedIcon sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Edit user">
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => { setEditingUser(u); setUserDialogOpen(true); }}
+                                            sx={{ color: '#94a3b8', '&:hover': { bgcolor: 'rgba(148,163,184,0.1)', color: '#f1f5f9' }, width: 28, height: 28 }}
+                                        >
+                                            <EditOutlinedIcon sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete user">
+                                        <IconButton
+                                            size="small"
+                                            disabled={deleteTenantUser.isPending}
+                                            onClick={() => {
+                                                if (confirm(`Delete user "${u.username}"? This also removes their global login.`)) {
+                                                    deleteTenantUser.mutate({ tenantId, userId: u.user_id });
+                                                }
+                                            }}
+                                            sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' }, width: 28, height: 28 }}
+                                        >
+                                            <DeleteOutlinedIcon sx={{ fontSize: 16 }} />
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
@@ -496,6 +627,14 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                 tenantId={tenantId}
                 tenantName={tenantName}
                 onSuccess={() => {}}
+            />
+
+            {/* User CRUD Dialog */}
+            <TenantUserDialog
+                open={userDialogOpen}
+                onClose={() => { setUserDialogOpen(false); setEditingUser(null); }}
+                tenantId={tenantId}
+                editUser={editingUser}
             />
         </Box>
     );
