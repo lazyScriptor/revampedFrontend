@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
@@ -11,6 +10,8 @@ interface PlatformKpiCardsProps {
         activeTenants: number;
         suspendedTenants: number;
         totalGlobalUsers: number;
+        overdueTenants?: number;
+        totalRevenuePaid?: number;
         tierBreakdown: Array<{ tier: string; count: number }>;
     } | null;
     isLoading: boolean;
@@ -47,7 +48,7 @@ const kpiConfig = [
     },
 ];
 
-const PlatformKpiCards: React.FC<PlatformKpiCardsProps> = ({ data, isLoading }) => {
+export default function PlatformKpiCards({ data, isLoading }: PlatformKpiCardsProps) {
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
             {kpiConfig.map((kpi) => (
@@ -79,37 +80,15 @@ const PlatformKpiCards: React.FC<PlatformKpiCardsProps> = ({ data, isLoading }) 
                         {kpi.icon}
                     </Box>
                     <Box>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: '#94a3b8',
-                                fontSize: '0.7rem',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                            }}
-                        >
+                        <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             {kpi.label}
                         </Typography>
-                        <Typography
-                            variant="h5"
-                            sx={{
-                                color: '#f1f5f9',
-                                fontWeight: 700,
-                                lineHeight: 1.2,
-                                fontVariantNumeric: 'tabular-nums',
-                            }}
-                        >
-                            {isLoading
-                                ? '—'
-                                : data
-                                    ? (data as Record<string, unknown>)[kpi.key]?.toString() || '0'
-                                    : '0'}
+                        <Typography variant="h5" sx={{ color: '#f1f5f9', fontWeight: 700, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
+                            {isLoading ? '—' : data ? (data as Record<string, unknown>)[kpi.key]?.toString() ?? '0' : '0'}
                         </Typography>
                     </Box>
                 </Paper>
             ))}
         </Box>
     );
-};
-
-export default PlatformKpiCards;
+}

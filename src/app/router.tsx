@@ -146,6 +146,15 @@ const permissionsRoute = createRoute({
 });
 
 // Super Admin Routes (standalone, separate auth)
+const superAdminIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/super-admin",
+  beforeLoad: () => {
+    const sa = useSuperAdminStore.getState();
+    throw redirect({ to: sa.isAuthenticated ? "/super-admin/dashboard" : "/super-admin/login" });
+  },
+});
+
 const superAdminLoginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/super-admin/login",
@@ -183,6 +192,7 @@ const routeTree = rootRoute.addChildren([
     adminUsersRoute,
     adminRolesRoute,
   ]),
+  superAdminIndexRoute,
   superAdminLoginRoute,
   superAdminDashboardRoute,
 ]);
