@@ -125,7 +125,7 @@ const maintenanceRoute = createRoute({
 const workforceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/workforce",
-  beforeLoad: () => requirePermission("inventory_permission"),
+  beforeLoad: () => requirePermission("workforce:view"),
   component: () => <WorkforceRoute />,
 });
 

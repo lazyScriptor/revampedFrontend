@@ -176,7 +176,7 @@ function AuthenticatedLayout() {
       text: "Workforce",
       icon: <BadgeIcon />,
       path: "/workforce",
-      requiredPermission: "inventory_permission",
+      requiredPermission: "workforce:view",
     },
     {
       text: "Accounting",

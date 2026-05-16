@@ -115,6 +115,19 @@ export const useUpdateTechnician = () => {
     });
 };
 
+// My Tickets — for the authenticated technician's own active defects
+export const useMyTickets = () => {
+    return useQuery({
+        queryKey: ['my-tickets'],
+        queryFn: async () => {
+            const response = await api.get('/defects/my-tickets');
+            const payload = response.data ? response.data : response;
+            const logs = payload?.data?.logs || payload?.logs || [];
+            return Array.isArray(logs) ? logs : [];
+        },
+    });
+};
+
 // 4. Toggle Status (Soft Delete)
 export const useToggleTechnicianStatus = () => {
     const queryClient = useQueryClient();
