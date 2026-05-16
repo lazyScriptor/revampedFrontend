@@ -12,26 +12,17 @@ import {
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import DiscountIcon from "@mui/icons-material/Discount";
+import PaymentsIcon from "@mui/icons-material/Payments";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
-
-const customScrollbar = {
-  "&::-webkit-scrollbar": { width: "6px" },
-  "&::-webkit-scrollbar-track": { background: "transparent" },
-  "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "10px" },
-  "&::-webkit-scrollbar-thumb:hover": { background: "#94a3b8" },
-};
 
 interface PosCheckoutPanelProps {
   cartItems: CartItem[];
   selectedCustomer: any | null;
   fees: { transport: number; discount: number; advance: number };
-  setFees: React.Dispatch<
-    React.SetStateAction<{
-      transport: number;
-      discount: number;
-      advance: number;
-    }>
-  >;
+  setFees: React.Dispatch<React.SetStateAction<{ transport: number; discount: number; advance: number }>>;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onConfirmDispatch: () => void;
@@ -48,13 +39,10 @@ export function PosCheckoutPanel({
   onConfirmDispatch,
   isSubmitting,
 }: PosCheckoutPanelProps) {
-  const subTotal = useMemo(() => {
-    return cartItems.reduce(
-      (total, item) => total + calculateLineMath(item).lineCost,
-      0,
-    );
-  }, [cartItems]);
-
+  const subTotal = useMemo(
+    () => cartItems.reduce((total, item) => total + calculateLineMath(item).lineCost, 0),
+    [cartItems]
+  );
   const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
 
@@ -64,15 +52,15 @@ export function PosCheckoutPanel({
   };
 
   const handleApplyWallet = () => {
-    if (selectedCustomer && selectedCustomer.deposit_balance) {
-      const maxApplicable = Math.min(
-        Number(selectedCustomer.deposit_balance),
-        grandTotal,
-      );
+    if (selectedCustomer?.deposit_balance) {
+      const maxApplicable = Math.min(Number(selectedCustomer.deposit_balance), grandTotal);
       setFees((prev) => ({ ...prev, advance: maxApplicable }));
     }
   };
 
+  const canDispatch = !!selectedCustomer && cartItems.length > 0 && !isSubmitting;
+
+  // ── Collapsed sidebar strip ──────────────────────────────────────────────────
   if (isCollapsed) {
     return (
       <Box
@@ -84,12 +72,14 @@ export function PosCheckoutPanel({
           alignItems: "center",
           py: 3,
           cursor: "pointer",
+          bgcolor: "#0f172a",
           color: "white",
           "&:hover": { bgcolor: "#1e293b" },
+          transition: "background-color 0.2s",
         }}
       >
-        <Tooltip title="Expand Terminal" placement="left">
-          <IconButton color="inherit" sx={{ mb: 4 }}>
+        <Tooltip title="Expand Checkout" placement="left">
+          <IconButton color="inherit" size="small" sx={{ mb: 4 }}>
             <ChevronLeftIcon />
           </IconButton>
         </Tooltip>
@@ -97,223 +87,249 @@ export function PosCheckoutPanel({
           sx={{
             writingMode: "vertical-rl",
             transform: "rotate(180deg)",
-            fontWeight: "bold",
+            fontWeight: 800,
             letterSpacing: 2,
-            fontSize: "1.2rem",
+            fontSize: "0.85rem",
             whiteSpace: "nowrap",
+            color: balanceDue > 0 ? "#4ade80" : "#94a3b8",
           }}
         >
-          DISPATCH: Rs. {grandTotal.toLocaleString()}
+          TOTAL · Rs. {grandTotal.toLocaleString()}
         </Typography>
       </Box>
     );
   }
 
+  // ── Full terminal ────────────────────────────────────────────────────────────
   return (
     <Box
       sx={{
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        bgcolor: "#f8fafc",
+        bgcolor: "#0f172a",
         overflow: "hidden",
       }}
     >
-      {/* LOCKED HEADER */}
+      {/* Terminal header */}
       <Box
         sx={{
           flexShrink: 0,
-          p: 3,
-          bgcolor: "white",
-          borderBottom: "1px solid #e2e8f0",
-          zIndex: 10,
+          px: 3,
+          py: 2,
+          borderBottom: "1px solid #1e293b",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <Typography variant="h6" fontWeight="bold">
-          Financials
-        </Typography>
-        <IconButton onClick={onToggleCollapse} size="small" color="primary">
-          <ChevronRightIcon />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              bgcolor: "#4ade80",
+              boxShadow: "0 0 6px #4ade80",
+            }}
+          />
+          <Typography variant="overline" sx={{ color: "#94a3b8", fontWeight: 700, letterSpacing: 2 }}>
+            CHECKOUT
+          </Typography>
+        </Box>
+        <IconButton onClick={onToggleCollapse} size="small" sx={{ color: "#475569" }}>
+          <ChevronRightIcon fontSize="small" />
         </IconButton>
       </Box>
 
-      {/* SCROLLABLE BODY */}
+      {/* Scrollable body */}
       <Box
         sx={{
           flexGrow: 1,
           overflowY: "auto",
-          minHeight: 0,
+          p: 3,
           display: "flex",
           flexDirection: "column",
-          gap: 3,
-          p: 3,
-          ...customScrollbar,
+          gap: 2.5,
+          "&::-webkit-scrollbar": { width: "4px" },
+          "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            flexShrink: 0,
-          }}
-        >
-          <TextField
-            label="Transport / Delivery Fee"
-            type="number"
-            fullWidth
-            value={fees.transport || ""}
-            onChange={(e) => handleFeeChange("transport", e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Rs.</InputAdornment>
-              ),
-              inputProps: { min: 0 },
-            }}
-          />
-          <TextField
-            label="Discount"
-            type="number"
-            fullWidth
-            value={fees.discount || ""}
-            onChange={(e) => handleFeeChange("discount", e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Rs.</InputAdornment>
-              ),
-              inputProps: { min: 0 },
-            }}
-          />
+        {/* Fees */}
+        <Box>
+          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, mb: 1.5, display: "block" }}>
+            ORDER ADJUSTMENTS
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <TextField
+              label="Transport / Delivery"
+              type="number"
+              size="small"
+              fullWidth
+              value={fees.transport || ""}
+              onChange={(e) => handleFeeChange("transport", e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LocalShippingIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                    </InputAdornment>
+                  ),
+                  inputProps: { min: 0 },
+                  sx: {
+                    color: "white",
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#475569" },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3b82f6" },
+                  },
+                },
+                inputLabel: { sx: { color: "#64748b" } },
+              }}
+            />
+            <TextField
+              label="Discount"
+              type="number"
+              size="small"
+              fullWidth
+              value={fees.discount || ""}
+              onChange={(e) => handleFeeChange("discount", e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <DiscountIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                    </InputAdornment>
+                  ),
+                  inputProps: { min: 0 },
+                  sx: {
+                    color: "white",
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#475569" },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3b82f6" },
+                  },
+                },
+                inputLabel: { sx: { color: "#64748b" } },
+              }}
+            />
+          </Box>
         </Box>
 
-        <Divider sx={{ borderStyle: "dashed", flexShrink: 0 }} />
-
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-            flexShrink: 0,
-          }}
-        >
+        {/* Financial breakdown */}
+        <Box sx={{ bgcolor: "#1e293b", borderRadius: 2, p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography color="text.secondary">
+            <Typography variant="body2" sx={{ color: "#64748b" }}>
               Subtotal ({cartItems.length} items)
             </Typography>
-            <Typography fontWeight="500">
+            <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 600 }}>
               Rs. {subTotal.toLocaleString()}
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography color="text.secondary">Transport</Typography>
-            <Typography fontWeight="500">
-              + Rs. {fees.transport.toLocaleString()}
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography color="text.secondary">Discount</Typography>
-            <Typography fontWeight="500" color="error.main">
-              - Rs. {fees.discount.toLocaleString()}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              mt: 1,
-              p: 1.5,
-              bgcolor: "#eff6ff",
-              borderRadius: 2,
-            }}
-          >
-            <Typography variant="h6" fontWeight="bold" color="primary.dark">
-              Grand Total
-            </Typography>
-            <Typography variant="h6" fontWeight="bold" color="primary.dark">
+          {fees.transport > 0 && (
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography variant="body2" sx={{ color: "#64748b" }}>Transport</Typography>
+              <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 600 }}>
+                + Rs. {fees.transport.toLocaleString()}
+              </Typography>
+            </Box>
+          )}
+          {fees.discount > 0 && (
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography variant="body2" sx={{ color: "#64748b" }}>Discount</Typography>
+              <Typography variant="body2" sx={{ color: "#f87171", fontWeight: 600 }}>
+                − Rs. {fees.discount.toLocaleString()}
+              </Typography>
+            </Box>
+          )}
+          <Divider sx={{ borderColor: "#334155", my: 0.5 }} />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 700 }}>Grand Total</Typography>
+            <Typography variant="h6" sx={{ color: "white", fontWeight: 900 }}>
               Rs. {grandTotal.toLocaleString()}
             </Typography>
           </Box>
         </Box>
 
-        <Divider sx={{ borderStyle: "dashed", flexShrink: 0 }} />
+        <Divider sx={{ borderColor: "#1e293b" }} />
 
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            flexShrink: 0,
-          }}
-        >
-          <Typography variant="subtitle2" fontWeight="600">
-            Advance Payment Today
+        {/* Advance */}
+        <Box>
+          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, mb: 1.5, display: "block" }}>
+            ADVANCE PAYMENT
           </Typography>
+
           {selectedCustomer && Number(selectedCustomer.deposit_balance) > 0 && (
             <Box
               sx={{
                 p: 1.5,
-                bgcolor: "#f0fdf4",
+                bgcolor: "#0f2416",
+                border: "1px solid #14532d",
                 borderRadius: 2,
-                border: "1px solid #bbf7d0",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                mb: 1.5,
               }}
             >
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="success.dark"
-                  display="flex"
-                  alignItems="center"
-                  gap={0.5}
-                >
-                  <AccountBalanceWalletIcon fontSize="inherit" /> Client Wallet
-                  Balance
-                </Typography>
-                <Typography
-                  variant="body2"
-                  fontWeight="bold"
-                  color="success.dark"
-                >
-                  Rs.{" "}
-                  {Number(selectedCustomer.deposit_balance).toLocaleString()}
-                </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <AccountBalanceWalletIcon sx={{ fontSize: 16, color: "#4ade80" }} />
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#4ade80", fontWeight: 700, display: "block" }}>
+                    Client Wallet
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#86efac", fontWeight: 700 }}>
+                    Rs. {Number(selectedCustomer.deposit_balance).toLocaleString()}
+                  </Typography>
+                </Box>
               </Box>
               <Button
                 size="small"
                 variant="outlined"
-                color="success"
-                sx={{ bgcolor: "white" }}
                 onClick={handleApplyWallet}
+                sx={{
+                  color: "#4ade80",
+                  borderColor: "#14532d",
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: "0.72rem",
+                  "&:hover": { bgcolor: "#14532d", borderColor: "#166534" },
+                }}
               >
                 Apply
               </Button>
             </Box>
           )}
+
           <TextField
-            label="Cash / Card Collected Now"
+            label="Collected Now"
             type="number"
+            size="small"
             fullWidth
             value={fees.advance || ""}
             onChange={(e) => handleFeeChange("advance", e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">Rs.</InputAdornment>
-              ),
-              inputProps: { min: 0 },
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PaymentsIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                  </InputAdornment>
+                ),
+                inputProps: { min: 0 },
+                sx: {
+                  color: "white",
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
+                  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#475569" },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3b82f6" },
+                },
+              },
+              inputLabel: { sx: { color: "#64748b" } },
             }}
           />
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
-            <Typography color="text.secondary" fontWeight="500">
-              Remaining Balance Due
-            </Typography>
+
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1.5 }}>
+            <Typography variant="caption" sx={{ color: "#64748b" }}>Remaining balance</Typography>
             <Typography
-              fontWeight="bold"
-              color={balanceDue > 0 ? "error.main" : "text.secondary"}
+              variant="body2"
+              sx={{ fontWeight: 800, color: balanceDue > 0 ? "#f87171" : "#4ade80" }}
             >
               Rs. {balanceDue.toLocaleString()}
             </Typography>
@@ -321,32 +337,39 @@ export function PosCheckoutPanel({
         </Box>
       </Box>
 
-      {/* LOCKED FOOTER ACTION (flexShrink ensures it stays at the bottom!) */}
-      <Box
-        sx={{
-          flexShrink: 0,
-          p: 3,
-          bgcolor: "white",
-          borderTop: "1px solid #e2e8f0",
-          zIndex: 10,
-        }}
-      >
+      {/* Dispatch button footer */}
+      <Box sx={{ flexShrink: 0, p: 3, borderTop: "1px solid #1e293b" }}>
+        {!selectedCustomer && (
+          <Typography variant="caption" sx={{ color: "#64748b", display: "block", textAlign: "center", mb: 1 }}>
+            Select a client to enable dispatch
+          </Typography>
+        )}
+        {selectedCustomer && cartItems.length === 0 && (
+          <Typography variant="caption" sx={{ color: "#64748b", display: "block", textAlign: "center", mb: 1 }}>
+            Add equipment to the order first
+          </Typography>
+        )}
         <Button
           variant="contained"
-          color="success"
           fullWidth
           size="large"
           disableElevation
-          disabled={!selectedCustomer || cartItems.length === 0 || isSubmitting}
+          disabled={!canDispatch}
           onClick={onConfirmDispatch}
+          startIcon={<RocketLaunchIcon />}
           sx={{
-            py: 2,
-            borderRadius: 2,
-            fontSize: "1.1rem",
-            fontWeight: "bold",
+            py: 1.75,
+            borderRadius: 2.5,
+            fontSize: "0.95rem",
+            fontWeight: 800,
+            bgcolor: canDispatch ? "#16a34a" : "#1e293b",
+            color: canDispatch ? "white" : "#475569",
+            letterSpacing: 0.5,
+            "&:hover": { bgcolor: "#15803d" },
+            "&.Mui-disabled": { bgcolor: "#1e293b", color: "#475569" },
           }}
         >
-          {isSubmitting ? "Processing..." : "Place Dispatch Order"}
+          {isSubmitting ? "Processing…" : "Place Dispatch Order"}
         </Button>
       </Box>
     </Box>

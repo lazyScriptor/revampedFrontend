@@ -7,161 +7,235 @@ import {
   CircularProgress,
   Avatar,
   Chip,
-  Paper,
   Divider,
-  Button,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import LockIcon from "@mui/icons-material/Lock";
 import StarIcon from "@mui/icons-material/Star";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import BusinessIcon from "@mui/icons-material/Business";
+import PersonIcon from "@mui/icons-material/Person";
+import CloseIcon from "@mui/icons-material/Close";
+import BadgeIcon from "@mui/icons-material/Badge";
+import PhoneIcon from "@mui/icons-material/Phone";
 
 import { usePosCustomerSearch } from "../hooks/usePosSearch";
 
-// Prop interface so the main POS screen knows who is selected
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
   onSelectCustomer: (customer: any | null) => void;
 }
 
-export function PosCustomerPanel({
-  selectedCustomer,
-  onSelectCustomer,
-}: PosCustomerPanelProps) {
+export function PosCustomerPanel({ selectedCustomer, onSelectCustomer }: PosCustomerPanelProps) {
   const [inputValue, setInputValue] = useState("");
-  const { data: searchResults = [], isLoading } =
-    usePosCustomerSearch(inputValue);
+  const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
+
+  const isBlacklisted = selectedCustomer?.status === "Blacklisted";
+  const hasWallet = Number(selectedCustomer?.deposit_balance) > 0;
+  const idInVault = selectedCustomer?.is_id_retained_currently;
+
+  const displayName = (c: any) =>
+    c?.customer_type === "Business"
+      ? c?.company_name
+      : `${c?.first_name} ${c?.last_name}`;
 
   return (
-    <Box
-      sx={{ display: "flex", flexDirection: "column", gap: 3, height: "100%" }}
-    >
-      {/* --- 1. The Global Search Bar --- */}
-      <Autocomplete
-        options={searchResults}
-        getOptionLabel={(option: any) =>
-          `${option.first_name} ${option.last_name}`
-        }
-        filterOptions={(x) => x} // Disable local filtering, let the backend handle it
-        autoComplete
-        includeInputInList
-        filterSelectedOptions
-        value={selectedCustomer}
-        noOptionsText={
-          inputValue.length < 2 ? "Type to search..." : "No clients found."
-        }
-        onChange={(event, newValue) => onSelectCustomer(newValue)}
-        onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            placeholder="Scan ID, Phone, or Name..."
-            variant="outlined"
-            fullWidth
-            InputProps={{
-              ...params.InputProps,
-              startAdornment: (
-                <SearchIcon color="action" sx={{ ml: 1, mr: -0.5 }} />
-              ),
-              endAdornment: (
-                <>
-                  {isLoading ? (
-                    <CircularProgress color="inherit" size={20} />
-                  ) : null}
-                  {/* CRITICAL FIX: Added the '?' optional chaining operator below */}
-                  {params.InputProps?.endAdornment}
-                </>
-              ),
-              sx: { borderRadius: 2, bgcolor: "white" },
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
+      {/* Search */}
+      <Box sx={{ position: "relative" }}>
+        <Autocomplete
+          options={searchResults}
+          getOptionLabel={(option: any) => displayName(option) || ""}
+          filterOptions={(x) => x}
+          autoComplete
+          includeInputInList
+          filterSelectedOptions
+          value={selectedCustomer}
+          noOptionsText={inputValue.length < 2 ? "Type to search…" : "No clients found."}
+          onChange={(_, newValue) => onSelectCustomer(newValue)}
+          onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
+          renderInput={(params) => (
+            <TextField
+              {...(params as any)}
+              placeholder="Scan NIC, phone, or name…"
+              size="small"
+              fullWidth
+              slotProps={{
+                ...((params as any).slotProps),
+                input: {
+                  ...((params as any).slotProps?.input || {}),
+                  startAdornment: (
+                    <SearchIcon sx={{ color: "action.disabled", ml: 0.5, mr: 0.5, fontSize: 18 }} />
+                  ),
+                  endAdornment: (
+                    <>
+                      {isLoading && <CircularProgress size={16} />}
+                      {((params as any).slotProps?.input as any)?.endAdornment}
+                    </>
+                  ),
+                  sx: {
+                    borderRadius: 2,
+                    bgcolor: "white",
+                    "& fieldset": { borderColor: "#e2e8f0" },
+                  },
+                },
+              }}
+            />
+          )}
+          renderOption={(props, option: any) => {
+            const { key, ...rest } = props as any;
+            return (
+              <Box
+                component="li"
+                key={key}
+                {...rest}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  px: 2,
+                  py: 1.5,
+                  cursor: "pointer",
+                  borderBottom: "1px solid #f1f5f9",
+                  "&:hover": { bgcolor: "#f8fafc" },
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 34,
+                    height: 34,
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    bgcolor:
+                      option.status === "Blacklisted"
+                        ? "error.light"
+                        : option.customer_type === "Business"
+                        ? "primary.main"
+                        : "#475569",
+                  }}
+                >
+                  {option.first_name?.charAt(0)}
+                </Avatar>
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                    {displayName(option)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {option.nic_number} · {option.phone_number}
+                  </Typography>
+                </Box>
+                {option.status === "Blacklisted" && (
+                  <Chip
+                    size="small"
+                    label="Blocked"
+                    color="error"
+                    sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
+                  />
+                )}
+              </Box>
+            );
+          }}
+        />
+      </Box>
+
+      {/* Client card */}
+      {selectedCustomer ? (
+        <Box
+          sx={{
+            flex: 1,
+            bgcolor: "white",
+            border: "1px solid",
+            borderColor: isBlacklisted ? "#fca5a5" : "#e2e8f0",
+            borderRadius: 2.5,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Card header with accent bar */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 2,
+              p: 2,
+              borderLeft: "4px solid",
+              borderLeftColor: isBlacklisted
+                ? "error.main"
+                : selectedCustomer.customer_type === "Business"
+                ? "primary.main"
+                : "#475569",
             }}
-          />
-        )}
-        // MASTERCLASS UX: Rich dropdown items
-        renderOption={(props, option: any) => (
-          <li
-            {...props}
-            key={option.customer_id}
-            className="flex items-center gap-3 p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50"
           >
             <Avatar
               sx={{
-                width: 40,
-                height: 40,
-                bgcolor:
-                  option.customer_type === "Business"
-                    ? "primary.main"
-                    : "slate.400",
+                width: 46,
+                height: 46,
+                fontWeight: 800,
+                fontSize: "1.1rem",
+                bgcolor: isBlacklisted
+                  ? "error.main"
+                  : selectedCustomer.customer_type === "Business"
+                  ? "primary.main"
+                  : "#475569",
+                flexShrink: 0,
               }}
             >
-              {option.first_name.charAt(0)}
+              {selectedCustomer.first_name?.charAt(0)}
             </Avatar>
-            <div className="flex-grow">
-              <Typography variant="body1" fontWeight="600" color="text.primary">
-                {option.customer_type === "Business"
-                  ? option.company_name
-                  : `${option.first_name} ${option.last_name}`}
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }} noWrap>
+                {displayName(selectedCustomer)}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                NIC: {option.nic_number} • Phone: {option.phone_number}
-              </Typography>
-            </div>
-            {option.status === "Blacklisted" && (
-              <Chip
-                size="small"
-                color="error"
-                label="Blacklisted"
-                sx={{ height: 20, fontSize: "0.7rem" }}
-              />
-            )}
-          </li>
-        )}
-      />
-
-      {/* --- 2. The Customer Snapshot Widget --- */}
-      {selectedCustomer ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2.5,
-            border: "1px solid #e2e8f0",
-            borderRadius: 2,
-            bgcolor: "white",
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
-          {/* Header */}
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-            <Avatar
-              sx={{
-                width: 56,
-                height: 56,
-                bgcolor:
-                  selectedCustomer.customer_type === "Business"
-                    ? "primary.main"
-                    : "slate.700",
-              }}
-            >
-              {selectedCustomer.first_name.charAt(0)}
-            </Avatar>
-            <Box>
-              <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>
-                {selectedCustomer.customer_type === "Business"
-                  ? selectedCustomer.company_name
-                  : `${selectedCustomer.first_name} ${selectedCustomer.last_name}`}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {selectedCustomer.nic_number} • {selectedCustomer.phone_number}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}>
+                {selectedCustomer.customer_type === "Business" ? (
+                  <BusinessIcon sx={{ fontSize: 12, color: "text.secondary" }} />
+                ) : (
+                  <PersonIcon sx={{ fontSize: 12, color: "text.secondary" }} />
+                )}
+                <Typography variant="caption" color="text.secondary">
+                  {selectedCustomer.customer_type}
+                </Typography>
+              </Box>
             </Box>
+            <Tooltip title="Remove selection">
+              <IconButton size="small" onClick={() => onSelectCustomer(null)} sx={{ color: "action.disabled" }}>
+                <CloseIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           <Divider />
 
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Quick info rows */}
+          <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <BadgeIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "monospace" }}>
+                {selectedCustomer.nic_number || "—"}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <PhoneIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary">
+                {selectedCustomer.phone_number || "—"}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Stats row */}
+          <Box
+            sx={{
+              mx: 2,
+              mb: 2,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 1,
+            }}
+          >
             <Box
               sx={{
                 p: 1.5,
@@ -170,130 +244,110 @@ export function PosCustomerPanel({
                 border: "1px solid #f1f5f9",
               }}
             >
+              <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontWeight: 700, mb: 0.5 }}>
+                <StarIcon sx={{ fontSize: 12, color: "#eab308" }} /> Trust Score
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                {selectedCustomer.rating?.toFixed(1) || "5.0"} / 5
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                p: 1.5,
+                bgcolor: hasWallet ? "#f0fdf4" : "#f8fafc",
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: hasWallet ? "#bbf7d0" : "#f1f5f9",
+              }}
+            >
               <Typography
                 variant="caption"
-                color="text.secondary"
-                display="block"
-              >
-                Trust Rating
-              </Typography>
-              <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   gap: 0.5,
-                  color: "#eab308",
+                  fontWeight: 700,
+                  mb: 0.5,
+                  color: hasWallet ? "success.dark" : "text.secondary",
                 }}
               >
-                <StarIcon fontSize="small" />
-                <Typography
-                  variant="body2"
-                  fontWeight="bold"
-                  color="text.primary"
-                >
-                  {selectedCustomer.rating}.0 / 5.0
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                p: 1.5,
-                bgcolor: "#f8fafc",
-                borderRadius: 2,
-                border: "1px solid #f1f5f9",
-              }}
-            >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                display="block"
-              >
-                Floating Advance
+                <AccountBalanceWalletIcon sx={{ fontSize: 12 }} /> Wallet
               </Typography>
-              <Typography
-                variant="body2"
-                fontWeight="bold"
-                color={
-                  Number(selectedCustomer.deposit_balance) > 0
-                    ? "success.main"
-                    : "text.primary"
-                }
-              >
-                Rs.{" "}
-                {Number(selectedCustomer.deposit_balance || 0).toLocaleString()}
+              <Typography variant="body2" sx={{ fontWeight: 800, color: hasWallet ? "success.main" : "text.secondary" }}>
+                Rs. {Number(selectedCustomer.deposit_balance || 0).toLocaleString()}
               </Typography>
             </Box>
-          </div>
+          </Box>
 
-          {/* Critical Warnings Engine */}
-          {selectedCustomer.status === "Blacklisted" && (
+          {/* Warnings */}
+          {isBlacklisted && (
             <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                p: 1.5,
+                mx: 2,
+                mb: 2,
+                px: 2,
+                py: 1.25,
                 bgcolor: "#fef2f2",
-                borderRadius: 2,
                 border: "1px solid #fca5a5",
-                color: "#dc2626",
+                borderRadius: 2,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
               }}
             >
-              <WarningAmberIcon fontSize="small" />
-              <Typography variant="body2" fontWeight="600">
-                Client is Blacklisted. DO NOT RENT.
+              <WarningAmberIcon sx={{ fontSize: 16, color: "error.main", flexShrink: 0 }} />
+              <Typography variant="caption" sx={{ color: "error.main", fontWeight: 700 }}>
+                BLACKLISTED — Do not process this order.
               </Typography>
             </Box>
           )}
 
-          {selectedCustomer.is_id_retained_currently && (
+          {idInVault && (
             <Box
               sx={{
+                mx: 2,
+                mb: 2,
+                px: 2,
+                py: 1.25,
+                bgcolor: "#fffbeb",
+                border: "1px solid #fde047",
+                borderRadius: 2,
                 display: "flex",
                 alignItems: "center",
                 gap: 1,
-                p: 1.5,
-                bgcolor: "#fffbeb",
-                borderRadius: 2,
-                border: "1px solid #fde047",
-                color: "#b45309",
               }}
             >
-              <VerifiedUserIcon fontSize="small" />
-              <Typography variant="body2" fontWeight="600">
-                Physical ID is currently in the vault.
+              <LockIcon sx={{ fontSize: 14, color: "#b45309", flexShrink: 0 }} />
+              <Typography variant="caption" sx={{ color: "#b45309", fontWeight: 600 }}>
+                Physical ID currently in the security vault.
               </Typography>
             </Box>
           )}
-        </Paper>
+        </Box>
       ) : (
-        /* Empty State */
+        /* Empty state */
         <Box
           sx={{
+            flex: 1,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            flexGrow: 1,
             border: "2px dashed #e2e8f0",
-            borderRadius: 2,
-            bgcolor: "#f8fafc",
+            borderRadius: 2.5,
             p: 3,
             textAlign: "center",
+            gap: 1,
+            color: "#94a3b8",
           }}
         >
-          <PersonAddIcon sx={{ fontSize: 48, color: "#cbd5e1", mb: 2 }} />
-          <Typography variant="body1" fontWeight="600" color="text.secondary">
+          <PersonIcon sx={{ fontSize: 40, opacity: 0.3 }} />
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
             No Client Selected
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            Search above or register a new client to begin drafting this
-            invoice.
+          <Typography variant="caption">
+            Search by name, NIC, or phone number above.
           </Typography>
-          <Button variant="outlined" size="small" sx={{ borderRadius: 2 }}>
-            Register New Client
-          </Button>
         </Box>
       )}
     </Box>

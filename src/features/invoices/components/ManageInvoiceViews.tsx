@@ -2,10 +2,8 @@ import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Autocomplete,
   TextField,
   CircularProgress,
-  Paper,
   Divider,
   Chip,
   Button,
@@ -28,142 +26,215 @@ import EditIcon from "@mui/icons-material/Edit";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import DescriptionIcon from "@mui/icons-material/Description";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import {
   useInvoiceSearch,
+  useInvoiceList,
   useAddPayment,
   useToggleVault,
   useUpdateFees,
 } from "../hooks/useInvoiceHooks";
 
-// --- GLOWING DOT CSS COMPONENT ---
+const scroll = {
+  "&::-webkit-scrollbar": { width: "5px" },
+  "&::-webkit-scrollbar-track": { background: "transparent" },
+  "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "10px" },
+};
+
 const StatusDot = ({ color }: { color: string }) => (
   <Box
     sx={{
-      width: 10,
-      height: 10,
+      width: 8,
+      height: 8,
       borderRadius: "50%",
-      backgroundColor: color,
-      boxShadow: `0 0 8px 2px ${color}80`,
-      mr: 1.5,
+      bgcolor: color,
+      boxShadow: `0 0 6px 2px ${color}60`,
+      flexShrink: 0,
     }}
   />
 );
 
-const customScrollbar = {
-  "&::-webkit-scrollbar": { width: "6px" },
-  "&::-webkit-scrollbar-track": { background: "transparent" },
-  "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "10px" },
-  "&::-webkit-scrollbar-thumb:hover": { background: "#94a3b8" },
+const relDate = (dateStr: string) => {
+  const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+  if (d === 0) return "Today";
+  if (d === 1) return "Yesterday";
+  if (d < 7) return `${d} days ago`;
+  return new Date(dateStr).toLocaleDateString();
 };
 
 // ============================================================================
-// PANE 1: INVOICE SEARCH
+// PANE 1: INVOICE ROSTER (search + status filter + live list)
 // ============================================================================
 export function ManageSearchPanel({
   onSelectInvoice,
+  selectedInvoiceId = null,
 }: {
   onSelectInvoice: (id: number) => void;
+  selectedInvoiceId?: number | null;
 }) {
-  const [inputValue, setInputValue] = useState("");
-  const { data: searchResults = [], isLoading } = useInvoiceSearch(inputValue);
+  const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
+
+  const { data: searchResults = [], isLoading: searching } = useInvoiceSearch(searchInput);
+  const { data: listData, isLoading: listLoading } = useInvoiceList(
+    1,
+    25,
+    statusFilter === "All" ? undefined : statusFilter
+  );
+
+  const isSearchMode = searchInput.length > 0;
+  const displayInvoices: any[] = isSearchMode
+    ? searchResults
+    : listData?.invoices || [];
+  const isLoading = isSearchMode ? searching : listLoading;
+
+  const borderColor = (inv: any) => {
+    if (inv.invoice_id === selectedInvoiceId) return "#2563eb";
+    return inv.status === "Active" ? "#fbbf24" : "#e2e8f0";
+  };
+
+  const bgColor = (inv: any) => {
+    if (inv.invoice_id === selectedInvoiceId) return "#eff6ff";
+    return "white";
+  };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 3,
-        height: "100%",
-        overflow: "hidden",
-      }}
-    >
-      <Box sx={{ flexGrow: 1, overflowY: "auto", pr: 1, ...customScrollbar }}>
-        <Autocomplete
-          options={searchResults}
-          getOptionLabel={(option: any) =>
-            `INV-${option.invoice_id}   ${option.Customer?.first_name}`
-          }
-          filterOptions={(x) => x}
-          onChange={(event, newValue: any) => {
-            if (newValue) onSelectInvoice(newValue.invoice_id);
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      {/* Search */}
+      <Box sx={{ p: 2, flexShrink: 0 }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search INV #, name, or phone…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: <SearchIcon sx={{ color: "action.disabled", mr: 1, fontSize: 18 }} />,
+              endAdornment: isLoading ? <CircularProgress size={16} /> : null,
+              sx: {
+                borderRadius: 2,
+                bgcolor: "white",
+                "& fieldset": { borderColor: "#e2e8f0" },
+              },
+            },
           }}
-          onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
-          ListboxProps={{ sx: { p: 1, bgcolor: "#f8fafc" } }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Search INV #, Name, or Phone..."
-              variant="outlined"
-              fullWidth
-              InputProps={{
-                ...params.InputProps,
-                startAdornment: (
-                  <SearchIcon color="action" sx={{ ml: 1, mr: -0.5 }} />
-                ),
-                endAdornment: (
-                  <>
-                    {isLoading ? (
-                      <CircularProgress color="inherit" size={20} />
-                    ) : null}
-                    {params.InputProps?.endAdornment}
-                  </>
-                ),
-                sx: { borderRadius: 2, bgcolor: "white" },
-              }}
-            />
-          )}
-          renderOption={(props, option: any) => {
-            const { key, ...otherProps } = props as any;
+        />
+      </Box>
+
+      {/* Status filter chips */}
+      <Box sx={{ px: 2, pb: 1.5, display: "flex", gap: 1, flexShrink: 0 }}>
+        {(["All", "Active", "Completed"] as const).map((s) => (
+          <Chip
+            key={s}
+            size="small"
+            label={s}
+            clickable
+            onClick={() => setStatusFilter(s)}
+            variant={statusFilter === s ? "filled" : "outlined"}
+            color={statusFilter === s ? (s === "Active" ? "warning" : s === "Completed" ? "success" : "primary") : "default"}
+            sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+          />
+        ))}
+        {!isSearchMode && listData?.totalItems != null && (
+          <Typography variant="caption" color="text.secondary" sx={{ ml: "auto", alignSelf: "center" }}>
+            {listData.totalItems} total
+          </Typography>
+        )}
+      </Box>
+
+      <Divider />
+
+      {/* Invoice list */}
+      <Box sx={{ flexGrow: 1, overflowY: "auto", ...scroll }}>
+        {isLoading && (
+          <Box sx={{ display: "flex", justifyContent: "center", pt: 4 }}>
+            <CircularProgress size={24} />
+          </Box>
+        )}
+
+        {!isLoading && displayInvoices.length === 0 && (
+          <Box sx={{ p: 4, textAlign: "center" }}>
+            <DescriptionIcon sx={{ fontSize: 36, color: "#cbd5e1", mb: 1 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+              {isSearchMode ? "No invoices match your search." : "No invoices found."}
+            </Typography>
+          </Box>
+        )}
+
+        {!isLoading &&
+          displayInvoices.map((inv: any) => {
+            const isActive = inv.status === "Active";
+            const customerName =
+              inv.Customer?.company_name ||
+              `${inv.Customer?.first_name || ""} ${inv.Customer?.last_name || ""}`.trim() ||
+              "Unknown";
+            const isSelected = inv.invoice_id === selectedInvoiceId;
+            const payments = inv.Payments || [];
+            const totalPaid = payments.reduce((s: number, p: any) => s + Number(p.payment_amount), 0);
+            const balance = Math.max(0, Number(inv.total_amount) - totalPaid);
+
             return (
               <Box
-                component="li"
-                key={key}
-                {...otherProps}
+                key={inv.invoice_id}
+                onClick={() => onSelectInvoice(inv.invoice_id)}
                 sx={{
-                  p: 2,
-                  mb: 1,
-                  borderRadius: 2,
-                  bgcolor: "white",
-                  border: "1px solid #e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
+                  px: 2,
+                  py: 1.5,
+                  borderBottom: "1px solid #f1f5f9",
+                  borderLeft: "3px solid",
+                  borderLeftColor: borderColor(inv),
+                  bgcolor: bgColor(inv),
                   cursor: "pointer",
+                  transition: "all 0.15s",
                   "&:hover": {
-                    borderColor: "primary.main",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                    bgcolor: isSelected ? "#eff6ff" : "#f8fafc",
+                    borderLeftColor: isSelected ? "#2563eb" : (isActive ? "#f59e0b" : "#10b981"),
                   },
                 }}
               >
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography
-                    variant="body1"
-                    fontWeight="600"
-                    color="primary.main"
-                  >
-                    INV-{option.invoice_id}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {option.Customer?.first_name} {option.Customer?.last_name}{" "}
-                    {option.Customer?.phone_number}
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: isSelected ? "primary.main" : "#1e293b" }}>
+                      INV-{inv.invoice_id}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={inv.status}
+                      color={isActive ? "warning" : "success"}
+                      variant={isSelected ? "filled" : "outlined"}
+                      sx={{ fontWeight: 700, fontSize: "0.65rem", height: 18 }}
+                    />
+                  </Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: balance > 0 ? "#dc2626" : "#059669" }}>
+                    Rs. {Number(inv.total_amount).toLocaleString()}
                   </Typography>
                 </Box>
-                <Chip
-                  size="small"
-                  label={option.status}
-                  color={option.status === "Active" ? "warning" : "success"}
-                />
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: "65%" }}>
+                    {customerName}
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    {relDate(inv.issued_date)}
+                  </Typography>
+                </Box>
+                {balance > 0 && isActive && (
+                  <Typography variant="caption" sx={{ color: "#dc2626", fontWeight: 600, fontSize: "0.68rem" }}>
+                    Balance due: Rs. {balance.toLocaleString()}
+                  </Typography>
+                )}
               </Box>
             );
-          }}
-        />
+          })}
       </Box>
     </Box>
   );
 }
 
 // ============================================================================
-// PANE 2: EQUIPMENT TRACKING BOARD (Upgraded UX with Pricing Breakdown)
+// PANE 2: ASSET TRACKING BOARD
 // ============================================================================
 export function ManageLedgerPanel({
   invoice,
@@ -174,154 +245,136 @@ export function ManageLedgerPanel({
 }) {
   if (!invoice)
     return (
-      <EmptyState text="Search and select an invoice to view its ledger." />
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          gap: 1.5,
+          color: "#94a3b8",
+        }}
+      >
+        <DescriptionIcon sx={{ fontSize: 48, opacity: 0.3 }} />
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          Select an invoice from the list to view its asset board.
+        </Typography>
+      </Box>
     );
 
-  const rawLines =
-    invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
+  const rawLines = invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
   const rawTraces =
     invoice.InvoiceTraces ||
     invoice.InvoiceTrace ||
     invoice.invoice_traces ||
     invoice.traces ||
     [];
-
-  const returnTraces = rawTraces.filter(
-    (t: any) => t.event_action === "RETURN_PROCESSED",
-  );
+  const returnTraces = rawTraces.filter((t: any) => t.event_action === "RETURN_PROCESSED");
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        bgcolor: "#f8fafc",
-        overflow: "hidden",
-      }}
-    >
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      {/* Board header */}
       <Box
         sx={{
           flexShrink: 0,
-          p: 3,
+          px: 3,
+          py: 2,
           bgcolor: "white",
           borderBottom: "1px solid #e2e8f0",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          zIndex: 10,
         }}
       >
-        <Typography variant="h6" fontWeight="bold">
-          Asset Tracking Board
-        </Typography>
+        <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+            Asset Tracking Board
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {rawLines.length} line item{rawLines.length !== 1 ? "s" : ""} · INV-{invoice.invoice_id}
+          </Typography>
+        </Box>
         {invoice.status === "Active" && (
           <Button
             variant="contained"
             color="primary"
+            size="small"
             startIcon={<AssignmentReturnedIcon />}
             disableElevation
             onClick={onOpenReturn}
+            sx={{ fontWeight: 700, borderRadius: 2 }}
           >
             Process Handover
           </Button>
         )}
       </Box>
 
-      <Box
-        sx={{
-          p: 3,
-          flexGrow: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 3,
-          ...customScrollbar,
-        }}
-      >
+      {/* Line cards */}
+      <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2.5, display: "flex", flexDirection: "column", gap: 2, ...scroll }}>
         {rawLines.map((line: any) => {
-          const isActive =
-            line.line_status === "Active" || line.status === "Active";
+          const isActive = line.line_status === "Active" || line.status === "Active";
           const equipName = line.Equipment?.equipment_name || "Unknown Asset";
-
-          const alreadyReturned =
-            (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
+          const alreadyReturned = (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
           const pending = line.borrow_quantity - alreadyReturned;
 
           const start = new Date(line.borrow_date).getTime();
-          const today = new Date().getTime();
+          const today = Date.now();
           let daysOut = Math.ceil((today - start) / (1000 * 60 * 60 * 24));
           if (daysOut < 1) daysOut = 1;
 
-          // --- 1. THE CORE MATH ENGINE ---
-          let accruedCost = 0;
           const lockedBase = Number(line.locked_base_price) || 0;
           const lockedExtra = Number(line.locked_extra_daily_rate) || 0;
           const lockedMinDays = Number(line.locked_minimum_days) || 1;
           const borrowQty = Number(line.borrow_quantity) || 1;
 
+          let accruedCost = 0;
           if (!isActive) {
             accruedCost = Number(line.line_total_amount) || 0;
           } else if (daysOut <= lockedMinDays) {
             accruedCost = lockedBase * borrowQty;
           } else {
-            accruedCost =
-              (lockedBase + (daysOut - lockedMinDays) * lockedExtra) *
-              borrowQty;
+            accruedCost = (lockedBase + (daysOut - lockedMinDays) * lockedExtra) * borrowQty;
           }
 
-          // --- 2. UX INTELLIGENCE: Pricing Mode & Breakdown Formula ---
           const isDailyMode = lockedMinDays <= 1 && lockedBase === lockedExtra;
+          const isOverdue = isActive && daysOut > lockedMinDays;
 
           let breakdownBadge = "";
           let breakdownFormula = "";
-
           if (!isActive) {
             breakdownBadge = "Settled";
-            breakdownFormula = "Final computed cost locked at return.";
+            breakdownFormula = "Final cost locked at return.";
           } else if (isDailyMode) {
-            breakdownBadge = "Flat Daily Rate";
-            breakdownFormula = `Rs. ${lockedBase.toLocaleString()} × ${daysOut} Day(s) × ${borrowQty} Qty`;
+            breakdownBadge = "Flat Daily";
+            breakdownFormula = `Rs.${lockedBase.toLocaleString()} × ${daysOut}d × ${borrowQty} unit${borrowQty > 1 ? "s" : ""}`;
           } else {
-            breakdownBadge = `Tiered (${lockedMinDays} Day Base)`;
+            breakdownBadge = `Tiered (${lockedMinDays}d base)`;
             if (daysOut <= lockedMinDays) {
-              breakdownFormula = `Base Rs. ${lockedBase.toLocaleString()} × ${borrowQty} Qty (Covers ${lockedMinDays} Days)`;
+              breakdownFormula = `Base Rs.${lockedBase.toLocaleString()} × ${borrowQty} unit${borrowQty > 1 ? "s" : ""} (covers ${lockedMinDays}d)`;
             } else {
               const extraDays = daysOut - lockedMinDays;
-              breakdownFormula = `[Base Rs. ${lockedBase.toLocaleString()} + (${extraDays} Extra Days × Rs. ${lockedExtra.toLocaleString()})] × ${borrowQty} Qty`;
+              breakdownFormula = `[Rs.${lockedBase.toLocaleString()} + ${extraDays}d × Rs.${lockedExtra.toLocaleString()}] × ${borrowQty}`;
             }
           }
 
-          // Calculate formatting safely to prevent floating point artifacts (e.g. 3500.001)
-          const formattedCost = Number(accruedCost.toFixed(2)).toLocaleString(
-            undefined,
-            { minimumFractionDigits: 0, maximumFractionDigits: 2 },
-          );
+          const formattedCost = Number(accruedCost.toFixed(2)).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          });
 
           const lineIterations = returnTraces
             .map((trace: any) => {
               let payload = trace.state_payload || {};
               if (typeof payload === "string") {
-                try {
-                  payload = JSON.parse(payload);
-                } catch (e) {
-                  payload = {};
-                }
+                try { payload = JSON.parse(payload); } catch { payload = {}; }
               }
-              const returnedLine = (payload.lines_returned || []).find(
-                (l: any) => l.line_id === line.line_id,
-              );
-
-              if (
-                returnedLine &&
-                (Number(returnedLine.good_qty) > 0 ||
-                  Number(returnedLine.defective_qty) > 0)
-              ) {
+              const rl = (payload.lines_returned || []).find((l: any) => l.line_id === line.line_id);
+              if (rl && (Number(rl.good_qty) > 0 || Number(rl.defective_qty) > 0)) {
                 return {
                   date: trace.occurred_at || trace.createdAt,
-                  good: Number(returnedLine.good_qty) || 0,
-                  defective: Number(returnedLine.defective_qty) || 0,
+                  good: Number(rl.good_qty) || 0,
+                  defective: Number(rl.defective_qty) || 0,
                 };
               }
               return null;
@@ -329,196 +382,130 @@ export function ManageLedgerPanel({
             .filter(Boolean);
 
           return (
-            <Paper
+            <Box
               key={line.line_id}
-              elevation={0}
               sx={{
-                border: "1px solid",
-                borderColor: isActive ? "#fbbf24" : "#e2e8f0",
-                borderRadius: 3,
                 bgcolor: "white",
+                border: "1px solid",
+                borderColor: isOverdue ? "#fca5a5" : isActive ? "#fde68a" : "#e2e8f0",
+                borderRadius: 2.5,
                 overflow: "hidden",
                 flexShrink: 0,
               }}
             >
-              <Box sx={{ p: 2.5 }}>
-                {/* Header Area */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <StatusDot color={isActive ? "#f59e0b" : "#10b981"} />
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {equipName}
-                    </Typography>
-                  </Box>
-                  <Chip
-                    size="small"
-                    variant={isActive ? "filled" : "outlined"}
-                    color={isActive ? "warning" : "default"}
-                    label={isActive ? "Out on Rent" : "Fully Returned"}
-                    sx={{ fontWeight: "bold" }}
-                  />
+              {/* Line header */}
+              <Box
+                sx={{
+                  px: 2.5,
+                  py: 1.5,
+                  bgcolor: "#fafafa",
+                  borderBottom: "1px solid #f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 1,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <StatusDot color={isActive ? (isOverdue ? "#ef4444" : "#f59e0b") : "#10b981"} />
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {equipName}
+                  </Typography>
                 </Box>
-
-                {/* Data Grid Area */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  {/* Timeline (3 columns) */}
-                  <Box className="md:col-span-3">
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      textTransform="uppercase"
-                      fontWeight="bold"
-                    >
-                      Timeline
-                    </Typography>
-                    <Typography variant="body2" fontWeight="500" mt={0.5}>
-                      Out: {new Date(line.borrow_date).toLocaleDateString()}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      fontWeight="500"
-                      color={
-                        isActive && daysOut > lockedMinDays
-                          ? "error.main"
-                          : "text.primary"
-                      }
-                    >
-                      Due:{" "}
-                      {new Date(line.expected_return_date).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-
-                  {/* Stats (3 columns) */}
-                  <Box className="md:col-span-3">
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      textTransform="uppercase"
-                      fontWeight="bold"
-                    >
-                      Total Stats
-                    </Typography>
-                    <Typography variant="body2" fontWeight="500" mt={0.5}>
-                      Borrowed: {borrowQty}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      fontWeight="bold"
-                      color={
-                        alreadyReturned > 0 ? "success.main" : "text.secondary"
-                      }
-                    >
-                      Returned: {alreadyReturned}
-                    </Typography>
-                    {isActive && (
-                      <Typography
-                        variant="body2"
-                        fontWeight="bold"
-                        color="warning.dark"
-                      >
-                        Pending: {pending}
-                      </Typography>
-                    )}
-                  </Box>
-
-                  {/* Financial Breakdown (6 columns - Takes up half the row) */}
-                  <Box
-                    className="md:col-span-6"
-                    sx={{
-                      bgcolor: "#f8fafc",
-                      p: 1.5,
-                      borderRadius: 2,
-                      border: "1px solid #e2e8f0",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 0.5,
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        textTransform="uppercase"
-                        fontWeight="bold"
-                      >
-                        Cost Till Today
-                      </Typography>
-                      <Chip
-                        size="small"
-                        label={breakdownBadge}
-                        color={isActive ? "primary" : "default"}
-                        variant={isActive ? "outlined" : "filled"}
-                        sx={{
-                          height: 20,
-                          fontSize: "0.65rem",
-                          fontWeight: "bold",
-                        }}
-                      />
-                    </Box>
-
-                    <Typography
-                      variant="h6"
-                      fontWeight="900"
-                      color={isActive ? "primary.main" : "text.primary"}
-                    >
-                      Rs. {formattedCost}
-                    </Typography>
-
-                    {/* The Explainer Math Formula */}
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{
-                        mt: 0.5,
-                        display: "block",
-                        borderTop: "1px dashed #cbd5e1",
-                        pt: 0.5,
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {breakdownFormula}
-                    </Typography>
-                  </Box>
-                </div>
+                <Chip
+                  size="small"
+                  label={isActive ? (isOverdue ? "Overdue" : "Out on Rent") : "Returned"}
+                  color={isActive ? (isOverdue ? "error" : "warning") : "success"}
+                  variant={isActive ? "filled" : "outlined"}
+                  sx={{ fontWeight: 700, fontSize: "0.7rem" }}
+                />
               </Box>
 
-              {/* Event Iteration Log */}
-              {lineIterations.length > 0 && (
+              {/* Data grid */}
+              <Box sx={{ p: 2, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 2fr" }, gap: 2 }}>
+                {/* Timeline */}
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 0.5 }}>
+                    Timeline
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    Out: {new Date(line.borrow_date).toLocaleDateString()}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 500, color: isOverdue ? "error.main" : "text.primary", display: "flex", alignItems: "center", gap: 0.5 }}
+                  >
+                    {isOverdue && <AccessTimeIcon sx={{ fontSize: 13 }} />}
+                    Due: {new Date(line.expected_return_date).toLocaleDateString()}
+                  </Typography>
+                  {isActive && (
+                    <Typography variant="caption" color={isOverdue ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
+                      {daysOut} day{daysOut !== 1 ? "s" : ""} out
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* Qty stats */}
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 0.5 }}>
+                    Quantities
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Borrowed: {borrowQty}</Typography>
+                  {alreadyReturned > 0 && (
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "success.main" }}>
+                      Returned: {alreadyReturned}
+                    </Typography>
+                  )}
+                  {isActive && (
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>
+                      Pending: {pending}
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* Financial */}
                 <Box
                   sx={{
                     bgcolor: "#f8fafc",
-                    borderTop: "1px dashed #cbd5e1",
-                    p: 2,
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 2,
+                    p: 1.5,
                   }}
                 >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+                      Cost {isActive ? "to Date" : "Final"}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={breakdownBadge}
+                      color={isActive ? "primary" : "default"}
+                      variant={isActive ? "outlined" : "filled"}
+                      sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
+                    />
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 900, color: isActive ? "primary.main" : "text.primary" }}>
+                    Rs. {formattedCost}
+                  </Typography>
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    fontWeight="bold"
-                    textTransform="uppercase"
-                    mb={1}
-                    display="block"
+                    sx={{ display: "block", borderTop: "1px dashed #cbd5e1", pt: 0.5, mt: 0.5, lineHeight: 1.3 }}
                   >
-                    Handover Iterations
+                    {breakdownFormula}
                   </Typography>
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
-                  >
-                    {lineIterations.map((iteration: any, i: number) => (
+                </Box>
+              </Box>
+
+              {/* Return iterations */}
+              {lineIterations.length > 0 && (
+                <Box sx={{ bgcolor: "#f8fafc", borderTop: "1px dashed #e2e8f0", p: 2 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}>
+                    Handover History
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                    {lineIterations.map((iter: any, i: number) => (
                       <Box
                         key={i}
                         sx={{
@@ -527,55 +514,26 @@ export function ManageLedgerPanel({
                           gap: 1.5,
                           p: 1,
                           bgcolor: "white",
-                          borderRadius: 1,
                           border: "1px solid #e2e8f0",
+                          borderRadius: 1.5,
                         }}
                       >
-                        <SubdirectoryArrowRightIcon
-                          sx={{ color: "#94a3b8", fontSize: 18 }}
-                        />
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ width: 140 }}
-                        >
-                          {new Date(iteration.date).toLocaleString([], {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
+                        <SubdirectoryArrowRightIcon sx={{ color: "#94a3b8", fontSize: 15 }} />
+                        <Typography variant="caption" color="text.secondary" sx={{ width: 130 }}>
+                          {new Date(iter.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                         </Typography>
-                        {iteration.good > 0 && (
-                          <Chip
-                            size="small"
-                            label={`${iteration.good} Safe`}
-                            color="success"
-                            variant="outlined"
-                            sx={{
-                              height: 22,
-                              fontSize: "0.75rem",
-                              fontWeight: "bold",
-                            }}
-                          />
+                        {iter.good > 0 && (
+                          <Chip size="small" label={`${iter.good} Good`} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
                         )}
-                        {iteration.defective > 0 && (
-                          <Chip
-                            size="small"
-                            label={`${iteration.defective} Broken`}
-                            color="error"
-                            variant="filled"
-                            sx={{
-                              height: 22,
-                              fontSize: "0.75rem",
-                              fontWeight: "bold",
-                            }}
-                          />
+                        {iter.defective > 0 && (
+                          <Chip size="small" label={`${iter.defective} Broken`} color="error" variant="filled" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
                         )}
                       </Box>
                     ))}
                   </Box>
                 </Box>
               )}
-            </Paper>
+            </Box>
           );
         })}
       </Box>
@@ -584,8 +542,11 @@ export function ManageLedgerPanel({
 }
 
 // ============================================================================
-// PANE 3: REDESIGNED POS TERMINAL & UNIFIED FINANCIAL LEDGER (Collapsible)
+// PANE 3: FINANCIAL TERMINAL
 // ============================================================================
+const PAYMENT_METHODS = ["Cash", "Card", "Transfer", "Cheque"] as const;
+type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
 export function ManageFinancialPanel({
   invoice,
   showToast,
@@ -600,19 +561,16 @@ export function ManageFinancialPanel({
   const paymentMutation = useAddPayment();
   const vaultMutation = useToggleVault();
   const updateFeesMutation = useUpdateFees();
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [isEditingFees, setIsEditingFees] = useState(false);
 
-  // Accordion Expand States (Open by default)
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
+  const [isEditingFees, setIsEditingFees] = useState(false);
   const [receiptExpanded, setReceiptExpanded] = useState(true);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
 
   const initialTransport = Number(invoice?.transport_fee) || 0;
   const initialDiscount = Number(invoice?.discount_amount) || 0;
-  const [fees, setFees] = useState({
-    transport: initialTransport,
-    discount: initialDiscount,
-  });
+  const [fees, setFees] = useState({ transport: initialTransport, discount: initialDiscount });
 
   useEffect(() => {
     setFees({ transport: initialTransport, discount: initialDiscount });
@@ -620,24 +578,47 @@ export function ManageFinancialPanel({
   }, [invoice?.invoice_id, initialTransport, initialDiscount]);
 
   if (!invoice)
-    return <EmptyState text="Select an invoice to launch the Terminal." />;
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "#0f172a",
+          color: "#475569",
+          gap: 1,
+        }}
+      >
+        {!isCollapsed && (
+          <Box sx={{ textAlign: "center", p: 3 }}>
+            <AccountBalanceWalletIcon sx={{ fontSize: 40, opacity: 0.3, mb: 1 }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Select an invoice to open the Financial Terminal.
+            </Typography>
+          </Box>
+        )}
+        {isCollapsed && (
+          <Box
+            onClick={onToggleCollapse}
+            sx={{ height: "100%", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          >
+            <ChevronLeftIcon sx={{ color: "#475569" }} />
+          </Box>
+        )}
+      </Box>
+    );
 
   const payments = invoice.Payments || [];
-  const totalPaid =
-    payments.reduce(
-      (sum: number, p: any) => sum + Number(p.payment_amount),
-      0,
-    ) || 0;
+  const totalPaid = payments.reduce((sum: number, p: any) => sum + Number(p.payment_amount), 0) || 0;
   const subTotal = Number(invoice.sub_total) || 0;
   const grandTotal = Number(invoice.total_amount) || 0;
-  const lateFees = Math.max(
-    0,
-    grandTotal - (subTotal + initialTransport - initialDiscount),
-  );
+  const lateFees = Math.max(0, grandTotal - (subTotal + initialTransport - initialDiscount));
   const balance = Math.max(0, grandTotal - totalPaid);
   const isCompleted = invoice.status === "Completed";
 
-  // --- COLLAPSED VERTICAL BAR ---
+  // ── Collapsed bar ──────────────────────────────────────────────────────────
   if (isCollapsed) {
     return (
       <Box
@@ -649,12 +630,13 @@ export function ManageFinancialPanel({
           alignItems: "center",
           py: 3,
           cursor: "pointer",
+          bgcolor: "#0f172a",
           color: "white",
           "&:hover": { bgcolor: "#1e293b" },
         }}
       >
         <Tooltip title="Expand Terminal" placement="left">
-          <IconButton color="inherit" sx={{ mb: 4 }}>
+          <IconButton color="inherit" size="small" sx={{ mb: 4 }}>
             <ChevronLeftIcon />
           </IconButton>
         </Tooltip>
@@ -662,19 +644,20 @@ export function ManageFinancialPanel({
           sx={{
             writingMode: "vertical-rl",
             transform: "rotate(180deg)",
-            fontWeight: "bold",
+            fontWeight: 800,
             letterSpacing: 2,
-            fontSize: "1.2rem",
+            fontSize: "0.85rem",
             whiteSpace: "nowrap",
+            color: balance > 0 ? "#f87171" : "#4ade80",
           }}
         >
-          BALANCE DUE: Rs. {balance.toLocaleString()}
+          BALANCE · Rs. {balance.toLocaleString()}
         </Typography>
       </Box>
     );
   }
 
-  // --- EXPANDED TERMINAL VIEW ---
+  // ── Payment event stream ───────────────────────────────────────────────────
   const paymentEvents = payments.map((p: any) => ({
     id: `pay-${p.payment_id}`,
     type: Number(p.payment_amount) < 0 ? "REFUND" : "PAYMENT",
@@ -694,11 +677,7 @@ export function ManageFinancialPanel({
     .map((t: any) => {
       let payload = t.state_payload || {};
       if (typeof payload === "string") {
-        try {
-          payload = JSON.parse(payload);
-        } catch (e) {
-          payload = {};
-        }
+        try { payload = JSON.parse(payload); } catch { payload = {}; }
       }
       return {
         id: `fee-${t.trace_id}`,
@@ -710,277 +689,245 @@ export function ManageFinancialPanel({
     });
 
   const unifiedLedger = [...paymentEvents, ...feeEvents].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   const handleUpdateFees = () => {
     updateFeesMutation.mutate(
+      { id: invoice.invoice_id, data: { transport_fee: fees.transport, discount_amount: fees.discount } },
       {
-        id: invoice.invoice_id,
-        data: { transport_fee: fees.transport, discount_amount: fees.discount },
-      },
-      {
-        onSuccess: () => {
-          showToast("Fees updated successfully.", "success");
-          setIsEditingFees(false);
-        },
-      },
+        onSuccess: () => { showToast("Fees updated.", "success"); setIsEditingFees(false); },
+      }
     );
   };
 
   const handlePayment = (isRefund: boolean) => {
     const amt = Number(paymentAmount);
-    if (amt <= 0) return showToast("Enter a valid amount", "error");
-    if (isRefund && amt > totalPaid)
-      return showToast("Cannot refund more than what was paid", "error");
-
+    if (amt <= 0) return showToast("Enter a valid amount.", "error");
+    if (isRefund && amt > totalPaid) return showToast("Cannot refund more than paid.", "error");
     paymentMutation.mutate(
-      {
-        id: invoice.invoice_id,
-        data: { amount: amt, method: "Cash", is_refund: isRefund },
-      },
+      { id: invoice.invoice_id, data: { amount: amt, method: paymentMethod, is_refund: isRefund } },
       {
         onSuccess: () => {
-          showToast(
-            isRefund ? "Refund issued." : "Payment recorded.",
-            "success",
-          );
+          showToast(isRefund ? "Refund issued." : "Payment recorded.", "success");
           setPaymentAmount("");
         },
-      },
+      }
     );
   };
 
+  // ── Expanded terminal ──────────────────────────────────────────────────────
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        bgcolor: "#f1f5f9",
-        overflow: "hidden",
-      }}
-    >
-      {/* 1. LOCKED HEADER */}
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#0f172a", overflow: "hidden" }}>
+      {/* Terminal header */}
       <Box
         sx={{
           flexShrink: 0,
-          p: 3,
-          bgcolor: "white",
-          borderBottom: "1px solid #e2e8f0",
-          zIndex: 10,
+          px: 3,
+          py: 2,
+          borderBottom: "1px solid #1e293b",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <Typography variant="h6" fontWeight="bold">
-          Financial Terminal
-        </Typography>
-        <IconButton onClick={onToggleCollapse} size="small" color="primary">
-          <ChevronRightIcon />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: balance > 0 ? "#f87171" : "#4ade80", boxShadow: `0 0 6px ${balance > 0 ? "#f87171" : "#4ade80"}` }} />
+          <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 2 }}>
+            FINANCIAL TERMINAL
+          </Typography>
+        </Box>
+        <IconButton onClick={onToggleCollapse} size="small" sx={{ color: "#475569" }}>
+          <ChevronRightIcon fontSize="small" />
         </IconButton>
       </Box>
 
-      {/* SCROLLABLE CONTENT BODY */}
+      {/* Scrollable body */}
       <Box
         sx={{
           flexGrow: 1,
           overflowY: "auto",
-          minHeight: 0,
+          p: 2.5,
           display: "flex",
           flexDirection: "column",
-          gap: 3,
-          p: 3,
-          ...customScrollbar,
+          gap: 2.5,
+          "&::-webkit-scrollbar": { width: "4px" },
+          "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
       >
-        <Paper
-          elevation={0}
+        {/* Balance card */}
+        <Box
           sx={{
+            bgcolor: "#1e293b",
+            borderRadius: 3,
             p: 3,
-            borderRadius: 4,
-            bgcolor: "#0f172a",
-            color: "white",
             textAlign: "center",
-            flexShrink: 0,
+            border: "1px solid #334155",
           }}
         >
-          <Typography
-            variant="overline"
-            color="#94a3b8"
-            fontWeight="bold"
-            letterSpacing={1}
-          >
-            Total Balance Due
+          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1.5 }}>
+            BALANCE DUE
           </Typography>
           <Typography
             variant="h3"
-            fontWeight="900"
-            color={balance > 0 ? "#f87171" : "#4ade80"}
-            sx={{ mt: 0.5, mb: 3 }}
+            sx={{
+              fontWeight: 900,
+              color: balance > 0 ? "#f87171" : "#4ade80",
+              my: 1,
+              fontSize: { xs: "2rem", md: "2.5rem" },
+            }}
           >
             Rs. {balance.toLocaleString()}
           </Typography>
-          <Box
+          {isCompleted && balance === 0 && (
+            <Typography variant="caption" sx={{ color: "#4ade80", fontWeight: 700 }}>
+              ✓ Fully Settled
+            </Typography>
+          )}
+        </Box>
+
+        {/* Payment method selector */}
+        <Box>
+          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, display: "block", mb: 1 }}>
+            PAYMENT METHOD
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {PAYMENT_METHODS.map((m) => (
+              <Button
+                key={m}
+                size="small"
+                variant={paymentMethod === m ? "contained" : "outlined"}
+                disableElevation
+                onClick={() => setPaymentMethod(m)}
+                sx={{
+                  flex: 1,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: "0.72rem",
+                  color: paymentMethod === m ? "white" : "#475569",
+                  borderColor: paymentMethod === m ? "primary.main" : "#334155",
+                  bgcolor: paymentMethod === m ? "primary.main" : "transparent",
+                  "&:hover": { borderColor: "primary.main" },
+                  minWidth: 0,
+                }}
+              >
+                {m}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Payment input */}
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <TextField
+            placeholder="0.00"
+            size="small"
+            value={paymentAmount}
+            onChange={(e) => setPaymentAmount(e.target.value)}
+            disabled={isCompleted && balance === 0}
             sx={{
-              display: "flex",
-              gap: 1,
-              width: "100%",
-              bgcolor: "#1e293b",
-              p: 1,
-              borderRadius: 2,
-              border: "1px solid #334155",
+              flexGrow: 1,
+              "& .MuiOutlinedInput-root": {
+                color: "white",
+                "& fieldset": { borderColor: "#334155" },
+                "&:hover fieldset": { borderColor: "#475569" },
+                "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+              },
             }}
-          >
-            <TextField
-              placeholder="0.00"
-              size="small"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
-              disabled={isCompleted && balance === 0}
-              sx={{
-                flexGrow: 1,
-                input: { color: "white", fontWeight: "bold" },
-                "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-              }}
-              InputProps={{
+            slotProps={{
+              input: {
                 startAdornment: (
-                  <Typography color="#94a3b8" mr={1} fontWeight="bold">
+                  <Typography sx={{ color: "#64748b", mr: 0.5, fontWeight: 700, fontSize: "0.85rem" }}>
                     Rs.
                   </Typography>
                 ),
-              }}
-            />
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => handlePayment(false)}
-              disableElevation
-              disabled={paymentMutation.isPending || balance === 0}
-              sx={{ fontWeight: "bold", borderRadius: 1.5 }}
-            >
-              Pay
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => handlePayment(true)}
-              disableElevation
-              disabled={paymentMutation.isPending || totalPaid === 0}
-              sx={{ fontWeight: "bold", borderRadius: 1.5 }}
-            >
-              Refund
-            </Button>
-          </Box>
-        </Paper>
+              },
+            }}
+          />
+          <Button
+            variant="contained"
+            color="success"
+            disableElevation
+            onClick={() => handlePayment(false)}
+            disabled={paymentMutation.isPending || balance === 0}
+            sx={{ fontWeight: 800, px: 2, borderRadius: 1.5 }}
+          >
+            Collect
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            disableElevation
+            onClick={() => handlePayment(true)}
+            disabled={paymentMutation.isPending || totalPaid === 0}
+            sx={{ fontWeight: 700, px: 1.5, borderRadius: 1.5, borderColor: "#334155" }}
+          >
+            Refund
+          </Button>
+        </Box>
 
-        {/* --- ACCORDION 1: RECEIPT BREAKDOWN --- */}
+        {/* Receipt accordion */}
         <Accordion
           expanded={receiptExpanded}
           onChange={() => setReceiptExpanded(!receiptExpanded)}
           disableGutters
           elevation={0}
           sx={{
-            border: "1px solid #e2e8f0",
-            borderRadius: "12px !important",
+            bgcolor: "white",
+            borderRadius: "10px !important",
             overflow: "hidden",
             "&:before": { display: "none" },
-            flexShrink: 0,
           }}
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
-            sx={{
-              bgcolor: "#f8fafc",
-              borderBottom: receiptExpanded ? "1px solid #e2e8f0" : "none",
-            }}
+            sx={{ px: 2.5, py: 1, borderBottom: receiptExpanded ? "1px solid #f1f5f9" : "none" }}
           >
-            <Typography
-              fontWeight="bold"
-              display="flex"
-              alignItems="center"
-              gap={1}
-            >
+            <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
               <ReceiptLongIcon fontSize="small" /> Receipt Breakdown
             </Typography>
           </AccordionSummary>
-          <AccordionDetails
-            sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5 }}
-          >
-            {/* INLINE EDIT BUTTON */}
+          <AccordionDetails sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column", gap: 1 }}>
             {!isEditingFees && !isCompleted && (
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: -1 }}>
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <Button
                   size="small"
                   onClick={() => setIsEditingFees(true)}
-                  sx={{ fontWeight: "bold" }}
+                  startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+                  sx={{ fontSize: "0.75rem", fontWeight: 700 }}
                 >
                   Edit Fees
                 </Button>
               </Box>
             )}
-
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography color="text.secondary">Base Subtotal</Typography>
-              <Typography fontWeight="500">
-                Rs. {subTotal.toLocaleString()}
-              </Typography>
+              <Typography variant="body2" color="text.secondary">Base Subtotal</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>Rs. {subTotal.toLocaleString()}</Typography>
             </Box>
+
             {isEditingFees ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  my: 1,
-                  p: 2,
-                  bgcolor: "#fffbeb",
-                  borderRadius: 2,
-                  border: "1px dashed #fde047",
-                }}
-              >
+              <Box sx={{ bgcolor: "#fffbeb", border: "1px dashed #fde047", borderRadius: 2, p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <TextField
                   label="Transport Fee"
                   size="small"
                   type="number"
                   value={fees.transport}
-                  onChange={(e) =>
-                    setFees({ ...fees, transport: Number(e.target.value) || 0 })
-                  }
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">Rs.</InputAdornment>
-                    ),
-                  }}
+                  onChange={(e) => setFees({ ...fees, transport: Number(e.target.value) || 0 })}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> } }}
                 />
                 <TextField
-                  label="Discount Applied"
+                  label="Discount"
                   size="small"
                   type="number"
                   value={fees.discount}
-                  onChange={(e) =>
-                    setFees({ ...fees, discount: Number(e.target.value) || 0 })
-                  }
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">Rs.</InputAdornment>
-                    ),
-                  }}
+                  onChange={(e) => setFees({ ...fees, discount: Number(e.target.value) || 0 })}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> } }}
                 />
-                <Box
-                  sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
-                >
+                <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
                   <Button
                     size="small"
                     color="inherit"
-                    onClick={() => {
-                      setFees({
-                        transport: initialTransport,
-                        discount: initialDiscount,
-                      });
-                      setIsEditingFees(false);
-                    }}
+                    onClick={() => { setFees({ transport: initialTransport, discount: initialDiscount }); setIsEditingFees(false); }}
                   >
                     Cancel
                   </Button>
@@ -988,8 +935,8 @@ export function ManageFinancialPanel({
                     size="small"
                     variant="contained"
                     color="warning"
-                    onClick={handleUpdateFees}
                     disableElevation
+                    onClick={handleUpdateFees}
                     disabled={updateFeesMutation.isPending}
                   >
                     Save
@@ -999,183 +946,116 @@ export function ManageFinancialPanel({
             ) : (
               <>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography
-                    color="text.secondary"
-                    display="flex"
-                    alignItems="center"
-                    gap={0.5}
-                  >
-                    <LocalShippingIcon fontSize="inherit" /> Transport
+                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <LocalShippingIcon sx={{ fontSize: 14 }} /> Transport
                   </Typography>
-                  <Typography fontWeight="500">
-                    + Rs. {initialTransport.toLocaleString()}
-                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>+ Rs. {initialTransport.toLocaleString()}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography color="text.secondary">
-                    Discount Applied
-                  </Typography>
-                  <Typography fontWeight="500" color="error.main">
-                    - Rs. {initialDiscount.toLocaleString()}
-                  </Typography>
+                  <Typography variant="body2" color="text.secondary">Discount</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "error.main" }}>− Rs. {initialDiscount.toLocaleString()}</Typography>
                 </Box>
               </>
             )}
 
             {lateFees > 0 && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography color="error.main" fontWeight="bold">
-                  Accrued Late Fees
-                </Typography>
-                <Typography fontWeight="bold" color="error.main">
-                  + Rs. {lateFees.toLocaleString()}
-                </Typography>
+                <Typography variant="body2" sx={{ color: "error.main", fontWeight: 700 }}>Late Fees</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "error.main" }}>+ Rs. {lateFees.toLocaleString()}</Typography>
               </Box>
             )}
 
-            <Divider sx={{ borderStyle: "dashed", my: 1 }} />
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography fontWeight="bold" variant="subtitle1">
-                Grand Total
-              </Typography>
-              <Typography fontWeight="900" variant="subtitle1">
-                Rs. {grandTotal.toLocaleString()}
-              </Typography>
+            <Divider sx={{ borderStyle: "dashed" }} />
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Grand Total</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>Rs. {grandTotal.toLocaleString()}</Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography color="success.main" fontWeight="bold">
-                Total Paid
-              </Typography>
-              <Typography color="success.main" fontWeight="bold">
-                - Rs. {totalPaid.toLocaleString()}
-              </Typography>
+              <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700 }}>Total Paid</Typography>
+              <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700 }}>− Rs. {totalPaid.toLocaleString()}</Typography>
             </Box>
           </AccordionDetails>
         </Accordion>
 
-        {/* --- ACCORDION 2: FINANCIAL TIMELINE --- */}
+        {/* Transaction timeline accordion */}
         <Accordion
           expanded={timelineExpanded}
           onChange={() => setTimelineExpanded(!timelineExpanded)}
           disableGutters
           elevation={0}
-          sx={{
-            border: "1px solid #e2e8f0",
-            borderRadius: "12px !important",
-            overflow: "hidden",
-            "&:before": { display: "none" },
-            flexShrink: 0,
-          }}
+          sx={{ bgcolor: "white", borderRadius: "10px !important", overflow: "hidden", "&:before": { display: "none" } }}
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
-            sx={{
-              bgcolor: "#f8fafc",
-              borderBottom: timelineExpanded ? "1px solid #e2e8f0" : "none",
-            }}
+            sx={{ px: 2.5, py: 1, borderBottom: timelineExpanded ? "1px solid #f1f5f9" : "none" }}
           >
-            <Typography
-              fontWeight="bold"
-              display="flex"
-              alignItems="center"
-              gap={1}
-            >
-              <HistoryIcon fontSize="small" /> Financial Timeline
+            <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+              <HistoryIcon fontSize="small" /> Transaction Ledger
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
             {unifiedLedger.length === 0 ? (
               <Box sx={{ p: 3, textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary">
-                  No transactions yet.
-                </Typography>
+                <Typography variant="body2" color="text.secondary">No transactions recorded.</Typography>
               </Box>
             ) : (
               unifiedLedger.map((item, index) => (
                 <Box
                   key={item.id}
                   sx={{
-                    p: 2,
-                    borderBottom:
-                      index < unifiedLedger.length - 1
-                        ? "1px solid #f1f5f9"
-                        : "none",
+                    px: 2.5,
+                    py: 1.5,
+                    borderBottom: index < unifiedLedger.length - 1 ? "1px solid #f8fafc" : "none",
                     display: "flex",
-                    gap: 2,
+                    gap: 1.5,
                     alignItems: "flex-start",
                   }}
                 >
-                  <Box sx={{ mt: 0.5 }}>
-                    {item.type === "PAYMENT" && (
-                      <PaymentIcon color="success" fontSize="small" />
-                    )}
-                    {item.type === "REFUND" && (
-                      <PaymentIcon color="error" fontSize="small" />
-                    )}
-                    {item.type === "FEE_ADJUSTMENT" && (
-                      <EditIcon color="warning" fontSize="small" />
-                    )}
+                  <Box
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 1.5,
+                      bgcolor:
+                        item.type === "PAYMENT"
+                          ? "#f0fdf4"
+                          : item.type === "REFUND"
+                          ? "#fef2f2"
+                          : "#fffbeb",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      mt: 0.25,
+                    }}
+                  >
+                    {item.type === "PAYMENT" && <PaymentIcon sx={{ fontSize: 14, color: "success.main" }} />}
+                    {item.type === "REFUND" && <PaymentIcon sx={{ fontSize: 14, color: "error.main" }} />}
+                    {item.type === "FEE_ADJUSTMENT" && <EditIcon sx={{ fontSize: 14, color: "warning.main" }} />}
                   </Box>
                   <Box sx={{ flexGrow: 1 }}>
                     {item.type === "FEE_ADJUSTMENT" ? (
                       <>
-                        <Typography
-                          variant="body2"
-                          fontWeight="bold"
-                          color="warning.dark"
-                        >
-                          Fees Adjusted by User
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Transport: Rs. {item.transport} | Discount: Rs.{" "}
-                          {item.discount}
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>Fees Adjusted</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Transport: Rs.{item.transport} · Discount: Rs.{item.discount}
                         </Typography>
                       </>
                     ) : (
                       <>
-                        <Typography
-                          variant="body2"
-                          fontWeight="bold"
-                          color={
-                            item.type === "REFUND"
-                              ? "error.main"
-                              : "success.main"
-                          }
-                        >
-                          {item.type === "REFUND"
-                            ? "Refund Issued"
-                            : "Payment Collected"}{" "}
-                          ({item.method})
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Amount: Rs. {item.amount.toLocaleString()}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 700, color: item.type === "REFUND" ? "error.main" : "success.main" }}
+                          >
+                            {item.type === "REFUND" ? "Refund" : "Payment"} · Rs.{item.amount.toLocaleString()}
+                          </Typography>
+                          <Chip size="small" label={item.method} sx={{ height: 16, fontSize: "0.6rem", fontWeight: 700 }} />
+                        </Box>
                       </>
                     )}
-                    <Typography
-                      variant="caption"
-                      color="#cbd5e1"
-                      fontWeight="bold"
-                    >
-                      {new Date(item.date).toLocaleString([], {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
+                    <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 600 }}>
+                      {new Date(item.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                     </Typography>
                   </Box>
                 </Box>
@@ -1184,28 +1064,24 @@ export function ManageFinancialPanel({
           </AccordionDetails>
         </Accordion>
 
-        {/* VAULT STATUS */}
+        {/* Vault control */}
         <Box
           sx={{
-            p: 2,
+            bgcolor: invoice.id_card_status ? "#1a1200" : "white",
             border: "1px solid",
-            borderColor: invoice.id_card_status ? "#fde047" : "#e2e8f0",
-            borderRadius: 2,
-            bgcolor: invoice.id_card_status ? "#fffbeb" : "white",
-            flexShrink: 0,
-            mt: "auto",
+            borderColor: invoice.id_card_status ? "#fde047" : "#334155",
+            borderRadius: 2.5,
+            p: 2,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <SecurityIcon
-              color={invoice.id_card_status ? "warning" : "disabled"}
-            />
-            <Typography fontWeight="bold">Security Vault</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
+            <SecurityIcon sx={{ fontSize: 16, color: invoice.id_card_status ? "#fde047" : "#475569" }} />
+            <Typography variant="body2" sx={{ fontWeight: 700, color: invoice.id_card_status ? "#fde047" : "#94a3b8" }}>
+              Security Vault
+            </Typography>
           </Box>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            {invoice.id_card_status
-              ? "Client's ID is locked in the vault."
-              : "ID has been returned to client."}
+          <Typography variant="caption" sx={{ color: invoice.id_card_status ? "#fde047" : "#64748b", display: "block", mb: 1.5 }}>
+            {invoice.id_card_status ? "Client's ID is locked in the vault." : "ID has been released to client."}
           </Typography>
           <Button
             fullWidth
@@ -1214,27 +1090,17 @@ export function ManageFinancialPanel({
             onClick={() => vaultMutation.mutate(invoice.invoice_id)}
             disabled={vaultMutation.isPending}
             disableElevation
+            size="small"
+            sx={{
+              fontWeight: 700,
+              borderRadius: 1.5,
+              ...(!invoice.id_card_status && { bgcolor: "#1e293b", color: "#94a3b8", "&:hover": { bgcolor: "#334155" } }),
+            }}
           >
-            {invoice.id_card_status ? "Release ID" : "Retain ID in Vault"}
+            {invoice.id_card_status ? "Release ID from Vault" : "Retain ID in Vault"}
           </Button>
         </Box>
       </Box>
     </Box>
   );
 }
-
-const EmptyState = ({ text }: { text: string }) => (
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "100%",
-      color: "#94a3b8",
-      p: 3,
-      textAlign: "center",
-    }}
-  >
-    <Typography fontWeight="500">{text}</Typography>
-  </Box>
-);
