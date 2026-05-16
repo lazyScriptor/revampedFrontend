@@ -43,6 +43,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 import HandymanIcon from "@mui/icons-material/Handyman";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import SecurityIcon from "@mui/icons-material/Security";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // Fallback bullet
 
 const drawerWidth = 260;
@@ -196,6 +197,11 @@ function AuthenticatedLayout() {
           text: "Roles",
           path: "/admin/roles",
           icon: <AdminPanelSettingsIcon fontSize="small" />,
+        },
+        {
+          text: "Permissions",
+          path: "/permissions",
+          icon: <SecurityIcon fontSize="small" />,
         },
       ],
     },

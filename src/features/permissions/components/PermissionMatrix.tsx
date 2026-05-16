@@ -168,7 +168,7 @@ const PermissionMatrix: React.FC = () => {
         });
 
         try {
-            await api.post(`/roles/${roleId}/permissions`, {
+            await api.post(`/roles/${roleId}/assign-permissions`, {
                 permissionIds: Array.from(currentPerms),
             });
             qc.invalidateQueries({ queryKey: ['permission-matrix'] });
