@@ -131,8 +131,8 @@ export default function EquipmentRoute() {
       </div>
 
       {/* KPI Cards */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
+      <Grid container spacing={{ xs: 1.5, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             className="border border-slate-200 rounded-xl bg-white h-full"
@@ -156,7 +156,7 @@ export default function EquipmentRoute() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             className="border border-green-200 rounded-xl bg-green-50/30 h-full"
@@ -180,7 +180,7 @@ export default function EquipmentRoute() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             className="border border-orange-200 rounded-xl bg-orange-50/30 h-full"

@@ -230,7 +230,7 @@ export function EquipmentTable({
 
   return (
     <>
-      <Box sx={{ height: 650, width: "100%", bgcolor: "background.paper" }}>
+      <Box sx={{ height: { xs: 520, md: 650 }, width: "100%", bgcolor: "background.paper" }}>
         <DataGrid
           rows={data}
           columns={columns}

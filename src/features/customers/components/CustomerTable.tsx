@@ -96,14 +96,15 @@ export function CustomerTable({
         );
       },
     },
-    { field: "nic_number", headerName: "NIC / Passport", width: 140 },
-    { field: "phone_number", headerName: "Phone", width: 130 },
+    { field: "nic_number", headerName: "NIC / Passport", flex: 0.7, minWidth: 140 },
+    { field: "phone_number", headerName: "Phone", flex: 0.6, minWidth: 130 },
 
     // --- COLLATERAL & FINANCE COLUMNS ---
     {
       field: "collateral",
       headerName: "Collateral",
-      width: 140,
+      flex: 0.6,
+      minWidth: 140,
       renderCell: (params: GridRenderCellParams) => {
         if (params.row.is_id_retained_currently) {
           return (
@@ -131,7 +132,8 @@ export function CustomerTable({
     {
       field: "deposit_balance",
       headerName: "Advance Held",
-      width: 130,
+      flex: 0.6,
+      minWidth: 130,
       renderCell: (params: GridRenderCellParams) => (
         <Typography
           variant="body2"
@@ -147,7 +149,8 @@ export function CustomerTable({
     {
       field: "status",
       headerName: "Status",
-      width: 120,
+      flex: 0.5,
+      minWidth: 120,
       renderCell: (params: GridRenderCellParams) => {
         const isBlacklisted = params.value === "Blacklisted";
         return (
@@ -198,7 +201,7 @@ export function CustomerTable({
 
   return (
     <>
-      <Box sx={{ height: 650, width: "100%", bgcolor: "background.paper" }}>
+      <Box sx={{ height: { xs: 520, md: 650 }, width: "100%", bgcolor: "background.paper" }}>
         <DataGrid
           rows={data}
           columns={columns}

@@ -255,8 +255,9 @@ export default function RentalHistoryRoute() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        gap: 3,
-        height: "calc(100vh - 100px)",
+        gap: { xs: 2, md: 3 },
+        height: { xs: "auto", md: "calc(100vh - 100px)" },
+        minHeight: { xs: "calc(100vh - 100px)", md: "auto" },
       }}
     >
       {/* HEADER SECTION */}
@@ -264,7 +265,9 @@ export default function RentalHistoryRoute() {
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-end",
+          alignItems: { xs: "flex-start", sm: "flex-end" },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 2,
         }}
       >
         <Box>
@@ -285,7 +288,7 @@ export default function RentalHistoryRoute() {
       </Box>
 
       {/* KPI WIDGETS */}
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 1.5, md: 3 }}>
         {[
           {
             label: "Active Orders",
@@ -309,7 +312,7 @@ export default function RentalHistoryRoute() {
             bg: "#f0fdf4",
           },
         ].map((kpi, i) => (
-          <Grid item xs={12} md={4} key={i}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
             <Card
               elevation={0}
               sx={{ border: "1px solid #e2e8f0", borderRadius: 3 }}
@@ -370,6 +373,7 @@ export default function RentalHistoryRoute() {
             bgcolor: "#f8fafc",
             display: "flex",
             gap: 2,
+            overflowX: "auto",
           }}
         >
           <ToggleButtonGroup
@@ -378,7 +382,7 @@ export default function RentalHistoryRoute() {
             exclusive
             onChange={(_, v) => v && setStatusFilter(v)}
             size="small"
-            sx={{ bgcolor: "white" }}
+            sx={{ bgcolor: "white", flexShrink: 0 }}
           >
             <ToggleButton value="All" sx={{ px: 3 }}>
               All Orders
@@ -392,21 +396,24 @@ export default function RentalHistoryRoute() {
           </ToggleButtonGroup>
         </Box>
 
-        <DataGrid
-          rows={data?.invoices || []}
-          columns={columns}
-          getRowId={(row) => row.invoice_id}
-          loading={isLoading}
-          paginationMode="server"
-          rowCount={data?.totalItems || 0}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          disableRowSelectionOnClick
-          sx={{
-            border: "none",
-            "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
-          }}
-        />
+        <Box sx={{ width: "100%", overflowX: "auto", minHeight: 0, flexGrow: 1 }}>
+          <DataGrid
+            rows={data?.invoices || []}
+            columns={columns}
+            getRowId={(row) => row.invoice_id}
+            loading={isLoading}
+            paginationMode="server"
+            rowCount={data?.totalItems || 0}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            disableRowSelectionOnClick
+            sx={{
+              border: "none",
+              minWidth: 720,
+              "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
+            }}
+          />
+        </Box>
       </Card>
 
       {/* DETAIL DRAWER */}

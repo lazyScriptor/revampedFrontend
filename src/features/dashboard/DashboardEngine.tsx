@@ -79,7 +79,7 @@ const DashboardEngine: React.FC = () => {
         sx={{
           p: 3,
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
           gap: 2,
         }}
       >
@@ -103,13 +103,38 @@ const DashboardEngine: React.FC = () => {
     );
   });
 
-  const rglLayout: RglLayoutItem[] = visibleLayout.map((item) => ({
-    i: item.i,
-    x: item.x,
-    y: item.y,
-    w: item.w,
-    h: item.h,
-  }));
+  // Generate responsive layouts for each breakpoint
+  const generateResponsiveLayout = (): Record<string, RglLayoutItem[]> => {
+    // Desktop layout (lg, md) - keep original
+    const lgLayout: RglLayoutItem[] = visibleLayout.map((item) => ({
+      i: item.i,
+      x: item.x,
+      y: item.y,
+      w: item.w,
+      h: item.h,
+    }));
+
+    // Tablet layout (sm) - reduce 2-col widgets to 1-col, keep 1-col as 1-col
+    const smLayout: RglLayoutItem[] = visibleLayout.map((item, idx) => ({
+      i: item.i,
+      x: 0, // Always left-aligned on mobile
+      y: idx, // Stack vertically
+      w: 1, // Full width (sm breakpoint = 1 col)
+      h: item.h,
+    }));
+
+    // Mobile layout (xs) - same as sm but ensure 1-col
+    const xsLayout: RglLayoutItem[] = smLayout;
+
+    return {
+      lg: lgLayout,
+      md: lgLayout, // Desktop & laptop same layout
+      sm: smLayout, // Tablet: stack 1-col
+      xs: xsLayout, // Mobile: stack 1-col
+    };
+  };
+
+  const responsiveLayouts = generateResponsiveLayout();
 
   return (
     <Box
@@ -124,9 +149,10 @@ const DashboardEngine: React.FC = () => {
       <Box
         sx={{
           display: "flex",
-          alignItems: "center",
+          alignItems: { xs: "stretch", md: "center" },
+          flexDirection: { xs: "column", md: "row" },
           gap: 2,
-          px: 3,
+          px: { xs: 2, md: 3 },
           py: 1.5,
           bgcolor: "#FFFFFF",
           borderBottom: "1px solid #E2E8F0",
@@ -160,7 +186,7 @@ const DashboardEngine: React.FC = () => {
           flexGrow: 1,
           overflowY: "auto",
           overflowX: "hidden",
-          px: 3,
+          px: { xs: 1.5, sm: 2, md: 3 },
           pt: 2,
           pb: 4,
         }}
@@ -171,11 +197,11 @@ const DashboardEngine: React.FC = () => {
             .sort()
             .join(",")}
           width={gridWidth}
-          layouts={{ lg: rglLayout, md: rglLayout, sm: rglLayout }}
+          layouts={responsiveLayouts}
           breakpoints={{ lg: 1200, md: 900, sm: 600, xs: 0 }}
-          cols={{ lg: 4, md: 4, sm: 2, xs: 1 }}
+          cols={{ lg: 4, md: 4, sm: 1, xs: 1 }}
           rowHeight={150}
-          margin={[16, 16]}
+          margin={[12, 12]}
           containerPadding={[0, 0]}
           dragConfig={{ enabled: isEditMode, handle: ".drag-handle" }}
           resizeConfig={{ enabled: false }}

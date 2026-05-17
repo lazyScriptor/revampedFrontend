@@ -255,7 +255,9 @@ export default function MaintenanceRoute() {
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
+          alignItems: { xs: "stretch", sm: "flex-start" },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 2,
         }}
       >
         <Box>
@@ -264,6 +266,7 @@ export default function MaintenanceRoute() {
             fontWeight="800"
             color="text.primary"
             gutterBottom
+            sx={{ fontSize: { xs: "1.5rem", md: "2.125rem" } }}
           >
             Workshop Command Center
           </Typography>
@@ -274,7 +277,7 @@ export default function MaintenanceRoute() {
         <Button
           variant="outlined"
           startIcon={<AssessmentIcon />}
-          sx={{ bgcolor: "white" }}
+          sx={{ bgcolor: "white", alignSelf: { xs: "flex-start", sm: "auto" } }}
         >
           Export Report
         </Button>
@@ -318,18 +321,24 @@ export default function MaintenanceRoute() {
             pt: 2,
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: { xs: "stretch", md: "flex-end" },
+            flexDirection: { xs: "column", md: "row" },
+            gap: 1,
             bgcolor: "#f8fafc",
           }}
         >
           <Tabs
             value={currentTab}
             onChange={(e, v) => setCurrentTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             sx={{
               "& .MuiTab-root": {
                 fontWeight: 600,
                 textTransform: "none",
-                fontSize: "1rem",
+                fontSize: { xs: "0.85rem", md: "1rem" },
+                minWidth: { xs: 0, md: 90 },
               },
             }}
           >
@@ -337,7 +346,7 @@ export default function MaintenanceRoute() {
             <Tab label={`Workshop (${workshopDefects.length})`} />
             <Tab label={`History (${historyDefects.length})`} />
           </Tabs>
-          <Box sx={{ pb: 1.5, width: 300 }}>
+          <Box sx={{ pb: 1.5, width: { xs: "100%", md: 300 } }}>
             <TextField
               fullWidth
               size="small"
@@ -356,8 +365,8 @@ export default function MaintenanceRoute() {
           </Box>
         </Box>
 
-        <TableContainer sx={{ maxHeight: 600 }}>
-          <Table stickyHeader>
+        <TableContainer sx={{ maxHeight: { xs: 420, md: 600 }, overflow: "auto" }}>
+          <Table stickyHeader sx={{ minWidth: 720 }}>
             <TableHead>
               <TableRow>
                 <TableCell

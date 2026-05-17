@@ -76,9 +76,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   alignItems: "center",
   justifyContent: "space-between",
   padding: theme.spacing(0, 2),
-  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-  color: theme.palette.primary.contrastText,
-  borderBottom: `1px solid ${theme.palette.primary.main}`,
+  borderBottom: `1px solid ${theme.palette.divider}`,
   ...theme.mixins.toolbar,
 }));
 
@@ -255,23 +253,23 @@ function AuthenticatedLayout() {
                 component="img"
                 src={logoUrl}
                 alt={businessName}
-                sx={{ width: 30, height: 30, borderRadius: 1, objectFit: "contain", flexShrink: 0, bgcolor: "rgba(255,255,255,0.95)", p: 0.25 }}
+                sx={{ width: 30, height: 30, borderRadius: 1, objectFit: "contain", flexShrink: 0 }}
               />
             ) : (
-              <Avatar sx={{ width: 30, height: 30, bgcolor: "rgba(255,255,255,0.18)", color: "primary.contrastText", fontSize: "0.85rem", fontWeight: 700 }}>
+              <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", color: "primary.contrastText", fontSize: "0.85rem", fontWeight: 700 }}>
                 {businessName.charAt(0).toUpperCase()}
               </Avatar>
             )}
             <Typography
               variant="subtitle1"
               noWrap
-              sx={{ fontSize: "0.95rem", fontWeight: 700, color: "primary.contrastText" }}
+              sx={{ fontSize: "0.95rem", fontWeight: 700, color: "text.primary" }}
             >
               {businessName}
             </Typography>
           </Box>
         )}
-        <IconButton onClick={handleDrawerToggle} sx={{ color: "primary.contrastText", "&:hover": { bgcolor: "rgba(255,255,255,0.15)" } }}>
+        <IconButton onClick={handleDrawerToggle}>
           <ChevronLeftIcon />
         </IconButton>
       </DrawerHeader>
@@ -569,7 +567,16 @@ function AuthenticatedLayout() {
         </Drawer>
       )}
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, width: "100%" }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: { xs: 1.5, sm: 2, md: 3 },
+          width: "100%",
+          minWidth: 0,
+          overflowX: "hidden",
+        }}
+      >
         <DrawerHeader />
         <Outlet />
       </Box>

@@ -34,13 +34,14 @@ const MasterFilterBar: React.FC = () => {
     <Paper
       elevation={0}
       sx={{
-        px: 3,
+        px: { xs: 2, md: 3 },
         py: 1.5,
         borderBottom: "1px solid",
         borderColor: "divider",
         display: "flex",
-        alignItems: "center",
+        alignItems: { xs: "stretch", md: "center" },
         justifyContent: "space-between",
+        flexDirection: { xs: "column", md: "row" },
         flexWrap: "wrap",
         gap: 2,
         bgcolor: "background.paper",
@@ -53,7 +54,16 @@ const MasterFilterBar: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: { xs: "stretch", sm: "center" },
+          flexDirection: { xs: "column", sm: "row" },
+          flexWrap: "wrap",
+          gap: { xs: 1.5, sm: 2 },
+          width: { xs: "100%", md: "auto" },
+        }}
+      >
         <TextField
           select
           size="small"
@@ -64,7 +74,7 @@ const MasterFilterBar: React.FC = () => {
               e.target.value === "all" ? null : Number(e.target.value),
             )
           }
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: { xs: "100%", sm: 200 } }}
         >
           {warehouses.map((w) => (
             <MenuItem key={w.id} value={w.id}>
@@ -80,6 +90,7 @@ const MasterFilterBar: React.FC = () => {
           slotProps={{ inputLabel: { shrink: true } }}
           value={globalFilters.startDate}
           onChange={(e) => updateFilter("startDate", e.target.value)}
+          sx={{ minWidth: { xs: "100%", sm: 140 } }}
         />
 
         <TextField
@@ -89,6 +100,7 @@ const MasterFilterBar: React.FC = () => {
           slotProps={{ inputLabel: { shrink: true } }}
           value={globalFilters.endDate}
           onChange={(e) => updateFilter("endDate", e.target.value)}
+          sx={{ minWidth: { xs: "100%", sm: 140 } }}
         />
 
         <Button
@@ -96,6 +108,7 @@ const MasterFilterBar: React.FC = () => {
           size="small"
           startIcon={<Refresh />}
           onClick={handleRefresh}
+          sx={{ flexShrink: 0 }}
         >
           Refresh
         </Button>

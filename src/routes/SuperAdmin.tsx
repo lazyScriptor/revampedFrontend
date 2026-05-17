@@ -147,7 +147,7 @@ export default function SuperAdminDashboard() {
             {/* ── Left Sidebar ─────────────────────────────────────── */}
             <Box
                 sx={{
-                    width: 220,
+                    width: { xs: 180, md: 220 },
                     flexShrink: 0,
                     display: 'flex',
                     flexDirection: 'column',

@@ -43,7 +43,8 @@ export default function InvoicesTab() {
     {
       field: "Customer",
       headerName: "Customer",
-      width: 200,
+      flex: 1,
+      minWidth: 180,
       sortable: false,
       valueGetter: (_value: any, row: any) => {
         const c = row.Customer;

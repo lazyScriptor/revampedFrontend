@@ -99,7 +99,7 @@ export default function CustomersRoute() {
 
       {/* KPI Dashboard */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             className="border border-slate-200 rounded-xl bg-white h-full"
@@ -124,7 +124,7 @@ export default function CustomersRoute() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             className="border border-red-200 rounded-xl bg-red-50/30 h-full"
@@ -149,7 +149,7 @@ export default function CustomersRoute() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             className="border border-slate-200 rounded-xl bg-white h-full"

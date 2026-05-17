@@ -293,8 +293,9 @@ export default function InvoicesRoute() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100vh - 100px)",
-        overflow: "hidden",
+        height: { xs: "auto", md: "calc(100vh - 100px)" },
+        minHeight: { xs: "calc(100vh - 100px)", md: "auto" },
+        overflow: { xs: "visible", md: "hidden" },
         gap: { xs: 1.5, lg: 2.5 },
       }}
     >

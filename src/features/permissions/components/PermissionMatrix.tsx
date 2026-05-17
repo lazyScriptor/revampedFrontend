@@ -377,6 +377,7 @@ const PermissionMatrix: React.FC = () => {
                         position: 'sticky',
                         top: 0,
                         zIndex: 1,
+                        minWidth: 200 + roles.length * 110 + (selectedUser ? 140 : 0),
                     }}
                 >
                     <Box sx={{ p: 1.5, pl: 2 }}>
@@ -425,6 +426,7 @@ const PermissionMatrix: React.FC = () => {
                                 borderBottom: '1px solid #e2e8f0',
                                 display: 'grid',
                                 gridTemplateColumns: `2.5fr repeat(${roles.length}, 1fr) ${selectedUser ? '1.2fr' : ''}`,
+                                minWidth: 200 + roles.length * 110 + (selectedUser ? 140 : 0),
                             }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -445,6 +447,7 @@ const PermissionMatrix: React.FC = () => {
                                     borderBottom: '1px solid #f1f5f9',
                                     '&:hover': { backgroundColor: '#fafbfc' },
                                     alignItems: 'center',
+                                    minWidth: 200 + roles.length * 110 + (selectedUser ? 140 : 0),
                                 }}
                             >
                                 <Box sx={{ px: 2, py: 0.5 }}>

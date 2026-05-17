@@ -58,7 +58,7 @@ export default function DataArenaRoute() {
         height: { lg: "calc(100vh - 100px)" },
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        overflow: { xs: "visible", lg: "hidden" },
       }}
     >
       {/* Header */}
@@ -97,7 +97,7 @@ export default function DataArenaRoute() {
         sx={{
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          gap: 4,
+          gap: { xs: 2, md: 4 },
           flexGrow: 1,
           minHeight: 0,
         }}
@@ -106,7 +106,8 @@ export default function DataArenaRoute() {
         <Paper
           elevation={0}
           sx={{
-            flex: "0 0 280px",
+            flex: { xs: "0 0 auto", md: "0 0 280px" },
+            width: { xs: "100%", md: "auto" },
             border: "1px solid #e2e8f0",
             borderRadius: 3,
             overflow: "hidden",
