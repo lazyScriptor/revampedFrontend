@@ -12,6 +12,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
 
 import PlatformKpiCards from '@/features/super-admin/components/PlatformKpiCards';
 import AuditLogTable from '@/features/super-admin/components/AuditLogTable';
@@ -19,16 +20,19 @@ import TenantListPanel from '@/features/super-admin/components/TenantListPanel';
 import TenantDetailPanel from '@/features/super-admin/components/TenantDetailPanel';
 import CorsManagerPanel from '@/features/super-admin/components/CorsManagerPanel';
 import CreateTenantDialog from '@/features/super-admin/components/CreateTenantDialog';
+import InquiryListPanel from '@/features/super-admin/components/InquiryListPanel';
+import InquiryDetailPanel from '@/features/super-admin/components/InquiryDetailPanel';
 
-import { usePlatformDashboard, useTenants } from '@/features/super-admin/hooks/useSuperAdminHooks';
+import { usePlatformDashboard, useTenants, useInquiryStats } from '@/features/super-admin/hooks/useSuperAdminHooks';
 import { useSuperAdminStore } from '@/stores/useSuperAdminStore';
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
-type NavKey = 'dashboard' | 'tenants' | 'cors' | 'audit';
+type NavKey = 'dashboard' | 'tenants' | 'inquiries' | 'cors' | 'audit';
 
 const NAV: { key: NavKey; icon: React.ReactNode; label: string }[] = [
     { key: 'dashboard', icon: <DashboardOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Dashboard' },
     { key: 'tenants', icon: <BusinessOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Tenants' },
+    { key: 'inquiries', icon: <MailOutlineOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Inquiries' },
     { key: 'cors', icon: <PublicOutlinedIcon sx={{ fontSize: 18 }} />, label: 'CORS & Security' },
     { key: 'audit', icon: <HistoryOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Audit Log' },
 ];
@@ -137,9 +141,15 @@ function DashboardView() {
 export default function SuperAdminDashboard() {
     const [activeNav, setActiveNav] = useState<NavKey>('dashboard');
     const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
+    const [selectedInquiryId, setSelectedInquiryId] = useState<number | null>(null);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const logout = useSuperAdminStore((s) => s.logout);
     const admin = useSuperAdminStore((s) => s.admin);
+
+    // Unread badge for the nav. Polls every 60s so a new inquiry surfaces
+    // without requiring the admin to refresh. Cheap query — single row + counts.
+    const { data: stats } = useInquiryStats();
+    const newInquiryCount = stats?.byStatus?.new ?? 0;
 
     return (
         <>
@@ -200,9 +210,28 @@ export default function SuperAdminDashboard() {
                                 }}
                             >
                                 {icon}
-                                <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: isActive ? 700 : 500 }}>
+                                <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: isActive ? 700 : 500, flex: 1 }}>
                                     {label}
                                 </Typography>
+                                {key === 'inquiries' && newInquiryCount > 0 && (
+                                    <Box
+                                        sx={{
+                                            minWidth: 18,
+                                            height: 18,
+                                            px: 0.75,
+                                            borderRadius: 9,
+                                            bgcolor: '#ef4444',
+                                            color: '#fff',
+                                            fontSize: '0.65rem',
+                                            fontWeight: 700,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        {newInquiryCount > 99 ? '99+' : newInquiryCount}
+                                    </Box>
+                                )}
                             </Box>
                         );
                     })}
@@ -252,6 +281,49 @@ export default function SuperAdminDashboard() {
                         <Typography variant="h6" sx={{ color: '#f1f5f9', fontWeight: 700, mb: 1 }}>Audit Log</Typography>
                         <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 3 }}>Full history of every Super Admin action across the platform.</Typography>
                         <AuditLogTable />
+                    </Box>
+                )}
+
+                {activeNav === 'inquiries' && (
+                    <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                        {/* Inquiry list — fixed width like the tenant list */}
+                        <Box sx={{ width: 320, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            <Box sx={{ px: 2, py: 1.25, borderBottom: '1px solid #1e293b', bgcolor: '#0f172a', flexShrink: 0 }}>
+                                <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.82rem' }}>
+                                    Contact Inquiries
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>
+                                    From geargrid.live/contact
+                                </Typography>
+                            </Box>
+                            <InquiryListPanel
+                                selectedId={selectedInquiryId}
+                                onSelect={(id) => setSelectedInquiryId(id)}
+                            />
+                        </Box>
+
+                        {/* Inquiry detail */}
+                        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            {selectedInquiryId ? (
+                                <InquiryDetailPanel inquiryId={selectedInquiryId} />
+                            ) : (
+                                <Box sx={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 1.5,
+                                    color: '#334155',
+                                }}>
+                                    <MailOutlineOutlinedIcon sx={{ fontSize: 48, opacity: 0.4 }} />
+                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>Select an inquiry</Typography>
+                                    <Typography variant="caption" sx={{ color: '#475569' }}>
+                                        Pick an inquiry from the list to triage, reply, and update its status.
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
                     </Box>
                 )}
 

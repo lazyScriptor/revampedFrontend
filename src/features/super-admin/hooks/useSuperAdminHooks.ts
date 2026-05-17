@@ -281,3 +281,114 @@ export const useAuditLog = (page: number = 1, limit: number = 50) =>
             return res.data;
         },
     });
+
+// ============================================================================
+// CONTACT INQUIRIES
+// ============================================================================
+export interface InquiryRow {
+    inquiry_id: number;
+    name: string;
+    email: string;
+    company: string | null;
+    phone?: string | null;
+    inquiry_type: 'demo' | 'sales' | 'support' | 'partnership' | 'other';
+    status: 'new' | 'contacted' | 'qualified' | 'closed';
+    message?: string;
+    internal_notes?: string | null;
+    source_ip?: string | null;
+    user_agent?: string | null;
+    referrer?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface InquiryListParams {
+    page?: number;
+    pageSize?: number;
+    status?: string;
+    inquiry_type?: string;
+    search?: string;
+    from_date?: string;
+    to_date?: string;
+}
+
+const inquiryQS = (p: InquiryListParams) => {
+    const qs = new URLSearchParams();
+    Object.entries(p).forEach(([k, v]) => {
+        if (v !== undefined && v !== '' && v !== null) qs.set(k, String(v));
+    });
+    const s = qs.toString();
+    return s ? `?${s}` : '';
+};
+
+export const useInquiries = (params: InquiryListParams = {}) =>
+    useQuery({
+        queryKey: ['sa-inquiries', params],
+        queryFn: async () => {
+            const res = await api.get(`/super-admin/inquiries${inquiryQS(params)}`);
+            return res.data as {
+                rows: InquiryRow[];
+                total: number;
+                page: number;
+                pageSize: number;
+                totalPages: number;
+            };
+        },
+        // 30s — inquiries don't change *that* fast, but they're not static either.
+        staleTime: 30_000,
+    });
+
+export const useInquiryStats = () =>
+    useQuery({
+        queryKey: ['sa-inquiries-stats'],
+        queryFn: async () => {
+            const res = await api.get('/super-admin/inquiries/stats');
+            return res.data as {
+                byStatus: Record<string, number>;
+                byType: Record<string, number>;
+            };
+        },
+        staleTime: 30_000,
+    });
+
+export const useInquiry = (id: number | null) =>
+    useQuery({
+        queryKey: ['sa-inquiry', id],
+        queryFn: async () => {
+            const res = await api.get(`/super-admin/inquiries/${id}`);
+            return (res.data as { inquiry: InquiryRow }).inquiry;
+        },
+        enabled: !!id,
+    });
+
+export const useUpdateInquiry = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            id,
+            ...patch
+        }: { id: number } & Partial<Pick<InquiryRow, 'status' | 'internal_notes'>>) => {
+            const res = await api.patch(`/super-admin/inquiries/${id}`, patch);
+            return (res.data as { inquiry: InquiryRow }).inquiry;
+        },
+        onSuccess: (inquiry) => {
+            qc.invalidateQueries({ queryKey: ['sa-inquiries'] });
+            qc.invalidateQueries({ queryKey: ['sa-inquiries-stats'] });
+            qc.setQueryData(['sa-inquiry', inquiry.inquiry_id], inquiry);
+        },
+    });
+};
+
+export const useDeleteInquiry = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            await api.delete(`/super-admin/inquiries/${id}`);
+            return id;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['sa-inquiries'] });
+            qc.invalidateQueries({ queryKey: ['sa-inquiries-stats'] });
+        },
+    });
+};
