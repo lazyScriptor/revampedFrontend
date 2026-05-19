@@ -1,0 +1,7 @@
+# app.geargrid.live — application portal
+# This subdomain is the authenticated app, NOT the marketing site.
+# Marketing SEO is handled on the main domain (geargrid.live).
+# Block all crawling so this subdomain doesn't compete with the main domain.
+
+User-agent: *
+Disallow: /

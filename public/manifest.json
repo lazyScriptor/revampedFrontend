@@ -1,0 +1,21 @@
+{
+  "name": "GearGrid — Rental Management Software",
+  "short_name": "GearGrid",
+  "description": "Enterprise rental management software for equipment dealers, construction firms, and fleet operators.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "categories": ["business", "productivity"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/gemini-svg.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

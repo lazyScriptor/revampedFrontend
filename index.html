@@ -2,9 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/gemini-svg.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gear Grid portal</title>
+
+    <!-- ══ App subdomain (app.geargrid.live) — keep OUT of search results ══
+         Marketing SEO ("rental management software", etc.) lives on the main
+         domain (geargrid.live). The app portal must not compete for those
+         queries — it would split authority and pollute results with login pages.
+         Strategy: noindex + canonical to main + disallow in robots.txt.        -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="googlebot" content="noindex, nofollow" />
+    <link rel="canonical" href="https://geargrid.live/" />
+
+    <title>GearGrid — Login</title>
+    <meta name="description" content="Sign in to the GearGrid rental management portal." />
+    <meta name="theme-color" content="#0f172a" />
+
+    <link rel="icon" type="image/svg+xml" href="/gemini-svg.svg" />
+    <link rel="apple-touch-icon" href="/gemini-svg.svg" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <link rel="preconnect" href="https://api.geargrid.live" />
+    <link rel="dns-prefetch" href="https://api.geargrid.live" />
   </head>
   <body>
     <div id="root"></div>
