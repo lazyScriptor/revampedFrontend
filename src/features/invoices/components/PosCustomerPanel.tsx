@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -10,6 +10,7 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -21,17 +22,72 @@ import PersonIcon from "@mui/icons-material/Person";
 import CloseIcon from "@mui/icons-material/Close";
 import BadgeIcon from "@mui/icons-material/Badge";
 import PhoneIcon from "@mui/icons-material/Phone";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 
 import { usePosCustomerSearch } from "../hooks/usePosSearch";
+import { useCustomerDetails } from "@/features/customers/hooks/useCustomerHooks";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
   onSelectCustomer: (customer: any | null) => void;
+  onBehalfOfCustomer?: any | null;
+  onChangeOnBehalfOfCustomer?: (c: any | null) => void;
 }
 
-export function PosCustomerPanel({ selectedCustomer, onSelectCustomer }: PosCustomerPanelProps) {
+export function PosCustomerPanel({
+  selectedCustomer,
+  onSelectCustomer,
+  onBehalfOfCustomer,
+  onChangeOnBehalfOfCustomer,
+}: PosCustomerPanelProps) {
   const [inputValue, setInputValue] = useState("");
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
+
+  // Fetch nested parent + workers for the selected customer so we know whether
+  // to surface the "rent on behalf of" picker. Skipped until something is
+  // actually selected.
+  const { data: selectedCustomerDetails } = useCustomerDetails(
+    selectedCustomer?.customer_id ?? null,
+  );
+
+  const relationshipOptions = useMemo(() => {
+    const list: Array<{ id: number; label: string; subtitle: string; data: any; relation: "parent" | "worker" }> = [];
+    const detail = selectedCustomerDetails || selectedCustomer;
+    if (!detail) return list;
+    if (detail.ParentCompany && detail.ParentCompany.customer_id) {
+      const p = detail.ParentCompany;
+      const name = p.company_name || `${p.first_name || ""} ${p.last_name || ""}`.trim();
+      list.push({
+        id: p.customer_id,
+        label: name,
+        subtitle: "Linked parent",
+        data: p,
+        relation: "parent",
+      });
+    }
+    if (Array.isArray(detail.Workers)) {
+      detail.Workers.forEach((w: any) => {
+        if (w?.status === "Blacklisted") return;
+        list.push({
+          id: w.customer_id,
+          label: `${w.first_name} ${w.last_name}`,
+          subtitle: "Linked child / worker",
+          data: w,
+          relation: "worker",
+        });
+      });
+    }
+    return list;
+  }, [selectedCustomerDetails, selectedCustomer]);
+
+  // Reset the on-behalf selection whenever the actor customer changes —
+  // a beneficiary from a previous customer never applies to a new one.
+  useEffect(() => {
+    if (onBehalfOfCustomer && onChangeOnBehalfOfCustomer) {
+      onChangeOnBehalfOfCustomer(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCustomer?.customer_id]);
 
   const isBlacklisted = selectedCustomer?.status === "Blacklisted";
   const hasWallet = Number(selectedCustomer?.deposit_balance) > 0;
@@ -321,6 +377,81 @@ export function PosCustomerPanel({ selectedCustomer, onSelectCustomer }: PosCust
               <Typography variant="caption" sx={{ color: "#b45309", fontWeight: 600 }}>
                 Physical ID currently in the security vault.
               </Typography>
+            </Box>
+          )}
+
+          {/* On-behalf-of selector — only when this customer has a parent and/or workers */}
+          {relationshipOptions.length > 0 && onChangeOnBehalfOfCustomer && (
+            <Box
+              sx={{
+                mx: 2,
+                mb: 2,
+                px: 1.5,
+                py: 1.5,
+                bgcolor: onBehalfOfCustomer ? "#eef2ff" : "#f8fafc",
+                border: "1px solid",
+                borderColor: onBehalfOfCustomer ? "#c7d2fe" : "#e2e8f0",
+                borderRadius: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <AccountTreeIcon sx={{ fontSize: 16, color: "#4f46e5" }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: "#0f172a", letterSpacing: 0.5, textTransform: "uppercase", fontSize: "0.65rem" }}>
+                  Rental Attribution
+                </Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                This customer is linked to a {relationshipOptions.some((o) => o.relation === "parent") ? "parent" : ""}
+                {relationshipOptions.some((o) => o.relation === "parent") && relationshipOptions.some((o) => o.relation === "worker") ? " and " : ""}
+                {relationshipOptions.some((o) => o.relation === "worker") ? "child / worker" : ""}. Choose who this rental is for.
+              </Typography>
+              <TextField
+                select
+                size="small"
+                fullWidth
+                value={onBehalfOfCustomer?.customer_id ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) {
+                    onChangeOnBehalfOfCustomer(null);
+                    return;
+                  }
+                  const chosen = relationshipOptions.find((o) => o.id === Number(v));
+                  onChangeOnBehalfOfCustomer(chosen ? chosen.data : null);
+                }}
+                slotProps={{
+                  input: { sx: { bgcolor: "white", borderRadius: 2 } },
+                }}
+              >
+                <MenuItem value="">
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Rent for self
+                    </Typography>
+                  </Box>
+                </MenuItem>
+                {relationshipOptions.map((opt) => (
+                  <MenuItem key={opt.id} value={opt.id}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+                      <AccountTreeIcon sx={{ fontSize: 16, color: opt.relation === "parent" ? "#7c3aed" : "#0ea5e9" }} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
+                          On behalf of {opt.label}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                          {opt.subtitle}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </TextField>
+              {onBehalfOfCustomer && (
+                <Typography variant="caption" sx={{ display: "block", mt: 1, color: "#4f46e5", fontWeight: 700 }}>
+                  Invoice will be attributed to both customers' history.
+                </Typography>
+              )}
             </Box>
           )}
         </Box>

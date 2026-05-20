@@ -27,7 +27,7 @@ export interface Customer {
     customer_id: number;
     customer_type: 'Individual' | 'Business';
     company_name?: string;
-    parent_customer_id?: number;
+    parent_customer_id?: number | null;
     first_name: string;
     last_name: string;
     nic_number: string;
@@ -39,8 +39,18 @@ export interface Customer {
     rating: number;
     status: 'Active' | 'Blacklisted';
     ParentCompany?: { // The nested object returned by Sequelize
-        company_name: string;
+        customer_id?: number;
+        customer_type?: 'Individual' | 'Business';
+        company_name?: string;
+        first_name?: string;
+        last_name?: string;
+        phone_number?: string;
+    } | null;
+    Workers?: Array<{
+        customer_id: number;
         first_name: string;
         last_name: string;
-    };
+        phone_number?: string;
+        status?: 'Active' | 'Blacklisted';
+    }>;
 }

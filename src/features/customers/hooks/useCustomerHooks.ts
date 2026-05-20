@@ -94,3 +94,43 @@ export const useDeleteCustomer = () => {
         },
     });
 }
+
+export interface ParentCustomerOption {
+    customer_id: number;
+    customer_type: 'Individual' | 'Business';
+    first_name: string;
+    last_name: string;
+    company_name?: string | null;
+    phone_number?: string;
+    nic_number?: string;
+    status?: 'Active' | 'Blacklisted';
+}
+
+const fetchParentOptions = async (
+    excludeId?: number | null,
+    search?: string,
+): Promise<ParentCustomerOption[]> => {
+    const params: Record<string, any> = {};
+    if (excludeId) params.exclude = excludeId;
+    if (search && search.trim().length > 0) params.search = search.trim();
+    const response = await api.get('/customers/parents', { params });
+    return response.data?.data?.options || response.data?.options || [];
+};
+
+// Real-data dropdown for the parent-customer picker. Excludes the customer
+// currently being edited so they can't be their own parent. Pass the live
+// search term and the backend does the matching — same pattern as the POS
+// customer search, so the dropdown stays responsive on large tenants.
+export const useParentCustomerOptions = (
+    excludeId?: number | null,
+    enabled = true,
+    search: string = '',
+) => {
+    return useQuery({
+        queryKey: ['customer-parent-options', excludeId || 'all', search],
+        queryFn: () => fetchParentOptions(excludeId, search),
+        enabled,
+        staleTime: 30_000,
+        placeholderData: (prev) => prev,
+    });
+};

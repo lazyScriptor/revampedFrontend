@@ -52,6 +52,7 @@ export default function InvoicesRoute() {
 
   // ── Dispatch State ────────────────────────────────────────────────────────────
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [onBehalfOfCustomer, setOnBehalfOfCustomer] = useState<any | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [fees, setFees] = useState({ transport: 0, discount: 0, advance: 0 });
 
@@ -97,11 +98,13 @@ export default function InvoicesRoute() {
     try {
       await api.post("/invoices", {
         customer_id: selectedCustomer.customer_id,
+        borrowed_on_behalf_of_customer_id: onBehalfOfCustomer?.customer_id ?? null,
         items: cartItems,
         fees: fees,
       });
       showToast("Invoice created successfully!", "success");
       setSelectedCustomer(null);
+      setOnBehalfOfCustomer(null);
       setCartItems([]);
       setFees({ transport: 0, discount: 0, advance: 0 });
       setIsConfirmDispatchOpen(false);
@@ -148,6 +151,8 @@ export default function InvoicesRoute() {
           <PosCustomerPanel
             selectedCustomer={selectedCustomer}
             onSelectCustomer={setSelectedCustomer}
+            onBehalfOfCustomer={onBehalfOfCustomer}
+            onChangeOnBehalfOfCustomer={setOnBehalfOfCustomer}
           />
         ) : (
           <ManageSearchPanel
@@ -518,6 +523,26 @@ export default function InvoicesRoute() {
             <Typography variant="body2" color="text.secondary">
               {selectedCustomer?.phone_number}
             </Typography>
+            {onBehalfOfCustomer && (
+              <Box
+                sx={{
+                  mt: 1.5,
+                  px: 1.5,
+                  py: 1,
+                  bgcolor: "#eef2ff",
+                  border: "1px solid #c7d2fe",
+                  borderRadius: 1.5,
+                }}
+              >
+                <Typography variant="caption" sx={{ color: "#4338ca", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+                  On behalf of
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "#1e1b4b", mt: 0.25 }}>
+                  {onBehalfOfCustomer.company_name ||
+                    `${onBehalfOfCustomer.first_name || ""} ${onBehalfOfCustomer.last_name || ""}`.trim()}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {/* Items */}

@@ -17,6 +17,7 @@ import AddIcon from "@mui/icons-material/Add";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 
 export default function CustomersRoute() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -34,17 +35,26 @@ export default function CustomersRoute() {
   } = useCustomerList(paginationModel.page + 1, paginationModel.pageSize);
 
   const customerList = response?.customers || [];
-  const totalRowCount = response?.total || 0;
+  const totalRowCount = response?.totalItems || 0;
 
   // Calculate live KPIs based on current data view
-  const { idsInVault, totalAdvance } = useMemo(() => {
+  const { idsInVault, totalAdvance, businessCount, delegatedCount } = useMemo(() => {
     let ids = 0;
     let advance = 0;
+    let businesses = 0;
+    let delegated = 0;
     customerList.forEach((c: any) => {
       if (c.is_id_retained_currently) ids++;
       if (c.deposit_balance) advance += Number(c.deposit_balance);
+      if (c.customer_type === "Business") businesses++;
+      if (c.parent_customer_id) delegated++;
     });
-    return { idsInVault: ids, totalAdvance: advance };
+    return {
+      idsInVault: ids,
+      totalAdvance: advance,
+      businessCount: businesses,
+      delegatedCount: delegated,
+    };
   }, [customerList]);
 
   const handleOpenAdd = () => {
@@ -98,8 +108,8 @@ export default function CustomersRoute() {
       </div>
 
       {/* KPI Dashboard */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <Grid container spacing={2.5}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card
             elevation={0}
             className="border border-slate-200 rounded-xl bg-white h-full"
@@ -119,12 +129,43 @@ export default function CustomersRoute() {
                 <Typography variant="h5" fontWeight="bold">
                   {totalRowCount}
                 </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {businessCount} business · {totalRowCount - businessCount} individual
+                </Typography>
               </div>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card
+            elevation={0}
+            className="border border-slate-200 rounded-xl bg-white h-full"
+          >
+            <CardContent className="flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                <AccountTreeIcon fontSize="large" />
+              </div>
+              <div>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  fontWeight="500"
+                >
+                  Linked to a Parent
+                </Typography>
+                <Typography variant="h5" fontWeight="bold">
+                  {delegatedCount}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  on this page
+                </Typography>
+              </div>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card
             elevation={0}
             className="border border-red-200 rounded-xl bg-red-50/30 h-full"
@@ -144,12 +185,15 @@ export default function CustomersRoute() {
                 <Typography variant="h5" fontWeight="bold" color="error.dark">
                   {idsInVault}
                 </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  on this page
+                </Typography>
               </div>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card
             elevation={0}
             className="border border-slate-200 rounded-xl bg-white h-full"
@@ -168,6 +212,9 @@ export default function CustomersRoute() {
                 </Typography>
                 <Typography variant="h5" fontWeight="bold" color="success.main">
                   Rs. {totalAdvance.toLocaleString()}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  on this page
                 </Typography>
               </div>
             </CardContent>
