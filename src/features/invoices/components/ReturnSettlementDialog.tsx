@@ -7,7 +7,6 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
   Chip,
   CircularProgress,
   FormControlLabel,
@@ -15,16 +14,25 @@ import {
   Rating,
   Alert,
   Divider,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import BuildCircleIcon from "@mui/icons-material/BuildCircle";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import MoneyOffIcon from "@mui/icons-material/MoneyOff";
+import RestoreIcon from "@mui/icons-material/Restore";
 import { useProcessReturn } from "../hooks/useInvoiceHooks";
+import { QuantityReturnSplitter } from "./QuantityReturnSplitter";
 
 // ─── Live late fee engine (mirrors backend logic exactly) ──────────────────────
+// `track_overdue === false` is the explicit opt-out: skip late fees entirely.
+// Using `=== false` (not falsy) so legacy lines without the field — `undefined`
+// — still flow through the date-based check.
 const calcLineLF = (line: any): number => {
+  if (line.track_overdue === false) return 0;
   if (!line.actual_return_date || !line.expected_return) return 0;
   const expected = new Date(line.expected_return).getTime();
   const actual = new Date(line.actual_return_date).getTime();
@@ -34,6 +42,7 @@ const calcLineLF = (line: any): number => {
 };
 
 const calcDaysLate = (line: any): number => {
+  if (line.track_overdue === false) return 0;
   if (!line.actual_return_date || !line.expected_return) return 0;
   const expected = new Date(line.expected_return).getTime();
   const actual = new Date(line.actual_return_date).getTime();
@@ -42,6 +51,8 @@ const calcDaysLate = (line: any): number => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: any) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const returnMutation = useProcessReturn();
   const [releaseId, setReleaseId] = useState(true);
   const [customerRating, setCustomerRating] = useState<number | null>(5);
@@ -63,6 +74,13 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           const alreadyReturned =
             (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
           const remainingToReturn = line.borrow_quantity - alreadyReturned;
+          // Legacy lines without the field default to tracked — preserves
+          // pre-existing behavior. Explicit `false` from a new line opts out.
+          const wasTracked = line.track_overdue !== false;
+          // Local-time today so users east of UTC don't get yesterday's date
+          // pre-filled in the actual-return field.
+          const today = new Date();
+          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
           return {
             line_id: line.line_id,
             equipment_name: line.Equipment?.equipment_name || "Unknown Item",
@@ -70,18 +88,24 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
             remaining_qty: remainingToReturn,
             locked_extra_rate: Number(line.locked_extra_daily_rate),
             expected_return: line.expected_return_date,
+            track_overdue: wasTracked,
+            // Frozen flag: was this line tracked when the return started? Used
+            // to decide whether to show the "Waive late fees" affordance —
+            // never gate on the live track_overdue value, otherwise once you
+            // waive you'd lose the way to un-waive.
+            _orig_tracked: wasTracked,
             good_qty: remainingToReturn,
             defective_qty: 0,
-            actual_return_date: new Date().toISOString().split("T")[0],
+            actual_return_date: todayStr,
           };
         })
       );
     }
   }, [invoice, open]);
 
-  const handleUpdateLine = (id: number, field: string, value: any) => {
+  const handleUpdateLineBatch = (id: number, updates: Record<string, any>) => {
     setReturnLines((prev) =>
-      prev.map((line) => (line.line_id === id ? { ...line, [field]: value } : line))
+      prev.map((line) => (line.line_id === id ? { ...line, ...updates } : line))
     );
   };
 
@@ -117,10 +141,19 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      slotProps={{ paper: { sx: { borderRadius: 3, bgcolor: "#f8fafc", maxHeight: "92vh" } } }}
+      fullScreen={isMobile}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: { xs: 0, sm: 3 },
+            bgcolor: "#f8fafc",
+            maxHeight: { xs: "100vh", sm: "92dvh" },
+          },
+        },
+      }}
     >
       <DialogTitle
-        sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", p: 3 }}
+        sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", p: { xs: 2, sm: 3 } }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
@@ -148,7 +181,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 3 }}>
+      <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
 
           {/* Late fee warning banner */}
@@ -172,8 +205,9 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
             const daysLate = calcDaysLate(line);
             const lineLF = calcLineLF(line);
             const isLate = daysLate > 0;
-            const totalReturning = (line.good_qty || 0) + (line.defective_qty || 0);
-            const overReturn = totalReturning > line.remaining_qty;
+            const overdueTracked = line.track_overdue !== false;
+            const canWaive = line._orig_tracked === true;
+            const isWaived = canWaive && !overdueTracked;
 
             return (
               <Box
@@ -206,7 +240,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                       {line.equipment_name}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
                     <Chip
                       size="small"
                       label={`${line.remaining_qty} / ${line.borrow_qty} pending`}
@@ -224,66 +258,77 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                         sx={{ fontWeight: 700, fontSize: "0.7rem" }}
                       />
                     )}
+                    {isWaived && (
+                      <Chip
+                        size="small"
+                        icon={<MoneyOffIcon sx={{ fontSize: 12 }} />}
+                        label="Late fees waived"
+                        variant="outlined"
+                        sx={{ fontWeight: 700, fontSize: "0.68rem", color: "warning.dark", borderColor: "#fde68a", bgcolor: "#fffbeb" }}
+                      />
+                    )}
+                    {!overdueTracked && !isWaived && (
+                      <Chip
+                        size="small"
+                        label="No overdue tracking"
+                        variant="outlined"
+                        sx={{ fontWeight: 600, fontSize: "0.68rem", color: "text.secondary", borderColor: "#cbd5e1" }}
+                      />
+                    )}
+                    {canWaive && (
+                      <Button
+                        size="small"
+                        variant="text"
+                        startIcon={
+                          isWaived ? (
+                            <RestoreIcon sx={{ fontSize: 14 }} />
+                          ) : (
+                            <MoneyOffIcon sx={{ fontSize: 14 }} />
+                          )
+                        }
+                        onClick={() =>
+                          handleUpdateLineBatch(line.line_id, { track_overdue: isWaived })
+                        }
+                        sx={{
+                          textTransform: "none",
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          color: isWaived ? "primary.main" : "warning.dark",
+                          minWidth: 0,
+                          px: 1,
+                        }}
+                      >
+                        {isWaived ? "Restore late fees" : "Waive late fees"}
+                      </Button>
+                    )}
                   </Box>
                 </Box>
 
                 {/* Due date context */}
-                <Box sx={{ px: 2.5, pt: 1.5, pb: 0.5 }}>
-                  <Typography variant="caption" color={isLate ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
-                    Expected return: {new Date(line.expected_return).toLocaleDateString()}
-                    {isLate && ` · ${daysLate} day${daysLate !== 1 ? "s" : ""} overdue`}
-                  </Typography>
-                </Box>
+                {overdueTracked && line.expected_return && (
+                  <Box sx={{ px: 2.5, pt: 1.5, pb: 0.5 }}>
+                    <Typography variant="caption" color={isLate ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
+                      Expected return: {new Date(line.expected_return).toLocaleDateString()}
+                      {isLate && ` · ${daysLate} day${daysLate !== 1 ? "s" : ""} overdue`}
+                    </Typography>
+                  </Box>
+                )}
 
-                {/* Input grid */}
-                <Box
-                  sx={{
-                    p: 2.5,
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" },
-                    gap: 2,
-                  }}
-                >
-                  <TextField
-                    type="date"
-                    label="Actual Return Date"
-                    size="small"
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    value={line.actual_return_date}
-                    onChange={(e) =>
-                      handleUpdateLine(line.line_id, "actual_return_date", e.target.value)
-                    }
-                  />
-                  <TextField
-                    type="number"
-                    label="Good / Safe Qty"
-                    size="small"
-                    value={line.good_qty}
-                    color="success"
-                    error={overReturn}
-                    onChange={(e) => {
-                      let val = parseInt(e.target.value) || 0;
-                      if (val < 0) val = 0;
-                      if (val + line.defective_qty > line.remaining_qty)
-                        val = line.remaining_qty - line.defective_qty;
-                      handleUpdateLine(line.line_id, "good_qty", val);
+                {/* Splitter handles returning qty (primary), plus a collapsible
+                    section for actual return date + defective qty. */}
+                <Box sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+                  <QuantityReturnSplitter
+                    remaining={line.remaining_qty}
+                    returningQty={(line.good_qty || 0) + (line.defective_qty || 0)}
+                    defectiveQty={line.defective_qty || 0}
+                    actualReturnDate={line.actual_return_date}
+                    onChange={({ returningQty, defectiveQty, actualReturnDate }) => {
+                      handleUpdateLineBatch(line.line_id, {
+                        good_qty: Math.max(0, returningQty - defectiveQty),
+                        defective_qty: defectiveQty,
+                        actual_return_date: actualReturnDate,
+                      });
                     }}
-                  />
-                  <TextField
-                    type="number"
-                    label="Broken / Defective Qty"
-                    size="small"
-                    value={line.defective_qty}
-                    color="error"
-                    error={overReturn}
-                    onChange={(e) => {
-                      let val = parseInt(e.target.value) || 0;
-                      if (val < 0) val = 0;
-                      if (val + line.good_qty > line.remaining_qty)
-                        val = line.remaining_qty - line.good_qty;
-                      handleUpdateLine(line.line_id, "defective_qty", val);
-                    }}
-                    helperText={line.defective_qty > 0 ? "→ Auto-routed to Defect Desk" : ""}
                   />
                 </Box>
               </Box>
@@ -359,7 +404,15 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, bgcolor: "white", borderTop: "1px solid #e2e8f0", gap: 1 }}>
+      <DialogActions
+        sx={{
+          p: { xs: 1.5, sm: 3 },
+          bgcolor: "white",
+          borderTop: "1px solid #e2e8f0",
+          gap: 1,
+          flexWrap: "wrap",
+        }}
+      >
         {hasLateFees && (
           <Typography variant="caption" sx={{ color: "warning.dark", fontWeight: 700, mr: "auto" }}>
             +Rs.{totalLateFees.toLocaleString()} in late fees will be applied

@@ -658,13 +658,39 @@ export function ManageFinancialPanel({
   }
 
   // ── Payment event stream ───────────────────────────────────────────────────
-  const paymentEvents = payments.map((p: any) => ({
-    id: `pay-${p.payment_id}`,
-    type: Number(p.payment_amount) < 0 ? "REFUND" : "PAYMENT",
-    amount: Math.abs(Number(p.payment_amount)),
-    method: p.method,
-    date: p.payment_date || p.createdAt,
-  }));
+  // Label payments chronologically: the first non-refund payment is the
+  // "Advance" (captured at dispatch), then Payment 1, 2, 3… for each
+  // subsequent collection. Refunds keep their own label and don't increment
+  // the counter. The display ledger is sorted DESC for readability, but
+  // labels are assigned in ASC order so they match the order of events as
+  // they actually occurred.
+  const paymentsByDateAsc = [...payments].sort(
+    (a: any, b: any) =>
+      new Date(a.payment_date || a.createdAt).getTime() -
+      new Date(b.payment_date || b.createdAt).getTime()
+  );
+  let collectionCounter = 0;
+  const paymentEvents = paymentsByDateAsc.map((p: any) => {
+    const isRefund = Number(p.payment_amount) < 0;
+    let label: string;
+    if (isRefund) {
+      label = "Refund";
+    } else if (collectionCounter === 0) {
+      label = "Advance";
+      collectionCounter += 1;
+    } else {
+      label = `Payment ${collectionCounter}`;
+      collectionCounter += 1;
+    }
+    return {
+      id: `pay-${p.payment_id}`,
+      type: isRefund ? "REFUND" : "PAYMENT",
+      label,
+      amount: Math.abs(Number(p.payment_amount)),
+      method: p.method,
+      date: p.payment_date || p.createdAt,
+    };
+  });
 
   const rawTraces =
     invoice.InvoiceTraces ||
@@ -1043,12 +1069,12 @@ export function ManageFinancialPanel({
                       </>
                     ) : (
                       <>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                           <Typography
                             variant="body2"
                             sx={{ fontWeight: 700, color: item.type === "REFUND" ? "error.main" : "success.main" }}
                           >
-                            {item.type === "REFUND" ? "Refund" : "Payment"} · Rs.{item.amount.toLocaleString()}
+                            {(item as any).label || (item.type === "REFUND" ? "Refund" : "Payment")} · Rs.{item.amount.toLocaleString()}
                           </Typography>
                           <Chip size="small" label={item.method} sx={{ height: 16, fontSize: "0.6rem", fontWeight: 700 }} />
                         </Box>

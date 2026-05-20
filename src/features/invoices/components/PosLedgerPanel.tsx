@@ -16,10 +16,18 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 
 import { usePosEquipmentSearch } from "../hooks/usePosEquipmentSearch";
 
-// ─── CartItem and calculateLineMath: CONTRACT UNCHANGED ───────────────────────
+// ─── CartItem and calculateLineMath ───────────────────────────────────────────
+// `track_overdue` controls whether late-fee tracking applies to this line.
+// Default OFF — UI prompts opt-in via "+ Track overdue" chip. When off, the
+// expected_return_date is set equal to borrow_date so calculateLineMath
+// resolves cleanly to a single-day base fee (no NaN, no inflated tiered cost).
+// Backend should treat `track_overdue === false` as "skip late-fee calc on
+// return"; legacy lines without the field continue to behave as before.
 
 export interface CartItem {
   cart_id: string;
@@ -34,9 +42,45 @@ export interface CartItem {
   locked_minimum_days: number;
   locked_extra_daily_rate: number;
   pricing_mode: "daily" | "tiered";
+  track_overdue: boolean;
 }
 
+// ─── Local-timezone-safe date helpers ────────────────────────────────────────
+// `new Date("YYYY-MM-DD")` parses as UTC midnight; getDate/setDate operate in
+// LOCAL time. For users east of UTC (e.g. Sri Lanka, UTC+5:30) that asymmetry
+// silently shifts dates by ±1 day when re-serialised. These helpers force
+// everything through local-time construction + manual YYYY-MM-DD formatting so
+// the same string comes out that the user sees in the date picker.
+
+export const formatLocalDate = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+export const todayLocalStr = () => formatLocalDate(new Date());
+
+export const addDaysLocal = (dateStr: string, days: number) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y || !m || !d) return dateStr;
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + days);
+  return formatLocalDate(dt);
+};
+
+// Returns positive int when `a` is later than `b`, 0 when equal, negative when
+// earlier. Date-only — no timezone drift.
+export const compareDateStr = (a: string, b: string) => {
+  if (!a || !b) return 0;
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  return new Date(ay, am - 1, ad).getTime() - new Date(by, bm - 1, bd).getTime();
+};
+
 export const calculateLineMath = (item: CartItem) => {
+  // Both dates parsed identically (UTC midnight via the "YYYY-MM-DD" form), so
+  // subtraction yields a clean integer day count regardless of viewer's TZ.
   const start = new Date(item.borrow_date).getTime();
   const end = new Date(item.expected_return_date).getTime();
   let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
@@ -73,10 +117,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
   const [inputValue, setInputValue] = useState("");
   const { data: searchResults = [], isLoading } = usePosEquipmentSearch(inputValue);
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const todayStr = todayLocalStr();
 
   const handleAddEquipment = (equipment: any) => {
     if (!equipment) return;
@@ -117,11 +158,14 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
       is_bulk_item: equipment.is_bulk_item,
       borrow_quantity: 1,
       borrow_date: todayStr,
-      expected_return_date: tomorrowStr,
+      // Off by default — expected_return_date == borrow_date keeps cost math
+      // resolving to a single-day base fee until the user opts in.
+      expected_return_date: todayStr,
       locked_base_price: Number(equipment.base_rental_price) || 0,
       locked_minimum_days: Number(equipment.minimum_rental_days) || 1,
       locked_extra_daily_rate: Number(equipment.extra_daily_rate) || 0,
       pricing_mode: isDaily ? "daily" : "tiered",
+      track_overdue: false,
     };
     setCartItems((prev) => [...prev, newItem]);
     setInputValue("");
@@ -155,12 +199,29 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
     }
   };
 
+  // Opt in: seed Due Back at borrow+1 day so the date picker has a sensible
+  // starting value. Opt out: collapse Due Back back to borrow_date so the
+  // cost math resolves to a single-day base fee.
+  const toggleOverdueTracking = (item: CartItem) => {
+    if (item.track_overdue) {
+      updateItemBatch(item.cart_id, {
+        track_overdue: false,
+        expected_return_date: item.borrow_date,
+      });
+    } else {
+      updateItemBatch(item.cart_id, {
+        track_overdue: true,
+        expected_return_date: addDaysLocal(item.borrow_date, 1),
+      });
+    }
+  };
+
   const cartSubtotal = cartItems.reduce((t, i) => t + calculateLineMath(i).lineCost, 0);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* ── Equipment Search ── */}
-      <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5, flexShrink: 0 }}>
+      <Box sx={{ px: { xs: 1.5, sm: 2.5 }, pt: { xs: 2, sm: 2.5 }, pb: 1.5, flexShrink: 0 }}>
         <Autocomplete
           options={searchResults}
           getOptionLabel={(option: any) => option.equipment_name}
@@ -260,7 +321,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
       {cartItems.length > 0 && (
         <Box
           sx={{
-            mx: 2.5,
+            mx: { xs: 1.5, sm: 2.5 },
             mb: 1,
             px: 2,
             py: 1,
@@ -287,8 +348,8 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
         sx={{
           flexGrow: 1,
           overflowY: "auto",
-          px: 2.5,
-          pb: 2.5,
+          px: { xs: 1.5, sm: 2.5 },
+          pb: { xs: 2, sm: 2.5 },
           display: "flex",
           flexDirection: "column",
           gap: 2,
@@ -321,6 +382,8 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
           cartItems.map((item) => {
             const { totalDays, lineCost, calculationText } = calculateLineMath(item);
             const isDailyMode = item.pricing_mode === "daily";
+            const returnBeforeBorrow =
+              item.track_overdue && compareDateStr(item.expected_return_date, item.borrow_date) < 0;
 
             return (
               <Paper
@@ -373,7 +436,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                 </Box>
 
                 {/* Logistics row */}
-                <Box sx={{ px: 2, pt: 1.5, pb: 1, display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                <Box sx={{ px: 2, pt: 1.5, pb: 1, display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
                   <TextField
                     type="number"
                     label="Qty"
@@ -395,18 +458,78 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     size="small"
                     slotProps={{ inputLabel: { shrink: true } }}
                     value={item.borrow_date}
-                    onChange={(e) => updateItem(item.cart_id, "borrow_date", e.target.value)}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      if (!item.track_overdue) {
+                        // Tracking off: Due Back follows Dispatch so cost stays
+                        // a single-day base fee.
+                        updateItemBatch(item.cart_id, {
+                          borrow_date: next,
+                          expected_return_date: next,
+                        });
+                      } else if (compareDateStr(next, item.expected_return_date) > 0) {
+                        // Tracking on: if user pushes Dispatch past Due Back,
+                        // auto-bump Due Back to Dispatch + 1 rather than leave
+                        // a stale invalid range.
+                        updateItemBatch(item.cart_id, {
+                          borrow_date: next,
+                          expected_return_date: addDaysLocal(next, 1),
+                        });
+                      } else {
+                        updateItem(item.cart_id, "borrow_date", next);
+                      }
+                    }}
                     sx={{ flex: 1, minWidth: 130 }}
                   />
-                  <TextField
-                    type="date"
-                    label="Due Back"
-                    size="small"
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    value={item.expected_return_date}
-                    onChange={(e) => updateItem(item.cart_id, "expected_return_date", e.target.value)}
-                    sx={{ flex: 1, minWidth: 130 }}
-                  />
+                  {item.track_overdue ? (
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, flex: 1, minWidth: 160 }}>
+                      <TextField
+                        type="date"
+                        label="Due Back"
+                        size="small"
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                          htmlInput: { min: item.borrow_date },
+                        }}
+                        value={item.expected_return_date}
+                        onChange={(e) => updateItem(item.cart_id, "expected_return_date", e.target.value)}
+                        error={returnBeforeBorrow}
+                        helperText={returnBeforeBorrow ? "Must be on or after dispatch" : undefined}
+                        sx={{ flex: 1 }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleOverdueTracking(item)}
+                        title="Remove overdue tracking for this item"
+                        sx={{ mt: 0.5, color: "text.disabled", "&:hover": { color: "error.main" } }}
+                      >
+                        <CloseIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <Chip
+                      size="small"
+                      icon={<AddIcon sx={{ fontSize: 14 }} />}
+                      label="Track overdue"
+                      variant="outlined"
+                      clickable
+                      onClick={() => toggleOverdueTracking(item)}
+                      sx={{
+                        borderStyle: "dashed",
+                        borderColor: "#cbd5e1",
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        fontSize: "0.72rem",
+                        height: 32,
+                        "&:hover": {
+                          borderStyle: "solid",
+                          borderColor: "primary.main",
+                          bgcolor: "#eff6ff",
+                          color: "primary.main",
+                        },
+                      }}
+                    />
+                  )}
                 </Box>
 
                 {/* Pricing row */}
