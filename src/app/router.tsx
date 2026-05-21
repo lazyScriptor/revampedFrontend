@@ -82,6 +82,11 @@ const equipmentCategoryRoute = createRoute({
 const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
+  validateSearch: (search: Record<string, unknown>) => ({
+    mode: (search.mode === "manage" || search.mode === "dispatch")
+      ? (search.mode as "manage" | "dispatch")
+      : undefined,
+  }),
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => (
     <div>
@@ -131,9 +136,17 @@ const workforceRoute = createRoute({
 });
 
 // Accounting & Reports
+const ACCOUNTING_TABS = ["overview", "invoices", "payments", "expenses", "receivables", "journal"] as const;
+const REPORT_CATEGORIES = ["customers", "equipment", "invoices", "financials"] as const;
+
 const accountingRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/accounting",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (ACCOUNTING_TABS as readonly string[]).includes(search.tab as string)
+      ? (search.tab as typeof ACCOUNTING_TABS[number])
+      : undefined,
+  }),
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <AccountingRoute />,
 });
@@ -141,6 +154,12 @@ const accountingRoute = createRoute({
 const reportsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/reports",
+  validateSearch: (search: Record<string, unknown>) => ({
+    category: (REPORT_CATEGORIES as readonly string[]).includes(search.category as string)
+      ? (search.category as typeof REPORT_CATEGORIES[number])
+      : undefined,
+    report: typeof search.report === "string" ? (search.report as string) : undefined,
+  }),
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <ReportsRoute />,
 });

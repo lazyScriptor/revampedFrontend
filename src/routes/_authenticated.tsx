@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { createRoute, Outlet, redirect, Link } from "@tanstack/react-router";
+import { createRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { Route as rootRoute } from "./__root";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUiStore } from "@/stores/useUiStore";
@@ -36,7 +36,6 @@ import StorageIcon from "@mui/icons-material/Storage";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
-import HistoryIcon from "@mui/icons-material/History";
 import BadgeIcon from "@mui/icons-material/Badge";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import CategoryIcon from "@mui/icons-material/Category";
@@ -46,6 +45,12 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import SecurityIcon from "@mui/icons-material/Security";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // Fallback bullet
+import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
+import PaidIcon from "@mui/icons-material/Paid";
+import MoneyOffIcon from "@mui/icons-material/MoneyOff";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import PieChartIcon from "@mui/icons-material/PieChart";
 
 const drawerWidth = 260;
 
@@ -122,6 +127,8 @@ function AuthenticatedLayout() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const config = (user as any)?.configData ?? null;
   const businessName: string =
@@ -138,10 +145,27 @@ function AuthenticatedLayout() {
   // State to track which sub-menus are expanded
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({
     Inventory: false,
+    Accounting: true,
+    Reports: true,
   });
 
+  type NavChild = {
+    text: string;
+    path: string;
+    icon?: React.ReactNode;
+    search?: Record<string, string>;
+  };
+  type NavItem = {
+    text: string;
+    icon: React.ReactNode;
+    path?: string;
+    search?: Record<string, string>;
+    requiredPermission?: string;
+    children?: NavChild[];
+  };
+
   // 1. Updated Nav Items with distinct icons and nested children
-  const allNavItems = [
+  const allNavItems: NavItem[] = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
     {
       text: "Inventory",
@@ -175,18 +199,15 @@ function AuthenticatedLayout() {
       text: "Invoices",
       icon: <ReceiptIcon />,
       path: "/invoices",
+      // Sidebar entry routes to the management workbench (existing orders),
+      // dispatch creation stays accessible via the in-page mode toggle.
+      search: { mode: "manage" },
       requiredPermission: "inventory_permission",
     },
     {
       text: "Data Arena",
       icon: <StorageIcon />,
       path: "/data-arena",
-      requiredPermission: "inventory_permission",
-    },
-    {
-      text: "Rental History",
-      icon: <HistoryIcon />,
-      path: "/rental-history",
       requiredPermission: "inventory_permission",
     },
     {
@@ -198,14 +219,76 @@ function AuthenticatedLayout() {
     {
       text: "Accounting",
       icon: <AccountBalanceIcon />,
-      path: "/accounting",
       requiredPermission: "inventory_permission",
+      children: [
+        {
+          text: "Overview",
+          path: "/accounting",
+          search: { tab: "overview" },
+          icon: <DashboardCustomizeIcon fontSize="small" />,
+        },
+        {
+          text: "Invoices",
+          path: "/accounting",
+          search: { tab: "invoices" },
+          icon: <ReceiptIcon fontSize="small" />,
+        },
+        {
+          text: "Payments",
+          path: "/accounting",
+          search: { tab: "payments" },
+          icon: <PaidIcon fontSize="small" />,
+        },
+        {
+          text: "Expenses",
+          path: "/accounting",
+          search: { tab: "expenses" },
+          icon: <MoneyOffIcon fontSize="small" />,
+        },
+        {
+          text: "Receivables",
+          path: "/accounting",
+          search: { tab: "receivables" },
+          icon: <AccountBalanceWalletIcon fontSize="small" />,
+        },
+        {
+          text: "Journal",
+          path: "/accounting",
+          search: { tab: "journal" },
+          icon: <MenuBookIcon fontSize="small" />,
+        },
+      ],
     },
     {
       text: "Reports",
       icon: <AssessmentIcon />,
-      path: "/reports",
       requiredPermission: "inventory_permission",
+      children: [
+        {
+          text: "Customers",
+          path: "/reports",
+          search: { category: "customers" },
+          icon: <PeopleIcon fontSize="small" />,
+        },
+        {
+          text: "Equipment",
+          path: "/reports",
+          search: { category: "equipment" },
+          icon: <ConstructionIcon fontSize="small" />,
+        },
+        {
+          text: "Invoices",
+          path: "/reports",
+          search: { category: "invoices" },
+          icon: <ReceiptIcon fontSize="small" />,
+        },
+        {
+          text: "Financials",
+          path: "/reports",
+          search: { category: "financials" },
+          icon: <PieChartIcon fontSize="small" />,
+        },
+      ],
     },
     {
       text: "User Configuration",
@@ -337,32 +420,46 @@ function AuthenticatedLayout() {
                   unmountOnExit
                 >
                   <List component="div" disablePadding>
-                    {item.children.map((child) => (
+                    {item.children.map((child) => {
+                      const childSearch = child.search || {};
+                      const currentSearch = (location.search as Record<string, string>) || {};
+                      const isActive =
+                        location.pathname === child.path &&
+                        Object.entries(childSearch).every(
+                          ([k, v]) => currentSearch[k] === v
+                        ) &&
+                        // For children that carry no search params, only highlight when
+                        // current URL also has no relevant search params (avoid two
+                        // siblings both lighting up on a fresh /reports load).
+                        (Object.keys(childSearch).length > 0 ||
+                          Object.keys(currentSearch).length === 0);
+                      return (
                       <ListItemButton
-                        key={child.text}
-                        component={Link}
-                        to={child.path}
-                        onClick={() => isMobile && setSidebarOpen(false)}
-                        activeProps={{
-                          sx: {
-                            bgcolor: (t: Theme) => `${t.palette.primary.main}1a`, // ~10% primary
-                            color: "primary.main",
-                            borderRadius: 2,
-                            "&:hover": { bgcolor: (t: Theme) => `${t.palette.primary.main}26` },
-                            "& .MuiListItemIcon-root": { color: "primary.main" },
-                          },
-                        }}
-                        inactiveProps={{
-                          sx: {
-                            color: "text.secondary",
-                            borderRadius: 2,
-                            "&:hover": { bgcolor: "action.hover" },
-                          },
+                        key={`${child.text}-${child.path}-${JSON.stringify(child.search || {})}`}
+                        onClick={() => {
+                          navigate({
+                            to: child.path,
+                            search: childSearch as any,
+                          });
+                          if (isMobile) setSidebarOpen(false);
                         }}
                         sx={{
                           pl: 4, // Indent the sub-items
                           mb: 0.5,
                           minHeight: 40,
+                          borderRadius: 2,
+                          color: isActive ? "primary.main" : "text.secondary",
+                          bgcolor: isActive
+                            ? (t: Theme) => `${t.palette.primary.main}1a`
+                            : "transparent",
+                          "&:hover": {
+                            bgcolor: isActive
+                              ? (t: Theme) => `${t.palette.primary.main}26`
+                              : "action.hover",
+                          },
+                          "& .MuiListItemIcon-root": {
+                            color: isActive ? "primary.main" : "inherit",
+                          },
                         }}
                       >
                         <ListItemIcon
@@ -384,7 +481,8 @@ function AuthenticatedLayout() {
                           }}
                         />
                       </ListItemButton>
-                    ))}
+                      );
+                    })}
                   </List>
                 </Collapse>
               </>
@@ -398,6 +496,7 @@ function AuthenticatedLayout() {
                   <ListItemButton
                     component={Link}
                     to={item.path}
+                    {...(item.search ? { search: item.search as any } : {})}
                     activeProps={{
                       sx: {
                         bgcolor: (t: Theme) => `${t.palette.primary.main}1a`,

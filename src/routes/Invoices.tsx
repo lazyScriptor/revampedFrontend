@@ -17,6 +17,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import PersonIcon from "@mui/icons-material/Person";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
@@ -45,10 +46,25 @@ import { useInvoiceDetails } from "@/features/invoices/hooks/useInvoiceHooks";
 export default function InvoicesRoute() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" };
 
-  const [posMode, setPosMode] = useState<"dispatch" | "manage">("dispatch");
+  const [posMode, setPosMode] = useState<"dispatch" | "manage">(
+    search.mode === "manage" ? "manage" : "dispatch"
+  );
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   const [activeMobilePane, setActiveMobilePane] = useState(0);
+
+  // Sync URL changes (e.g. sidebar nav while already on /invoices) → local state
+  useEffect(() => {
+    if (search.mode === "manage" && posMode !== "manage") setPosMode("manage");
+    if (search.mode === "dispatch" && posMode !== "dispatch") setPosMode("dispatch");
+  }, [search.mode]);
+
+  const switchPosMode = (next: "dispatch" | "manage") => {
+    setPosMode(next);
+    navigate({ to: "/invoices", search: { mode: next } as any, replace: true });
+  };
 
   // ── Dispatch State ────────────────────────────────────────────────────────────
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
@@ -340,7 +356,7 @@ export default function InvoicesRoute() {
           }}
         >
           <Box
-            onClick={() => setPosMode("dispatch")}
+            onClick={() => switchPosMode("dispatch")}
             sx={{
               display: "flex",
               alignItems: "center",
@@ -366,7 +382,7 @@ export default function InvoicesRoute() {
             </Box>
           </Box>
           <Box
-            onClick={() => setPosMode("manage")}
+            onClick={() => switchPosMode("manage")}
             sx={{
               display: "flex",
               alignItems: "center",

@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Box, Typography, Tabs, Tab, Paper, IconButton, useTheme, useMediaQuery } from "@mui/material";
-import { DragIndicator as DragIcon, ChevronRight, ChevronLeft } from "@mui/icons-material";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Box, Typography, Tabs, Tab, Paper, useTheme, useMediaQuery } from "@mui/material";
+import type React from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import OverviewTab from "@/features/accounting/components/OverviewTab";
 import InvoicesTab from "@/features/accounting/components/InvoicesTab";
 import PaymentsTab from "@/features/accounting/components/PaymentsTab";
@@ -10,41 +11,108 @@ import JournalTab from "@/features/accounting/components/JournalTab";
 import AccountingChartsPanel from "@/features/accounting/components/AccountingChartsPanel";
 import { useReportStore } from "@/stores/useReportStore";
 
+const ACCOUNTING_TAB_KEYS = [
+  "overview",
+  "invoices",
+  "payments",
+  "expenses",
+  "receivables",
+  "journal",
+] as const;
+type AccountingTabKey = (typeof ACCOUNTING_TAB_KEYS)[number];
+
+const TAB_CONFIG: { key: AccountingTabKey; label: string; subtitle: string; component: React.ComponentType }[] = [
+  { key: "overview", label: "Overview", subtitle: "Headline KPIs across the ledger", component: OverviewTab },
+  { key: "invoices", label: "Invoices", subtitle: "All issued and active invoices", component: InvoicesTab },
+  { key: "payments", label: "Payments", subtitle: "Inflows and refunds, by method and date", component: PaymentsTab },
+  { key: "expenses", label: "Expenses", subtitle: "Operating, capital and pass-through costs", component: ExpensesTab },
+  { key: "receivables", label: "Receivables", subtitle: "Outstanding customer balances and aging", component: ReceivablesTab },
+  { key: "journal", label: "Journal", subtitle: "Chronological transactional record", component: JournalTab },
+];
+
 export default function AccountingRoute() {
+  const { activeTab, setActiveTab } = useReportStore();
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { tab?: AccountingTabKey };
+
+  const dedicatedIdx = ACCOUNTING_TAB_KEYS.indexOf(search.tab as AccountingTabKey);
+  const isDedicated = dedicatedIdx >= 0;
+
+  // Sync URL tab → store (so the workstation view also remembers).
+  useEffect(() => {
+    if (isDedicated && dedicatedIdx !== activeTab) {
+      setActiveTab(dedicatedIdx);
+    }
+  }, [dedicatedIdx, isDedicated]);
+
+  // ── Dedicated single-tab view (sidebar deep-link target) ────────────────────
+  if (isDedicated) {
+    const { label, subtitle, component: Component } = TAB_CONFIG[dedicatedIdx];
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 4 }}>
+        <Box>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              letterSpacing: 1.2,
+              textTransform: "uppercase",
+              color: "#64748b",
+            }}
+          >
+            Accounting
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a", lineHeight: 1.1 }}>
+            {label}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {subtitle}
+          </Typography>
+        </Box>
+        <Component />
+      </Box>
+    );
+  }
+
+  // ── Legacy multi-tab workstation (only reached at /accounting with no ?tab=) ─
+  const handleTabChange = (_: any, v: number) => {
+    setActiveTab(v);
+    navigate({
+      to: "/accounting",
+      search: { tab: ACCOUNTING_TAB_KEYS[v] } as any,
+      replace: true,
+    });
+  };
+
+  return <AccountingWorkstation activeTab={activeTab} onTabChange={handleTabChange} />;
+}
+
+// Kept for direct /accounting access; sidebar always routes to dedicated views.
+function AccountingWorkstation({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab: number;
+  onTabChange: (_: any, v: number) => void;
+}) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { activeTab, setActiveTab } = useReportStore();
-  
-  // Resizable state
-  const [chartsWidth, setChartsWidth] = useState(isMobile ? 100 : 30); // percentage
+  const [chartsWidth, setChartsWidth] = useState(isMobile ? 100 : 30);
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const tabConfig = [
-    { label: "Overview", component: OverviewTab },
-    { label: "Invoices", component: InvoicesTab },
-    { label: "Payments", component: PaymentsTab },
-    { label: "Expenses", component: ExpensesTab },
-    { label: "Receivables", component: ReceivablesTab },
-    { label: "Journal", component: JournalTab },
-  ];
-
-  // Mouse event handlers for resizing
   const startResizing = useCallback(() => setIsResizing(true), []);
   const stopResizing = useCallback(() => setIsResizing(false), []);
-  
-  const resize = useCallback((mouseMoveEvent: MouseEvent) => {
-    if (isResizing && containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const newWidth = ((containerRect.right - mouseMoveEvent.clientX) / containerRect.width) * 100;
-      
-      // Constraints: between 15% and 60%
-      if (newWidth > 15 && newWidth < 60) {
-        setChartsWidth(newWidth);
+  const resize = useCallback(
+    (mouseMoveEvent: MouseEvent) => {
+      if (isResizing && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const next = ((rect.right - mouseMoveEvent.clientX) / rect.width) * 100;
+        if (next > 15 && next < 60) setChartsWidth(next);
       }
-    }
-  }, [isResizing]);
-
+    },
+    [isResizing]
+  );
   useEffect(() => {
     if (isResizing) {
       window.addEventListener("mousemove", resize);
@@ -61,54 +129,54 @@ export default function AccountingRoute() {
 
   return (
     <Box ref={containerRef} sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 4, height: "100%" }}>
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold">Accounting Workstation</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Professional transactional financial management & real-time analytics.
-          </Typography>
-        </Box>
+      <Box>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
+          Accounting Workstation
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Professional transactional financial management & real-time analytics.
+        </Typography>
       </Box>
 
-      {/* Main Layout Container */}
-      <Box sx={{ 
-        display: "flex", 
-        flexDirection: isMobile ? "column" : "row",
-        gap: isMobile ? 3 : 0,
-        minHeight: "70vh",
-        position: "relative"
-      }}>
-        
-        {/* LEFT SIDE: Data Tables */}
-        <Box sx={{ 
-          flex: 1, 
-          width: isMobile ? "100%" : `${100 - chartsWidth}%`,
-          transition: isResizing ? "none" : "width 0.2s",
+      <Box
+        sx={{
           display: "flex",
-          flexDirection: "column",
-          gap: 2
-        }}>
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? 3 : 0,
+          minHeight: "70vh",
+          position: "relative",
+        }}
+      >
+        <Box
+          sx={{
+            flex: 1,
+            width: isMobile ? "100%" : `${100 - chartsWidth}%`,
+            transition: isResizing ? "none" : "width 0.2s",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
           <Tabs
             value={activeTab}
-            onChange={(_, v) => setActiveTab(v)}
+            onChange={onTabChange}
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              bgcolor: "white", 
-              borderRadius: 2, 
+              bgcolor: "white",
+              borderRadius: 2,
               border: "1px solid #e2e8f0",
               "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.85rem", minHeight: 48 },
               "& .MuiTabs-indicator": { height: 3, borderRadius: "3px 3px 0 0" },
             }}
           >
-            {tabConfig.map((t, i) => (
+            {TAB_CONFIG.map((t, i) => (
               <Tab key={i} label={t.label} />
             ))}
           </Tabs>
 
           <Box sx={{ flexGrow: 1 }}>
-            {tabConfig.map((t, i) => (
+            {TAB_CONFIG.map((t, i) => (
               <Box key={i} sx={{ display: activeTab === i ? "block" : "none" }}>
                 {activeTab === i && <t.component />}
               </Box>
@@ -116,7 +184,6 @@ export default function AccountingRoute() {
           </Box>
         </Box>
 
-        {/* RESIZER BAR */}
         {!isMobile && (
           <Box
             onMouseDown={startResizing}
@@ -128,23 +195,25 @@ export default function AccountingRoute() {
               justifyContent: "center",
               "&:hover .resizer-line": { bgcolor: "primary.main" },
               px: 0.5,
-              zIndex: 10
+              zIndex: 10,
             }}
           >
-            <Box className="resizer-line" sx={{ 
-              width: "2px", 
-              height: "40%", 
-              bgcolor: isResizing ? "primary.main" : "#e2e8f0",
-              borderRadius: 1,
-              transition: "background-color 0.2s"
-            }} />
+            <Box
+              className="resizer-line"
+              sx={{
+                width: "2px",
+                height: "40%",
+                bgcolor: isResizing ? "primary.main" : "#e2e8f0",
+                borderRadius: 1,
+                transition: "background-color 0.2s",
+              }}
+            />
           </Box>
         )}
 
-        {/* RIGHT SIDE: Charts Panel */}
-        <Paper 
+        <Paper
           elevation={0}
-          sx={{ 
+          sx={{
             width: isMobile ? "100%" : `${chartsWidth}%`,
             minWidth: isMobile ? "none" : "300px",
             border: "1px solid #e2e8f0",
