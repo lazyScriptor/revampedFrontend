@@ -1,5 +1,6 @@
 import { Box, Typography, Skeleton } from '@mui/material';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { formatDisplayDate } from '@/lib/dates';
 
 interface TrendPoint {
     date: string;
@@ -16,7 +17,7 @@ const fmt = (v: number) => `Rs. ${Number(v).toLocaleString()}`;
 
 export default function RevenueTrendChart({ data, isLoading, currency = 'Rs.' }: Props) {
     const chartData = (data || []).map((d) => ({
-        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: formatDisplayDate(d.date, undefined, { month: 'short', day: 'numeric' }),
         revenue: parseFloat(String(d.revenue)) || 0,
     }));
 

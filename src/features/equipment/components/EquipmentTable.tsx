@@ -22,6 +22,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ImageIcon from "@mui/icons-material/Image";
 
 import { useDeleteEquipment } from "../hooks/useEquipmentHooks";
+import { formatDisplayDate } from "@/lib/dates";
 
 interface EquipmentTableProps {
   data: any[];
@@ -167,15 +168,13 @@ export function EquipmentTable({
       field: "end_of_warranty_date",
       headerName: "Warranty Expiry",
       width: 140,
-      valueFormatter: (value) =>
-        value ? new Date(value).toLocaleDateString() : "N/A",
+      valueFormatter: (value) => (value ? formatDisplayDate(value) : "N/A"),
     },
     {
       field: "createdAt",
       headerName: "Date Added",
       width: 120,
-      valueFormatter: (value) =>
-        value ? new Date(value).toLocaleDateString() : "N/A",
+      valueFormatter: (value) => (value ? formatDisplayDate(value) : "N/A"),
     },
 
     // --- Status & Actions ---

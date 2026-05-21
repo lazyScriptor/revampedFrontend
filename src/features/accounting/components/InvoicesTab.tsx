@@ -4,6 +4,7 @@ import AccountingFilterBar from "./AccountingFilterBar";
 import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useAccountingInvoices } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
+import { formatDisplayDate } from "@/lib/dates";
 
 const STATUS_OPTIONS = [
   { value: "Active", label: "Active" },
@@ -38,7 +39,7 @@ export default function InvoicesTab() {
       field: "issued_date",
       headerName: "Date",
       width: 120,
-      valueFormatter: (value: string) => value ? new Date(value).toLocaleDateString() : "—",
+      valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "Customer",

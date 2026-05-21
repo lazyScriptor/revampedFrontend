@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import dayjs from "dayjs";
+import { todayLocalStr, addDaysLocal } from "@/lib/dates";
 
 export interface AccountingFilters {
   dateFrom: string;
@@ -19,8 +19,8 @@ export interface AccountingFilters {
 }
 
 const DEFAULT_FILTERS: AccountingFilters = {
-  dateFrom: dayjs().subtract(30, "day").format("YYYY-MM-DD"),
-  dateTo: dayjs().format("YYYY-MM-DD"),
+  dateFrom: addDaysLocal(todayLocalStr(), -30),
+  dateTo: todayLocalStr(),
   status: [],
   search: "",
   minAmount: "",

@@ -16,6 +16,8 @@ import {
   Divider,
   ToggleButtonGroup,
   ToggleButton,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
@@ -34,6 +36,10 @@ import { useInvoiceList } from "@/features/invoices/hooks/useInvoiceHooks";
 import { ReturnSettlementDialog } from "@/features/invoices/components/ReturnSettlementDialog";
 import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
 import { handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
+import { formatDisplayDate } from "@/lib/dates";
+import { useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
+import { ReviewThread } from "@/features/reviews/components/ReviewThread";
+import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
 
 export default function RentalHistoryRoute() {
   // --- 1. STATE MANAGEMENT ---
@@ -50,9 +56,14 @@ export default function RentalHistoryRoute() {
   const [viewInvoiceDetails, setViewInvoiceDetails] = useState<any | null>(
     null,
   );
+  const [drawerTab, setDrawerTab] = useState<"details" | "reviews">("details");
 
   // NEW: Dedicated state for printing to prevent timing issues
   const [invoiceToPrint, setInvoiceToPrint] = useState<any | null>(null);
+
+  // Fetch reviews for the open invoice (skips until something's selected).
+  const { data: drawerReviews = [], isLoading: drawerReviewsLoading } =
+    useInvoiceReviews(viewInvoiceDetails?.invoice_id || null);
 
   const [toast, setToast] = useState({
     open: false,
@@ -149,7 +160,7 @@ export default function RentalHistoryRoute() {
       field: "issued_date",
       headerName: "Date Issued",
       width: 150,
-      valueFormatter: (value) => new Date(value).toLocaleDateString(),
+      valueFormatter: (value) => formatDisplayDate(value),
     },
     {
       field: "total_amount",
@@ -455,6 +466,16 @@ export default function RentalHistoryRoute() {
             </IconButton>
           </Box>
 
+          <Tabs
+            value={drawerTab}
+            onChange={(_, v) => setDrawerTab(v)}
+            variant="fullWidth"
+            sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}
+          >
+            <Tab value="details" label="Details" />
+            <Tab value="reviews" label={`Reviews${drawerReviews.length ? ` (${drawerReviews.length})` : ""}`} />
+          </Tabs>
+
           <Box
             sx={{
               p: 3,
@@ -462,10 +483,27 @@ export default function RentalHistoryRoute() {
               overflowY: "auto",
               display: "flex",
               flexDirection: "column",
-              gap: 3,
+              gap: 2,
             }}
           >
-            {/* ... (Client and Items code here remains the same) */}
+            {drawerTab === "details" && (
+              <Box sx={{ color: "text.secondary" }}>
+                {/* Existing detail summary lives elsewhere; the drawer is reserved for the print/receipt view. */}
+                <Typography variant="body2">
+                  Open the printable receipt via the print button to see the full breakdown.
+                </Typography>
+              </Box>
+            )}
+            {drawerTab === "reviews" && viewInvoiceDetails && (
+              <>
+                <ReviewThread
+                  invoiceId={viewInvoiceDetails.invoice_id}
+                  reviews={drawerReviews}
+                  isLoading={drawerReviewsLoading}
+                />
+                <ReviewComposer invoiceId={viewInvoiceDetails.invoice_id} />
+              </>
+            )}
           </Box>
         </Box>
       </Drawer>

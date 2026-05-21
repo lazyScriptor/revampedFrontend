@@ -13,6 +13,7 @@ import CustomersRoute from "@/routes/Customers";
 import MaintenanceRoute from "@/routes/Maintenance";
 import WorkforceRoute from "@/routes/Workforce";
 import AccountingRoute from "@/routes/Accounting";
+import ReportsRoute from "@/routes/Reports";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
 import PermissionsPage from "@/routes/Permissions";
@@ -137,6 +138,13 @@ const accountingRoute = createRoute({
   component: () => <AccountingRoute />,
 });
 
+const reportsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/reports",
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <ReportsRoute />,
+});
+
 // Permissions Matrix (Admin only)
 const permissionsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -188,6 +196,7 @@ const routeTree = rootRoute.addChildren([
     maintenanceRoute,
     workforceRoute,
     accountingRoute,
+    reportsRoute,
     permissionsRoute,
     adminUsersRoute,
     adminRolesRoute,

@@ -21,6 +21,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { useDeleteCategory } from "../hooks/useCategoryHooks";
+import { formatDisplayDate } from "@/lib/dates";
 
 interface CategoryTableProps {
   data: any[];
@@ -110,8 +111,7 @@ export function CategoryTable({
       field: "createdAt",
       headerName: "Date Created",
       width: 150,
-      valueFormatter: (value) =>
-        value ? new Date(value).toLocaleDateString() : "N/A",
+      valueFormatter: (value) => (value ? formatDisplayDate(value) : "N/A"),
     },
     {
       field: "actions",

@@ -20,6 +20,7 @@ import {
 } from '../hooks/useSuperAdminHooks';
 import RecordPaymentDialog from './RecordPaymentDialog';
 import TenantUserDialog from './TenantUserDialog';
+import { formatDisplayDate } from '@/lib/dates';
 
 const STATUS_META: Record<string, { color: string; bg: string }> = {
     Active: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
@@ -473,7 +474,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                         <Box key={p.sub_id} sx={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', alignItems: 'center', px: 2, py: 1.5, bgcolor: '#0f172a', borderRadius: 1.5, border: '1px solid #1e293b', gap: 1 }}>
                                             <Box>
                                                 <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }}>{p.plan_name}</Typography>
-                                                <Typography variant="caption" sx={{ color: '#475569' }}>{new Date(p.createdAt).toLocaleDateString()}</Typography>
+                                                <Typography variant="caption" sx={{ color: '#475569' }}>{formatDisplayDate(p.createdAt)}</Typography>
                                             </Box>
                                             <Typography variant="body2" sx={{ color: '#f1f5f9', fontWeight: 700 }}>
                                                 {p.currency} {Number(p.amount).toLocaleString()}

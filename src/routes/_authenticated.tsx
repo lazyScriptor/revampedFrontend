@@ -42,6 +42,7 @@ import ConstructionIcon from "@mui/icons-material/Construction";
 import CategoryIcon from "@mui/icons-material/Category";
 import HandymanIcon from "@mui/icons-material/Handyman";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import SecurityIcon from "@mui/icons-material/Security";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // Fallback bullet
@@ -198,6 +199,12 @@ function AuthenticatedLayout() {
       text: "Accounting",
       icon: <AccountBalanceIcon />,
       path: "/accounting",
+      requiredPermission: "inventory_permission",
+    },
+    {
+      text: "Reports",
+      icon: <AssessmentIcon />,
+      path: "/reports",
       requiredPermission: "inventory_permission",
     },
     {

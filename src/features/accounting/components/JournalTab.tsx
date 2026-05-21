@@ -6,6 +6,7 @@ import AccountingFilterBar from "./AccountingFilterBar";
 import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useTransactionJournal } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
+import { formatDisplayDate } from "@/lib/dates";
 
 export default function JournalTab() {
   const { filters, updateFilter, updateMultiple, resetFilters, setPage, setPageSize, toQueryParams } =
@@ -18,7 +19,7 @@ export default function JournalTab() {
       field: "date",
       headerName: "Date",
       width: 120,
-      valueFormatter: (value: string) => value ? new Date(value).toLocaleDateString() : "—",
+      valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "type",

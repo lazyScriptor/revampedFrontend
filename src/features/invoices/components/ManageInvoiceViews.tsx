@@ -36,6 +36,10 @@ import {
   useToggleVault,
   useUpdateFees,
 } from "../hooks/useInvoiceHooks";
+import { formatDisplayDate } from "@/lib/dates";
+import { useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
+import { ReviewThread } from "@/features/reviews/components/ReviewThread";
+import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
 
 const scroll = {
   "&::-webkit-scrollbar": { width: "5px" },
@@ -61,7 +65,7 @@ const relDate = (dateStr: string) => {
   if (d === 0) return "Today";
   if (d === 1) return "Yesterday";
   if (d < 7) return `${d} days ago`;
-  return new Date(dateStr).toLocaleDateString();
+  return formatDisplayDate(dateStr);
 };
 
 // ============================================================================
@@ -430,14 +434,14 @@ export function ManageLedgerPanel({
                     Timeline
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    Out: {new Date(line.borrow_date).toLocaleDateString()}
+                    Out: {formatDisplayDate(line.borrow_date)}
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{ fontWeight: 500, color: isOverdue ? "error.main" : "text.primary", display: "flex", alignItems: "center", gap: 0.5 }}
                   >
                     {isOverdue && <AccessTimeIcon sx={{ fontSize: 13 }} />}
-                    Due: {new Date(line.expected_return_date).toLocaleDateString()}
+                    Due: {formatDisplayDate(line.expected_return_date)}
                   </Typography>
                   {isActive && (
                     <Typography variant="caption" color={isOverdue ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
@@ -536,7 +540,42 @@ export function ManageLedgerPanel({
             </Box>
           );
         })}
+
+        {/* Reviews thread — staff-only ratings + comments for this invoice */}
+        <InvoiceReviewsSection invoiceId={invoice.invoice_id} />
       </Box>
+    </Box>
+  );
+}
+
+// Reviews section embedded into the ledger so the operator can record a star
+// rating + note without leaving the manage panel. The composer triggers
+// recomputation of Customer.rating in the backend.
+function InvoiceReviewsSection({ invoiceId }: { invoiceId: number }) {
+  const { data: reviews = [], isLoading } = useInvoiceReviews(invoiceId);
+  return (
+    <Box
+      sx={{
+        mt: 2.5,
+        p: 2,
+        bgcolor: "white",
+        border: "1px solid #e2e8f0",
+        borderRadius: 2.5,
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.5,
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
+        <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b", fontSize: "0.68rem" }}>
+          REVIEWS & FEEDBACK
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {reviews.length} {reviews.length === 1 ? "entry" : "entries"}
+        </Typography>
+      </Box>
+      <ReviewThread invoiceId={invoiceId} reviews={reviews} isLoading={isLoading} />
+      <ReviewComposer invoiceId={invoiceId} />
     </Box>
   );
 }

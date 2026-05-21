@@ -26,6 +26,7 @@ import MoneyOffIcon from "@mui/icons-material/MoneyOff";
 import RestoreIcon from "@mui/icons-material/Restore";
 import { useProcessReturn } from "../hooks/useInvoiceHooks";
 import { QuantityReturnSplitter } from "./QuantityReturnSplitter";
+import { formatDisplayDate } from "@/lib/dates";
 
 // ─── Live late fee engine (mirrors backend logic exactly) ──────────────────────
 // `track_overdue === false` is the explicit opt-out: skip late fees entirely.
@@ -308,7 +309,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                 {overdueTracked && line.expected_return && (
                   <Box sx={{ px: 2.5, pt: 1.5, pb: 0.5 }}>
                     <Typography variant="caption" color={isLate ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
-                      Expected return: {new Date(line.expected_return).toLocaleDateString()}
+                      Expected return: {formatDisplayDate(line.expected_return)}
                       {isLate && ` · ${daysLate} day${daysLate !== 1 ? "s" : ""} overdue`}
                     </Typography>
                   </Box>

@@ -34,6 +34,7 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 import HandymanIcon from "@mui/icons-material/Handyman";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { formatDisplayDate } from "@/lib/dates";
 
 import {
   useDefectList,
@@ -431,7 +432,7 @@ export default function MaintenanceRoute() {
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         Ticket #{row.log_id} • Reported on{" "}
-                        {new Date(row.reported_date).toLocaleDateString()}
+                        {formatDisplayDate(row.reported_date)}
                       </Typography>
                     </TableCell>
 

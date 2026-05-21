@@ -4,6 +4,7 @@ import AccountingFilterBar from "./AccountingFilterBar";
 import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useAccountingPayments } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
+import { formatDisplayDate } from "@/lib/dates";
 
 const METHOD_OPTIONS = [
   { value: "Cash", label: "Cash" },
@@ -40,7 +41,7 @@ export default function PaymentsTab() {
       field: "payment_date",
       headerName: "Date",
       width: 120,
-      valueFormatter: (value: string) => value ? new Date(value).toLocaleDateString() : "—",
+      valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "invoice_id",

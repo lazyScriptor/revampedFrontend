@@ -54,6 +54,7 @@ import {
   useMyTickets,
   useResolveDefect,
 } from "@/features/inventory/hooks/useDefectHooks";
+import { formatDisplayDate } from "@/lib/dates";
 
 // ─────────────────────────────────────────────
 // Shared helpers
@@ -321,9 +322,7 @@ function TechnicianDashboard() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        {ticket.reported_date
-                          ? new Date(ticket.reported_date).toLocaleDateString()
-                          : "—"}
+                        {formatDisplayDate(ticket.reported_date)}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">

@@ -1,19 +1,16 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
+import { todayLocalStr, addDaysLocal } from '@/lib/dates';
 import type { LayoutItem, GlobalFilters, WidgetDefinition } from '@/features/dashboard/types';
 
-const today = new Date().toISOString().split('T')[0];
-const thirtyDaysAgo = (() => {
-  const d = new Date();
-  d.setDate(d.getDate() - 30);
-  return d.toISOString().split('T')[0];
-})();
-
-const DEFAULT_FILTERS: GlobalFilters = {
-  startDate: thirtyDaysAgo,
-  endDate: today,
+// Defaults are viewer-local — when the dashboard config request lands it
+// overrides them with tenant-tz-aware bounds from the server. Using
+// `.toISOString()` here was off-by-one for viewers east of UTC.
+const buildDefaultFilters = (): GlobalFilters => ({
+  startDate: addDaysLocal(todayLocalStr(), -30),
+  endDate: todayLocalStr(),
   warehouseId: null,
-};
+});
 
 // ============================================================================
 // THE FIX: FRONTEND SOURCE OF TRUTH
@@ -59,7 +56,7 @@ interface DashboardStore {
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   layout: [],
-  globalFilters: DEFAULT_FILTERS,
+  globalFilters: buildDefaultFilters(),
   widgetCatalog: [],
   isEditMode: false,
   isConfigLoaded: false,
@@ -75,7 +72,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
     set({
       layout: isOldFormat ? FRONTEND_DEFAULT_LAYOUT : layout,
-      globalFilters: savedFilters ?? DEFAULT_FILTERS,
+      globalFilters: savedFilters ?? buildDefaultFilters(),
       widgetCatalog: finalCatalog,
       isConfigLoaded: true,
     });

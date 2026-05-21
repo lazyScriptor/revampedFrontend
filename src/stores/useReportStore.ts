@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import dayjs from 'dayjs';
+import { todayLocalStr, addDaysLocal } from '@/lib/dates';
 
 interface ReportFilters {
     activeTab: number;
@@ -11,11 +11,13 @@ interface ReportFilters {
     setCashFlowDate: (date: string) => void;
 }
 
+const today = todayLocalStr();
+
 export const useReportStore = create<ReportFilters>()((set) => ({
     activeTab: 0,
-    startDate: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD'),
-    cashFlowDate: dayjs().format('YYYY-MM-DD'),
+    startDate: addDaysLocal(today, -30),
+    endDate: today,
+    cashFlowDate: today,
 
     setActiveTab: (tab) => set({ activeTab: tab }),
     setDateRange: (start, end) => set({ startDate: start, endDate: end }),

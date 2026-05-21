@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import AccountingFilterBar from "./AccountingFilterBar";
 import { useAccountingFilters } from "../hooks/useAccountingFilters";
+import { todayLocalStr, formatDisplayDate, formatLocalDate } from "@/lib/dates";
 import { useAccountingExpenses } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
 import { useToast } from "@/components/ui/AppToast";
@@ -33,7 +34,7 @@ const CATEGORY_COLORS: Record<string, "primary" | "secondary" | "warning" | "def
 const EMPTY_FORM = {
   category: "Operational",
   amount: "",
-  date: new Date().toISOString().split("T")[0],
+  date: todayLocalStr(),
   description: "",
 };
 
@@ -62,7 +63,7 @@ export default function ExpensesTab() {
     setForm({
       category: row.category,
       amount: String(row.amount),
-      date: row.date ? new Date(row.date).toISOString().split("T")[0] : "",
+      date: row.date ? formatLocalDate(new Date(row.date)) : "",
       description: row.description || "",
     });
     setFormOpen(true);
@@ -126,7 +127,7 @@ export default function ExpensesTab() {
       field: "date",
       headerName: "Date",
       width: 120,
-      valueFormatter: (value: string) => value ? new Date(value).toLocaleDateString() : "—",
+      valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "category",
