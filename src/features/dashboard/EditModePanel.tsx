@@ -27,7 +27,8 @@ const EditModePanel: React.FC = () => {
         paper: {
           sx: {
             pointerEvents: "auto", // the drawer panel itself must stay interactive
-            width: 300,
+            width: { xs: "85vw", sm: 320, md: 300 },
+            maxWidth: 360,
             borderLeft: "1px solid",
             borderColor: "border.subtle",
             bgcolor: "background.paper",

@@ -4,9 +4,28 @@ import { CustomerFormData } from '../schemas/customer.schema';
 
 // --- API Calls ---
 
-// 1. Fetch all with pagination and search
-const fetchCustomers = async (page: number, limit: number, search?: string) => {
-    const response = await api.get('/customers', { params: { page, limit, search } });
+export interface CustomerFilters {
+    search?: string;
+    customer_type?: 'Individual' | 'Business' | '';
+    status?: 'Active' | 'Blacklisted' | '';
+    id_retained?: 'true' | 'false' | '';
+    has_parent?: 'true' | 'false' | '';
+}
+
+// 1. Fetch all with pagination, search, and faceted filters
+const fetchCustomers = async (
+    page: number,
+    limit: number,
+    filters: CustomerFilters = {},
+) => {
+    const params: Record<string, any> = { page, limit };
+    if (filters.search?.trim()) params.search = filters.search.trim();
+    if (filters.customer_type) params.customer_type = filters.customer_type;
+    if (filters.status) params.status = filters.status;
+    if (filters.id_retained) params.id_retained = filters.id_retained;
+    if (filters.has_parent) params.has_parent = filters.has_parent;
+
+    const response = await api.get('/customers', { params });
     return {
         customers: response.data?.data?.customers || response.data?.customers || [],
         totalItems: response.data?.data?.totalItems || response.data?.totalItems || 0,
@@ -41,11 +60,20 @@ const deleteCustomer = async (id: number) => {
 
 // --- React Query Hooks ---
 
-// Hook for fetching the paginated list (with optional search)
-export const useCustomerList = (page: number, limit: number, search?: string) => {
+// Hook for fetching the paginated list. Accepts either a string (legacy search-only
+// call sites) or a CustomerFilters object so existing pages keep working.
+export const useCustomerList = (
+    page: number,
+    limit: number,
+    filtersOrSearch?: string | CustomerFilters,
+) => {
+    const filters: CustomerFilters =
+        typeof filtersOrSearch === 'string'
+            ? { search: filtersOrSearch }
+            : filtersOrSearch ?? {};
     return useQuery({
-        queryKey: ['customers', page, limit, search],
-        queryFn: () => fetchCustomers(page, limit, search),
+        queryKey: ['customers', page, limit, filters],
+        queryFn: () => fetchCustomers(page, limit, filters),
         placeholderData: keepPreviousData,
     });
 };

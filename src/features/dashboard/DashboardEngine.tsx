@@ -49,6 +49,7 @@ const DashboardEngine: React.FC = () => {
   const setWidgetWidth = useDashboardStore((s) => s.setWidgetWidth);
   const widgetCatalog = useDashboardStore((s) => s.widgetCatalog);
   const isEditMode = useDashboardStore((s) => s.isEditMode);
+  const isPanelOpen = useDashboardStore((s) => s.isPanelOpen);
   const isConfigLoaded = useDashboardStore((s) => s.isConfigLoaded);
   const toggleEditMode = useDashboardStore((s) => s.toggleEditMode);
   const toggleWidget = useDashboardStore((s) => s.toggleWidget);
@@ -266,9 +267,18 @@ const DashboardEngine: React.FC = () => {
           flexGrow: 1,
           overflowY: "auto",
           overflowX: "hidden",
-          px: { xs: 1.5, sm: 2, md: 3 },
+          pl: { xs: 1.5, sm: 2, md: 3 },
           pt: 2,
           pb: 4,
+          // When the customize panel is open on desktop, reserve space for the
+          // 300px drawer overlay so widgets re-flow into the visible area.
+          // On mobile (xs/sm) the drawer covers the screen — no padding shift.
+          pr: {
+            xs: 1.5,
+            sm: 2,
+            md: isPanelOpen ? "320px" : 3,
+          },
+          transition: "padding-right 220ms cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         <ResponsiveGridLayout

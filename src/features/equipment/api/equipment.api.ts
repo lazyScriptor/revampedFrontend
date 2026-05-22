@@ -6,14 +6,27 @@ export interface PaginatedEquipmentResponse {
   total: number;
 }
 
-export const fetchEquipment = async (page: number, limit: number): Promise<PaginatedEquipmentResponse> => {
-  const response = await api.get('/equipment', {
-    params: { page, limit }
-  });
+export interface EquipmentFilters {
+  search?: string;
+  category_id?: number | "";
+  warehouse_id?: number | "";
+}
+
+export const fetchEquipment = async (
+  page: number,
+  limit: number,
+  filters: EquipmentFilters = {},
+): Promise<PaginatedEquipmentResponse> => {
+  const params: Record<string, any> = { page, limit };
+  if (filters.search?.trim()) params.search = filters.search.trim();
+  if (filters.category_id) params.category_id = filters.category_id;
+  if (filters.warehouse_id) params.warehouse_id = filters.warehouse_id;
+
+  const response = await api.get('/equipment', { params });
 
   const equipment = response.data?.equipment || response.data?.data || response.data || [];
 
-  // ✅ FIX: Added `|| equipment.length` at the end. 
+  // ✅ FIX: Added `|| equipment.length` at the end.
   // If the backend doesn't send a total, it will just count the items currently returned!
   const total = response.data?.total || response.data?.meta?.total || equipment.length;
 
