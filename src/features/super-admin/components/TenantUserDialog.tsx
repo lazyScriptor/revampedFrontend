@@ -1,252 +1,356 @@
-import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions,
-    Box, Button, TextField, Typography, CircularProgress,
-    MenuItem, Alert, Switch, FormControlLabel,
-} from '@mui/material';
-import { useCreateTenantUser, useUpdateTenantUser, useTenantRoles } from '@/features/super-admin/hooks/useSuperAdminHooks';
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  MenuItem,
+  TextField,
+} from "@mui/material";
+import Person2OutlinedIcon from "@mui/icons-material/Person2Outlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
+import ToggleOnOutlinedIcon from "@mui/icons-material/ToggleOnOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import {
+  FieldGrid,
+  FormDialogShell,
+  FormFooterMeta,
+  FormSection,
+  ToggleRow,
+} from "@/components/forms/FormDialogShell";
+import {
+  useCreateTenantUser,
+  useUpdateTenantUser,
+  useTenantRoles,
+} from "@/features/super-admin/hooks/useSuperAdminHooks";
 
 interface FormValues {
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    password: string;
-    role_id: string;
-    is_active: boolean;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  role_id: string;
+  is_active: boolean;
 }
 
 interface ExistingUser {
-    user_id: number;
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    is_active: boolean;
-    role_ids: number[];
+  user_id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  role_ids: number[];
 }
 
 interface Props {
-    open: boolean;
-    onClose: () => void;
-    tenantId: string;
-    editUser?: ExistingUser | null;
+  open: boolean;
+  onClose: () => void;
+  tenantId: string;
+  editUser?: ExistingUser | null;
 }
 
-const darkField = {
-    '& .MuiOutlinedInput-root': {
-        color: '#f1f5f9',
-        '& fieldset': { borderColor: '#334155' },
-        '&:hover fieldset': { borderColor: '#475569' },
-        '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-    },
-    '& .MuiInputLabel-root': { color: '#94a3b8' },
-    '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' },
-    '& .MuiFormHelperText-root': { color: '#ef4444' },
-};
-
 export default function TenantUserDialog({ open, onClose, tenantId, editUser }: Props) {
-    const isEdit = !!editUser;
-    const { data: roles = [] } = useTenantRoles(tenantId);
+  const isEdit = !!editUser;
+  const { data: roles = [] } = useTenantRoles(tenantId);
 
-    const { register, handleSubmit, control, reset, formState: { errors } } = useForm<FormValues>({
-        defaultValues: { username: '', email: '', first_name: '', last_name: '', password: '', role_id: '', is_active: true },
-    });
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors, isDirty },
+  } = useForm<FormValues>({
+    defaultValues: {
+      username: "",
+      email: "",
+      first_name: "",
+      last_name: "",
+      password: "",
+      role_id: "",
+      is_active: true,
+    },
+  });
 
-    useEffect(() => {
-        if (open) {
-            if (isEdit && editUser) {
-                reset({
-                    username: editUser.username,
-                    email: editUser.email,
-                    first_name: editUser.first_name,
-                    last_name: editUser.last_name,
-                    password: '',
-                    role_id: editUser.role_ids?.[0]?.toString() || '',
-                    is_active: editUser.is_active,
-                });
-            } else {
-                reset({ username: '', email: '', first_name: '', last_name: '', password: '', role_id: '', is_active: true });
-            }
-        }
-    }, [open, editUser, isEdit, reset]);
+  useEffect(() => {
+    if (open) {
+      if (isEdit && editUser) {
+        reset({
+          username: editUser.username,
+          email: editUser.email,
+          first_name: editUser.first_name,
+          last_name: editUser.last_name,
+          password: "",
+          role_id: editUser.role_ids?.[0]?.toString() || "",
+          is_active: editUser.is_active,
+        });
+      } else {
+        reset({
+          username: "",
+          email: "",
+          first_name: "",
+          last_name: "",
+          password: "",
+          role_id: "",
+          is_active: true,
+        });
+      }
+    }
+  }, [open, editUser, isEdit, reset]);
 
-    const createMutation = useCreateTenantUser();
-    const updateMutation = useUpdateTenantUser();
-    const activeMutation = isEdit ? updateMutation : createMutation;
+  const createMutation = useCreateTenantUser();
+  const updateMutation = useUpdateTenantUser();
+  const activeMutation = isEdit ? updateMutation : createMutation;
 
-    const onSubmit = (values: FormValues) => {
-        if (isEdit && editUser) {
-            const payload: Record<string, unknown> = {
-                username: values.username,
-                email: values.email,
-                first_name: values.first_name,
-                last_name: values.last_name,
-                is_active: values.is_active,
-                role_id: values.role_id ? parseInt(values.role_id) : undefined,
-            };
-            if (values.password) payload.password = values.password;
+  const onSubmit = (values: FormValues) => {
+    if (isEdit && editUser) {
+      const payload: Record<string, unknown> = {
+        username: values.username,
+        email: values.email,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        is_active: values.is_active,
+        role_id: values.role_id ? parseInt(values.role_id) : undefined,
+      };
+      if (values.password) payload.password = values.password;
 
-            updateMutation.mutate(
-                { tenantId, userId: editUser.user_id, data: payload },
-                { onSuccess: () => { reset(); onClose(); } },
-            );
-        } else {
-            createMutation.mutate(
-                {
-                    tenantId,
-                    data: {
-                        username: values.username,
-                        email: values.email,
-                        first_name: values.first_name,
-                        last_name: values.last_name,
-                        password: values.password,
-                        role_id: values.role_id ? parseInt(values.role_id) : undefined,
-                    },
-                },
-                { onSuccess: () => { reset(); onClose(); } },
-            );
-        }
-    };
+      updateMutation.mutate(
+        { tenantId, userId: editUser.user_id, data: payload },
+        {
+          onSuccess: () => {
+            reset();
+            onClose();
+          },
+        },
+      );
+    } else {
+      createMutation.mutate(
+        {
+          tenantId,
+          data: {
+            username: values.username,
+            email: values.email,
+            first_name: values.first_name,
+            last_name: values.last_name,
+            password: values.password,
+            role_id: values.role_id ? parseInt(values.role_id) : undefined,
+          },
+        },
+        {
+          onSuccess: () => {
+            reset();
+            onClose();
+          },
+        },
+      );
+    }
+  };
 
-    const handleClose = () => {
-        if (activeMutation.isPending) return;
-        reset();
-        createMutation.reset();
-        updateMutation.reset();
-        onClose();
-    };
+  const handleClose = () => {
+    if (activeMutation.isPending) return;
+    reset();
+    createMutation.reset();
+    updateMutation.reset();
+    onClose();
+  };
 
-    return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            maxWidth="sm"
-            fullWidth
-            slotProps={{ paper: { sx: { bgcolor: '#0f172a', border: '1px solid #1e293b', backgroundImage: 'none' } } }}
+  const errorCount = Object.keys(errors).length;
+  const mutationError =
+    activeMutation.isError &&
+    (activeMutation.error instanceof Error
+      ? activeMutation.error.message
+      : "Operation failed.");
+
+  const avatarText = isEdit && editUser
+    ? `${editUser.first_name?.[0] || ""}${editUser.last_name?.[0] || ""}`.toUpperCase() || "U"
+    : "+";
+
+  return (
+    <FormDialogShell
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      eyebrow={isEdit ? "Edit User" : "New User"}
+      title={
+        isEdit && editUser
+          ? `${editUser.first_name} ${editUser.last_name}`.trim() || editUser.username
+          : "Create a tenant user"
+      }
+      subtitle={
+        isEdit
+          ? "Update account details and role assignment."
+          : "Provisions a new login inside this tenant."
+      }
+      avatarText={avatarText}
+      footer={
+        <>
+          <FormFooterMeta>
+            {errorCount > 0
+              ? `Fix ${errorCount} issue${errorCount > 1 ? "s" : ""} before saving`
+              : mutationError
+                ? mutationError
+                : isDirty && !activeMutation.isPending
+                  ? "Unsaved changes"
+                  : ""}
+          </FormFooterMeta>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button onClick={handleClose} disabled={activeMutation.isPending} color="inherit">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="tenant-user-form"
+              variant="contained"
+              disabled={activeMutation.isPending}
+              startIcon={
+                activeMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined
+              }
+            >
+              {activeMutation.isPending
+                ? "Saving…"
+                : isEdit
+                  ? "Save changes"
+                  : "Create user"}
+            </Button>
+          </Box>
+        </>
+      }
+    >
+      <Box
+        component="form"
+        id="tenant-user-form"
+        onSubmit={handleSubmit(onSubmit)}
+        sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+      >
+        {mutationError && (
+          <Alert severity="error" variant="outlined" icon={<WarningAmberIcon />}>
+            {mutationError}
+          </Alert>
+        )}
+
+        <FormSection
+          icon={<Person2OutlinedIcon />}
+          title="Identity"
+          hint="Personal information shown across the tenant's product."
         >
-            <DialogTitle sx={{ color: '#f1f5f9', fontWeight: 700, pb: 0.5 }}>
-                {isEdit ? 'Edit User' : 'Create New User'}
-                <Typography variant="caption" sx={{ color: '#64748b', display: 'block', fontWeight: 400 }}>
-                    {isEdit ? 'Update account details and role assignment.' : 'Creates a new login account in this tenant.'}
-                </Typography>
-            </DialogTitle>
+          <FieldGrid>
+            <TextField
+              label="First name"
+              size="small"
+              required
+              fullWidth
+              {...register("first_name", { required: "Required" })}
+              error={!!errors.first_name}
+              helperText={errors.first_name?.message}
+            />
+            <TextField
+              label="Last name"
+              size="small"
+              required
+              fullWidth
+              {...register("last_name", { required: "Required" })}
+              error={!!errors.last_name}
+              helperText={errors.last_name?.message}
+            />
+          </FieldGrid>
+          <FieldGrid>
+            <TextField
+              label="Username"
+              size="small"
+              required
+              fullWidth
+              {...register("username", { required: "Required" })}
+              error={!!errors.username}
+              helperText={errors.username?.message}
+            />
+            <TextField
+              label="Email"
+              size="small"
+              type="email"
+              required
+              fullWidth
+              {...register("email", {
+                required: "Required",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Invalid email",
+                },
+              })}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
+          </FieldGrid>
+        </FormSection>
 
-            <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-                    {activeMutation.isError && (
-                        <Alert severity="error" sx={{ fontSize: '0.78rem' }}>
-                            {activeMutation.error instanceof Error ? activeMutation.error.message : 'Operation failed'}
-                        </Alert>
-                    )}
+        <FormSection
+          icon={<LockOutlinedIcon />}
+          title={isEdit ? "Reset password" : "Initial password"}
+          hint={
+            isEdit
+              ? "Leave blank to keep the user's existing password."
+              : "Provided on first login. They can change it later from their profile."
+          }
+        >
+          <TextField
+            label={isEdit ? "New password" : "Password"}
+            size="small"
+            type="password"
+            fullWidth
+            autoComplete="new-password"
+            {...register(
+              "password",
+              isEdit
+                ? {}
+                : {
+                    required: "Required",
+                    minLength: { value: 8, message: "Min 8 characters" },
+                  },
+            )}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+          />
+        </FormSection>
 
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <TextField
-                            label="First Name" size="small" required
-                            {...register('first_name', { required: 'Required' })}
-                            error={!!errors.first_name} helperText={errors.first_name?.message}
-                            sx={darkField}
-                        />
-                        <TextField
-                            label="Last Name" size="small" required
-                            {...register('last_name', { required: 'Required' })}
-                            error={!!errors.last_name} helperText={errors.last_name?.message}
-                            sx={darkField}
-                        />
-                    </Box>
+        <FormSection
+          icon={<SecurityOutlinedIcon />}
+          title="Role assignment"
+          hint="The role governs which permissions the user inherits."
+        >
+          <Controller
+            name="role_id"
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} select label="Role" size="small" fullWidth>
+                <MenuItem value="">— No role —</MenuItem>
+                {roles.map((r) => (
+                  <MenuItem key={r.role_id} value={r.role_id.toString()}>
+                    {r.role_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+        </FormSection>
 
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <TextField
-                            label="Username" size="small" required
-                            {...register('username', { required: 'Required' })}
-                            error={!!errors.username} helperText={errors.username?.message}
-                            sx={darkField}
-                        />
-                        <TextField
-                            label="Email" size="small" type="email" required
-                            {...register('email', {
-                                required: 'Required',
-                                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email' },
-                            })}
-                            error={!!errors.email} helperText={errors.email?.message}
-                            sx={darkField}
-                        />
-                    </Box>
-
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <TextField
-                            label={isEdit ? 'New Password (leave blank to keep)' : 'Password'}
-                            size="small"
-                            type="password"
-                            {...register('password', isEdit ? {} : { required: 'Required', minLength: { value: 8, message: 'Min 8 characters' } })}
-                            error={!!errors.password} helperText={errors.password?.message}
-                            sx={darkField}
-                        />
-                        <Controller
-                            name="role_id"
-                            control={control}
-                            render={({ field }) => (
-                                <TextField
-                                    {...field}
-                                    select label="Role" size="small" sx={darkField}
-                                    slotProps={{
-                                        select: {
-                                            MenuProps: { slotProps: { paper: { sx: { bgcolor: '#1e293b', color: '#f1f5f9' } } } },
-                                        },
-                                    }}
-                                >
-                                    <MenuItem value="" sx={{ color: '#64748b' }}>— No Role —</MenuItem>
-                                    {roles.map((r) => (
-                                        <MenuItem key={r.role_id} value={r.role_id.toString()} sx={{ color: '#f1f5f9' }}>
-                                            {r.role_name}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                            )}
-                        />
-                    </Box>
-
-                    {isEdit && (
-                        <Controller
-                            name="is_active"
-                            control={control}
-                            render={({ field }) => (
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={field.value}
-                                            onChange={(e) => field.onChange(e.target.checked)}
-                                            sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#10b981' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#10b981' } }}
-                                        />
-                                    }
-                                    label={<Typography variant="body2" sx={{ color: '#e2e8f0' }}>Account Active</Typography>}
-                                />
-                            )}
-                        />
-                    )}
-                </DialogContent>
-
-                <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-                    <Button
-                        onClick={handleClose}
-                        disabled={activeMutation.isPending}
-                        sx={{ color: '#64748b', '&:hover': { bgcolor: 'rgba(100,116,139,0.1)' } }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={activeMutation.isPending}
-                        sx={{ bgcolor: '#3b82f6', fontWeight: 700, '&:hover': { bgcolor: '#2563eb' }, minWidth: 120 }}
-                    >
-                        {activeMutation.isPending ? (
-                            <CircularProgress size={18} color="inherit" />
-                        ) : isEdit ? 'Save Changes' : 'Create User'}
-                    </Button>
-                </DialogActions>
-            </Box>
-        </Dialog>
-    );
+        {isEdit && (
+          <Controller
+            name="is_active"
+            control={control}
+            render={({ field }) => (
+              <ToggleRow
+                icon={<ToggleOnOutlinedIcon />}
+                title="Account active"
+                hint="Inactive users cannot sign in but their data remains intact."
+                checked={!!field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        )}
+      </Box>
+    </FormDialogShell>
+  );
 }

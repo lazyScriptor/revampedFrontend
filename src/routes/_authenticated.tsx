@@ -151,7 +151,7 @@ function AuthenticatedLayout() {
 
   // State to track which sub-menus are expanded
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({
-    Inventory: false,
+    Inventory: true,
     Accounting: true,
     Reports: true,
     "Data Arena": true,

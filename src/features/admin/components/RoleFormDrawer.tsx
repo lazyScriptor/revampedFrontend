@@ -1,10 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Box, Typography, IconButton, TextField, Button,
-  Alert, Stack, CircularProgress,
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  TextField,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
+import TextSnippetOutlinedIcon from "@mui/icons-material/TextSnippetOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import {
+  FormDialogShell,
+  FormSection,
+} from "@/components/forms/FormDialogShell";
 import { roleApi } from "../api/admin.api";
 
 interface Props {
@@ -14,16 +22,20 @@ interface Props {
   roleToEdit?: any;
 }
 
-export default function RoleFormDialog({ open, onClose, onSuccess, roleToEdit = null }: Props) {
+const blankForm = { roleName: "", description: "", hierarchyLevel: 10 };
+
+export default function RoleFormDialog({
+  open,
+  onClose,
+  onSuccess,
+  roleToEdit = null,
+}: Props) {
   const isEditMode = Boolean(roleToEdit);
 
-  const [formData, setFormData] = useState({
-    roleName: "",
-    description: "",
-    hierarchyLevel: 10,
-  });
+  const [formData, setFormData] = useState(blankForm);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (roleToEdit) {
@@ -33,17 +45,24 @@ export default function RoleFormDialog({ open, onClose, onSuccess, roleToEdit = 
         hierarchyLevel: roleToEdit.hierarchy_level ?? 10,
       });
     } else {
-      setFormData({ roleName: "", description: "", hierarchyLevel: 10 });
+      setFormData(blankForm);
     }
     setError(null);
-  }, [roleToEdit]);
+    setDirty(false);
+  }, [roleToEdit, open]);
 
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: field === "hierarchyLevel" ? parseInt(e.target.value) || 0 : e.target.value,
-    }));
-  };
+  const handleChange =
+    (field: keyof typeof blankForm) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]:
+          field === "hierarchyLevel"
+            ? parseInt(e.target.value) || 0
+            : e.target.value,
+      }));
+      setDirty(true);
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,68 +81,101 @@ export default function RoleFormDialog({ open, onClose, onSuccess, roleToEdit = 
       onSuccess();
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
+  const lockedSystemName = isEditMode && roleToEdit?.is_system_default;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {isEditMode ? "Edit Role" : "Create New Role"}
-        </Typography>
-        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        <Box component="form" id="role-form" onSubmit={handleSubmit}>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Stack spacing={2.5} sx={{ pt: 1 }}>
-            <TextField
-              label="Role Name"
-              fullWidth
-              required
-              value={formData.roleName}
-              onChange={handleChange("roleName")}
-              size="small"
-              disabled={isEditMode && roleToEdit?.is_system_default}
-              helperText={isEditMode && roleToEdit?.is_system_default ? "System default role names cannot be changed." : ""}
-            />
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              rows={3}
-              value={formData.description}
-              onChange={handleChange("description")}
-              size="small"
-            />
-            <TextField
-              label="Hierarchy Level"
-              type="number"
-              fullWidth
-              required
-              value={formData.hierarchyLevel}
-              onChange={handleChange("hierarchyLevel")}
-              size="small"
-              helperText="Higher number = higher privilege (e.g., 100 is highest). Users can only manage roles below their own level."
-            />
-          </Stack>
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={loading} variant="outlined">Cancel</Button>
-        <Button
-          type="submit"
-          form="role-form"
-          variant="contained"
-          disableElevation
-          disabled={loading}
-          onClick={handleSubmit}
-          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : undefined}
+    <FormDialogShell
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      eyebrow={isEditMode ? "Edit Role" : "New Role"}
+      title={isEditMode ? roleToEdit?.role_name || "Role" : "Create a role"}
+      subtitle="Define a privilege level. Assign permissions afterwards from the role detail page."
+      avatarText={(formData.roleName || "R")[0].toUpperCase()}
+      footer={
+        <>
+          <Box sx={{ minWidth: 0, color: "text.secondary", fontSize: "0.78rem" }}>
+            {dirty && !loading && !error ? "Unsaved changes" : ""}
+          </Box>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button onClick={onClose} disabled={loading} color="inherit">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="role-form"
+              variant="contained"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
+            >
+              {loading ? "Saving…" : isEditMode ? "Save changes" : "Create role"}
+            </Button>
+          </Box>
+        </>
+      }
+    >
+      <Box
+        component="form"
+        id="role-form"
+        onSubmit={handleSubmit}
+        sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+      >
+        {error && (
+          <Alert severity="error" variant="outlined" icon={<WarningAmberIcon />}>
+            {error}
+          </Alert>
+        )}
+
+        <FormSection
+          icon={<SecurityOutlinedIcon />}
+          title="Identity"
+          hint="The name shown in pickers and audit logs."
         >
-          {loading ? "Saving..." : isEditMode ? "Save Changes" : "Create Role"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <TextField
+            label="Role name"
+            required
+            value={formData.roleName}
+            onChange={handleChange("roleName")}
+            size="small"
+            fullWidth
+            disabled={lockedSystemName}
+            helperText={
+              lockedSystemName ? "System default role names cannot be changed." : " "
+            }
+          />
+        </FormSection>
+
+        <FormSection
+          icon={<TextSnippetOutlinedIcon />}
+          title="Description & privilege level"
+          hint="Higher numbers represent more privileged roles."
+        >
+          <TextField
+            label="Description"
+            fullWidth
+            multiline
+            rows={3}
+            value={formData.description}
+            onChange={handleChange("description")}
+            size="small"
+          />
+          <TextField
+            label="Hierarchy level"
+            type="number"
+            required
+            value={formData.hierarchyLevel}
+            onChange={handleChange("hierarchyLevel")}
+            size="small"
+            fullWidth
+            helperText="100 = highest. Users can only manage roles below their own level."
+          />
+        </FormSection>
+      </Box>
+    </FormDialogShell>
   );
 }

@@ -1,20 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Alert,
   Box,
-  Typography,
-  IconButton,
-  TextField,
   Button,
   CircularProgress,
-  Stack,
+  TextField,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import TextSnippetOutlinedIcon from "@mui/icons-material/TextSnippetOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 import {
   categorySchema,
@@ -25,6 +21,10 @@ import {
   useCreateCategory,
   useUpdateCategory,
 } from "../hooks/useCategoryHooks";
+import {
+  FormDialogShell,
+  FormSection,
+} from "@/components/forms/FormDialogShell";
 
 interface CategoryFormDialogProps {
   open: boolean;
@@ -42,12 +42,13 @@ export function CategoryFormDrawer({
 
   const isEditing = !!initialData;
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
   });
@@ -62,6 +63,7 @@ export function CategoryFormDrawer({
       } else {
         reset({ category_name: "", description: "" });
       }
+      setError(null);
     }
   }, [open, initialData, reset]);
 
@@ -71,72 +73,98 @@ export function CategoryFormDrawer({
       description: data.description === "" ? null : data.description,
     };
 
+    const onErr = (err: any) => setError(err?.message || "Save failed.");
+
     if (isEditing && initialData) {
       updateMutation.mutate(
         { id: initialData.category_id, data: payload },
-        { onSuccess: () => onClose() },
+        { onSuccess: () => onClose(), onError: onErr },
       );
     } else {
-      createMutation.mutate(payload, { onSuccess: () => onClose() });
+      createMutation.mutate(payload, {
+        onSuccess: () => onClose(),
+        onError: onErr,
+      });
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {isEditing ? "Edit Category" : "New Category"}
-        </Typography>
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        <Box
-          component="form"
-          id="category-form"
-          onSubmit={handleSubmit(onSubmit)}
+    <FormDialogShell
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      eyebrow={isEditing ? "Edit Category" : "New Category"}
+      title={isEditing ? initialData?.category_name || "Category" : "Create a category"}
+      subtitle="Categories group similar equipment so they can be assigned and reported together."
+      avatarText={(initialData?.category_name || "C")[0].toUpperCase()}
+      footer={
+        <>
+          <Box sx={{ minWidth: 0, color: "text.secondary", fontSize: "0.78rem" }}>
+            {isDirty && !isPending && !error ? "Unsaved changes" : ""}
+          </Box>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button onClick={onClose} disabled={isPending} color="inherit">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="category-form"
+              variant="contained"
+              disabled={isPending}
+              startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
+            >
+              {isPending ? "Saving…" : isEditing ? "Save changes" : "Create category"}
+            </Button>
+          </Box>
+        </>
+      }
+    >
+      <Box
+        component="form"
+        id="category-form"
+        onSubmit={handleSubmit(onSubmit)}
+        sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+      >
+        {error && (
+          <Alert severity="error" variant="outlined" icon={<WarningAmberIcon />}>
+            {error}
+          </Alert>
+        )}
+
+        <FormSection
+          icon={<CategoryOutlinedIcon />}
+          title="Category"
+          hint="Use a short, recognisable name — it shows in dropdowns everywhere."
         >
-          <Stack spacing={2.5} sx={{ pt: 1 }}>
-            <TextField
-              fullWidth
-              label="Category Name"
-              {...register("category_name")}
-              error={!!errors.category_name}
-              helperText={errors.category_name?.message}
-              placeholder="e.g. Power Tools"
-              size="small"
-            />
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Description (Optional)"
-              {...register("description")}
-              error={!!errors.description}
-              helperText={errors.description?.message}
-              size="small"
-            />
-          </Stack>
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button variant="outlined" onClick={onClose} disabled={isPending}>
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          form="category-form"
-          variant="contained"
-          disableElevation
-          disabled={isPending}
-          startIcon={
-            isPending && <CircularProgress size={18} color="inherit" />
-          }
+          <TextField
+            label="Category name"
+            required
+            fullWidth
+            placeholder="e.g. Power Tools"
+            {...register("category_name")}
+            error={!!errors.category_name}
+            helperText={errors.category_name?.message || " "}
+            size="small"
+          />
+        </FormSection>
+
+        <FormSection
+          icon={<TextSnippetOutlinedIcon />}
+          title="Description"
+          hint="Optional. Useful for onboarding new staff."
         >
-          {isPending ? "Saving..." : isEditing ? "Save Changes" : "Save Category"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <TextField
+            label="Description"
+            fullWidth
+            multiline
+            rows={4}
+            {...register("description")}
+            error={!!errors.description}
+            helperText={errors.description?.message}
+            size="small"
+          />
+        </FormSection>
+      </Box>
+    </FormDialogShell>
   );
 }
