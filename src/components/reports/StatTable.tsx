@@ -5,6 +5,7 @@ import {
   GridRowsProp,
   GridSortModel,
   GridPaginationModel,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid";
 import { Box, useTheme } from "@mui/material";
 
@@ -36,6 +37,12 @@ interface StatTableProps {
    * first value in pageSizeOptions so the dropdown UI matches the active size.
    */
   initialPageSize?: number;
+  /** Show row-selection checkboxes. */
+  checkboxSelection?: boolean;
+  /** Controlled row selection model. */
+  rowSelectionModel?: GridRowSelectionModel;
+  /** Called when row selection changes (passes the raw v9 model). */
+  onRowSelectionModelChange?: (model: GridRowSelectionModel) => void;
 }
 
 // Thin wrapper around MUI DataGrid with the project's consistent styling.
@@ -55,6 +62,9 @@ export function StatTable({
   pageSizeOptions = [10, 25, 50, 100],
   height = 560,
   initialPageSize,
+  checkboxSelection,
+  rowSelectionModel,
+  onRowSelectionModelChange,
 }: StatTableProps) {
   const theme = useTheme();
   const memoCols = useMemo(() => columns, [columns]);
@@ -118,6 +128,9 @@ export function StatTable({
         sortModel={sortModel}
         onSortModelChange={onSortModelChange}
         pageSizeOptions={safeOptions}
+        checkboxSelection={checkboxSelection}
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={onRowSelectionModelChange}
         disableRowSelectionOnClick
         sx={{
           flex: 1,

@@ -1,9 +1,33 @@
-import { useState, useEffect } from "react";
-import { Box, Typography, Button, Switch, FormControlLabel, Paper, Chip, IconButton, Tooltip } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  InputAdornment,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+  useTheme,
+  alpha,
+} from "@mui/material";
+import { GridColDef } from "@mui/x-data-grid";
+import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
+import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
 import { userApi, roleApi } from "../api/admin.api";
 import UserFormDrawer from "./UserFormDrawer";
 import BulkAssignModal from "./BulkAssignModal";
@@ -11,14 +35,112 @@ import CsvUploadDropzone from "./CsvUploadDropzone";
 import AssignRolesModal from "./AssignRolesModal";
 import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ListPageShell } from "@/components/layout/ListPageShell";
+import { StatTable } from "@/components/reports/StatTable";
+
+dayjs.extend(relativeTime);
+
+type StatusFilter = "all" | "active" | "inactive";
+
+const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
+const resolveAvatar = (url?: string | null) => {
+  if (!url) return undefined;
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${apiBase}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
+const initialsOf = (u: { first_name?: string; last_name?: string; username?: string }) => {
+  const f = (u.first_name || "").trim();
+  const l = (u.last_name || "").trim();
+  const fi = f[0] || u.username?.[0] || "?";
+  const li = l[0] || "";
+  return `${fi}${li}`.toUpperCase();
+};
+
+interface KpiTileProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  tone: "primary" | "success" | "danger" | "accent";
+}
+function KpiTile({ icon, label, value, tone }: KpiTileProps) {
+  const theme = useTheme();
+  const toneColor =
+    tone === "primary"
+      ? theme.palette.primary.main
+      : tone === "success"
+        ? theme.palette.success.main
+        : tone === "danger"
+          ? theme.palette.error.main
+          : theme.palette.info.main;
+
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        p: 2,
+        bgcolor: theme.palette.background.paper,
+        border: `1px solid ${theme.palette.border.subtle}`,
+        borderRadius: 2.5,
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+      }}
+    >
+      <Box
+        sx={{
+          width: 38,
+          height: 38,
+          borderRadius: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          color: toneColor,
+          bgcolor: alpha(toneColor, 0.1),
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            color: theme.palette.text.secondary,
+            fontSize: "0.68rem",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          {label}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "1.35rem",
+            fontWeight: 800,
+            color: theme.palette.text.primary,
+            lineHeight: 1.1,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {value}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
 
 export default function UserManagement() {
+  const theme = useTheme();
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
-  const [showInactive, setShowInactive] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Drawer & Modal States
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<any>(null);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
@@ -28,6 +150,8 @@ export default function UserManagement() {
 
   const { showSuccess, showError, showInfo } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  const showInactive = statusFilter !== "active";
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -52,6 +176,7 @@ export default function UserManagement() {
   useEffect(() => {
     fetchUsers();
     fetchRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showInactive]);
 
   const handleSuccess = () => {
@@ -104,127 +229,409 @@ export default function UserManagement() {
     setCsvUploadOpen(false);
   };
 
-  const columns: GridColDef[] = [
-    { field: "user_id", headerName: "ID", width: 70 },
-    { field: "username", headerName: "Username", width: 150 },
-    { field: "email", headerName: "Email", width: 220 },
-    {
-      field: "Roles",
-      headerName: "Assigned Roles",
-      width: 250,
-      sortable: false,
-      renderCell: (params) => (
-        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", alignItems: "center", height: "100%" }}>
-          {params.value?.map((role: any) => (
-            <Chip key={role.role_id} label={role.role_name} size="small" variant="outlined" color="primary" />
-          ))}
-          {(!params.value || params.value.length === 0) && (
-            <Typography variant="caption" color="text.secondary">No Roles</Typography>
-          )}
-        </Box>
-      ),
-    },
-    {
-      field: "is_active",
-      headerName: "Status",
-      width: 120,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? "Active" : "Inactive"}
-          color={params.value ? "success" : "default"}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 150,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Box>
-          <Tooltip title="Manage Roles">
-            <IconButton color="secondary" onClick={() => setRoleAssignUser(params.row)}>
-              <ManageAccountsIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit User">
-            <IconButton color="primary" onClick={() => handleEdit(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {params.row.is_active && (
-            <Tooltip title="Deactivate User">
-              <IconButton color="error" onClick={() => handleDelete(params.row.user_id, params.row.username)}>
-                <DeleteIcon fontSize="small" />
+  // ── KPIs ──
+  const kpis = useMemo(() => {
+    const total = users.length;
+    const active = users.filter((u) => u.is_active).length;
+    const inactive = total - active;
+    const withRoles = users.filter((u) => (u.Roles?.length ?? 0) > 0).length;
+    return { total, active, inactive, withRoles };
+  }, [users]);
+
+  // ── Client-side filter ──
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return users.filter((u) => {
+      if (statusFilter === "active" && !u.is_active) return false;
+      if (statusFilter === "inactive" && u.is_active) return false;
+      if (!q) return true;
+      return (
+        (u.first_name || "").toLowerCase().includes(q) ||
+        (u.last_name || "").toLowerCase().includes(q) ||
+        (u.username || "").toLowerCase().includes(q) ||
+        (u.email || "").toLowerCase().includes(q)
+      );
+    });
+  }, [users, search, statusFilter]);
+
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: "_person",
+        headerName: "Person",
+        flex: 1.6,
+        minWidth: 220,
+        sortable: false,
+        renderCell: (params) => {
+          const u = params.row;
+          const displayName = `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.username;
+          return (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, py: 1 }}>
+              <Avatar
+                src={resolveAvatar(u.avatar_url)}
+                sx={{
+                  width: 34,
+                  height: 34,
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  border: `1px solid ${theme.palette.border.subtle}`,
+                }}
+              >
+                {initialsOf(u)}
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 700,
+                    color: theme.palette.text.primary,
+                    lineHeight: 1.2,
+                  }}
+                  noWrap
+                >
+                  {displayName}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    fontSize: "0.7rem",
+                    fontFamily: "ui-monospace, SFMono-Regular, monospace",
+                  }}
+                  noWrap
+                >
+                  @{u.username}
+                </Typography>
+              </Box>
+            </Box>
+          );
+        },
+      },
+      {
+        field: "email",
+        headerName: "Email",
+        flex: 1.2,
+        minWidth: 200,
+        renderCell: (params) => (
+          <Typography variant="body2" sx={{ fontSize: "0.8rem", color: theme.palette.text.secondary }}>
+            {params.value || "—"}
+          </Typography>
+        ),
+      },
+      {
+        field: "Roles",
+        headerName: "Roles",
+        flex: 1.4,
+        minWidth: 220,
+        sortable: false,
+        renderCell: (params) => {
+          const list = params.value || [];
+          if (list.length === 0) {
+            return (
+              <Typography variant="caption" sx={{ color: theme.palette.text.disabled, fontStyle: "italic" }}>
+                No roles
+              </Typography>
+            );
+          }
+          const visible = list.slice(0, 2);
+          const extra = list.length - visible.length;
+          return (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+              {visible.map((r: any) => (
+                <Chip
+                  key={r.role_id}
+                  label={r.role_name}
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: "0.66rem",
+                    fontWeight: 700,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    color: theme.palette.primary.dark,
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+                  }}
+                />
+              ))}
+              {extra > 0 && (
+                <Chip
+                  label={`+${extra}`}
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: "0.66rem",
+                    fontWeight: 700,
+                    bgcolor: theme.palette.surface.muted,
+                    color: theme.palette.text.secondary,
+                  }}
+                />
+              )}
+            </Box>
+          );
+        },
+      },
+      {
+        field: "last_login_at",
+        headerName: "Last Login",
+        flex: 0.9,
+        minWidth: 130,
+        renderCell: (params) => {
+          if (!params.value) {
+            return (
+              <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>
+                Never
+              </Typography>
+            );
+          }
+          const d = dayjs(params.value);
+          return (
+            <Tooltip title={d.format("MMM D, YYYY · h:mm A")}>
+              <Typography variant="body2" sx={{ fontSize: "0.78rem", color: theme.palette.text.secondary }}>
+                {d.fromNow()}
+              </Typography>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        field: "is_active",
+        headerName: "Status",
+        width: 110,
+        renderCell: (params) => (
+          <Chip
+            label={params.value ? "Active" : "Inactive"}
+            size="small"
+            sx={{
+              height: 22,
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              bgcolor: params.value
+                ? alpha(theme.palette.success.main, 0.12)
+                : alpha(theme.palette.text.disabled as string, 0.12),
+              color: params.value ? theme.palette.success.dark : theme.palette.text.secondary,
+              border: `1px solid ${
+                params.value
+                  ? alpha(theme.palette.success.main, 0.3)
+                  : theme.palette.border.subtle
+              }`,
+            }}
+          />
+        ),
+      },
+      {
+        field: "_actions",
+        headerName: "",
+        width: 140,
+        sortable: false,
+        filterable: false,
+        align: "right",
+        headerAlign: "right",
+        renderCell: (params) => (
+          <Box sx={{ display: "flex", gap: 0.25 }}>
+            <Tooltip title="Manage roles">
+              <IconButton
+                size="small"
+                onClick={() => setRoleAssignUser(params.row)}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  },
+                }}
+              >
+                <ManageAccountsOutlinedIcon sx={{ fontSize: 17 }} />
               </IconButton>
             </Tooltip>
-          )}
-        </Box>
-      ),
-    },
-  ];
+            <Tooltip title="Edit user">
+              <IconButton
+                size="small"
+                onClick={() => handleEdit(params.row)}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  },
+                }}
+              >
+                <EditOutlinedIcon sx={{ fontSize: 17 }} />
+              </IconButton>
+            </Tooltip>
+            {params.row.is_active && (
+              <Tooltip title="Deactivate user">
+                <IconButton
+                  size="small"
+                  onClick={() => handleDelete(params.row.user_id, params.row.username)}
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    "&:hover": {
+                      color: theme.palette.error.main,
+                      bgcolor: alpha(theme.palette.error.main, 0.08),
+                    },
+                  }}
+                >
+                  <DeleteOutlineOutlinedIcon sx={{ fontSize: 17 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [theme],
+  );
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, margin: "0 auto" }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>User Management</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage your organization's users, their roles, and system access.
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <FormControlLabel
-            control={<Switch checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />}
-            label="Show Inactive"
-          />
-          {selectedRowIds.length > 0 && (
-            <Button variant="outlined" color="secondary" onClick={() => setBulkAssignOpen(true)}>
-              Bulk Assign Role ({selectedRowIds.length})
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <ListPageShell
+        icon={<PeopleAltOutlinedIcon sx={{ fontSize: 22 }} />}
+        title="User Management"
+        subtitle="Identities, role assignments, and account status across the workspace."
+        actions={
+          <>
+            {selectedRowIds.length > 0 && (
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<GroupAddOutlinedIcon />}
+                onClick={() => setBulkAssignOpen(true)}
+              >
+                Bulk assign ({selectedRowIds.length})
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<UploadFileOutlinedIcon />}
+              onClick={() => setCsvUploadOpen((v) => !v)}
+            >
+              {csvUploadOpen ? "Close import" : "Bulk import"}
             </Button>
-          )}
-          <Button variant="outlined" color="primary" onClick={() => setCsvUploadOpen(!csvUploadOpen)}>
-            {csvUploadOpen ? "Close CSV Import" : "Bulk Import"}
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => { setUserToEdit(null); setDrawerOpen(true); }}
-          >
-            Create User
-          </Button>
-        </Box>
-      </Box>
-
-      {csvUploadOpen && (
-        <Box mb={3}>
-          <CsvUploadDropzone onUpload={handleFileUpload} />
-        </Box>
-      )}
-
-      <Paper sx={{ height: 600, width: "100%", boxShadow: 2, borderRadius: 2 }}>
-        <DataGrid
-          rows={users}
+            <Button
+              variant="contained"
+              startIcon={<PersonAddAltOutlinedIcon />}
+              onClick={() => {
+                setUserToEdit(null);
+                setDrawerOpen(true);
+              }}
+            >
+              Create user
+            </Button>
+          </>
+        }
+        kpis={
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+            <KpiTile
+              icon={<PeopleAltOutlinedIcon sx={{ fontSize: 20 }} />}
+              label="Total Users"
+              value={kpis.total}
+              tone="primary"
+            />
+            <KpiTile
+              icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 20 }} />}
+              label="Active"
+              value={kpis.active}
+              tone="success"
+            />
+            <KpiTile
+              icon={<BlockOutlinedIcon sx={{ fontSize: 20 }} />}
+              label="Inactive"
+              value={kpis.inactive}
+              tone="danger"
+            />
+            <KpiTile
+              icon={<ShieldOutlinedIcon sx={{ fontSize: 20 }} />}
+              label="With Roles"
+              value={kpis.withRoles}
+              tone="accent"
+            />
+          </Stack>
+        }
+        filters={
+          <>
+            <TextField
+              size="small"
+              placeholder="Search name, username or email"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              sx={{ minWidth: { xs: "100%", sm: 280 } }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchOutlinedIcon sx={{ fontSize: 18, color: theme.palette.text.disabled }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            <Box sx={{ display: "flex", gap: 0.75, alignItems: "center" }}>
+              {(["all", "active", "inactive"] as const).map((s) => {
+                const active = statusFilter === s;
+                return (
+                  <Chip
+                    key={s}
+                    label={s === "all" ? "All" : s === "active" ? "Active" : "Inactive"}
+                    onClick={() => setStatusFilter(s)}
+                    size="small"
+                    sx={{
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      px: 0.5,
+                      bgcolor: active ? theme.palette.primary.main : "transparent",
+                      color: active ? theme.palette.primary.contrastText : theme.palette.text.secondary,
+                      border: `1px solid ${active ? theme.palette.primary.main : theme.palette.border.subtle}`,
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: active
+                          ? theme.palette.primary.dark
+                          : alpha(theme.palette.primary.main, 0.08),
+                        borderColor: theme.palette.primary.main,
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+            <Box sx={{ flex: 1 }} />
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+              {filteredRows.length} of {users.length}
+            </Typography>
+          </>
+        }
+      >
+        {csvUploadOpen && (
+          <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.border.subtle}` }}>
+            <CsvUploadDropzone onUpload={handleFileUpload} />
+          </Box>
+        )}
+        <StatTable
+          rows={filteredRows}
           columns={columns}
           getRowId={(row) => row.user_id}
           loading={loading}
+          height="fill"
+          pageSizeOptions={[10, 25, 50, 100]}
+          initialPageSize={25}
           checkboxSelection
-          disableRowSelectionOnClick
-          onRowSelectionModelChange={(newSelection) => {
-            const ids = Array.from(newSelection as unknown as Iterable<number>);
+          onRowSelectionModelChange={(model) => {
+            const ids = Array.from(model as unknown as Iterable<number>);
             setSelectedRowIds(ids);
           }}
-          sx={{ border: 0 }}
         />
-      </Paper>
+      </ListPageShell>
 
       {drawerOpen && (
         <UserFormDrawer
           open={drawerOpen}
           userToEdit={userToEdit}
-          onClose={() => { setDrawerOpen(false); setUserToEdit(null); }}
+          onClose={() => {
+            setDrawerOpen(false);
+            setUserToEdit(null);
+          }}
           onSuccess={handleSuccess}
         />
       )}
@@ -244,7 +651,10 @@ export default function UserManagement() {
           open={Boolean(roleAssignUser)}
           onClose={() => setRoleAssignUser(null)}
           user={roleAssignUser}
-          onSuccess={() => { setRoleAssignUser(null); fetchUsers(); }}
+          onSuccess={() => {
+            setRoleAssignUser(null);
+            fetchUsers();
+          }}
         />
       )}
 

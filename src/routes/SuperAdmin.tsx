@@ -44,64 +44,166 @@ function DashboardView() {
 
     const overdue = (tenants as any[]).filter((t) => t.subscription_status === 'Overdue').length;
     const totalRevenue = (dashData as any)?.totalRevenuePaid || 0;
+    const todayLabel = new Date().toLocaleDateString(undefined, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Box>
-                <Typography variant="h6" sx={{ color: '#f1f5f9', fontWeight: 700 }}>Platform Dashboard</Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>Real-time overview of all tenant activity and platform health.</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 2, flexWrap: 'wrap' }}>
+                <Box>
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            color: '#475569',
+                            fontSize: '0.66rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.08em',
+                            display: 'block',
+                            mb: 0.5,
+                        }}
+                    >
+                        Platform Control
+                    </Typography>
+                    <Typography
+                        variant="h5"
+                        sx={{ color: '#f1f5f9', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}
+                    >
+                        Mission Control
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.72rem', mt: 0.5, display: 'block' }}>
+                        Real-time overview of all tenant activity, revenue, and platform health.
+                    </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.7rem', fontWeight: 600 }}>
+                    {todayLabel}
+                </Typography>
             </Box>
 
             {/* Primary KPIs */}
             <PlatformKpiCards data={dashData as any} isLoading={isLoading} />
 
             {/* Secondary KPI row */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
                 {[
                     {
                         label: 'Overdue Accounts',
                         value: isLoading ? '—' : overdue.toString(),
-                        icon: <WarningAmberOutlinedIcon sx={{ fontSize: 18 }} />,
-                        color: '#f59e0b',
-                        bg: 'rgba(245,158,11,0.08)',
+                        hint: 'Past their billing date',
+                        icon: <WarningAmberOutlinedIcon sx={{ fontSize: 22 }} />,
+                        accent: '#f59e0b',
+                        glow: 'rgba(245,158,11,0.20)',
                     },
                     {
-                        label: 'Total Revenue Collected',
+                        label: 'Revenue Collected',
                         value: isLoading ? '—' : `LKR ${Number(totalRevenue).toLocaleString()}`,
-                        icon: <TrendingUpOutlinedIcon sx={{ fontSize: 18 }} />,
-                        color: '#10b981',
-                        bg: 'rgba(16,185,129,0.08)',
+                        hint: 'All-time platform receipts',
+                        icon: <TrendingUpOutlinedIcon sx={{ fontSize: 22 }} />,
+                        accent: '#10b981',
+                        glow: 'rgba(16,185,129,0.20)',
                     },
                     {
-                        label: 'Tier Breakdown',
-                        value: isLoading ? '—' : ((dashData as any)?.tierBreakdown || []).map((t: any) => `${t.tier}: ${t.count}`).join(' · ') || '—',
-                        icon: <WorkspacePremiumOutlinedIcon sx={{ fontSize: 18 }} />,
-                        color: '#8b5cf6',
-                        bg: 'rgba(139,92,246,0.08)',
+                        label: 'Tier Mix',
+                        value: isLoading
+                            ? '—'
+                            : ((dashData as any)?.tierBreakdown || []).map((t: any) => `${t.tier}: ${t.count}`).join(' · ') || '—',
+                        hint: 'Workspaces by subscription tier',
+                        icon: <WorkspacePremiumOutlinedIcon sx={{ fontSize: 22 }} />,
+                        accent: '#8b5cf6',
+                        glow: 'rgba(139,92,246,0.20)',
                     },
                 ].map((kpi) => (
                     <Box
                         key={kpi.label}
                         sx={{
-                            p: 2.5,
-                            border: '1px solid #1e293b',
+                            position: 'relative',
+                            p: 2.25,
                             borderRadius: 2,
+                            border: '1px solid #1e293b',
                             bgcolor: '#0f172a',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
+                            overflow: 'hidden',
+                            transition: 'border-color 150ms, transform 150ms',
+                            '&:hover': { borderColor: kpi.accent, transform: 'translateY(-1px)' },
+                            '&::before': {
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: 3,
+                                height: '100%',
+                                bgcolor: kpi.accent,
+                                opacity: 0.75,
+                            },
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                top: -20,
+                                right: -20,
+                                width: 80,
+                                height: 80,
+                                borderRadius: '50%',
+                                bgcolor: kpi.glow,
+                                filter: 'blur(20px)',
+                                pointerEvents: 'none',
+                            },
                         }}
                     >
-                        <Box sx={{ width: 40, height: 40, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: kpi.bg, color: kpi.color, flexShrink: 0 }}>
-                            {kpi.icon}
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
-                                {kpi.label}
-                            </Typography>
-                            <Typography variant="subtitle1" sx={{ color: '#f1f5f9', fontWeight: 700, lineHeight: 1.3, fontSize: '0.95rem' }}>
-                                {kpi.value}
-                            </Typography>
+                        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                            <Box
+                                sx={{
+                                    width: 42,
+                                    height: 42,
+                                    borderRadius: 1.5,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: kpi.glow,
+                                    color: kpi.accent,
+                                    border: `1px solid ${kpi.accent}33`,
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {kpi.icon}
+                            </Box>
+                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: '#94a3b8',
+                                        fontSize: '0.66rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.06em',
+                                        display: 'block',
+                                        lineHeight: 1.2,
+                                    }}
+                                >
+                                    {kpi.label}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        color: '#f1f5f9',
+                                        fontSize: '1.1rem',
+                                        fontWeight: 800,
+                                        lineHeight: 1.25,
+                                        mt: 0.5,
+                                        fontVariantNumeric: 'tabular-nums',
+                                        letterSpacing: '-0.01em',
+                                    }}
+                                >
+                                    {kpi.value}
+                                </Typography>
+                                <Typography
+                                    variant="caption"
+                                    sx={{ color: '#475569', fontSize: '0.62rem', mt: 0.5, display: 'block' }}
+                                >
+                                    {kpi.hint}
+                                </Typography>
+                            </Box>
                         </Box>
                     </Box>
                 ))}
@@ -109,29 +211,105 @@ function DashboardView() {
 
             {/* Quick tenant status snapshot */}
             <Box sx={{ border: '1px solid #1e293b', borderRadius: 2, bgcolor: '#0f172a', overflow: 'hidden' }}>
-                <Box sx={{ px: 2.5, py: 1.75, borderBottom: '1px solid #1e293b' }}>
-                    <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.85rem' }}>
-                        Tenant Status Overview
+                <Box
+                    sx={{
+                        px: 2.5,
+                        py: 1.75,
+                        borderBottom: '1px solid #1e293b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 700, fontSize: '0.88rem' }}>
+                            Recent Tenants
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.66rem' }}>
+                            Latest 8 workspaces — click "Tenants" to manage all
+                        </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.66rem', fontVariantNumeric: 'tabular-nums' }}>
+                        {(tenants as any[]).length} total
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', px: 2.5, py: 1, borderBottom: '1px solid #0f172a', bgcolor: 'rgba(30,41,59,0.5)' }}>
-                    {['Name', 'Status', 'Tier', 'Monthly Rate'].map((h) => (
-                        <Typography key={h} variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{h}</Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1.1fr', px: 2.5, py: 1, borderBottom: '1px solid #1e293b', bgcolor: 'rgba(30,41,59,0.5)' }}>
+                    {['Name', 'Status', 'Tier', 'Monthly'].map((h) => (
+                        <Typography key={h} variant="caption" sx={{ color: '#64748b', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{h}</Typography>
                     ))}
                 </Box>
                 {(tenants as any[]).slice(0, 8).map((t: any) => {
                     const statusColor = { Active: '#10b981', Suspended: '#ef4444', Overdue: '#f59e0b' }[t.subscription_status as string] || '#64748b';
+                    const tierColor = { Basic: '#64748b', Pro: '#3b82f6', Enterprise: '#8b5cf6' }[t.tier as string] || '#64748b';
                     return (
-                        <Box key={t.tenant_id} sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', px: 2.5, py: 1.25, borderBottom: '1px solid #1e293b', alignItems: 'center' }}>
-                            <Typography variant="body2" sx={{ color: '#e2e8f0', fontSize: '0.8rem', fontWeight: 500 }}>{t.display_name || t.db_name}</Typography>
-                            <Typography variant="caption" sx={{ color: statusColor, fontWeight: 700, fontSize: '0.72rem' }}>{t.subscription_status}</Typography>
-                            <Typography variant="caption" sx={{ color: '#94a3b8' }}>{t.tier}</Typography>
-                            <Typography variant="caption" sx={{ color: '#64748b', fontFamily: 'monospace' }}>
+                        <Box
+                            key={t.tenant_id}
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: '2.2fr 1fr 1fr 1.1fr',
+                                px: 2.5,
+                                py: 1.25,
+                                borderBottom: '1px solid #1e293b',
+                                alignItems: 'center',
+                                '&:hover': { bgcolor: 'rgba(30,41,59,0.4)' },
+                                '&:last-of-type': { borderBottom: 0 },
+                                transition: 'background-color 100ms',
+                            }}
+                        >
+                            <Typography variant="body2" sx={{ color: '#e2e8f0', fontSize: '0.8rem', fontWeight: 600 }} noWrap>
+                                {t.display_name || t.db_name}
+                            </Typography>
+                            <Box>
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        px: 0.75,
+                                        py: 0.2,
+                                        borderRadius: 0.75,
+                                        bgcolor: `${statusColor}18`,
+                                        border: `1px solid ${statusColor}40`,
+                                        color: statusColor,
+                                        fontSize: '0.66rem',
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: statusColor }} />
+                                    {t.subscription_status}
+                                </Box>
+                            </Box>
+                            <Box>
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        px: 0.75,
+                                        py: 0.2,
+                                        borderRadius: 0.75,
+                                        border: `1px solid ${tierColor}55`,
+                                        color: tierColor,
+                                        fontSize: '0.62rem',
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    {t.tier}
+                                </Box>
+                            </Box>
+                            <Typography variant="caption" sx={{ color: '#94a3b8', fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontVariantNumeric: 'tabular-nums', fontSize: '0.7rem' }}>
                                 {t.monthly_rate > 0 ? `LKR ${Number(t.monthly_rate).toLocaleString()}` : '—'}
                             </Typography>
                         </Box>
                     );
                 })}
+                {(tenants as any[]).length === 0 && !isLoading && (
+                    <Box sx={{ py: 4, textAlign: 'center', color: '#475569' }}>
+                        <Typography variant="body2" sx={{ fontSize: '0.78rem' }}>No tenants yet</Typography>
+                        <Typography variant="caption" sx={{ fontSize: '0.66rem' }}>
+                            Create the first tenant from the Tenants tab.
+                        </Typography>
+                    </Box>
+                )}
             </Box>
         </Box>
     );
