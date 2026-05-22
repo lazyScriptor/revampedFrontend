@@ -60,6 +60,11 @@ const flushWaiters = (ok: boolean) => {
 // Endpoints we must NOT try to refresh on — they're the auth surface itself
 const AUTH_BYPASS = ['/auth/login', '/auth/refresh', '/auth/logout', '/super-admin/login'];
 
+// Endpoints where a 401 should NOT force the user out. These are background/peripheral
+// features (notifications bell, bulk-job poller) whose failures must never break the
+// session — a brief auth glitch on /notifications shouldn't kick the user back to login.
+const LOGOUT_BYPASS = ['/notifications', '/bulk-jobs'];
+
 api.interceptors.response.use(
     (response: AxiosResponse) => {
         // Backend wraps everything in { status, data }. Unwrap so hooks get the body.
@@ -70,9 +75,10 @@ api.interceptors.response.use(
         const status = error.response?.status;
         const url = original?.url || '';
         const isAuthEndpoint = AUTH_BYPASS.some((p) => url.includes(p));
+        const isLogoutBypass = LOGOUT_BYPASS.some((p) => url.includes(p));
 
         // Try silent refresh exactly once per failed request, and never on auth endpoints
-        if (status === 401 && original && !original._retried && !isAuthEndpoint) {
+        if (status === 401 && original && !original._retried && !isAuthEndpoint && !isLogoutBypass) {
             original._retried = true;
 
             // A refresh is already in flight — queue this request to replay when it lands
@@ -99,8 +105,10 @@ api.interceptors.response.use(
             }
         }
 
-        // 401 on the auth endpoints themselves (or after refresh) → log out cleanly
-        if (status === 401 && !isAuthEndpoint) {
+        // 401 on the auth endpoints themselves (or after refresh) → log out cleanly.
+        // Skip for peripheral features (notifications, bulk-jobs) so a transient
+        // failure there can never bounce the user back to the login screen.
+        if (status === 401 && !isAuthEndpoint && !isLogoutBypass) {
             window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         }
 

@@ -96,9 +96,16 @@ const invoicesRoute = createRoute({
 });
 
 // NEW: Data Arena Route (Protected by 'admin' permission)
+const DATA_ARENA_SECTIONS = ["imports", "exports", "bulk", "downloads", "jobs"] as const;
+
 const dataArenaRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/data-arena",
+  validateSearch: (search: Record<string, unknown>) => ({
+    section: (DATA_ARENA_SECTIONS as readonly string[]).includes(search.section as string)
+      ? (search.section as typeof DATA_ARENA_SECTIONS[number])
+      : undefined,
+  }),
   beforeLoad: () => requirePermission("inventory_permission"), // CRITICAL: Only admins should access bulk exports
   component: () => (
     <div>

@@ -46,6 +46,12 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import SecurityIcon from "@mui/icons-material/Security";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // Fallback bullet
 import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
+import FolderZipIcon from "@mui/icons-material/FolderZip";
+import HistoryIcon from "@mui/icons-material/History";
+import { NotificationBellSafe } from "@/components/notifications/NotificationBellSafe";
 import PaidIcon from "@mui/icons-material/Paid";
 import MoneyOffIcon from "@mui/icons-material/MoneyOff";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
@@ -147,6 +153,7 @@ function AuthenticatedLayout() {
     Inventory: false,
     Accounting: true,
     Reports: true,
+    "Data Arena": true,
   });
 
   type NavChild = {
@@ -207,8 +214,39 @@ function AuthenticatedLayout() {
     {
       text: "Data Arena",
       icon: <StorageIcon />,
-      path: "/data-arena",
       requiredPermission: "inventory_permission",
+      children: [
+        {
+          text: "Imports",
+          path: "/data-arena",
+          search: { section: "imports" },
+          icon: <UploadFileIcon fontSize="small" />,
+        },
+        {
+          text: "Exports",
+          path: "/data-arena",
+          search: { section: "exports" },
+          icon: <FileDownloadIcon fontSize="small" />,
+        },
+        {
+          text: "Bulk Actions",
+          path: "/data-arena",
+          search: { section: "bulk" },
+          icon: <PlaylistAddCheckIcon fontSize="small" />,
+        },
+        {
+          text: "Downloads",
+          path: "/data-arena",
+          search: { section: "downloads" },
+          icon: <FolderZipIcon fontSize="small" />,
+        },
+        {
+          text: "Job History",
+          path: "/data-arena",
+          search: { section: "jobs" },
+          icon: <HistoryIcon fontSize="small" />,
+        },
+      ],
     },
     {
       text: "Workforce",
@@ -636,7 +674,8 @@ function AuthenticatedLayout() {
             </Box>
           )}
           <Box sx={{ flexGrow: 1 }} />
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <NotificationBellSafe />
             <Typography
               variant="body2"
               color="text.primary"
