@@ -4,31 +4,37 @@ import { Close } from "@mui/icons-material";
 import { useDashboardStore } from "@/stores/useDashboardStore";
 
 const EditModePanel: React.FC = () => {
-  const isEditMode = useDashboardStore((s) => s.isEditMode);
+  const isPanelOpen = useDashboardStore((s) => s.isPanelOpen);
+  const closePanel = useDashboardStore((s) => s.closePanel);
   const layout = useDashboardStore((s) => s.layout);
   const toggleWidget = useDashboardStore((s) => s.toggleWidget);
-  const toggleEditMode = useDashboardStore((s) => s.toggleEditMode);
   const widgetCatalog = useDashboardStore((s) => s.widgetCatalog);
 
   return (
     <Drawer
       anchor="right"
       variant="temporary"
-      open={isEditMode}
-      onClose={toggleEditMode}
+      open={isPanelOpen}
+      onClose={closePanel}
+      hideBackdrop
+      disableScrollLock
       slotProps={{
+        root: {
+          // The Modal root spans the full screen — make it non-interactive so
+          // pointer events reach the grid for drag/resize while the panel is open.
+          style: { pointerEvents: "none" },
+        },
         paper: {
           sx: {
+            pointerEvents: "auto", // the drawer panel itself must stay interactive
             width: 300,
-            borderLeft: "1px solid #E2E8F0",
-            bgcolor: "#FFFFFF",
+            borderLeft: "1px solid",
+            borderColor: "border.subtle",
+            bgcolor: "background.paper",
             px: 2.5,
             py: 3,
-            boxShadow: "-8px 0 24px rgba(0,0,0,0.06)",
+            boxShadow: "-8px 0 24px rgba(0,0,0,0.10)",
           },
-        },
-        backdrop: {
-          sx: { bgcolor: "rgba(0,0,0,0.06)" },
         },
       }}
     >
@@ -44,7 +50,7 @@ const EditModePanel: React.FC = () => {
         </Box>
         <IconButton
           size="small"
-          onClick={toggleEditMode}
+          onClick={closePanel}
           sx={{ color: "text.disabled", mt: -0.5, "&:hover": { color: "text.primary" } }}
         >
           <Close fontSize="small" />
@@ -76,26 +82,26 @@ const EditModePanel: React.FC = () => {
                 py: 1,
                 borderRadius: 1.5,
                 border: "1px solid",
-                borderColor: isEnabled ? "primary.200" : "#E2E8F0",
-                bgcolor: isEnabled ? "#EFF6FF" : "transparent",
+                borderColor: isEnabled ? "primary.light" : "border.subtle",
+                bgcolor: isEnabled ? "primary.50" : "transparent",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
                 "&:hover": {
-                  borderColor: "primary.300",
-                  bgcolor: isEnabled ? "#DBEAFE" : "#F8FAFC",
+                  borderColor: "primary.main",
+                  bgcolor: isEnabled ? "primary.100" : "surface.muted",
                 },
               }}
             >
               <Box>
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 600, color: isEnabled ? "primary.800" : "text.primary", fontSize: "0.8rem" }}
+                  sx={{ fontWeight: 600, color: isEnabled ? "primary.dark" : "text.primary", fontSize: "0.8rem" }}
                 >
                   {widget.display_name}
                 </Typography>
                 <Typography
                   variant="caption"
-                  sx={{ color: isEnabled ? "primary.500" : "text.disabled", display: "block", fontSize: "0.7rem" }}
+                  sx={{ color: isEnabled ? "primary.main" : "text.disabled", display: "block", fontSize: "0.7rem" }}
                 >
                   {widget.default_w >= 2 ? "Half width" : "Quarter width"}
                 </Typography>

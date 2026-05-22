@@ -46,6 +46,7 @@ const DashboardEngine: React.FC = () => {
 
   const layout = useDashboardStore((s) => s.layout);
   const setLayout = useDashboardStore((s) => s.setLayout);
+  const setWidgetWidth = useDashboardStore((s) => s.setWidgetWidth);
   const widgetCatalog = useDashboardStore((s) => s.widgetCatalog);
   const isEditMode = useDashboardStore((s) => s.isEditMode);
   const isConfigLoaded = useDashboardStore((s) => s.isConfigLoaded);
@@ -119,9 +120,38 @@ const DashboardEngine: React.FC = () => {
     );
   });
 
+  // Build a mobile-friendly 2-col layout: KPI cards pair up (w=1 each),
+  // charts and tables go full-width (w=2). Items stack without overlap.
+  const buildMobileLayout = (): RglLayoutItem[] => {
+    const result: RglLayoutItem[] = [];
+    let curY = 0;
+    let kpiRow: StoreLayoutItem[] = [];
+
+    const flushKpiRow = () => {
+      if (!kpiRow.length) return;
+      kpiRow.forEach((item, i) => {
+        result.push({ i: item.i, x: i % 2, y: curY + Math.floor(i / 2), w: 1, h: item.h });
+      });
+      curY += Math.ceil(kpiRow.length / 2) * kpiRow[0].h;
+      kpiRow = [];
+    };
+
+    for (const item of visibleLayout) {
+      const isKpi = item.h <= 1 && item.w <= 1;
+      if (isKpi) {
+        kpiRow.push(item);
+      } else {
+        flushKpiRow();
+        result.push({ i: item.i, x: 0, y: curY, w: 2, h: item.h });
+        curY += item.h;
+      }
+    }
+    flushKpiRow();
+    return result;
+  };
+
   // Generate responsive layouts for each breakpoint
   const generateResponsiveLayout = (): Record<string, RglLayoutItem[]> => {
-    // Desktop layout (lg, md) - keep original
     const lgLayout: RglLayoutItem[] = visibleLayout.map((item) => ({
       i: item.i,
       x: item.x,
@@ -130,23 +160,13 @@ const DashboardEngine: React.FC = () => {
       h: item.h,
     }));
 
-    // Tablet layout (sm) - reduce 2-col widgets to 1-col, keep 1-col as 1-col
-    const smLayout: RglLayoutItem[] = visibleLayout.map((item, idx) => ({
-      i: item.i,
-      x: 0, // Always left-aligned on mobile
-      y: idx, // Stack vertically
-      w: 1, // Full width (sm breakpoint = 1 col)
-      h: item.h,
-    }));
-
-    // Mobile layout (xs) - same as sm but ensure 1-col
-    const xsLayout: RglLayoutItem[] = smLayout;
+    const mobileLayout = buildMobileLayout();
 
     return {
       lg: lgLayout,
-      md: lgLayout, // Desktop & laptop same layout
-      sm: smLayout, // Tablet: stack 1-col
-      xs: xsLayout, // Mobile: stack 1-col
+      md: lgLayout,
+      sm: mobileLayout, // tablet: 2-col, charts full-width
+      xs: mobileLayout, // phone: 2-col, charts full-width
     };
   };
 
@@ -259,7 +279,7 @@ const DashboardEngine: React.FC = () => {
           width={gridWidth}
           layouts={responsiveLayouts}
           breakpoints={{ lg: 1200, md: 900, sm: 600, xs: 0 }}
-          cols={{ lg: 4, md: 4, sm: 1, xs: 1 }}
+          cols={{ lg: 4, md: 4, sm: 2, xs: 2 }}
           rowHeight={150}
           margin={[12, 12]}
           containerPadding={[0, 0]}
@@ -303,48 +323,93 @@ const DashboardEngine: React.FC = () => {
                   "&:hover .widget-dismiss": { opacity: 1, transform: "scale(1)" },
                 }}
               >
-                {/* Edit mode: drag strip + inline close */}
+                {/* Edit mode: drag strip + size presets + remove */}
                 {isEditMode && (
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      height: 28,
+                      height: 32,
                       borderBottom: `1px dashed ${dt.color.primary}55`,
                       bgcolor: `${dt.color.primary}0A`,
                       flexShrink: 0,
+                      gap: 0.5,
+                      px: 0.5,
                     }}
                   >
+                    {/* Drag handle — only this element is the actual drag trigger */}
                     <Box
                       className="drag-handle"
                       sx={{
-                        flex: 1,
                         display: "flex",
                         alignItems: "center",
-                        gap: 0.5,
-                        pl: 1,
+                        gap: 0.25,
+                        pl: 0.5,
                         cursor: "grab",
                         height: "100%",
                         color: dt.color.primary,
-                        fontSize: "0.65rem",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
+                        flexShrink: 0,
                         "&:active": { cursor: "grabbing" },
                       }}
                     >
                       <DragIndicator sx={{ fontSize: 14 }} />
-                      Drag to rearrange
                     </Box>
+
+                    {/* Spacer */}
+                    <Box sx={{ flex: 1 }} />
+
+                    {/* Width preset buttons: 1 / 2 / 3 / 4 columns */}
+                    {([1, 2, 3, 4] as const).map((size) => {
+                      const active = item.w === size;
+                      return (
+                        <Box
+                          key={size}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setWidgetWidth(item.i, size);
+                          }}
+                          title={`${size} column${size > 1 ? "s" : ""}`}
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: 0.75,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "0.6rem",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            userSelect: "none",
+                            bgcolor: active ? dt.color.primary : "transparent",
+                            color: active ? "#fff" : dt.color.foregroundFaint,
+                            border: `1px solid ${active ? dt.color.primary : dt.color.border}`,
+                            transition: `background-color ${dt.motion.fast}, color ${dt.motion.fast}, border-color ${dt.motion.fast}`,
+                            "&:hover": {
+                              bgcolor: active ? dt.color.primaryStrong : `${dt.color.primary}18`,
+                              borderColor: dt.color.primary,
+                              color: active ? "#fff" : dt.color.primary,
+                            },
+                          }}
+                        >
+                          {size}
+                        </Box>
+                      );
+                    })}
+
+                    {/* Remove */}
                     <Box
-                      onClick={() => handleRemoveWidget(item.i)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveWidget(item.i);
+                      }}
                       sx={{
-                        width: 28,
-                        height: "100%",
+                        width: 24,
+                        height: 24,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
+                        borderRadius: 0.75,
                         color: dt.color.foregroundFaint,
                         transition: `color ${dt.motion.fast}, background-color ${dt.motion.fast}`,
                         "&:hover": {
@@ -353,7 +418,7 @@ const DashboardEngine: React.FC = () => {
                         },
                       }}
                     >
-                      <Close sx={{ fontSize: 14 }} />
+                      <Close sx={{ fontSize: 13 }} />
                     </Box>
                   </Box>
                 )}

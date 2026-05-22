@@ -45,12 +45,15 @@ interface DashboardStore {
   globalFilters: GlobalFilters;
   widgetCatalog: WidgetDefinition[];
   isEditMode: boolean;
+  isPanelOpen: boolean;
   isConfigLoaded: boolean;
   loadConfig: (config: { layout: LayoutItem[]; savedFilters: GlobalFilters | null; widgetCatalog: WidgetDefinition[] }) => void;
   setLayout: (layout: LayoutItem[]) => void;
   updateFilter: (key: keyof GlobalFilters, value: string | number | null) => void;
   toggleWidget: (def: WidgetDefinition) => void;
+  setWidgetWidth: (key: string, w: number) => void;
   toggleEditMode: () => void;
+  closePanel: () => void;
   _debouncedSync: () => void;
 }
 
@@ -59,6 +62,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   globalFilters: buildDefaultFilters(),
   widgetCatalog: [],
   isEditMode: false,
+  isPanelOpen: false,
   isConfigLoaded: false,
 
   loadConfig: ({ layout, savedFilters, widgetCatalog }) => {
@@ -100,7 +104,19 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     get()._debouncedSync();
   },
 
-  toggleEditMode: () => set((state) => ({ isEditMode: !state.isEditMode })),
+  setWidgetWidth: (key, w) => {
+    const { layout } = get();
+    set({ layout: layout.map((item) => (item.i === key ? { ...item, w } : item)) });
+    get()._debouncedSync();
+  },
+
+  toggleEditMode: () =>
+    set((state) => ({
+      isEditMode: !state.isEditMode,
+      isPanelOpen: !state.isEditMode, // entering edit → open panel; exiting → close panel
+    })),
+
+  closePanel: () => set({ isPanelOpen: false }),
 
   _debouncedSync: () => {
     if (syncTimer) clearTimeout(syncTimer);
