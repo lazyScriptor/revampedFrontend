@@ -10,12 +10,19 @@ interface User {
     roles: string[];
     permissions: string[];
     configData?: Record<string, unknown> | null;
+    // Optional profile mirror — filled by /me hooks after profile edits, so the
+    // AppBar avatar/initials reflect the latest values without a hard reload.
+    first_name?: string | null;
+    last_name?: string | null;
+    avatar_url?: string | null;
+    job_title?: string | null;
 }
 
 interface AuthState {
     isAuthenticated: boolean;
     user: User | null;
     setAuth: (user: User) => void;
+    updateUserPartial: (patch: Partial<User>) => void;
     logout: () => void;
     hasPermission: (code: string) => boolean;
     hasAnyPermission: (...codes: string[]) => boolean;
@@ -29,6 +36,11 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             user: null,
             setAuth: (user) => set({ isAuthenticated: true, user }),
+            updateUserPartial: (patch) => {
+                const current = get().user;
+                if (!current) return;
+                set({ user: { ...current, ...patch } });
+            },
 
             logout: () => {
                 // 1. Wipe the Zustand state

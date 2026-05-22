@@ -52,6 +52,7 @@ import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
 import HistoryIcon from "@mui/icons-material/History";
 import { NotificationBellSafe } from "@/components/notifications/NotificationBellSafe";
+import { AppBarUserMenu } from "@/components/profile/AppBarUserMenu";
 import PaidIcon from "@mui/icons-material/Paid";
 import MoneyOffIcon from "@mui/icons-material/MoneyOff";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
@@ -683,9 +684,7 @@ function AuthenticatedLayout() {
             >
               {user?.username}
             </Typography>
-            <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
-              {user?.username?.charAt(0).toUpperCase() || "U"}
-            </Avatar>
+            <AppBarUserMenu />
           </Box>
         </Toolbar>
       </MuiAppBar>

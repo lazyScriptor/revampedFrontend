@@ -14,6 +14,7 @@ import MaintenanceRoute from "@/routes/Maintenance";
 import WorkforceRoute from "@/routes/Workforce";
 import AccountingRoute from "@/routes/Accounting";
 import ReportsRoute from "@/routes/Reports";
+import ProfileRoute from "@/routes/Profile";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
 import PermissionsPage from "@/routes/Permissions";
@@ -171,6 +172,19 @@ const reportsRoute = createRoute({
   component: () => <ReportsRoute />,
 });
 
+// Personal profile (no permission gate — every authenticated user has one)
+const PROFILE_TABS = ["profile", "security", "preferences", "notifications", "activity", "access"] as const;
+const profileRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/profile",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (PROFILE_TABS as readonly string[]).includes(search.tab as string)
+      ? (search.tab as typeof PROFILE_TABS[number])
+      : undefined,
+  }),
+  component: () => <ProfileRoute />,
+});
+
 // Permissions Matrix (Admin only)
 const permissionsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -223,6 +237,7 @@ const routeTree = rootRoute.addChildren([
     workforceRoute,
     accountingRoute,
     reportsRoute,
+    profileRoute,
     permissionsRoute,
     adminUsersRoute,
     adminRolesRoute,
