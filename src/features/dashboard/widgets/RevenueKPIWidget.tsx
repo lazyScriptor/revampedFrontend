@@ -17,10 +17,10 @@ const RevenueKPIWidget: React.FC = () => {
       label="Total Revenue"
       value={data ? fmt(data.totalRevenue) : null}
       loading={isLoading}
-      icon={<AttachMoneyIcon fontSize="small" />}
-      accentColor="#2563eb"
-      trend={pct ? (parseFloat(pct) >= 0 ? 'up' : 'down') : 'neutral'}
-      trendValue={pct ? `${parseFloat(pct) >= 0 ? '▲' : '▼'} ${Math.abs(parseFloat(pct))}%` : undefined}
+      icon={<AttachMoneyIcon />}
+      tone="primary"
+      trend={pct ? (parseFloat(pct) >= 0 ? "up" : "down") : "neutral"}
+      trendValue={pct ? `${Math.abs(parseFloat(pct))}%` : undefined}
       subLabel="vs prior day"
     />
   );

@@ -2,6 +2,20 @@
 
 Vite + React 18 + TypeScript. Pairs with the `revampedBackend` repo.
 
+## Design intelligence — UI/UX Pro Max skill
+
+Installed at user level (`~/.claude/skills/`, not in this repo). The skill is invokable directly via the Skill tool — for any UI/UX-design task (new pages, restyling, picking colors/typography, layout reviews, accessibility checks) invoke it **before** sketching markup. The companion skills `design`, `design-system`, `ui-styling`, `brand`, `banner-design`, and `slides` are also available.
+
+Raw CLI access if you need it:
+
+```bash
+python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <style|color|ux|typography|chart|landing|product|google-fonts> -n 3
+python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<context>" --design-system -p "GearGrid"
+python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --stack react
+```
+
+Read `~/.claude/skills/ui-ux-pro-max/SKILL.md` for the full set of flags and the persistence pattern.
+
 ## Stack — what's actually here
 
 - **Routing**: TanStack Router (file-based in `src/routes/`)

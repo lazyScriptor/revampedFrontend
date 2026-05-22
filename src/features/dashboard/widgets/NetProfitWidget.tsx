@@ -16,8 +16,8 @@ const NetProfitWidget: React.FC = () => {
       label="Net Profit"
       value={data ? fmt(data.netProfit) : null}
       loading={isLoading}
-      icon={isPositive ? <TrendingUpIcon fontSize="small" /> : <TrendingDownIcon fontSize="small" />}
-      accentColor={isPositive ? '#16a34a' : '#dc2626'}
+      icon={isPositive ? <TrendingUpIcon /> : <TrendingDownIcon />}
+      tone={isPositive ? "accent" : "danger"}
       subLabel="revenue minus expenses"
     />
   );

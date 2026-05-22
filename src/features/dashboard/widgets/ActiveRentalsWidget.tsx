@@ -11,8 +11,8 @@ const ActiveRentalsWidget: React.FC = () => {
       label="Active Rentals"
       value={data?.activeRentalsCount ?? null}
       loading={isLoading}
-      icon={<ReceiptLongIcon fontSize="small" />}
-      accentColor="#6366f1"
+      icon={<ReceiptLongIcon />}
+      tone="violet"
       subLabel="open invoices"
     />
   );

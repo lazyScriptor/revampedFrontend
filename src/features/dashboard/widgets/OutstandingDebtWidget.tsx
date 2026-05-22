@@ -14,8 +14,8 @@ const OutstandingDebtWidget: React.FC = () => {
       label="Outstanding Debt"
       value={data ? fmt(data.outstandingDebt) : null}
       loading={isLoading}
-      icon={<WarningAmberIcon fontSize="small" />}
-      accentColor="#f59e0b"
+      icon={<WarningAmberIcon />}
+      tone="warning"
       subLabel="unpaid invoice balances"
     />
   );

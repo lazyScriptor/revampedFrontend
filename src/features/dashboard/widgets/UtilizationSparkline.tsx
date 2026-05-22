@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Box, Typography, Skeleton, LinearProgress } from "@mui/material";
+import { Box, Typography, Skeleton, LinearProgress, Chip } from "@mui/material";
 import {
   AreaChart,
   Area,
@@ -10,11 +10,11 @@ import {
 } from "recharts";
 import { useUtilizationSparkline } from "@/features/dashboard/hooks/useDashboardHooks";
 import dayjs from "dayjs";
+import { dashboardTokens as t, dashboardTones } from "../_tokens";
 
 const UtilizationSparkline: React.FC = () => {
   const { data, isLoading } = useUtilizationSparkline();
 
-  // Format data for the chart, mapping ISO dates to short weekday names (e.g., 'Mon')
   const chartData = useMemo(() => {
     return (data?.sparklineData ?? []).map(
       (d: { date: string; utilization: number }) => ({
@@ -25,125 +25,140 @@ const UtilizationSparkline: React.FC = () => {
   }, [data?.sparklineData]);
 
   const rate = data?.currentRate ?? 0;
-  // Sleek, muted traffic-light colors for enterprise feel
-  const rateColor = rate >= 75 ? "#10B981" : rate >= 40 ? "#F59E0B" : "#EF4444";
+
+  // Tone-driven, semantic — same scale as before but pulls from the shared palette.
+  const tone =
+    rate >= 75 ? dashboardTones.accent :
+    rate >= 40 ? dashboardTones.warning :
+    dashboardTones.danger;
+
+  const gradientId = "utilGrad";
 
   return (
     <Box
       sx={{
         height: "100%",
+        width: "100%",
         display: "flex",
         flexDirection: "column",
-        p: 3, // Premium breathing room
-        bgcolor: "transparent",
+        px: 2,
+        py: 1.75,
       }}
     >
-      {/* 1. Sleek Header */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          mb: 0.5,
-        }}
-      >
-        <Typography
-          variant="subtitle1"
-          sx={{
-            color: "text.primary",
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Fleet Utilization
-        </Typography>
-        {!isLoading && (
+      {/* Header */}
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.5 }}>
+        <Box sx={{ minWidth: 0 }}>
           <Typography
+            variant="caption"
             sx={{
-              fontSize: "2rem",
+              color: t.color.foregroundMuted,
               fontWeight: 700,
-              color: rateColor,
-              lineHeight: 1,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              fontSize: "0.68rem",
+              lineHeight: 1.4,
             }}
           >
-            {rate}%
+            Fleet Utilization
           </Typography>
+          {!isLoading && (
+            <Typography
+              variant="caption"
+              sx={{ display: "block", color: t.color.foregroundFaint, fontWeight: 500, fontSize: "0.72rem", mt: 0.25 }}
+            >
+              {data?.totalOwned ?? 0} total units · 7-day trend
+            </Typography>
+          )}
+        </Box>
+
+        {!isLoading && (
+          <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+            <Typography
+              sx={{
+                fontSize: { xs: "1.6rem", sm: "1.8rem" },
+                fontWeight: 800,
+                color: tone.strong,
+                lineHeight: 1,
+                fontVariantNumeric: "tabular-nums",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {rate}%
+            </Typography>
+            <Chip
+              size="small"
+              label={rate >= 75 ? "Healthy" : rate >= 40 ? "Watch" : "Low"}
+              sx={{
+                mt: 0.5,
+                height: 18,
+                fontSize: "0.65rem",
+                fontWeight: 800,
+                bgcolor: tone.soft,
+                color: tone.on,
+                border: 0,
+              }}
+            />
+          </Box>
         )}
       </Box>
 
-      {/* 2. Loading State vs Content */}
       {isLoading ? (
         <>
-          <Skeleton variant="text" width="60%" height={24} sx={{ mb: 2 }} />
+          <Skeleton variant="text" width="60%" height={20} sx={{ mb: 1.5 }} />
           <Skeleton variant="rounded" sx={{ flexGrow: 1, borderRadius: 2 }} />
         </>
       ) : (
         <>
-          {/* Context Line & Progress Bar */}
-          <Typography
-            variant="body2"
-            sx={{ color: "text.secondary", mb: 2, fontWeight: 500 }}
-          >
-            {data?.totalOwned ?? 0} total units · 7-day trend
-          </Typography>
-
+          {/* Slim progress bar mirrors the headline number */}
           <LinearProgress
             variant="determinate"
             value={rate}
             sx={{
-              height: 4, // Thinner, sleeker progress bar
-              borderRadius: 2,
-              mb: 3, // Space before the chart
-              bgcolor: "#F1F5F9",
+              height: 5,
+              borderRadius: 99,
+              mt: 1.25,
+              mb: 1.75,
+              bgcolor: t.color.surfaceMuted,
               "& .MuiLinearProgress-bar": {
-                bgcolor: rateColor,
-                borderRadius: 2,
+                bgcolor: tone.strong,
+                borderRadius: 99,
               },
             }}
           />
 
-          {/* 3. The Fluid Chart Container */}
+          {/* Area sparkline */}
           <Box sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={chartData}
-                margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-              >
+              <AreaChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="utilGrad" x1="0" y1="0" x2="0" y2="1">
-                    {/* Modern subtle gradient fade */}
-                    <stop
-                      offset="0%"
-                      stopColor={rateColor}
-                      stopOpacity={0.25}
-                    />
-                    <stop offset="100%" stopColor={rateColor} stopOpacity={0} />
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={tone.strong} stopOpacity={0.32} />
+                    <stop offset="100%" stopColor={tone.strong} stopOpacity={0} />
                   </linearGradient>
                 </defs>
 
-                {/* Clean, minimalist axes */}
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12, fill: "#64748B", fontWeight: 500 }}
+                  tick={{ fontSize: 11, fill: t.color.foregroundFaint, fontWeight: 500 }}
                   tickLine={false}
                   axisLine={false}
-                  dy={10}
+                  dy={6}
                 />
-                {/* Hidden Y-Axis to give the area chart a defined floor/ceiling without visual clutter */}
                 <YAxis hide domain={["dataMin - 5", "dataMax + 5"]} />
 
                 <Tooltip
                   formatter={(v) => [`${v}%`, "Utilization"] as [string, string]}
                   contentStyle={{
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
-                    color: "#0F172A",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                    color: t.color.foreground,
+                    border: `1px solid ${t.color.border}`,
+                    borderRadius: 8,
+                    boxShadow: t.shadow.md,
+                    padding: "6px 10px",
                   }}
                   cursor={{
-                    stroke: "#CBD5E1",
+                    stroke: t.color.borderStrong,
                     strokeWidth: 1,
                     strokeDasharray: "4 4",
                   }}
@@ -152,12 +167,12 @@ const UtilizationSparkline: React.FC = () => {
                 <Area
                   type="monotone"
                   dataKey="utilization"
-                  stroke={rateColor}
-                  strokeWidth={3} // Bolder line for premium feel
-                  fill="url(#utilGrad)"
+                  stroke={tone.strong}
+                  strokeWidth={2.5}
+                  fill={`url(#${gradientId})`}
                   dot={false}
-                  activeDot={{ r: 6, strokeWidth: 0, fill: rateColor }}
-                  isAnimationActive={false} // Prevents lag during dashboard drag/drop
+                  activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff", fill: tone.strong }}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>

@@ -1,6 +1,7 @@
 import React, { Suspense, useMemo } from "react";
-import { Box, Skeleton, Button } from "@mui/material";
+import { Box, Skeleton, Button, Typography } from "@mui/material";
 import { DragIndicator, Settings, Close } from "@mui/icons-material";
+import { dashboardTokens as dt } from "./_tokens";
 import {
   ResponsiveGridLayout,
   Layout,
@@ -28,9 +29,17 @@ const WidgetSkeleton: React.FC = () => (
     variant="rectangular"
     width="100%"
     height="100%"
-    sx={{ borderRadius: 2 }}
+    sx={{ borderRadius: dt.radius.md, bgcolor: dt.color.surfaceMuted }}
   />
 );
+
+const today = () =>
+  new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
 const DashboardEngine: React.FC = () => {
   const { isLoading: configLoading } = useDashboardConfig();
@@ -43,6 +52,9 @@ const DashboardEngine: React.FC = () => {
   const toggleEditMode = useDashboardStore((s) => s.toggleEditMode);
   const toggleWidget = useDashboardStore((s) => s.toggleWidget);
   const hasPermission = useAuthStore((s) => s.hasPermission);
+  const userDisplayName = useAuthStore(
+    (s) => (s.user?.first_name as string | undefined) || s.user?.username || "",
+  );
 
   const catalogMap = useMemo(
     () =>
@@ -77,18 +89,22 @@ const DashboardEngine: React.FC = () => {
     return (
       <Box
         sx={{
-          p: 3,
+          p: { xs: 2, md: 3 },
           display: "grid",
           gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
-          gap: 2,
+          gap: 1.5,
         }}
       >
         {([1, 1, 1, 1, 2, 2] as const).map((span, i) => (
           <Skeleton
             key={i}
             variant="rectangular"
-            height={span === 1 ? 150 : 316}
-            sx={{ borderRadius: 2, gridColumn: `span ${span}` }}
+            height={span === 1 ? 144 : 316}
+            sx={{
+              borderRadius: dt.radius.lg,
+              bgcolor: dt.color.surfaceMuted,
+              gridColumn: `span ${span}`,
+            }}
           />
         ))}
       </Box>
@@ -142,26 +158,60 @@ const DashboardEngine: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        bgcolor: "#F8FAFC",
+        bgcolor: dt.color.background,
       }}
     >
-      {/* Header bar */}
+      {/* Header bar — welcome line + filters + customize CTA */}
       <Box
         sx={{
           display: "flex",
-          alignItems: { xs: "stretch", md: "center" },
-          flexDirection: { xs: "column", md: "row" },
-          gap: 2,
+          alignItems: { xs: "stretch", lg: "center" },
+          flexDirection: { xs: "column", lg: "row" },
+          gap: { xs: 1.5, lg: 2 },
           px: { xs: 2, md: 3 },
-          py: 1.5,
-          bgcolor: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
+          py: { xs: 1.5, md: 2 },
+          bgcolor: dt.color.surface,
+          borderBottom: `1px solid ${dt.color.border}`,
           flexShrink: 0,
         }}
       >
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+        {/* Welcome / context line — hidden when very narrow to keep filters dominant */}
+        <Box sx={{ minWidth: 0, display: { xs: "none", md: "block" }, flexShrink: 0 }}>
+          <Typography
+            sx={{
+              fontSize: "1.05rem",
+              fontWeight: 800,
+              color: dt.color.foreground,
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {userDisplayName ? `Welcome back, ${userDisplayName}` : "Dashboard"}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              color: dt.color.foregroundFaint,
+              fontSize: "0.72rem",
+              fontWeight: 500,
+            }}
+          >
+            {today()}
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: { md: "flex-end", lg: "center" },
+          }}
+        >
           <MasterFilterBar />
         </Box>
+
         <Button
           variant={isEditMode ? "contained" : "outlined"}
           size="small"
@@ -171,11 +221,21 @@ const DashboardEngine: React.FC = () => {
           sx={{
             whiteSpace: "nowrap",
             flexShrink: 0,
-            borderRadius: 1.5,
+            borderRadius: dt.radius.md,
             textTransform: "none",
+            fontWeight: 700,
+            px: 2,
+            borderColor: isEditMode ? "transparent" : dt.color.border,
+            color: isEditMode ? "#fff" : dt.color.foreground,
+            bgcolor: isEditMode ? dt.color.primary : "transparent",
+            "&:hover": {
+              bgcolor: isEditMode ? dt.color.primaryStrong : dt.color.surfaceMuted,
+              borderColor: isEditMode ? "transparent" : dt.color.borderStrong,
+            },
+            transition: dt.motion.base,
           }}
         >
-          {isEditMode ? "Done" : "Customize"}
+          {isEditMode ? "Done editing" : "Customize"}
         </Button>
       </Box>
 
@@ -222,24 +282,25 @@ const DashboardEngine: React.FC = () => {
                   height: "100%",
                   width: "100%",
                   overflow: "hidden",
-                  borderRadius: 2,
-                  bgcolor: "#FFFFFF",
-                  border: "1px solid",
-                  borderColor: isEditMode ? "primary.300" : "#E2E8F0",
+                  borderRadius: dt.radius.lg,
+                  bgcolor: dt.color.surface,
+                  border: `1px solid ${isEditMode ? dt.color.primary : dt.color.border}`,
                   borderStyle: isEditMode ? "dashed" : "solid",
-                  boxShadow: isEditMode
-                    ? "none"
-                    : "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-                  transition: "box-shadow 0.15s ease",
+                  boxShadow: isEditMode ? dt.shadow.none : dt.shadow.sm,
+                  transition: `box-shadow ${dt.motion.base}, transform ${dt.motion.base}, border-color ${dt.motion.fast}`,
                   "&:hover": isEditMode
                     ? {}
-                    : { boxShadow: "0 4px 12px rgba(0,0,0,0.08)" },
+                    : {
+                        boxShadow: dt.shadow.md,
+                        borderColor: dt.color.borderStrong,
+                      },
                   // Close button reveals on card hover (normal mode only)
                   "& .widget-dismiss": {
                     opacity: 0,
-                    transition: "opacity 0.15s ease",
+                    transform: "scale(0.85)",
+                    transition: `opacity ${dt.motion.fast}, transform ${dt.motion.fast}, background-color ${dt.motion.fast}, color ${dt.motion.fast}`,
                   },
-                  "&:hover .widget-dismiss": { opacity: 1 },
+                  "&:hover .widget-dismiss": { opacity: 1, transform: "scale(1)" },
                 }}
               >
                 {/* Edit mode: drag strip + inline close */}
@@ -248,10 +309,9 @@ const DashboardEngine: React.FC = () => {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      height: 26,
-                      borderBottom: "1px dashed",
-                      borderColor: "primary.200",
-                      bgcolor: "#EFF6FF",
+                      height: 28,
+                      borderBottom: `1px dashed ${dt.color.primary}55`,
+                      bgcolor: `${dt.color.primary}0A`,
                       flexShrink: 0,
                     }}
                   >
@@ -261,31 +321,39 @@ const DashboardEngine: React.FC = () => {
                         flex: 1,
                         display: "flex",
                         alignItems: "center",
+                        gap: 0.5,
                         pl: 1,
                         cursor: "grab",
                         height: "100%",
+                        color: dt.color.primary,
+                        fontSize: "0.65rem",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
                         "&:active": { cursor: "grabbing" },
                       }}
                     >
-                      <DragIndicator
-                        sx={{ fontSize: 16, color: "primary.400" }}
-                      />
+                      <DragIndicator sx={{ fontSize: 14 }} />
+                      Drag to rearrange
                     </Box>
                     <Box
                       onClick={() => handleRemoveWidget(item.i)}
                       sx={{
-                        width: 26,
+                        width: 28,
                         height: "100%",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        color: "text.disabled",
-                        "&:hover": { color: "#dc2626", bgcolor: "#fee2e2" },
-                        transition: "color 0.1s, background-color 0.1s",
+                        color: dt.color.foregroundFaint,
+                        transition: `color ${dt.motion.fast}, background-color ${dt.motion.fast}`,
+                        "&:hover": {
+                          color: dt.color.danger,
+                          bgcolor: `${dt.color.danger}14`,
+                        },
                       }}
                     >
-                      <Close sx={{ fontSize: 13 }} />
+                      <Close sx={{ fontSize: 14 }} />
                     </Box>
                   </Box>
                 )}
@@ -297,23 +365,25 @@ const DashboardEngine: React.FC = () => {
                     onClick={() => handleRemoveWidget(item.i)}
                     sx={{
                       position: "absolute",
-                      top: 6,
-                      right: 6,
+                      top: 8,
+                      right: 8,
                       zIndex: 10,
-                      width: 20,
-                      height: 20,
+                      width: 22,
+                      height: 22,
                       borderRadius: "50%",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
-                      bgcolor: "rgba(0,0,0,0.06)",
-                      color: "#94a3b8",
-                      "&:hover": { bgcolor: "#fee2e2", color: "#dc2626" },
-                      transition: "background-color 0.1s, color 0.1s",
+                      bgcolor: dt.color.surfaceMuted,
+                      color: dt.color.foregroundFaint,
+                      "&:hover": {
+                        bgcolor: `${dt.color.danger}14`,
+                        color: dt.color.danger,
+                      },
                     }}
                   >
-                    <Close sx={{ fontSize: 11 }} />
+                    <Close sx={{ fontSize: 12 }} />
                   </Box>
                 )}
 
