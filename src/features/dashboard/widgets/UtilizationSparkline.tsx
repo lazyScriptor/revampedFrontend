@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, Typography, Skeleton, LinearProgress, Chip } from "@mui/material";
 import {
   AreaChart,
@@ -10,9 +11,10 @@ import {
 } from "recharts";
 import { useUtilizationSparkline } from "@/features/dashboard/hooks/useDashboardHooks";
 import dayjs from "dayjs";
-import { dashboardTokens as t, dashboardTones } from "../_tokens";
+import { dashboardTokens as dt, dashboardTones } from "../_tokens";
 
 const UtilizationSparkline: React.FC = () => {
+  const { t } = useTranslation();
   const { data, isLoading } = useUtilizationSparkline();
 
   const chartData = useMemo(() => {
@@ -51,7 +53,7 @@ const UtilizationSparkline: React.FC = () => {
           <Typography
             variant="caption"
             sx={{
-              color: t.color.foregroundMuted,
+              color: dt.color.foregroundMuted,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
@@ -59,14 +61,14 @@ const UtilizationSparkline: React.FC = () => {
               lineHeight: 1.4,
             }}
           >
-            Fleet Utilization
+            {t("dashboard.widgets.fleetUtilization")}
           </Typography>
           {!isLoading && (
             <Typography
               variant="caption"
-              sx={{ display: "block", color: t.color.foregroundFaint, fontWeight: 500, fontSize: "0.72rem", mt: 0.25 }}
+              sx={{ display: "block", color: dt.color.foregroundFaint, fontWeight: 500, fontSize: "0.72rem", mt: 0.25 }}
             >
-              {data?.totalOwned ?? 0} total units · 7-day trend
+              {t("dashboard.widgets.totalUnits", { count: data?.totalOwned ?? 0 })} · {t("dashboard.widgets.sevenDayTrend")}
             </Typography>
           )}
         </Box>
@@ -118,7 +120,7 @@ const UtilizationSparkline: React.FC = () => {
               borderRadius: 99,
               mt: 1.25,
               mb: 1.75,
-              bgcolor: t.color.surfaceMuted,
+              bgcolor: dt.color.surfaceMuted,
               "& .MuiLinearProgress-bar": {
                 bgcolor: tone.strong,
                 borderRadius: 99,
@@ -139,7 +141,7 @@ const UtilizationSparkline: React.FC = () => {
 
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: t.color.foregroundFaint, fontWeight: 500 }}
+                  tick={{ fontSize: 11, fill: dt.color.foregroundFaint, fontWeight: 500 }}
                   tickLine={false}
                   axisLine={false}
                   dy={6}
@@ -151,14 +153,14 @@ const UtilizationSparkline: React.FC = () => {
                   contentStyle={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: t.color.foreground,
-                    border: `1px solid ${t.color.border}`,
+                    color: dt.color.foreground,
+                    border: `1px solid ${dt.color.border}`,
                     borderRadius: 8,
-                    boxShadow: t.shadow.md,
+                    boxShadow: dt.shadow.md,
                     padding: "6px 10px",
                   }}
                   cursor={{
-                    stroke: t.color.borderStrong,
+                    stroke: dt.color.borderStrong,
                     strokeWidth: 1,
                     strokeDasharray: "4 4",
                   }}

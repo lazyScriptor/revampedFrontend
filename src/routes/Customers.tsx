@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useCustomerList } from "@/features/customers/hooks/useCustomerHooks";
 import type { CustomerFilters } from "@/features/customers/hooks/useCustomerHooks";
 import { CustomerTable } from "@/features/customers/components/CustomerTable";
@@ -41,6 +42,7 @@ function useDebounced<T>(value: T, delay = 300): T {
 
 export default function CustomersRoute() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
@@ -132,10 +134,10 @@ export default function CustomersRoute() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Typography variant="h4" fontWeight="bold" color="text.primary">
-            Client CRM
+            {t("customers.title")}
           </Typography>
           <Typography variant="body2" color="text.secondary" className="mt-1">
-            Manage your individual renters, corporate clients, and retained collateral.
+            {t("customers.subtitle")}
           </Typography>
         </div>
         <Button
@@ -145,7 +147,7 @@ export default function CustomersRoute() {
           disableElevation
           sx={{ py: 1.5, px: 3, borderRadius: 2 }}
         >
-          Add Customer
+          {t("customers.addCustomer")}
         </Button>
       </div>
 
@@ -159,11 +161,11 @@ export default function CustomersRoute() {
               </div>
               <div>
                 <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  Total Clients
+                  {t("customers.totalClients")}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold">{totalRowCount}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {businessCount} business · {customerList.length - businessCount} individual (this page)
+                  {businessCount} {t("customers.business")} · {customerList.length - businessCount} {t("customers.individual")}
                 </Typography>
               </div>
             </CardContent>
@@ -177,10 +179,10 @@ export default function CustomersRoute() {
               </div>
               <div>
                 <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  Linked to a Parent
+                  {t("customers.linkedToParent")}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold">{delegatedCount}</Typography>
-                <Typography variant="caption" color="text.secondary">on this page</Typography>
+                <Typography variant="caption" color="text.secondary">{t("customers.onThisPage")}</Typography>
               </div>
             </CardContent>
           </Card>
@@ -193,10 +195,10 @@ export default function CustomersRoute() {
               </div>
               <div>
                 <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  IDs Currently in Vault
+                  {t("customers.idsInVault")}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold" color="error.dark">{idsInVault}</Typography>
-                <Typography variant="caption" color="text.secondary">on this page</Typography>
+                <Typography variant="caption" color="text.secondary">{t("customers.onThisPage")}</Typography>
               </div>
             </CardContent>
           </Card>
@@ -209,12 +211,12 @@ export default function CustomersRoute() {
               </div>
               <div>
                 <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  Total Advance Held
+                  {t("customers.totalAdvanceHeld")}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold" color="success.main">
                   Rs. {totalAdvance.toLocaleString()}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">on this page</Typography>
+                <Typography variant="caption" color="text.secondary">{t("customers.onThisPage")}</Typography>
               </div>
             </CardContent>
           </Card>
@@ -236,7 +238,7 @@ export default function CustomersRoute() {
       >
         <TextField
           size="small"
-          placeholder="Search name, company, phone, or NIC…"
+          placeholder={t("customers.searchPlaceholder")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           sx={{ minWidth: { xs: "100%", sm: 320 } }}
@@ -263,31 +265,31 @@ export default function CustomersRoute() {
 
         {/* Type chips */}
         <FilterChipGroup
-          label="Type"
+          label={t("common.type")}
           value={type}
           onChange={(v) => setType(v as any)}
           options={[
-            { value: "", label: "All" },
-            { value: "Individual", label: "Individual" },
-            { value: "Business", label: "Business" },
+            { value: "", label: t("common.all") },
+            { value: "Individual", label: t("customers.individual") },
+            { value: "Business", label: t("customers.business") },
           ]}
         />
 
         {/* Status chips */}
         <FilterChipGroup
-          label="Status"
+          label={t("common.status")}
           value={status}
           onChange={(v) => setStatus(v as any)}
           options={[
-            { value: "", label: "All" },
-            { value: "Active", label: "Active", color: theme.palette.success.main },
-            { value: "Blacklisted", label: "Blacklisted", color: theme.palette.error.main },
+            { value: "", label: t("common.all") },
+            { value: "Active", label: t("common.active"), color: theme.palette.success.main },
+            { value: "Blacklisted", label: t("customers.blacklisted"), color: theme.palette.error.main },
           ]}
         />
 
         {/* Toggle chips */}
         <Chip
-          label="ID in vault"
+          label={t("customers.idInVault")}
           onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
           size="small"
           icon={<VerifiedUserIcon sx={{ fontSize: "14px !important" }} />}
@@ -304,7 +306,7 @@ export default function CustomersRoute() {
           }}
         />
         <Chip
-          label="Has parent"
+          label={t("customers.hasParent")}
           onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
           size="small"
           icon={<AccountTreeIcon sx={{ fontSize: "14px !important" }} />}

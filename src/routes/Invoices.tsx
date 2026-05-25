@@ -18,6 +18,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import PersonIcon from "@mui/icons-material/Person";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
@@ -45,6 +46,7 @@ import { useInvoiceDetails } from "@/features/invoices/hooks/useInvoiceHooks";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" };
@@ -156,10 +158,10 @@ export default function InvoicesRoute() {
     >
       <Box sx={{ px: 2.5, py: 2, bgcolor: "white", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b", fontSize: "0.68rem" }}>
-          {posMode === "dispatch" ? "CLIENT LOOKUP" : "INVOICE SEARCH"}
+          {posMode === "dispatch" ? t("invoices.selectCustomer").toUpperCase() : t("invoices.invoiceSearch").toUpperCase()}
         </Typography>
         <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a", mt: 0.25 }}>
-          {posMode === "dispatch" ? "Select a customer" : "Find an order"}
+          {posMode === "dispatch" ? t("invoices.selectCustomer") : t("invoices.findOrder")}
         </Typography>
       </Box>
       <Box sx={{ flexGrow: 1, overflowY: "auto", minHeight: 0, p: 2 }}>
@@ -209,14 +211,14 @@ export default function InvoicesRoute() {
       >
         <Box>
           <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b", fontSize: "0.68rem" }}>
-            {posMode === "dispatch" ? "DISPATCH CART" : "ORDER LEDGER"}
+            {posMode === "dispatch" ? t("invoices.dispatch").toUpperCase() : t("orders.orderLedger").toUpperCase()}
           </Typography>
           <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a", mt: 0.25 }}>
             {posMode === "dispatch"
-              ? `${cartItems.length} item${cartItems.length !== 1 ? "s" : ""} in cart`
+              ? t("invoices.lineItem", { count: cartItems.length })
               : activeInvoice
               ? `INV-${activeInvoice.invoice_id}`
-              : "No invoice selected"}
+              : t("invoices.selectAnInvoice")}
           </Typography>
         </Box>
         {posMode === "dispatch" && (
@@ -336,12 +338,12 @@ export default function InvoicesRoute() {
             variant="h5"
             sx={{ fontWeight: 900, color: "#0f172a", lineHeight: 1.1 }}
           >
-            {posMode === "dispatch" ? "New Dispatch" : "Order Management"}
+            {posMode === "dispatch" ? t("invoices.newDispatch") : t("orders.title")}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
             {posMode === "dispatch"
-              ? "Draft and commit new rental dispatch orders"
-              : "Manage returns, payments, and vaults for active orders"}
+              ? t("invoices.newDispatch") + " — " + t("invoices.findOrder").toLowerCase()
+              : t("orders.subtitle")}
           </Typography>
         </Box>
 
@@ -378,7 +380,7 @@ export default function InvoicesRoute() {
           >
             <RocketLaunchIcon sx={{ fontSize: 15 }} />
             <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-              New Dispatch
+              {t("invoices.newDispatch")}
             </Box>
           </Box>
           <Box
@@ -404,7 +406,7 @@ export default function InvoicesRoute() {
           >
             <ManageSearchIcon sx={{ fontSize: 15 }} />
             <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-              Manage Orders
+              {t("invoices.manageOrders")}
             </Box>
           </Box>
         </Box>

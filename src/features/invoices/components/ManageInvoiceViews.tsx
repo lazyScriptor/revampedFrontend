@@ -40,6 +40,7 @@ import { formatDisplayDate } from "@/lib/dates";
 import { useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
 import { ReviewThread } from "@/features/reviews/components/ReviewThread";
 import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
+import { useTranslation } from "react-i18next";
 
 const scroll = {
   "&::-webkit-scrollbar": { width: "5px" },
@@ -78,6 +79,7 @@ export function ManageSearchPanel({
   onSelectInvoice: (id: number) => void;
   selectedInvoiceId?: number | null;
 }) {
+  const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
 
@@ -111,7 +113,7 @@ export function ManageSearchPanel({
         <TextField
           fullWidth
           size="small"
-          placeholder="Search INV #, name, or phone…"
+          placeholder={t("invoices.findOrderPlaceholder")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           slotProps={{
@@ -130,21 +132,29 @@ export function ManageSearchPanel({
 
       {/* Status filter chips */}
       <Box sx={{ px: 2, pb: 1.5, display: "flex", gap: 1, flexShrink: 0 }}>
-        {(["All", "Active", "Completed"] as const).map((s) => (
-          <Chip
-            key={s}
-            size="small"
-            label={s}
-            clickable
-            onClick={() => setStatusFilter(s)}
-            variant={statusFilter === s ? "filled" : "outlined"}
-            color={statusFilter === s ? (s === "Active" ? "warning" : s === "Completed" ? "success" : "primary") : "default"}
-            sx={{ fontWeight: 700, fontSize: "0.72rem" }}
-          />
-        ))}
+        {(["All", "Active", "Completed"] as const).map((s) => {
+          const label =
+            s === "All"
+              ? t("common.all")
+              : s === "Active"
+                ? t("invoices.active")
+                : t("invoices.completed");
+          return (
+            <Chip
+              key={s}
+              size="small"
+              label={label}
+              clickable
+              onClick={() => setStatusFilter(s)}
+              variant={statusFilter === s ? "filled" : "outlined"}
+              color={statusFilter === s ? (s === "Active" ? "warning" : s === "Completed" ? "success" : "primary") : "default"}
+              sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+            />
+          );
+        })}
         {!isSearchMode && listData?.totalItems != null && (
           <Typography variant="caption" color="text.secondary" sx={{ ml: "auto", alignSelf: "center" }}>
-            {listData.totalItems} total
+            {t("invoices.totalCount", { count: listData.totalItems })}
           </Typography>
         )}
       </Box>
@@ -247,6 +257,7 @@ export function ManageLedgerPanel({
   invoice: any;
   onOpenReturn: () => void;
 }) {
+  const { t } = useTranslation();
   if (!invoice)
     return (
       <Box
@@ -293,10 +304,10 @@ export function ManageLedgerPanel({
       >
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            Asset Tracking Board
+            {t("orders.assetTrackingBoard")}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {rawLines.length} line item{rawLines.length !== 1 ? "s" : ""} · INV-{invoice.invoice_id}
+            {t("invoices.lineItem", { count: rawLines.length })} · INV-{invoice.invoice_id}
           </Typography>
         </Box>
         {invoice.status === "Active" && (
@@ -431,21 +442,21 @@ export function ManageLedgerPanel({
                 {/* Timeline */}
                 <Box>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 0.5 }}>
-                    Timeline
+                    {t("orders.timeline")}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    Out: {formatDisplayDate(line.borrow_date)}
+                    {t("orders.out")}: {formatDisplayDate(line.borrow_date)}
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{ fontWeight: 500, color: isOverdue ? "error.main" : "text.primary", display: "flex", alignItems: "center", gap: 0.5 }}
                   >
                     {isOverdue && <AccessTimeIcon sx={{ fontSize: 13 }} />}
-                    Due: {formatDisplayDate(line.expected_return_date)}
+                    {t("orders.due")}: {formatDisplayDate(line.expected_return_date)}
                   </Typography>
                   {isActive && (
                     <Typography variant="caption" color={isOverdue ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
-                      {daysOut} day{daysOut !== 1 ? "s" : ""} out
+                      {t("orders.daysOverdue", { count: daysOut })}
                     </Typography>
                   )}
                 </Box>
@@ -453,17 +464,17 @@ export function ManageLedgerPanel({
                 {/* Qty stats */}
                 <Box>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 0.5 }}>
-                    Quantities
+                    {t("orders.quantities")}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Borrowed: {borrowQty}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{t("orders.borrowed")}: {borrowQty}</Typography>
                   {alreadyReturned > 0 && (
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "success.main" }}>
-                      Returned: {alreadyReturned}
+                      {t("orders.returned")}: {alreadyReturned}
                     </Typography>
                   )}
                   {isActive && (
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>
-                      Pending: {pending}
+                      {t("orders.pending")}: {pending}
                     </Typography>
                   )}
                 </Box>
@@ -479,7 +490,7 @@ export function ManageLedgerPanel({
                 >
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
-                      Cost {isActive ? "to Date" : "Final"}
+                      {t("orders.costFinal")}
                     </Typography>
                     <Chip
                       size="small"
@@ -506,7 +517,7 @@ export function ManageLedgerPanel({
               {lineIterations.length > 0 && (
                 <Box sx={{ bgcolor: "#f8fafc", borderTop: "1px dashed #e2e8f0", p: 2 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}>
-                    Handover History
+                    {t("orders.handoverHistory")}
                   </Typography>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
                     {lineIterations.map((iter: any, i: number) => (
@@ -552,6 +563,7 @@ export function ManageLedgerPanel({
 // rating + note without leaving the manage panel. The composer triggers
 // recomputation of Customer.rating in the backend.
 function InvoiceReviewsSection({ invoiceId }: { invoiceId: number }) {
+  const { t } = useTranslation();
   const { data: reviews = [], isLoading } = useInvoiceReviews(invoiceId);
   return (
     <Box
@@ -568,10 +580,10 @@ function InvoiceReviewsSection({ invoiceId }: { invoiceId: number }) {
     >
       <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b", fontSize: "0.68rem" }}>
-          REVIEWS & FEEDBACK
+          {t("orders.reviewsHeader").toUpperCase()}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          {reviews.length} {reviews.length === 1 ? "entry" : "entries"}
+          {t("invoices.entries", { count: reviews.length })}
         </Typography>
       </Box>
       <ReviewThread invoiceId={invoiceId} reviews={reviews} isLoading={isLoading} />
@@ -597,6 +609,7 @@ export function ManageFinancialPanel({
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }) {
+  const { t } = useTranslation();
   const paymentMutation = useAddPayment();
   const vaultMutation = useToggleVault();
   const updateFeesMutation = useUpdateFees();
@@ -799,7 +812,7 @@ export function ManageFinancialPanel({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: balance > 0 ? "#f87171" : "#4ade80", boxShadow: `0 0 6px ${balance > 0 ? "#f87171" : "#4ade80"}` }} />
           <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 2 }}>
-            FINANCIAL TERMINAL
+            {t("orders.financialTerminal").toUpperCase()}
           </Typography>
         </Box>
         <IconButton onClick={onToggleCollapse} size="small" sx={{ color: "#475569" }}>
@@ -831,7 +844,7 @@ export function ManageFinancialPanel({
           }}
         >
           <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1.5 }}>
-            BALANCE DUE
+            {t("orders.balanceDue").toUpperCase()}
           </Typography>
           <Typography
             variant="h3"
@@ -854,7 +867,7 @@ export function ManageFinancialPanel({
         {/* Payment method selector */}
         <Box>
           <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, display: "block", mb: 1 }}>
-            PAYMENT METHOD
+            {t("orders.paymentMethod").toUpperCase()}
           </Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             {PAYMENT_METHODS.map((m) => (
@@ -917,7 +930,7 @@ export function ManageFinancialPanel({
             disabled={paymentMutation.isPending || balance === 0}
             sx={{ fontWeight: 800, px: 2, borderRadius: 1.5 }}
           >
-            Collect
+            {t("orders.collect")}
           </Button>
           <Button
             variant="outlined"
@@ -949,7 +962,7 @@ export function ManageFinancialPanel({
             sx={{ px: 2.5, py: 1, borderBottom: receiptExpanded ? "1px solid #f1f5f9" : "none" }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
-              <ReceiptLongIcon fontSize="small" /> Receipt Breakdown
+              <ReceiptLongIcon fontSize="small" /> {t("orders.receiptBreakdown")}
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column", gap: 1 }}>
@@ -1055,13 +1068,13 @@ export function ManageFinancialPanel({
             sx={{ px: 2.5, py: 1, borderBottom: timelineExpanded ? "1px solid #f1f5f9" : "none" }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
-              <HistoryIcon fontSize="small" /> Transaction Ledger
+              <HistoryIcon fontSize="small" /> {t("orders.transactionLedger")}
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
             {unifiedLedger.length === 0 ? (
               <Box sx={{ p: 3, textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary">No transactions recorded.</Typography>
+                <Typography variant="body2" color="text.secondary">{t("orders.noTransactions")}</Typography>
               </Box>
             ) : (
               unifiedLedger.map((item, index) => (
@@ -1142,11 +1155,11 @@ export function ManageFinancialPanel({
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
             <SecurityIcon sx={{ fontSize: 16, color: invoice.id_card_status ? "#fde047" : "#475569" }} />
             <Typography variant="body2" sx={{ fontWeight: 700, color: invoice.id_card_status ? "#fde047" : "#94a3b8" }}>
-              Security Vault
+              {t("orders.securityVault")}
             </Typography>
           </Box>
           <Typography variant="caption" sx={{ color: invoice.id_card_status ? "#fde047" : "#64748b", display: "block", mb: 1.5 }}>
-            {invoice.id_card_status ? "Client's ID is locked in the vault." : "ID has been released to client."}
+            {invoice.id_card_status ? t("orders.idInVault") : t("orders.idReleased")}
           </Typography>
           <Button
             fullWidth
@@ -1162,7 +1175,7 @@ export function ManageFinancialPanel({
               ...(!invoice.id_card_status && { bgcolor: "#1e293b", color: "#94a3b8", "&:hover": { bgcolor: "#334155" } }),
             }}
           >
-            {invoice.id_card_status ? "Release ID from Vault" : "Retain ID in Vault"}
+            {invoice.id_card_status ? t("orders.releaseId") : t("orders.retainIdInVault")}
           </Button>
         </Box>
       </Box>

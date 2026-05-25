@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Typography, Tabs, Tab, Paper, useTheme, useMediaQuery } from "@mui/material";
 import type React from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import OverviewTab from "@/features/accounting/components/OverviewTab";
 import InvoicesTab from "@/features/accounting/components/InvoicesTab";
 import PaymentsTab from "@/features/accounting/components/PaymentsTab";
@@ -21,16 +22,18 @@ const ACCOUNTING_TAB_KEYS = [
 ] as const;
 type AccountingTabKey = (typeof ACCOUNTING_TAB_KEYS)[number];
 
-const TAB_CONFIG: { key: AccountingTabKey; label: string; subtitle: string; component: React.ComponentType }[] = [
-  { key: "overview", label: "Overview", subtitle: "Headline KPIs across the ledger", component: OverviewTab },
-  { key: "invoices", label: "Invoices", subtitle: "All issued and active invoices", component: InvoicesTab },
-  { key: "payments", label: "Payments", subtitle: "Inflows and refunds, by method and date", component: PaymentsTab },
-  { key: "expenses", label: "Expenses", subtitle: "Operating, capital and pass-through costs", component: ExpensesTab },
-  { key: "receivables", label: "Receivables", subtitle: "Outstanding customer balances and aging", component: ReceivablesTab },
-  { key: "journal", label: "Journal", subtitle: "Chronological transactional record", component: JournalTab },
+const buildTabConfig = (t: (k: string) => string): { key: AccountingTabKey; label: string; subtitle: string; component: React.ComponentType }[] => [
+  { key: "overview", label: t("accounting.overview"), subtitle: t("accounting.subtitle"), component: OverviewTab },
+  { key: "invoices", label: t("accounting.invoices"), subtitle: t("invoices.title"), component: InvoicesTab },
+  { key: "payments", label: t("accounting.payments"), subtitle: t("accounting.paymentReceived"), component: PaymentsTab },
+  { key: "expenses", label: t("accounting.expenses"), subtitle: t("accounting.expense"), component: ExpensesTab },
+  { key: "receivables", label: t("accounting.receivables"), subtitle: t("accounting.receivables"), component: ReceivablesTab },
+  { key: "journal", label: t("accounting.journal"), subtitle: t("accounting.journal"), component: JournalTab },
 ];
 
 export default function AccountingRoute() {
+  const { t } = useTranslation();
+  const TAB_CONFIG = buildTabConfig(t);
   const { activeTab, setActiveTab } = useReportStore();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: AccountingTabKey };
@@ -60,7 +63,7 @@ export default function AccountingRoute() {
               color: "#64748b",
             }}
           >
-            Accounting
+            {t("accounting.title")}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a", lineHeight: 1.1 }}>
             {label}
@@ -96,6 +99,8 @@ function AccountingWorkstation({
   onTabChange: (_: any, v: number) => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation();
+  const TAB_CONFIG = buildTabConfig(t);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [chartsWidth, setChartsWidth] = useState(isMobile ? 100 : 30);
   const [isResizing, setIsResizing] = useState(false);

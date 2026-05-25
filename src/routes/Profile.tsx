@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Tabs,
@@ -24,29 +25,32 @@ import { NotificationsSection } from "@/features/profile/components/Notification
 import { ActivitySection } from "@/features/profile/components/ActivitySection";
 import { AccessSection } from "@/features/profile/components/AccessSection";
 
-const TABS = [
-  { key: "profile",       label: "Profile",       icon: <PersonIcon fontSize="small" /> },
-  { key: "security",      label: "Security",      icon: <LockResetIcon fontSize="small" /> },
-  { key: "preferences",   label: "Preferences",   icon: <TuneIcon fontSize="small" /> },
-  { key: "notifications", label: "Notifications", icon: <NotificationsActiveIcon fontSize="small" /> },
-  { key: "activity",      label: "Activity",      icon: <TimelineIcon fontSize="small" /> },
-  { key: "access",        label: "Access",        icon: <VerifiedUserIcon fontSize="small" /> },
+const buildTabs = (t: (k: string) => string) => [
+  { key: "profile",       label: t("profile.tabs.profile"),       icon: <PersonIcon fontSize="small" /> },
+  { key: "security",      label: t("profile.tabs.security"),      icon: <LockResetIcon fontSize="small" /> },
+  { key: "preferences",   label: t("profile.tabs.preferences"),   icon: <TuneIcon fontSize="small" /> },
+  { key: "notifications", label: t("profile.tabs.notifications"), icon: <NotificationsActiveIcon fontSize="small" /> },
+  { key: "activity",      label: t("profile.tabs.activity"),      icon: <TimelineIcon fontSize="small" /> },
+  { key: "access",        label: t("profile.tabs.access"),        icon: <VerifiedUserIcon fontSize="small" /> },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+type TabKey = "profile" | "security" | "preferences" | "notifications" | "activity" | "access";
 
 export default function ProfileRoute() {
+  const { t } = useTranslation();
+  const TABS = buildTabs(t);
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: TabKey };
   const me = useMyProfile();
 
   const activeKey: TabKey = useMemo(() => {
     const requested = search.tab;
-    if (requested && TABS.some((t) => t.key === requested)) return requested;
+    if (requested && TABS.some((tb) => tb.key === requested)) return requested;
     return "profile";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.tab]);
 
-  const activeIdx = TABS.findIndex((t) => t.key === activeKey);
+  const activeIdx = TABS.findIndex((tb) => tb.key === activeKey);
 
   const handleTabChange = (_: any, idx: number) => {
     navigate({
@@ -120,8 +124,8 @@ export default function ProfileRoute() {
             "& .MuiTabs-indicator": { height: 3, borderRadius: "3px 3px 0 0" },
           }}
         >
-          {TABS.map((t) => (
-            <Tab key={t.key} icon={t.icon as any} iconPosition="start" label={t.label} />
+          {TABS.map((tab) => (
+            <Tab key={tab.key} icon={tab.icon as any} iconPosition="start" label={tab.label} />
           ))}
         </Tabs>
       </Box>

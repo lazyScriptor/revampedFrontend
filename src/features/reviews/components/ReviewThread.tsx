@@ -22,6 +22,7 @@ import {
   useDeleteReview,
   useUpdateReview,
 } from "@/features/reviews/hooks/useInvoiceReviews";
+import { useTranslation } from "react-i18next";
 
 interface ReviewThreadProps {
   invoiceId: number;
@@ -37,6 +38,7 @@ const STAGE_LABELS: Record<InvoiceReview["stage"], string> = {
 };
 
 export function ReviewThread({ invoiceId, reviews, isLoading }: ReviewThreadProps) {
+  const { t } = useTranslation();
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
@@ -58,8 +60,8 @@ export function ReviewThread({ invoiceId, reviews, isLoading }: ReviewThreadProp
           color: "text.secondary",
         }}
       >
-        <Typography variant="body2">No reviews yet for this invoice.</Typography>
-        <Typography variant="caption">Add the first one below.</Typography>
+        <Typography variant="body2">{t("orders.noReviewsYet")}</Typography>
+        <Typography variant="caption">{t("orders.addFirstReview")}</Typography>
       </Box>
     );
   }

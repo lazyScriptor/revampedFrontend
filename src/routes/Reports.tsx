@@ -10,6 +10,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import PeopleIcon from "@mui/icons-material/People";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
@@ -85,6 +86,7 @@ const CATEGORY_KEYS = CATEGORIES.map((c) => c.key);
 
 export default function ReportsRoute() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { category?: string; report?: string };
@@ -143,7 +145,7 @@ export default function ReportsRoute() {
               color: "#64748b",
             }}
           >
-            Reports
+            {t("nav.reports")}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a", lineHeight: 1.1 }}>
             {category.label}

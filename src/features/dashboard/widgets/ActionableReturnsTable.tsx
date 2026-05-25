@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Box, Typography, Skeleton, Chip, Link, Stack, Tooltip } from "@mui/material";
 import PhoneIcon from "@mui/icons-material/Phone";
 import ReceiptIcon from "@mui/icons-material/Receipt";
@@ -6,13 +7,14 @@ import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlin
 import { useReturnsDueToday } from "@/features/dashboard/hooks/useDashboardHooks";
 import type { ReturnItem } from "@/features/dashboard/types";
 import dayjs from "dayjs";
-import { dashboardTokens as t, dashboardTones } from "../_tokens";
+import { dashboardTokens as dt, dashboardTones } from "../_tokens";
 
 const StatusChip: React.FC<{ days: number }> = ({ days }) => {
+  const { t } = useTranslation();
   if (days <= 0)
     return (
       <Chip
-        label="Due Today"
+        label={t("common.today")}
         size="small"
         sx={{
           bgcolor: dashboardTones.warning.soft,
@@ -26,7 +28,7 @@ const StatusChip: React.FC<{ days: number }> = ({ days }) => {
     );
   return (
     <Chip
-      label={`${days}d overdue`}
+      label={t("orders.daysOverdue", { count: days })}
       size="small"
       sx={{
         bgcolor: dashboardTones.danger.soft,
@@ -41,6 +43,7 @@ const StatusChip: React.FC<{ days: number }> = ({ days }) => {
 };
 
 const ActionableReturnsTable: React.FC = () => {
+  const { t } = useTranslation();
   const { data, isLoading } = useReturnsDueToday();
 
   const customerName = (r: ReturnItem) =>
@@ -63,7 +66,7 @@ const ActionableReturnsTable: React.FC = () => {
         sx={{
           px: 2,
           py: 1.25,
-          borderBottom: `1px solid ${t.color.border}`,
+          borderBottom: `1px solid ${dt.color.border}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -76,7 +79,7 @@ const ActionableReturnsTable: React.FC = () => {
             sx={{
               width: 26,
               height: 26,
-              borderRadius: t.radius.md,
+              borderRadius: dt.radius.md,
               bgcolor: dashboardTones.warning.soft,
               color: dashboardTones.warning.strong,
               display: "flex",
@@ -93,21 +96,21 @@ const ActionableReturnsTable: React.FC = () => {
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
-              color: t.color.foreground,
+              color: dt.color.foreground,
               fontSize: "0.72rem",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
           >
-            Returns Due
+            {t("dashboard.widgets.returnsDue")}
           </Typography>
         </Box>
         {data && (
           <Box sx={{ display: "flex", gap: 0.5 }}>
             {data.overdueCount > 0 && (
               <Chip
-                label={`${data.overdueCount} overdue`}
+                label={`${data.overdueCount} ${t("dashboard.widgets.overdue")}`}
                 size="small"
                 sx={{
                   bgcolor: dashboardTones.danger.soft,
@@ -120,7 +123,7 @@ const ActionableReturnsTable: React.FC = () => {
               />
             )}
             <Chip
-              label={`${data.total} total`}
+              label={`${data.total} ${t("dashboard.widgets.total")}`}
               size="small"
               sx={{
                 bgcolor: dashboardTones.slate.soft,
@@ -144,15 +147,15 @@ const ActionableReturnsTable: React.FC = () => {
           // Slim scrollbar
           "&::-webkit-scrollbar": { width: 6 },
           "&::-webkit-scrollbar-thumb": {
-            background: t.color.border,
+            background: dt.color.border,
             borderRadius: 99,
           },
-          "&::-webkit-scrollbar-thumb:hover": { background: t.color.borderStrong },
+          "&::-webkit-scrollbar-thumb:hover": { background: dt.color.borderStrong },
         }}
       >
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={56} sx={{ borderRadius: t.radius.md, mb: 0.75 }} />
+            <Skeleton key={i} variant="rectangular" height={56} sx={{ borderRadius: dt.radius.md, mb: 0.75 }} />
           ))
         ) : data?.items.length === 0 ? (
           <Box
@@ -180,10 +183,10 @@ const ActionableReturnsTable: React.FC = () => {
             >
               <EventAvailableOutlinedIcon sx={{ fontSize: 22 }} />
             </Box>
-            <Typography variant="body2" sx={{ color: t.color.foreground, fontWeight: 700 }}>
+            <Typography variant="body2" sx={{ color: dt.color.foreground, fontWeight: 700 }}>
               All clear
             </Typography>
-            <Typography variant="caption" sx={{ color: t.color.foregroundFaint }}>
+            <Typography variant="caption" sx={{ color: dt.color.foregroundFaint }}>
               No returns due today
             </Typography>
           </Box>
@@ -201,12 +204,12 @@ const ActionableReturnsTable: React.FC = () => {
                   px: 1.25,
                   py: 1,
                   mb: 0.5,
-                  borderRadius: t.radius.md,
+                  borderRadius: dt.radius.md,
                   borderLeft: `3px solid ${overdue ? dashboardTones.danger.strong : dashboardTones.warning.strong}`,
-                  bgcolor: overdue ? `${dashboardTones.danger.soft}66` : t.color.surface,
-                  transition: `background-color ${t.motion.fast}`,
+                  bgcolor: overdue ? `${dashboardTones.danger.soft}66` : dt.color.surface,
+                  transition: `background-color ${dt.motion.fast}`,
                   "&:hover": {
-                    bgcolor: t.color.surfaceMuted,
+                    bgcolor: dt.color.surfaceMuted,
                   },
                 }}
               >
@@ -216,7 +219,7 @@ const ActionableReturnsTable: React.FC = () => {
                       variant="body2"
                       sx={{
                         fontWeight: 700,
-                        color: t.color.foreground,
+                        color: dt.color.foreground,
                         fontSize: "0.78rem",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
@@ -231,7 +234,7 @@ const ActionableReturnsTable: React.FC = () => {
                   <Typography
                     variant="caption"
                     sx={{
-                      color: t.color.foregroundMuted,
+                      color: dt.color.foregroundMuted,
                       fontSize: "0.72rem",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -240,7 +243,7 @@ const ActionableReturnsTable: React.FC = () => {
                   >
                     {item.equipment_name} · qty {item.borrow_quantity}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: t.color.foregroundFaint, fontSize: "0.68rem" }}>
+                  <Typography variant="caption" sx={{ color: dt.color.foregroundFaint, fontSize: "0.68rem" }}>
                     Expected {dayjs(item.expected_return_date).format("D MMM YYYY")}
                   </Typography>
                 </Stack>
@@ -255,9 +258,9 @@ const ActionableReturnsTable: React.FC = () => {
                           justifyContent: "center",
                           width: 30,
                           height: 30,
-                          borderRadius: t.radius.sm,
+                          borderRadius: dt.radius.sm,
                           color: dashboardTones.primary.strong,
-                          transition: `background-color ${t.motion.fast}, color ${t.motion.fast}`,
+                          transition: `background-color ${dt.motion.fast}, color ${dt.motion.fast}`,
                           "&:hover": {
                             bgcolor: dashboardTones.primary.soft,
                             color: dashboardTones.primary.on,
@@ -278,9 +281,9 @@ const ActionableReturnsTable: React.FC = () => {
                           justifyContent: "center",
                           width: 30,
                           height: 30,
-                          borderRadius: t.radius.sm,
+                          borderRadius: dt.radius.sm,
                           color: dashboardTones.accent.strong,
-                          transition: `background-color ${t.motion.fast}, color ${t.motion.fast}`,
+                          transition: `background-color ${dt.motion.fast}, color ${dt.motion.fast}`,
                           "&:hover": {
                             bgcolor: dashboardTones.accent.soft,
                             color: dashboardTones.accent.on,

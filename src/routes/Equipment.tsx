@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { useEquipmentList } from "@/features/equipment/hooks/useEquipmentHooks";
 import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
@@ -48,6 +49,7 @@ type AvailabilityKey = "all" | "in_stock" | "rented" | "in_repair";
 
 export default function EquipmentRoute() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
@@ -154,10 +156,10 @@ export default function EquipmentRoute() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Typography variant="h4" fontWeight="bold" color="text.primary">
-            Equipment Inventory
+            {t("equipment.title")}
           </Typography>
           <Typography variant="body2" color="text.secondary" className="mt-1">
-            Manage your rental assets, track availability, and monitor maintenance.
+            {t("equipment.subtitle")}
           </Typography>
         </div>
         <Button
@@ -167,7 +169,7 @@ export default function EquipmentRoute() {
           disableElevation
           sx={{ py: 1.5, px: 3, borderRadius: 2 }}
         >
-          Add Equipment
+          {t("equipment.addEquipment")}
         </Button>
       </div>
 
@@ -181,7 +183,7 @@ export default function EquipmentRoute() {
               </div>
               <div>
                 <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  Total Assets
+                  {t("equipment.totalAssets")}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold">{totalRowCount}</Typography>
               </div>
@@ -196,10 +198,10 @@ export default function EquipmentRoute() {
               </div>
               <div>
                 <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  Available for Rent
+                  {t("equipment.availableForRent")}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold" color="success.dark">
-                  {globalStats?.available || 0} Units
+                  {globalStats?.available || 0} {t("equipment.units")}
                 </Typography>
               </div>
             </CardContent>
@@ -213,10 +215,10 @@ export default function EquipmentRoute() {
               </div>
               <div>
                 <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  In Maintenance
+                  {t("equipment.inMaintenance")}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold" color="warning.dark">
-                  {globalStats?.maintenance || 0} Units
+                  {globalStats?.maintenance || 0} {t("equipment.units")}
                 </Typography>
               </div>
             </CardContent>
@@ -239,7 +241,7 @@ export default function EquipmentRoute() {
       >
         <TextField
           size="small"
-          placeholder="Search name or serial number…"
+          placeholder={t("equipment.searchPlaceholder")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           sx={{ minWidth: { xs: "100%", sm: 300 } }}
@@ -283,7 +285,7 @@ export default function EquipmentRoute() {
             },
           }}
         >
-          <MenuItem value="">All categories</MenuItem>
+          <MenuItem value="">{t("equipment.allCategories")}</MenuItem>
           {categories.map((c: any) => (
             <MenuItem key={c.category_id} value={c.category_id}>
               {c.category_name}
@@ -304,14 +306,14 @@ export default function EquipmentRoute() {
               mr: 0.25,
             }}
           >
-            Availability
+            {t("equipment.availability")}
           </Typography>
           {(
             [
-              { value: "all", label: "All", color: theme.palette.primary.main },
-              { value: "in_stock", label: "In stock", color: theme.palette.success.main },
-              { value: "rented", label: "Rented", color: theme.palette.info.main },
-              { value: "in_repair", label: "In repair", color: theme.palette.warning.main },
+              { value: "all", label: t("common.all"), color: theme.palette.primary.main },
+              { value: "in_stock", label: t("equipment.inStock"), color: theme.palette.success.main },
+              { value: "rented", label: t("equipment.rented"), color: theme.palette.info.main },
+              { value: "in_repair", label: t("equipment.inRepair"), color: theme.palette.warning.main },
             ] as const
           ).map((opt) => {
             const active = availability === opt.value;

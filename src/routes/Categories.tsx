@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
 import { CategoryTable } from "@/features/equipment/components/CategoryTable";
 import { CategoryFormDrawer } from "@/features/equipment/components/CategoryFormDrawer";
@@ -15,6 +16,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ClassIcon from "@mui/icons-material/Class";
 
 export default function CategoriesRoute() {
+  const { t } = useTranslation();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
 
@@ -71,10 +73,10 @@ export default function CategoriesRoute() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Typography variant="h4" fontWeight="bold" color="text.primary">
-            Equipment Categories
+            {t("nav.categories")}
           </Typography>
           <Typography variant="body2" color="text.secondary" className="mt-1">
-            Organize your inventory into logical groupings.
+            {t("equipment.subtitle")}
           </Typography>
         </div>
         <Button
@@ -84,7 +86,7 @@ export default function CategoriesRoute() {
           disableElevation
           sx={{ py: 1.5, px: 3, borderRadius: 2 }}
         >
-          Add Category
+          {t("common.add")} {t("nav.categories")}
         </Button>
       </div>
 

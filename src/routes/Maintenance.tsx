@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Typography,
@@ -97,6 +98,7 @@ const KpiCard = ({
 );
 
 export default function MaintenanceRoute() {
+  const { t } = useTranslation();
   const { data: defects = [], isLoading: defectsLoading } = useDefectList();
   const { data: technicians = [] } = useTechnicianRoster();
   const assignMutation = useAssignTechnician();
@@ -269,10 +271,10 @@ export default function MaintenanceRoute() {
             gutterBottom
             sx={{ fontSize: { xs: "1.5rem", md: "2.125rem" } }}
           >
-            Workshop Command Center
+            {t("maintenance.title")}
           </Typography>
           <Typography color="text.secondary" variant="body1">
-            Allocate technicians, log partial repairs, and monitor fleet health.
+            {t("maintenance.subtitle")}
           </Typography>
         </Box>
         <Button
@@ -280,7 +282,7 @@ export default function MaintenanceRoute() {
           startIcon={<AssessmentIcon />}
           sx={{ bgcolor: "white", alignSelf: { xs: "flex-start", sm: "auto" } }}
         >
-          Export Report
+          {t("reports.exportPdf")}
         </Button>
       </Box>
 

@@ -16,20 +16,21 @@ import {
   useCreateReview,
   ReviewStage,
 } from "@/features/reviews/hooks/useInvoiceReviews";
+import { useTranslation } from "react-i18next";
 
 interface ReviewComposerProps {
   invoiceId: number;
   onCreated?: () => void;
 }
 
-const STAGES: { value: ReviewStage; label: string }[] = [
-  { value: "handover", label: "Handover" },
-  { value: "return", label: "Return" },
-  { value: "followup", label: "Follow-up" },
-  { value: "adhoc", label: "Ad-hoc" },
-];
-
 export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
+  const { t } = useTranslation();
+  const STAGES: { value: ReviewStage; label: string }[] = [
+    { value: "handover", label: t("orders.stageHandover") },
+    { value: "return", label: t("orders.stageReturn") },
+    { value: "followup", label: t("orders.stageFollowup") },
+    { value: "adhoc", label: t("orders.stageAdhoc") },
+  ];
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [stage, setStage] = useState<ReviewStage>("return");
@@ -67,7 +68,7 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
       }}
     >
       <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: 0.5, textTransform: "uppercase" }}>
-        Add a review
+        {t("orders.addReview")}
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "row", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
@@ -80,7 +81,7 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
         <TextField
           select
           size="small"
-          label="Stage"
+          label={t("orders.stage")}
           value={stage}
           onChange={(e) => setStage(e.target.value as ReviewStage)}
           sx={{ minWidth: 140 }}
@@ -91,7 +92,7 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
         </TextField>
         <FormControlLabel
           control={<Switch checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} size="small" />}
-          label={<Typography variant="caption">Primary (averages into customer rating)</Typography>}
+          label={<Typography variant="caption">{t("orders.primaryHint")}</Typography>}
         />
       </Box>
 
@@ -99,7 +100,7 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
         size="small"
         multiline
         minRows={2}
-        placeholder="What happened on this rental? Late return, damaged unit, smooth pickup…"
+        placeholder={t("orders.reviewPlaceholder")}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
@@ -120,7 +121,7 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
           onClick={submit}
           sx={{ borderRadius: 2, textTransform: "none", fontWeight: 700 }}
         >
-          {isPending ? "Saving…" : "Save review"}
+          {isPending ? t("common.saving") : t("orders.saveReview")}
         </Button>
       </Box>
     </Box>

@@ -23,6 +23,7 @@ import ImageIcon from "@mui/icons-material/Image";
 
 import { useDeleteEquipment } from "../hooks/useEquipmentHooks";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 interface EquipmentTableProps {
   data: any[];
@@ -41,6 +42,7 @@ export function EquipmentTable({
   onPaginationModelChange,
   onEdit, // <--- ADD THIS RIGHT HERE
 }: EquipmentTableProps) {
+  const { t } = useTranslation();
   const deleteMutation = useDeleteEquipment();
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -54,10 +56,10 @@ export function EquipmentTable({
   // 🚀 THE COMPREHENSIVE COLUMN LIST
   const columns: GridColDef[] = [
     // --- Identifiers & Media ---
-    { field: "equipment_id", headerName: "ID", width: 70 },
+    { field: "equipment_id", headerName: t("invoices.invoiceId"), width: 70 },
     {
       field: "image_url",
-      headerName: "Image",
+      headerName: t("equipment.image"),
       width: 70,
       sortable: false,
       renderCell: (params) => (
@@ -74,13 +76,13 @@ export function EquipmentTable({
     },
     {
       field: "serial_number",
-      headerName: "SKU / Serial",
+      headerName: t("equipment.sku"),
       width: 140,
       fontWeight: "bold",
     },
     {
       field: "equipment_name",
-      headerName: "Equipment Name",
+      headerName: t("equipment.equipmentName"),
       flex: 1,
       minWidth: 200,
     },
@@ -88,14 +90,14 @@ export function EquipmentTable({
     // --- Relationships ---
     {
       field: "category",
-      headerName: "Category",
+      headerName: t("common.category"),
       width: 150,
       valueGetter: (value, row) =>
         row?.EquipmentCategory?.category_name || "N/A",
     },
     {
       field: "warehouse",
-      headerName: "Location",
+      headerName: t("equipment.location"),
       width: 160,
       valueGetter: (value, row) => row?.Warehouse?.location_name || "N/A",
     },
@@ -103,7 +105,7 @@ export function EquipmentTable({
     // --- Pricing ---
     {
       field: "base_rental_price",
-      headerName: "Daily Rate",
+      headerName: t("equipment.dailyRate"),
       width: 110,
       renderCell: (params) => (
         <span className="font-medium">
@@ -113,7 +115,7 @@ export function EquipmentTable({
     },
     {
       field: "extra_daily_rate",
-      headerName: "Extra/Overdue Rate",
+      headerName: t("equipment.extraDailyRate"),
       width: 150,
       renderCell: (params) => (
         <span>${Number(params.value || 0).toFixed(2)}</span>
@@ -121,13 +123,13 @@ export function EquipmentTable({
     },
     {
       field: "minimum_rental_days",
-      headerName: "Min Days",
+      headerName: t("equipment.minRentalDays"),
       width: 100,
       type: "number",
     },
     {
       field: "purchase_cost",
-      headerName: "Purchase Cost",
+      headerName: t("equipment.purchaseCost"),
       width: 130,
       renderCell: (params) =>
         params.value ? `$${Number(params.value).toFixed(2)}` : "N/A",
@@ -136,14 +138,14 @@ export function EquipmentTable({
     // --- Inventory Quantities ---
     {
       field: "total_owned_qty",
-      headerName: "Total Qty",
+      headerName: t("equipment.totalOwned"),
       width: 100,
       type: "number",
     },
-    { field: "rented_qty", headerName: "Rented", width: 100, type: "number" },
+    { field: "rented_qty", headerName: t("equipment.rented"), width: 100, type: "number" },
     {
       field: "available_qty",
-      headerName: "Available",
+      headerName: t("equipment.availableQty"),
       width: 100,
       type: "number",
       renderCell: (params) => (
@@ -152,7 +154,7 @@ export function EquipmentTable({
     },
     {
       field: "is_bulk_item",
-      headerName: "Bulk Item",
+      headerName: t("equipment.isBulkItem"),
       width: 100,
       type: "boolean",
     },
@@ -160,19 +162,19 @@ export function EquipmentTable({
     // --- Warranty & Dates ---
     {
       field: "warranty_period_months",
-      headerName: "Warranty (Mo)",
+      headerName: t("equipment.warrantyMonths"),
       width: 120,
       type: "number",
     },
     {
       field: "end_of_warranty_date",
-      headerName: "Warranty Expiry",
+      headerName: t("equipment.endOfWarranty"),
       width: 140,
       valueFormatter: (value) => (value ? formatDisplayDate(value) : "N/A"),
     },
     {
       field: "createdAt",
-      headerName: "Date Added",
+      headerName: t("common.createdAt"),
       width: 120,
       valueFormatter: (value) => (value ? formatDisplayDate(value) : "N/A"),
     },
@@ -180,13 +182,13 @@ export function EquipmentTable({
     // --- Status & Actions ---
     {
       field: "status",
-      headerName: "Status",
+      headerName: t("common.status"),
       width: 130,
       renderCell: (params) => {
         const isAvailable = params.row.available_qty > 0;
         return (
           <Chip
-            label={isAvailable ? "Available" : "Out of Stock"}
+            label={isAvailable ? t("common.available") : t("equipment.outOfStock")}
             color={isAvailable ? "success" : "warning"}
             size="small"
             variant="filled"
@@ -197,14 +199,14 @@ export function EquipmentTable({
     },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: t("common.actions"),
       width: 100,
       sortable: false,
       filterable: false,
       pinned: "right", // Pins the actions to the right side
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
-          <Tooltip title="Edit Item">
+          <Tooltip title={t("common.edit")}>
             <IconButton
               size="small"
               color="primary"
@@ -213,7 +215,7 @@ export function EquipmentTable({
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Item">
+          <Tooltip title={t("common.delete")}>
             <IconButton
               size="small"
               color="error"

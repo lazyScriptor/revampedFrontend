@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, Typography, Skeleton, Chip } from "@mui/material";
 import {
   BarChart,
@@ -11,7 +12,7 @@ import {
 } from "recharts";
 import { useDashboardKPIs } from "@/features/dashboard/hooks/useDashboardHooks";
 import dayjs from "dayjs";
-import { dashboardTokens as t, dashboardTones } from "../_tokens";
+import { dashboardTokens as dt, dashboardTones } from "../_tokens";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("en-US", {
@@ -29,6 +30,7 @@ const fmtFull = (v: number) =>
   }).format(v);
 
 const RevenueTrendChart: React.FC = () => {
+  const { t } = useTranslation();
   const { data, isLoading } = useDashboardKPIs();
 
   const chartData = useMemo(
@@ -67,7 +69,7 @@ const RevenueTrendChart: React.FC = () => {
           <Typography
             variant="caption"
             sx={{
-              color: t.color.foregroundMuted,
+              color: dt.color.foregroundMuted,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
@@ -75,14 +77,14 @@ const RevenueTrendChart: React.FC = () => {
               lineHeight: 1.4,
             }}
           >
-            Revenue Trend · last 30 days
+            {t("dashboard.widgets.revenueTrend")} · {t("dashboard.widgets.lastNDays", { count: 30 })}
           </Typography>
           {!isLoading && (
             <Typography
               sx={{
                 fontSize: "1.25rem",
                 fontWeight: 800,
-                color: t.color.foreground,
+                color: dt.color.foreground,
                 lineHeight: 1.2,
                 mt: 0.25,
                 fontVariantNumeric: "tabular-nums",
@@ -127,10 +129,10 @@ const RevenueTrendChart: React.FC = () => {
                   <stop offset="100%" stopColor={dashboardTones.primary.strong} stopOpacity={0.55} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 4" stroke={t.color.border} vertical={false} />
+              <CartesianGrid strokeDasharray="3 4" stroke={dt.color.border} vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 10, fill: t.color.foregroundFaint }}
+                tick={{ fontSize: 10, fill: dt.color.foregroundFaint }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
@@ -138,7 +140,7 @@ const RevenueTrendChart: React.FC = () => {
               />
               <YAxis
                 tickFormatter={fmt}
-                tick={{ fontSize: 10, fill: t.color.foregroundFaint }}
+                tick={{ fontSize: 10, fill: dt.color.foregroundFaint }}
                 tickLine={false}
                 axisLine={false}
                 width={52}
@@ -146,15 +148,15 @@ const RevenueTrendChart: React.FC = () => {
               <Tooltip
                 cursor={{ fill: dashboardTones.primary.soft, opacity: 0.4 }}
                 formatter={(v) => [fmtFull(Number(v)), "Revenue"]}
-                labelStyle={{ fontSize: 11, color: t.color.foreground, fontWeight: 700 }}
+                labelStyle={{ fontSize: 11, color: dt.color.foreground, fontWeight: 700 }}
                 contentStyle={{
                   fontSize: 11,
-                  border: `1px solid ${t.color.border}`,
+                  border: `1px solid ${dt.color.border}`,
                   borderRadius: 8,
-                  boxShadow: t.shadow.md,
+                  boxShadow: dt.shadow.md,
                   padding: "6px 10px",
                 }}
-                itemStyle={{ color: t.color.foreground, fontWeight: 600 }}
+                itemStyle={{ color: dt.color.foreground, fontWeight: 600 }}
               />
               <Bar dataKey="revenue" fill="url(#revBarFill)" radius={[4, 4, 0, 0]} maxBarSize={28} />
             </BarChart>
@@ -167,13 +169,13 @@ const RevenueTrendChart: React.FC = () => {
         <Typography
           variant="caption"
           sx={{
-            color: t.color.foregroundFaint,
+            color: dt.color.foregroundFaint,
             fontSize: "0.68rem",
             mt: 0.5,
             fontWeight: 500,
           }}
         >
-          Peak day · {fmtFull(peak)}
+          {t("dashboard.widgets.peakDay", { value: fmtFull(peak) })}
         </Typography>
       )}
     </Box>
