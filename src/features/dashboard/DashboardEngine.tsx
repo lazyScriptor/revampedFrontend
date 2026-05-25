@@ -1,6 +1,7 @@
 import React, { Suspense, useMemo } from "react";
 import { Box, Skeleton, Button, Typography } from "@mui/material";
 import { DragIndicator, Settings, Close } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { dashboardTokens as dt } from "./_tokens";
 import {
   ResponsiveGridLayout,
@@ -42,6 +43,7 @@ const today = () =>
   });
 
 const DashboardEngine: React.FC = () => {
+  const { t } = useTranslation();
   const { isLoading: configLoading } = useDashboardConfig();
 
   const layout = useDashboardStore((s) => s.layout);
@@ -207,7 +209,9 @@ const DashboardEngine: React.FC = () => {
               letterSpacing: "-0.01em",
             }}
           >
-            {userDisplayName ? `Welcome back, ${userDisplayName}` : "Dashboard"}
+            {userDisplayName
+              ? t("dashboard.welcomeBackName", { name: userDisplayName })
+              : t("dashboard.title")}
           </Typography>
           <Typography
             variant="caption"
@@ -256,7 +260,7 @@ const DashboardEngine: React.FC = () => {
             transition: dt.motion.base,
           }}
         >
-          {isEditMode ? "Done editing" : "Customize"}
+          {isEditMode ? t("dashboard.doneEditing") : t("dashboard.customize")}
         </Button>
       </Box>
 

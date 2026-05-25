@@ -3,6 +3,7 @@ import { createRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@
 import { Route as rootRoute } from "./__root";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUiStore } from "@/stores/useUiStore";
+import { useTranslation } from "react-i18next";
 
 // MUI Imports
 import { styled, useTheme, Theme, CSSObject } from "@mui/material/styles";
@@ -130,6 +131,7 @@ export const authenticatedRoute = createRoute({
 function AuthenticatedLayout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -159,12 +161,14 @@ function AuthenticatedLayout() {
 
   type NavChild = {
     text: string;
+    label?: string; // Translated display label; falls back to `text`
     path: string;
     icon?: React.ReactNode;
     search?: Record<string, string>;
   };
   type NavItem = {
     text: string;
+    label?: string; // Translated display label; falls back to `text`
     icon: React.ReactNode;
     path?: string;
     search?: Record<string, string>;
@@ -172,182 +176,92 @@ function AuthenticatedLayout() {
     children?: NavChild[];
   };
 
-  // 1. Updated Nav Items with distinct icons and nested children
+  // 1. Updated Nav Items with distinct icons and nested children. Labels are
+  // resolved via t(...) so the sidebar respects the active language. Each
+  // parent's `text` is also the openMenus key — we keep it stable in English
+  // ("Inventory", "Accounting", …) and only translate the display label.
   const allNavItems: NavItem[] = [
-    { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
+    { text: "Dashboard", label: t("nav.dashboard"), icon: <DashboardIcon />, path: "/dashboard" },
     {
       text: "Inventory",
+      label: t("nav.inventory"),
       icon: <InventoryIcon />,
       requiredPermission: "inventory_permission",
       children: [
-        {
-          text: "All Equipment",
-          path: "/equipment",
-          icon: <ConstructionIcon fontSize="small" />,
-        },
-        {
-          text: "Categories",
-          path: "/equipment-category",
-          icon: <CategoryIcon fontSize="small" />,
-        },
-        {
-          text: "Maintenance",
-          path: "/maintenance",
-          icon: <HandymanIcon fontSize="small" />,
-        },
+        { text: "All Equipment", label: t("nav.allEquipment"), path: "/equipment", icon: <ConstructionIcon fontSize="small" /> },
+        { text: "Categories", label: t("nav.categories"), path: "/equipment-category", icon: <CategoryIcon fontSize="small" /> },
+        { text: "Maintenance", label: t("nav.maintenance"), path: "/maintenance", icon: <HandymanIcon fontSize="small" /> },
       ],
     },
     {
       text: "Customers",
+      label: t("nav.customers"),
       icon: <PeopleIcon />,
       path: "/customers",
       requiredPermission: "inventory_permission",
     },
     {
       text: "Invoices",
+      label: t("nav.invoices"),
       icon: <ReceiptIcon />,
       path: "/invoices",
-      // Sidebar entry routes to the management workbench (existing orders),
-      // dispatch creation stays accessible via the in-page mode toggle.
       search: { mode: "manage" },
       requiredPermission: "inventory_permission",
     },
     {
       text: "Data Arena",
+      label: t("nav.dataArena"),
       icon: <StorageIcon />,
       requiredPermission: "inventory_permission",
       children: [
-        {
-          text: "Imports",
-          path: "/data-arena",
-          search: { section: "imports" },
-          icon: <UploadFileIcon fontSize="small" />,
-        },
-        {
-          text: "Exports",
-          path: "/data-arena",
-          search: { section: "exports" },
-          icon: <FileDownloadIcon fontSize="small" />,
-        },
-        {
-          text: "Bulk Actions",
-          path: "/data-arena",
-          search: { section: "bulk" },
-          icon: <PlaylistAddCheckIcon fontSize="small" />,
-        },
-        {
-          text: "Downloads",
-          path: "/data-arena",
-          search: { section: "downloads" },
-          icon: <FolderZipIcon fontSize="small" />,
-        },
-        {
-          text: "Job History",
-          path: "/data-arena",
-          search: { section: "jobs" },
-          icon: <HistoryIcon fontSize="small" />,
-        },
+        { text: "Imports", label: t("nav.imports"), path: "/data-arena", search: { section: "imports" }, icon: <UploadFileIcon fontSize="small" /> },
+        { text: "Exports", label: t("nav.exports"), path: "/data-arena", search: { section: "exports" }, icon: <FileDownloadIcon fontSize="small" /> },
+        { text: "Bulk Actions", label: t("nav.bulkActions"), path: "/data-arena", search: { section: "bulk" }, icon: <PlaylistAddCheckIcon fontSize="small" /> },
+        { text: "Downloads", label: t("nav.downloads"), path: "/data-arena", search: { section: "downloads" }, icon: <FolderZipIcon fontSize="small" /> },
+        { text: "Job History", label: t("nav.jobHistory"), path: "/data-arena", search: { section: "jobs" }, icon: <HistoryIcon fontSize="small" /> },
       ],
     },
     {
       text: "Workforce",
+      label: t("nav.workforce"),
       icon: <BadgeIcon />,
       path: "/workforce",
       requiredPermission: "workforce:view",
     },
     {
       text: "Accounting",
+      label: t("nav.accounting"),
       icon: <AccountBalanceIcon />,
       requiredPermission: "inventory_permission",
       children: [
-        {
-          text: "Overview",
-          path: "/accounting",
-          search: { tab: "overview" },
-          icon: <DashboardCustomizeIcon fontSize="small" />,
-        },
-        {
-          text: "Invoices",
-          path: "/accounting",
-          search: { tab: "invoices" },
-          icon: <ReceiptIcon fontSize="small" />,
-        },
-        {
-          text: "Payments",
-          path: "/accounting",
-          search: { tab: "payments" },
-          icon: <PaidIcon fontSize="small" />,
-        },
-        {
-          text: "Expenses",
-          path: "/accounting",
-          search: { tab: "expenses" },
-          icon: <MoneyOffIcon fontSize="small" />,
-        },
-        {
-          text: "Receivables",
-          path: "/accounting",
-          search: { tab: "receivables" },
-          icon: <AccountBalanceWalletIcon fontSize="small" />,
-        },
-        {
-          text: "Journal",
-          path: "/accounting",
-          search: { tab: "journal" },
-          icon: <MenuBookIcon fontSize="small" />,
-        },
+        { text: "Overview", label: t("nav.overview"), path: "/accounting", search: { tab: "overview" }, icon: <DashboardCustomizeIcon fontSize="small" /> },
+        { text: "Invoices", label: t("nav.invoices"), path: "/accounting", search: { tab: "invoices" }, icon: <ReceiptIcon fontSize="small" /> },
+        { text: "Payments", label: t("nav.payments"), path: "/accounting", search: { tab: "payments" }, icon: <PaidIcon fontSize="small" /> },
+        { text: "Expenses", label: t("nav.expenses"), path: "/accounting", search: { tab: "expenses" }, icon: <MoneyOffIcon fontSize="small" /> },
+        { text: "Receivables", label: t("nav.receivables"), path: "/accounting", search: { tab: "receivables" }, icon: <AccountBalanceWalletIcon fontSize="small" /> },
+        { text: "Journal", label: t("nav.journal"), path: "/accounting", search: { tab: "journal" }, icon: <MenuBookIcon fontSize="small" /> },
       ],
     },
     {
       text: "Reports",
+      label: t("nav.reports"),
       icon: <AssessmentIcon />,
       requiredPermission: "inventory_permission",
       children: [
-        {
-          text: "Customers",
-          path: "/reports",
-          search: { category: "customers" },
-          icon: <PeopleIcon fontSize="small" />,
-        },
-        {
-          text: "Equipment",
-          path: "/reports",
-          search: { category: "equipment" },
-          icon: <ConstructionIcon fontSize="small" />,
-        },
-        {
-          text: "Invoices",
-          path: "/reports",
-          search: { category: "invoices" },
-          icon: <ReceiptIcon fontSize="small" />,
-        },
-        {
-          text: "Financials",
-          path: "/reports",
-          search: { category: "financials" },
-          icon: <PieChartIcon fontSize="small" />,
-        },
+        { text: "Customers", label: t("nav.customers"), path: "/reports", search: { category: "customers" }, icon: <PeopleIcon fontSize="small" /> },
+        { text: "Equipment", label: t("nav.equipment"), path: "/reports", search: { category: "equipment" }, icon: <ConstructionIcon fontSize="small" /> },
+        { text: "Invoices", label: t("nav.invoices"), path: "/reports", search: { category: "invoices" }, icon: <ReceiptIcon fontSize="small" /> },
+        { text: "Financials", label: t("nav.financials"), path: "/reports", search: { category: "financials" }, icon: <PieChartIcon fontSize="small" /> },
       ],
     },
     {
       text: "User Configuration",
+      label: t("nav.userConfig"),
       icon: <AdminPanelSettingsIcon />,
       children: [
-        {
-          text: "Users",
-          path: "/admin/users",
-          icon: <PeopleIcon fontSize="small" />,
-        },
-        {
-          text: "Roles",
-          path: "/admin/roles",
-          icon: <AdminPanelSettingsIcon fontSize="small" />,
-        },
-        {
-          text: "Permissions",
-          path: "/permissions",
-          icon: <SecurityIcon fontSize="small" />,
-        },
+        { text: "Users", label: t("nav.users"), path: "/admin/users", icon: <PeopleIcon fontSize="small" /> },
+        { text: "Roles", label: t("nav.roles"), path: "/admin/roles", icon: <AdminPanelSettingsIcon fontSize="small" /> },
+        { text: "Permissions", label: t("nav.permissions"), path: "/permissions", icon: <SecurityIcon fontSize="small" /> },
       ],
     },
   ];
@@ -438,7 +352,7 @@ function AuthenticatedLayout() {
                         {item.icon}
                       </ListItemIcon>
                       <ListItemText
-                        primary={item.text}
+                        primary={item.label || item.text}
                         sx={{ opacity: isSidebarOpen ? 1 : 0 }}
                         primaryTypographyProps={{ fontWeight: 500 }}
                       />
@@ -513,7 +427,7 @@ function AuthenticatedLayout() {
                           )}
                         </ListItemIcon>
                         <ListItemText
-                          primary={child.text}
+                          primary={child.label || child.text}
                           primaryTypographyProps={{
                             fontSize: "0.875rem",
                             fontWeight: 500,

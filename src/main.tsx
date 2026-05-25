@@ -15,6 +15,23 @@ import { ToastProvider } from "@/components/ui/AppToast";
 import { useAuthStore } from "@/stores/useAuthStore";
 import './index.css'; // Make sure Tailwind is imported here!
 
+// Initialize i18next BEFORE the first render so the very first paint already
+// has the right pack (en/si). Side-effect import — its default export sets up
+// the global i18n instance.
+import "@/i18n";
+import { syncLanguageFromAuth } from "@/i18n";
+
+// If the user was already authenticated from a previous session (zustand
+// persisted), apply their saved language preference right away. Without this,
+// a returning user would see the browser-detected default for a frame.
+(() => {
+  const u = useAuthStore.getState().user;
+  if (u) {
+    const tenantDefault = (u.configData as any)?.tenant_default_language ?? null;
+    syncLanguageFromAuth(u.language ?? null, tenantDefault).catch(() => {});
+  }
+})();
+
 // When silent refresh fails (refresh token expired/invalid), log out cleanly.
 // The api layer dispatches this; we centralize the response here.
 window.addEventListener('auth:unauthorized', () => {

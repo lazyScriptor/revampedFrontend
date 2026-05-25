@@ -1,9 +1,11 @@
 import React from "react";
 import { Box, Typography, Switch, Divider, IconButton, Drawer } from "@mui/material";
 import { Close } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 import { useDashboardStore } from "@/stores/useDashboardStore";
 
 const EditModePanel: React.FC = () => {
+  const { t } = useTranslation();
   const isPanelOpen = useDashboardStore((s) => s.isPanelOpen);
   const closePanel = useDashboardStore((s) => s.closePanel);
   const layout = useDashboardStore((s) => s.layout);
@@ -43,10 +45,10 @@ const EditModePanel: React.FC = () => {
       <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", lineHeight: 1.3 }}>
-            Customize Dashboard
+            {t("dashboard.customizeDashboard")}
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Toggle modules on or off
+            {t("dashboard.toggleModules")}
           </Typography>
         </Box>
         <IconButton
@@ -64,7 +66,7 @@ const EditModePanel: React.FC = () => {
         variant="overline"
         sx={{ color: "text.disabled", letterSpacing: 1.2, fontSize: "0.65rem", fontWeight: 600 }}
       >
-        Available Modules
+        {t("dashboard.availableModules")}
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1.5 }}>
@@ -104,7 +106,7 @@ const EditModePanel: React.FC = () => {
                   variant="caption"
                   sx={{ color: isEnabled ? "primary.main" : "text.disabled", display: "block", fontSize: "0.7rem" }}
                 >
-                  {widget.default_w >= 2 ? "Half width" : "Quarter width"}
+                  {widget.default_w >= 2 ? t("dashboard.halfWidth") : t("dashboard.quarterWidth")}
                 </Typography>
               </Box>
               <Switch

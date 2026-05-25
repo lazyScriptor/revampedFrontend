@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 // MUI Imports
 import {
@@ -31,6 +32,7 @@ export default function LoginRoute() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useTranslation();
 
   // 1. Initialize React Hook Form with Zod validation
   const {
@@ -102,7 +104,7 @@ export default function LoginRoute() {
               variant="subtitle1"
               sx={{ color: "#64748b", mt: 1, fontWeight: 500 }} // slate-500
             >
-              Enterprise Management System
+              {t("language.title") === "Language" ? "Enterprise Management System" : "ව්‍යවසාය කළමනාකරණ පද්ධතිය"}
             </Typography>
           </Box>
 
@@ -119,7 +121,7 @@ export default function LoginRoute() {
               required
               fullWidth
               id="email"
-              label="Work Email"
+              label={t("common.email")}
               autoComplete="email"
               autoFocus
               {...register("email")}
@@ -139,7 +141,7 @@ export default function LoginRoute() {
               required
               fullWidth
               id="password"
-              label="Password"
+              label={t("common.password")}
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               {...register("password")}
@@ -206,7 +208,7 @@ export default function LoginRoute() {
               {loginMutation.isPending ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
-                "Authenticate"
+                t("common.submit")
               )}
             </Button>
           </Box>

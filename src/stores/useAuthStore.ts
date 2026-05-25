@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { syncLanguageFromAuth } from '@/i18n';
 
 // 1. Updated to match your exact backend payload from the console
 interface User {
@@ -16,6 +17,10 @@ interface User {
     last_name?: string | null;
     avatar_url?: string | null;
     job_title?: string | null;
+    // Language preference. Backend resolves
+    //   user.language → tenant.default_language → "si"
+    // and ships this at login. Frontend i18n picks it up in syncLanguageFromAuth.
+    language?: string | null;
 }
 
 interface AuthState {
@@ -35,11 +40,24 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             isAuthenticated: false,
             user: null,
-            setAuth: (user) => set({ isAuthenticated: true, user }),
+            setAuth: (user) => {
+                set({ isAuthenticated: true, user });
+                // Apply the backend-resolved language to the i18n instance.
+                // configData.tenant_default_language is set by authService
+                // when there's no user override.
+                const tenantDefault =
+                    (user.configData as any)?.tenant_default_language ?? null;
+                syncLanguageFromAuth(user.language, tenantDefault).catch(() => {});
+            },
             updateUserPartial: (patch) => {
                 const current = get().user;
                 if (!current) return;
                 set({ user: { ...current, ...patch } });
+                // If the user updated their language preference via /me, mirror it
+                // into the active i18n instance immediately.
+                if (patch.language) {
+                    syncLanguageFromAuth(patch.language, null).catch(() => {});
+                }
             },
 
             logout: () => {

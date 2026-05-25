@@ -75,6 +75,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
     const [configForm, setConfigForm] = useState({
         tier: 'Basic',
         max_users: 25,
+        default_language: 'si',
         feature_flags: { continuous_return: true, accounting_module: true, bulk_import: true, maintenance_module: true },
         branding: { primaryColor: '#1e40af', secondaryColor: '#0f172a', accentColor: '#3b82f6', logoUrl: '', businessName: '' },
     });
@@ -104,6 +105,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
         setConfigForm({
             tier: t.tier || 'Basic',
             max_users: t.max_users || 25,
+            default_language: t.default_language || 'si',
             feature_flags: parseJson(t.feature_flags, { continuous_return: true, accounting_module: true, bulk_import: true, maintenance_module: true }),
             branding: parseJson(t.branding, { primaryColor: '#1e40af', secondaryColor: '#0f172a', accentColor: '#3b82f6', logoUrl: '', businessName: '' }),
         });
@@ -303,6 +305,38 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                         </Box>
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
+                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Default Language</Typography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 2, alignItems: 'center' }}>
+                            <TextField
+                                size="small"
+                                select
+                                label="Language"
+                                value={configForm.default_language}
+                                onChange={(e) =>
+                                    setConfigForm((f) => ({ ...f, default_language: e.target.value }))
+                                }
+                                sx={DARK_INPUT}
+                            >
+                                <MenuItem value="si">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box component="span" sx={{ fontSize: '0.95rem' }}>සිංහල</Box>
+                                        <Typography component="span" variant="caption" sx={{ color: '#64748b' }}>
+                                            · Sinhala
+                                        </Typography>
+                                    </Box>
+                                </MenuItem>
+                                <MenuItem value="en">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box component="span">English</Box>
+                                    </Box>
+                                </MenuItem>
+                            </TextField>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.72rem', lineHeight: 1.5 }}>
+                                Default UI language for every user of this tenant. Individual users can still override this on their profile. Sinhala is the platform default.
+                            </Typography>
+                        </Box>
+
+                        <Divider sx={{ borderColor: '#1e293b' }} />
                         <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Feature Flags</Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             {Object.entries(FEATURE_LABELS).map(([key, { label, desc }]) => (
@@ -424,7 +458,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
 
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <Button variant="contained" startIcon={<SaveOutlinedIcon />}
-                                onClick={() => handleSave({ tier: configForm.tier, max_users: configForm.max_users, feature_flags: configForm.feature_flags, branding: configForm.branding }, 'config')}
+                                onClick={() => handleSave({ tier: configForm.tier, max_users: configForm.max_users, default_language: configForm.default_language, feature_flags: configForm.feature_flags, branding: configForm.branding }, 'config')}
                                 disabled={updateMutation.isPending}
                                 sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700 }}>
                                 Save Configuration
