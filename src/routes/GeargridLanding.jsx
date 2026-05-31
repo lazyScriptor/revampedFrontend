@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ── YouTube product demo (Sinhala walkthrough) ──────────────────────────────
+// Lite-embed pattern: show a static thumbnail until the user clicks Play,
+// then swap to the real iframe. This keeps the LCP fast, avoids loading the
+// ~500 KB YouTube player bundle on every visit, and defers YT cookies until
+// the visitor actually consents. ?t=56 jumps past the intro reel.
+const DEMO_VIDEO = {
+  id: "SvrlC_b1XMg",
+  startSeconds: 56,
+  // maxresdefault for retina, hqdefault as automatic fallback if the channel
+  // hasn't rendered the 1280×720 thumbnail yet.
+  posterMax: "https://i.ytimg.com/vi/SvrlC_b1XMg/maxresdefault.jpg",
+  posterHq: "https://i.ytimg.com/vi/SvrlC_b1XMg/hqdefault.jpg",
+};
+
 const GearGridLanding = () => {
   // Modal & Flow State
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
@@ -8,6 +22,9 @@ const GearGridLanding = () => {
   const [userEmail, setUserEmail] = useState("");
   const [demoMessage, setDemoMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Toggles the YouTube iframe in the video showcase. False = poster + play
+  // button; true = real iframe loaded with autoplay from t=56s.
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   // --- Premium Animation Easing ---
   const transition = { duration: 0.8, ease: [0.22, 1, 0.36, 1] };
