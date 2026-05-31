@@ -263,35 +263,165 @@ const GearGridLanding = () => {
                 />
               </svg>
             </motion.button>
+
+            <motion.a
+              href="#demo-video"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById("demo-video")
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+              className="px-8 py-5 text-lg font-bold rounded-full bg-white border-2 border-slate-200 text-slate-900 hover:border-amber-400 hover:bg-amber-50 transition-colors flex items-center justify-center gap-3 group"
+            >
+              <svg
+                className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              Watch Demo <span className="text-slate-400 font-medium">· Sinhala</span>
+            </motion.a>
           </motion.div>
         </motion.div>
       </section>
 
-      {/* --- Abstract Floating UI --- */}
-      <section className="relative w-full max-w-7xl mx-auto px-6 h-64 md:h-96 -mt-20 z-0">
+      {/* --- Video Showcase (Sinhala product walkthrough) --- */}
+      <section id="demo-video" className="relative w-full max-w-6xl mx-auto px-6 -mt-20 z-10">
         <motion.div
-          initial={{ y: 100, opacity: 0 }}
+          initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full h-full bg-white rounded-t-3xl border-t border-x border-slate-200 shadow-2xl shadow-slate-900/5 relative overflow-hidden"
+          transition={{ duration: 1.1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="relative"
         >
-          <div className="h-12 border-b border-slate-100 flex items-center px-6 gap-2 bg-slate-50/50">
-            <div className="w-3 h-3 rounded-full bg-slate-300"></div>
-            <div className="w-3 h-3 rounded-full bg-slate-300"></div>
-            <div className="w-3 h-3 rounded-full bg-slate-300"></div>
-            <div className="ml-4 h-4 w-48 bg-slate-200 rounded-md"></div>
+          {/* Eyebrow caption above the player */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 text-xs font-bold tracking-widest uppercase">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60 animate-ping"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
+              </span>
+              Live Product Demo
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold tracking-wide">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l6-4.5-6-4.5v9z" />
+              </svg>
+              සිංහල · Sinhala narration
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-semibold">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              ~3 min walkthrough
+            </span>
           </div>
-          <div className="p-8 grid grid-cols-3 gap-8 opacity-40">
-            <div className="space-y-4">
-              <div className="h-3 w-1/2 bg-amber-500/20 rounded"></div>
-              <div className="h-2 w-full bg-slate-100 rounded"></div>
-              <div className="h-2 w-full bg-slate-100 rounded"></div>
+
+          {/* Glow halo behind the player */}
+          <div
+            className="absolute inset-x-12 -top-6 -bottom-6 bg-gradient-to-tr from-amber-300/40 via-orange-300/30 to-yellow-200/40 blur-3xl rounded-[40px] -z-10 opacity-70"
+            aria-hidden="true"
+          />
+
+          {/* Player frame */}
+          <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-2xl shadow-slate-900/15 bg-slate-900">
+            {/* Faux browser chrome — keeps the "this is a real product" feel */}
+            <div className="h-9 flex items-center gap-2 px-4 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
+              <div className="flex gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400/70"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400/70"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/70"></div>
+              </div>
+              <div className="ml-3 px-3 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px] font-mono tracking-wide truncate max-w-xs">
+                geargrid.live / product-demo · si
+              </div>
+              <div className="ml-auto text-[10px] font-mono text-slate-500 hidden sm:block">HD · 1080p</div>
             </div>
-            <div className="space-y-4">
-              <div className="h-3 w-1/3 bg-blue-500/20 rounded"></div>
-              <div className="h-2 w-full bg-slate-100 rounded"></div>
-              <div className="h-2 w-5/6 bg-slate-100 rounded"></div>
+
+            {/* 16:9 player */}
+            <div className="relative w-full aspect-video bg-black">
+              {!isVideoPlaying ? (
+                <button
+                  type="button"
+                  onClick={() => setIsVideoPlaying(true)}
+                  className="group absolute inset-0 w-full h-full overflow-hidden focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/60"
+                  aria-label="Play GearGrid Sinhala product demo"
+                >
+                  <img
+                    src={DEMO_VIDEO.posterMax}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEMO_VIDEO.posterHq;
+                    }}
+                    alt="GearGrid product demo — Sinhala walkthrough preview"
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  />
+                  {/* Vignette overlay for legibility of the play button */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/60" />
+
+                  {/* Play button — Apple-style glassy disc */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full bg-amber-400/30 blur-2xl scale-150 group-hover:scale-[1.8] transition-transform duration-500"></div>
+                      <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/95 backdrop-blur flex items-center justify-center shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)] group-hover:scale-105 group-active:scale-95 transition-transform duration-200">
+                        <svg
+                          className="w-8 h-8 md:w-10 md:h-10 text-slate-900 ml-1"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom caption */}
+                  <div className="absolute left-0 right-0 bottom-0 p-5 md:p-7 text-left">
+                    <div className="text-xs font-bold tracking-widest text-amber-400 uppercase mb-1">
+                      Watch the demo
+                    </div>
+                    <div className="text-white text-lg md:text-2xl font-bold leading-tight max-w-2xl drop-shadow-lg">
+                      GearGrid — සම්පූර්ණ කුලී කළමනාකරණ පද්ධතිය
+                    </div>
+                    <div className="text-slate-300 text-xs md:text-sm mt-1 max-w-2xl">
+                      A 3-minute Sinhala walkthrough of the equipment, customers,
+                      invoicing, and dashboard workflows.
+                    </div>
+                  </div>
+                </button>
+              ) : (
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO.id}?start=${DEMO_VIDEO.startSeconds}&autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+                  title="GearGrid Sinhala Product Demo"
+                  loading="lazy"
+                  allow="accelerated-2d-canvas; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              )}
             </div>
+          </div>
+
+          {/* Tiny meta row beneath */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-5 text-xs text-slate-500">
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 3.993L9 16z" />
+              </svg>
+              Watch on YouTube
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>Captions available · CC</span>
+            <span aria-hidden="true">·</span>
+            <span>No sign-up required to watch</span>
           </div>
         </motion.div>
       </section>
