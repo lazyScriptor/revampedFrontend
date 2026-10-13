@@ -43,6 +43,7 @@ Read `~/.claude/skills/ui-ux-pro-max/SKILL.md` for the full set of flags and the
 1. **Type check passes** — `npx tsc --noEmit`. There are a few pre-existing errors in `_authenticated.tsx` and `RentalHistory.tsx` (MUI v9 `primaryTypographyProps` / polymorphic `component={Link}` patterns). **Don't fix them mid-feature**; only touch when explicitly cleaning up that file.
 2. **Test the change in the browser**, not just the type checker. Vite HMR catches most things; full reload after auth-related changes.
 3. **Dual-Layer Auth (No Login Bounces)**: Always pass `token` to `setAuth(user, token)` in login mutations. Do NOT strip `Authorization: Bearer` in `api.ts` — cross-port dev (`:5173` $\to$ `:8086`) and Safari omit/drop `SameSite=Lax` / `Secure` cookies, which causes instant 401 bounce-backs to `/login` when landing on `/dashboard`. Vite dev proxy in `vite.config.js` also forwards `/api` and `/uploads`.
+4. **Vercel Deployment Verification**: Pushes to `main` auto-deploy to **Vercel** (`https://geargrid.live`, `https://app.geargrid.live`). Always check Vercel deployment dashboard if live production behavior lags behind local commits.
 
 ## Multi-tenant theming (important)
 
