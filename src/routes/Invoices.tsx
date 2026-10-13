@@ -418,7 +418,7 @@ export default function InvoicesRoute() {
           flexGrow: 1,
           minHeight: 0,
           overflow: "hidden",
-          pb: { xs: isMobile ? "56px" : 0, lg: 0 },
+          pb: { xs: isMobile ? "70px" : 0, lg: 0 },
         }}
       >
         {/* Desktop: all 3 panes side by side */}
@@ -466,14 +466,17 @@ export default function InvoicesRoute() {
           value={activeMobilePane}
           onChange={(_, newValue) => setActiveMobilePane(newValue)}
           sx={{
-            position: "absolute",
+            position: "fixed",
             bottom: 0,
             left: 0,
             right: 0,
+            height: 56,
             bgcolor: posMode === "dispatch" ? "#0f172a" : "#1e3a8a",
             borderTop: "1px solid",
             borderColor: posMode === "dispatch" ? "#1e293b" : "#1e40af",
-            zIndex: 10,
+            zIndex: 1000,
+            boxShadow: "0 -4px 12px rgba(0, 0, 0, 0.15)",
+            pb: "env(safe-area-inset-bottom, 0px)",
             "& .MuiBottomNavigationAction-root": {
               color: "#64748b",
               minWidth: 0,
