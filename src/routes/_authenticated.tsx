@@ -151,6 +151,8 @@ function AuthenticatedLayout() {
         : `${apiOrigin}${rawLogo}`)
     : null;
 
+  const [logoFailed, setLogoFailed] = useState(false);
+
   // State to track which sub-menus are expanded
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({
     Inventory: true,
@@ -291,11 +293,12 @@ function AuthenticatedLayout() {
       <DrawerHeader>
         {isSidebarOpen && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: 0.5, minWidth: 0 }}>
-            {logoUrl ? (
+            {logoUrl && !logoFailed ? (
               <Box
                 component="img"
                 src={logoUrl}
                 alt={businessName}
+                onError={() => setLogoFailed(true)}
                 sx={{ width: 30, height: 30, borderRadius: 1, objectFit: "contain", flexShrink: 0 }}
               />
             ) : (
@@ -570,13 +573,18 @@ function AuthenticatedLayout() {
           </IconButton>
           {(!isSidebarOpen || isMobile) && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-              {logoUrl && (
+              {logoUrl && !logoFailed ? (
                 <Box
                   component="img"
                   src={logoUrl}
                   alt={businessName}
+                  onError={() => setLogoFailed(true)}
                   sx={{ width: 26, height: 26, borderRadius: 1, objectFit: "contain", flexShrink: 0 }}
                 />
+              ) : (
+                <Avatar sx={{ width: 26, height: 26, bgcolor: "primary.main", color: "primary.contrastText", fontSize: "0.75rem", fontWeight: 700 }}>
+                  {businessName.charAt(0).toUpperCase()}
+                </Avatar>
               )}
               <Typography
                 variant="subtitle1"
