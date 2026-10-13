@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Typography, Skeleton, Chip } from "@mui/material";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import {
   BarChart,
   Bar,
@@ -59,41 +60,61 @@ const RevenueTrendChart: React.FC = () => {
         width: "100%",
         display: "flex",
         flexDirection: "column",
-        px: 2,
-        py: 1.75,
+        px: { xs: 1.75, sm: 2 },
+        py: 1.5,
       }}
     >
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1, mb: 1.25 }}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            variant="caption"
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1, mb: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, minWidth: 0 }}>
+          <Box
             sx={{
-              color: dt.color.foregroundMuted,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              fontSize: "0.68rem",
-              lineHeight: 1.4,
+              width: 28,
+              height: 28,
+              borderRadius: "8px",
+              bgcolor: `${dashboardTones.primary.strong}15`,
+              color: dashboardTones.primary.strong,
+              border: `1px solid ${dashboardTones.primary.strong}25`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              mt: 0.25,
             }}
           >
-            {t("dashboard.widgets.revenueTrend")} · {t("dashboard.widgets.lastNDays", { count: 30 })}
-          </Typography>
-          {!isLoading && (
+            <TrendingUpIcon sx={{ fontSize: 16 }} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography
+              variant="caption"
               sx={{
-                fontSize: "1.25rem",
-                fontWeight: 800,
-                color: dt.color.foreground,
-                lineHeight: 1.2,
-                mt: 0.25,
-                fontVariantNumeric: "tabular-nums",
-                letterSpacing: "-0.01em",
+                color: dt.color.foregroundMuted,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                fontSize: "0.68rem",
+                lineHeight: 1.3,
+                display: "block",
               }}
             >
-              {fmtFull(total)}
+              {t("dashboard.widgets.revenueTrend", "Revenue Trend")} · {t("dashboard.widgets.lastNDays", { count: 30, defaultValue: "Last 30 Days" })}
             </Typography>
-          )}
+            {!isLoading && (
+              <Typography
+                sx={{
+                  fontSize: { xs: "1.2rem", sm: "1.35rem" },
+                  fontWeight: 800,
+                  color: dt.color.foreground,
+                  lineHeight: 1.15,
+                  mt: 0.2,
+                  fontVariantNumeric: "tabular-nums",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {fmtFull(total)}
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         {!isLoading && deltaPct != null && (
@@ -102,11 +123,12 @@ const RevenueTrendChart: React.FC = () => {
             label={`${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%`}
             sx={{
               fontWeight: 800,
-              fontSize: "0.7rem",
+              fontSize: "0.68rem",
               height: 22,
               bgcolor: deltaPct >= 0 ? dashboardTones.accent.soft : dashboardTones.danger.soft,
               color: deltaPct >= 0 ? dashboardTones.accent.on : dashboardTones.danger.on,
               border: 0,
+              flexShrink: 0,
             }}
           />
         )}
@@ -114,19 +136,19 @@ const RevenueTrendChart: React.FC = () => {
 
       {/* Chart */}
       {isLoading ? (
-        <Skeleton variant="rectangular" sx={{ flexGrow: 1, borderRadius: 1 }} />
+        <Skeleton variant="rectangular" sx={{ flexGrow: 1, borderRadius: dt.radius.md }} />
       ) : (
-        <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <Box sx={{ flexGrow: 1, minHeight: 0, minWidth: 0, width: "100%", height: "100%" }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={150}>
             <BarChart
               data={chartData}
-              margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-              barCategoryGap="28%"
+              margin={{ top: 6, right: 6, left: -10, bottom: 0 }}
+              barCategoryGap="24%"
             >
               <defs>
                 <linearGradient id="revBarFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={dashboardTones.primary.strong} stopOpacity={0.95} />
-                  <stop offset="100%" stopColor={dashboardTones.primary.strong} stopOpacity={0.55} />
+                  <stop offset="100%" stopColor={dashboardTones.primary.strong} stopOpacity={0.45} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 4" stroke={dt.color.border} vertical={false} />
@@ -136,17 +158,17 @@ const RevenueTrendChart: React.FC = () => {
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
-                minTickGap={20}
+                minTickGap={25}
               />
               <YAxis
                 tickFormatter={fmt}
                 tick={{ fontSize: 10, fill: dt.color.foregroundFaint }}
                 tickLine={false}
                 axisLine={false}
-                width={52}
+                width={44}
               />
               <Tooltip
-                cursor={{ fill: dashboardTones.primary.soft, opacity: 0.4 }}
+                cursor={{ fill: `${dashboardTones.primary.strong}12` }}
                 formatter={(v) => [fmtFull(Number(v)), "Revenue"]}
                 labelStyle={{ fontSize: 11, color: dt.color.foreground, fontWeight: 700 }}
                 contentStyle={{
@@ -164,7 +186,7 @@ const RevenueTrendChart: React.FC = () => {
         </Box>
       )}
 
-      {/* Footer micro-stat */}
+      {/* Footer Micro-Stat */}
       {!isLoading && peak > 0 && (
         <Typography
           variant="caption"
@@ -175,7 +197,7 @@ const RevenueTrendChart: React.FC = () => {
             fontWeight: 500,
           }}
         >
-          {t("dashboard.widgets.peakDay", { value: fmtFull(peak) })}
+          {t("dashboard.widgets.peakDay", { value: fmtFull(peak), defaultValue: `Peak day · ${fmtFull(peak)}` })}
         </Typography>
       )}
     </Box>

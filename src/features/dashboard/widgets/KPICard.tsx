@@ -41,20 +41,22 @@ const TrendPill: React.FC<{ trend: "up" | "down" | "neutral"; value: string }> =
       sx={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 0.25,
+        gap: 0.3,
         bgcolor: p.bg,
         color: p.fg,
-        fontSize: "0.7rem",
-        fontWeight: 700,
+        fontSize: "0.68rem",
+        fontWeight: 800,
         lineHeight: 1,
-        py: 0.4,
+        py: 0.35,
         pl: 0.5,
         pr: 0.75,
         borderRadius: t.radius.pill,
+        border: `1px solid ${p.ring}30`,
         letterSpacing: 0.2,
+        flexShrink: 0,
       }}
     >
-      <Icon sx={{ fontSize: 12 }} />
+      <Icon sx={{ fontSize: 11 }} />
       {value}
     </Box>
   );
@@ -73,8 +75,6 @@ export const KPICard: React.FC<KPICardProps> = ({
   accentColor,
   sx,
 }) => {
-  // tone takes precedence; fall back to accentColor for back-compat with the
-  // existing widgets that still pass `accentColor="#xxx"`.
   const palette = tone ? dashboardTones[tone] : null;
   const strong = palette?.strong || accentColor || t.color.primary;
   const soft = palette?.soft || t.color.surfaceMuted;
@@ -87,12 +87,12 @@ export const KPICard: React.FC<KPICardProps> = ({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        gap: 1.25,
-        // Subtle tinted top accent — much more modern than full left border.
+        gap: { xs: 1, sm: 1.25 },
         position: "relative",
-        px: { xs: 1.75, sm: 2.25 },
-        py: 1.75,
+        px: { xs: 1.5, sm: 2 },
+        py: { xs: 1.5, sm: 1.75 },
         overflow: "hidden",
+        background: `linear-gradient(145deg, #FFFFFF 0%, ${strong}05 100%)`,
         "&::before": {
           content: '""',
           position: "absolute",
@@ -100,8 +100,7 @@ export const KPICard: React.FC<KPICardProps> = ({
           left: 0,
           right: 0,
           height: 3,
-          bgcolor: strong,
-          opacity: 0.9,
+          background: `linear-gradient(90deg, ${strong} 0%, ${strong}55 100%)`,
         },
         ...sx,
       }}
@@ -120,15 +119,15 @@ export const KPICard: React.FC<KPICardProps> = ({
           sx={{
             color: t.color.foregroundMuted,
             fontWeight: 700,
-            fontSize: "0.68rem",
+            fontSize: { xs: "0.64rem", sm: "0.68rem" },
             textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            lineHeight: 1.4,
-            // Keep label on one line at narrow widths but allow wrap on truly tiny
+            letterSpacing: "0.07em",
+            lineHeight: 1.35,
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            flex: 1,
           }}
         >
           {label}
@@ -138,15 +137,17 @@ export const KPICard: React.FC<KPICardProps> = ({
           <Box
             sx={{
               flexShrink: 0,
-              width: 34,
-              height: 34,
-              borderRadius: t.radius.md,
-              bgcolor: soft,
+              width: { xs: 30, sm: 34 },
+              height: { xs: 30, sm: 34 },
+              borderRadius: "10px",
+              background: `linear-gradient(135deg, ${soft} 0%, ${strong}18 100%)`,
+              border: `1px solid ${strong}28`,
               color: strong,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              "& > *": { fontSize: 18 },
+              boxShadow: `0 2px 6px ${strong}12`,
+              "& > *": { fontSize: { xs: 16, sm: 18 } },
             }}
           >
             {icon}
@@ -154,19 +155,22 @@ export const KPICard: React.FC<KPICardProps> = ({
         )}
       </Box>
 
-      {/* Big value */}
-      <Box sx={{ minHeight: 36 }}>
+      {/* Primary Value */}
+      <Box sx={{ minHeight: { xs: 28, sm: 34 }, display: "flex", alignItems: "center" }}>
         {loading ? (
-          <Skeleton variant="text" width="65%" height={36} />
+          <Skeleton variant="text" width="70%" height={34} />
         ) : (
           <Typography
             sx={{
-              fontSize: { xs: "1.5rem", sm: "1.7rem" },
+              fontSize: { xs: "1.3rem", sm: "1.55rem", md: "1.75rem" },
               fontWeight: 800,
               color: t.color.foreground,
               lineHeight: 1.1,
-              fontVariantNumeric: "tabular-nums", // numbers don't shift on update
-              letterSpacing: "-0.01em",
+              fontVariantNumeric: "tabular-nums",
+              letterSpacing: "-0.02em",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {value ?? "—"}
@@ -174,8 +178,17 @@ export const KPICard: React.FC<KPICardProps> = ({
         )}
       </Box>
 
-      {/* Footer: trend pill + sublabel, or custom footer slot */}
-      <Box sx={{ minHeight: 18, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+      {/* Footer: Trend Pill / SubLabel / Slot */}
+      <Box
+        sx={{
+          minHeight: 18,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.75,
+          flexWrap: "nowrap",
+          overflow: "hidden",
+        }}
+      >
         {footerSlot ? (
           <Box sx={{ width: "100%" }}>{footerSlot}</Box>
         ) : (
@@ -187,8 +200,11 @@ export const KPICard: React.FC<KPICardProps> = ({
                 sx={{
                   color: t.color.foregroundFaint,
                   fontWeight: 500,
-                  fontSize: "0.72rem",
-                  lineHeight: 1.4,
+                  fontSize: { xs: "0.68rem", sm: "0.72rem" },
+                  lineHeight: 1.3,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {subLabel}

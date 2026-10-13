@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Typography, Skeleton, LinearProgress, Chip } from "@mui/material";
+import SpeedIcon from "@mui/icons-material/Speed";
 import {
   AreaChart,
   Area,
@@ -28,7 +29,6 @@ const UtilizationSparkline: React.FC = () => {
 
   const rate = data?.currentRate ?? 0;
 
-  // Tone-driven, semantic — same scale as before but pulls from the shared palette.
   const tone =
     rate >= 75 ? dashboardTones.accent :
     rate >= 40 ? dashboardTones.warning :
@@ -43,41 +43,61 @@ const UtilizationSparkline: React.FC = () => {
         width: "100%",
         display: "flex",
         flexDirection: "column",
-        px: 2,
-        py: 1.75,
+        px: { xs: 1.75, sm: 2 },
+        py: 1.5,
       }}
     >
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 0.5 }}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            variant="caption"
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, minWidth: 0 }}>
+          <Box
             sx={{
-              color: dt.color.foregroundMuted,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              fontSize: "0.68rem",
-              lineHeight: 1.4,
+              width: 28,
+              height: 28,
+              borderRadius: "8px",
+              bgcolor: tone.soft,
+              color: tone.strong,
+              border: `1px solid ${tone.strong}25`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              mt: 0.25,
             }}
           >
-            {t("dashboard.widgets.fleetUtilization")}
-          </Typography>
-          {!isLoading && (
+            <SpeedIcon sx={{ fontSize: 16 }} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography
               variant="caption"
-              sx={{ display: "block", color: dt.color.foregroundFaint, fontWeight: 500, fontSize: "0.72rem", mt: 0.25 }}
+              sx={{
+                color: dt.color.foregroundMuted,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                fontSize: "0.68rem",
+                lineHeight: 1.3,
+                display: "block",
+              }}
             >
-              {t("dashboard.widgets.totalUnits", { count: data?.totalOwned ?? 0 })} · {t("dashboard.widgets.sevenDayTrend")}
+              {t("dashboard.widgets.fleetUtilization", "Fleet Utilization")}
             </Typography>
-          )}
+            {!isLoading && (
+              <Typography
+                variant="caption"
+                sx={{ display: "block", color: dt.color.foregroundFaint, fontWeight: 500, fontSize: "0.72rem", mt: 0.2 }}
+              >
+                {t("dashboard.widgets.totalUnits", { count: data?.totalOwned ?? 0, defaultValue: `${data?.totalOwned ?? 0} units` })} · {t("dashboard.widgets.sevenDayTrend", "7-day trend")}
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         {!isLoading && (
           <Box sx={{ textAlign: "right", flexShrink: 0 }}>
             <Typography
               sx={{
-                fontSize: { xs: "1.6rem", sm: "1.8rem" },
+                fontSize: { xs: "1.45rem", sm: "1.65rem" },
                 fontWeight: 800,
                 color: tone.strong,
                 lineHeight: 1,
@@ -91,8 +111,8 @@ const UtilizationSparkline: React.FC = () => {
               size="small"
               label={rate >= 75 ? "Healthy" : rate >= 40 ? "Watch" : "Low"}
               sx={{
-                mt: 0.5,
-                height: 18,
+                mt: 0.35,
+                height: 19,
                 fontSize: "0.65rem",
                 fontWeight: 800,
                 bgcolor: tone.soft,
@@ -111,15 +131,15 @@ const UtilizationSparkline: React.FC = () => {
         </>
       ) : (
         <>
-          {/* Slim progress bar mirrors the headline number */}
+          {/* Linear Progress Indicator */}
           <LinearProgress
             variant="determinate"
             value={rate}
             sx={{
               height: 5,
               borderRadius: 99,
-              mt: 1.25,
-              mb: 1.75,
+              mt: 1,
+              mb: 1.5,
               bgcolor: dt.color.surfaceMuted,
               "& .MuiLinearProgress-bar": {
                 bgcolor: tone.strong,
@@ -128,9 +148,9 @@ const UtilizationSparkline: React.FC = () => {
             }}
           />
 
-          {/* Area sparkline */}
-          <Box sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}>
-            <ResponsiveContainer width="100%" height="100%">
+          {/* Area Sparkline */}
+          <Box sx={{ flexGrow: 1, minHeight: 0, minWidth: 0, width: "100%", height: "100%" }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={140}>
               <AreaChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -141,10 +161,10 @@ const UtilizationSparkline: React.FC = () => {
 
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: dt.color.foregroundFaint, fontWeight: 500 }}
+                  tick={{ fontSize: 10, fill: dt.color.foregroundFaint, fontWeight: 500 }}
                   tickLine={false}
                   axisLine={false}
-                  dy={6}
+                  dy={4}
                 />
                 <YAxis hide domain={["dataMin - 5", "dataMax + 5"]} />
 

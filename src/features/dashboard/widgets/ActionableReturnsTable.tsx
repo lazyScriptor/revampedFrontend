@@ -1,9 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Typography, Skeleton, Chip, Link, Stack, Tooltip } from "@mui/material";
+import { Box, Typography, Skeleton, Chip, Stack, Tooltip } from "@mui/material";
 import PhoneIcon from "@mui/icons-material/Phone";
-import ReceiptIcon from "@mui/icons-material/Receipt";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import { useNavigate } from "@tanstack/react-router";
 import { useReturnsDueToday } from "@/features/dashboard/hooks/useDashboardHooks";
 import type { ReturnItem } from "@/features/dashboard/types";
 import dayjs from "dayjs";
@@ -14,29 +15,29 @@ const StatusChip: React.FC<{ days: number }> = ({ days }) => {
   if (days <= 0)
     return (
       <Chip
-        label={t("common.today")}
+        label={t("common.today", "Today")}
         size="small"
         sx={{
           bgcolor: dashboardTones.warning.soft,
           color: dashboardTones.warning.on,
           fontWeight: 800,
-          height: 18,
-          fontSize: 10,
-          border: 0,
+          height: 19,
+          fontSize: "0.65rem",
+          border: `1px solid ${dashboardTones.warning.strong}20`,
         }}
       />
     );
   return (
     <Chip
-      label={t("orders.daysOverdue", { count: days })}
+      label={t("orders.daysOverdue", { count: days, defaultValue: `${days}d overdue` })}
       size="small"
       sx={{
         bgcolor: dashboardTones.danger.soft,
         color: dashboardTones.danger.on,
         fontWeight: 800,
-        height: 18,
-        fontSize: 10,
-        border: 0,
+        height: 19,
+        fontSize: "0.65rem",
+        border: `1px solid ${dashboardTones.danger.strong}20`,
       }}
     />
   );
@@ -44,6 +45,7 @@ const StatusChip: React.FC<{ days: number }> = ({ days }) => {
 
 const ActionableReturnsTable: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data, isLoading } = useReturnsDueToday();
 
   const customerName = (r: ReturnItem) =>
@@ -64,7 +66,7 @@ const ActionableReturnsTable: React.FC = () => {
       {/* Header */}
       <Box
         sx={{
-          px: 2,
+          px: { xs: 1.75, sm: 2 },
           py: 1.25,
           borderBottom: `1px solid ${dt.color.border}`,
           display: "flex",
@@ -77,11 +79,12 @@ const ActionableReturnsTable: React.FC = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
           <Box
             sx={{
-              width: 26,
-              height: 26,
-              borderRadius: dt.radius.md,
+              width: 28,
+              height: 28,
+              borderRadius: "8px",
               bgcolor: dashboardTones.warning.soft,
               color: dashboardTones.warning.strong,
+              border: `1px solid ${dashboardTones.warning.strong}20`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -103,34 +106,34 @@ const ActionableReturnsTable: React.FC = () => {
               textOverflow: "ellipsis",
             }}
           >
-            {t("dashboard.widgets.returnsDue")}
+            {t("dashboard.widgets.returnsDue", "Returns Due Today")}
           </Typography>
         </Box>
         {data && (
-          <Box sx={{ display: "flex", gap: 0.5 }}>
+          <Box sx={{ display: "flex", gap: 0.75, flexShrink: 0 }}>
             {data.overdueCount > 0 && (
               <Chip
-                label={`${data.overdueCount} ${t("dashboard.widgets.overdue")}`}
+                label={`${data.overdueCount} ${t("dashboard.widgets.overdue", "overdue")}`}
                 size="small"
                 sx={{
                   bgcolor: dashboardTones.danger.soft,
                   color: dashboardTones.danger.on,
                   fontWeight: 800,
                   height: 20,
-                  fontSize: 10,
+                  fontSize: "0.65rem",
                   border: 0,
                 }}
               />
             )}
             <Chip
-              label={`${data.total} ${t("dashboard.widgets.total")}`}
+              label={`${data.total} ${t("dashboard.widgets.total", "total")}`}
               size="small"
               sx={{
                 bgcolor: dashboardTones.slate.soft,
                 color: dashboardTones.slate.on,
                 fontWeight: 700,
                 height: 20,
-                fontSize: 10,
+                fontSize: "0.65rem",
                 border: 0,
               }}
             />
@@ -143,9 +146,8 @@ const ActionableReturnsTable: React.FC = () => {
         sx={{
           flexGrow: 1,
           overflowY: "auto",
-          p: 1,
-          // Slim scrollbar
-          "&::-webkit-scrollbar": { width: 6 },
+          p: { xs: 1, sm: 1.25 },
+          "&::-webkit-scrollbar": { width: 5 },
           "&::-webkit-scrollbar-thumb": {
             background: dt.color.border,
             borderRadius: 99,
@@ -155,9 +157,9 @@ const ActionableReturnsTable: React.FC = () => {
       >
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={56} sx={{ borderRadius: dt.radius.md, mb: 0.75 }} />
+            <Skeleton key={i} variant="rectangular" height={58} sx={{ borderRadius: dt.radius.md, mb: 1 }} />
           ))
-        ) : data?.items.length === 0 ? (
+        ) : !data?.items || data.items.length === 0 ? (
           <Box
             sx={{
               display: "flex",
@@ -165,7 +167,7 @@ const ActionableReturnsTable: React.FC = () => {
               alignItems: "center",
               justifyContent: "center",
               height: "100%",
-              gap: 0.5,
+              gap: 0.75,
               py: 4,
             }}
           >
@@ -183,15 +185,15 @@ const ActionableReturnsTable: React.FC = () => {
             >
               <EventAvailableOutlinedIcon sx={{ fontSize: 22 }} />
             </Box>
-            <Typography variant="body2" sx={{ color: dt.color.foreground, fontWeight: 700 }}>
+            <Typography variant="body2" sx={{ color: dt.color.foreground, fontWeight: 700, fontSize: "0.82rem" }}>
               All clear
             </Typography>
-            <Typography variant="caption" sx={{ color: dt.color.foregroundFaint }}>
-              No returns due today
+            <Typography variant="caption" sx={{ color: dt.color.foregroundFaint, fontSize: "0.72rem" }}>
+              {t("dashboard.widgets.noReturns", "No returns due today")}
             </Typography>
           </Box>
         ) : (
-          data?.items.map((item: ReturnItem) => {
+          data.items.map((item: ReturnItem) => {
             const overdue = parseInt(item.days_overdue as unknown as string) > 0;
             return (
               <Box
@@ -200,27 +202,29 @@ const ActionableReturnsTable: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: 1,
-                  px: 1.25,
-                  py: 1,
-                  mb: 0.5,
+                  gap: 1.25,
+                  px: 1.5,
+                  py: 1.25,
+                  mb: 0.75,
                   borderRadius: dt.radius.md,
+                  border: `1px solid ${overdue ? `${dashboardTones.danger.strong}33` : dt.color.border}`,
                   borderLeft: `3px solid ${overdue ? dashboardTones.danger.strong : dashboardTones.warning.strong}`,
-                  bgcolor: overdue ? `${dashboardTones.danger.soft}66` : dt.color.surface,
-                  transition: `background-color ${dt.motion.fast}`,
+                  bgcolor: overdue ? `${dashboardTones.danger.soft}33` : dt.color.surface,
+                  transition: dt.motion.fast,
                   "&:hover": {
                     bgcolor: dt.color.surfaceMuted,
+                    borderColor: overdue ? dashboardTones.danger.strong : dt.color.borderStrong,
                   },
                 }}
               >
-                <Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
+                <Stack spacing={0.35} sx={{ minWidth: 0, flex: 1 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
                     <Typography
                       variant="body2"
                       sx={{
                         fontWeight: 700,
                         color: dt.color.foreground,
-                        fontSize: "0.78rem",
+                        fontSize: "0.8rem",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -236,6 +240,7 @@ const ActionableReturnsTable: React.FC = () => {
                     sx={{
                       color: dt.color.foregroundMuted,
                       fontSize: "0.72rem",
+                      fontWeight: 500,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -248,53 +253,60 @@ const ActionableReturnsTable: React.FC = () => {
                   </Typography>
                 </Stack>
 
-                <Box sx={{ display: "flex", gap: 0.25, flexShrink: 0 }}>
-                  <Tooltip title="Open invoice">
-                    <Link href={`/invoices?id=${item.invoice_id}`} underline="none">
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 30,
-                          height: 30,
-                          borderRadius: dt.radius.sm,
-                          color: dashboardTones.primary.strong,
-                          transition: `background-color ${dt.motion.fast}, color ${dt.motion.fast}`,
-                          "&:hover": {
-                            bgcolor: dashboardTones.primary.soft,
-                            color: dashboardTones.primary.on,
-                          },
-                          cursor: "pointer",
-                        }}
-                      >
-                        <ReceiptIcon sx={{ fontSize: 16 }} />
-                      </Box>
-                    </Link>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
+                  <Tooltip title="View Invoice">
+                    <Box
+                      onClick={() => navigate({ to: "/invoices", search: { id: item.invoice_id } as any })}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: { xs: 34, sm: 32 },
+                        height: { xs: 34, sm: 32 },
+                        borderRadius: dt.radius.sm,
+                        border: `1px solid ${dt.color.border}`,
+                        bgcolor: dt.color.surface,
+                        color: dashboardTones.primary.strong,
+                        cursor: "pointer",
+                        transition: dt.motion.fast,
+                        "&:hover": {
+                          bgcolor: dashboardTones.primary.soft,
+                          borderColor: dashboardTones.primary.strong,
+                        },
+                      }}
+                    >
+                      <ReceiptLongIcon sx={{ fontSize: 16 }} />
+                    </Box>
                   </Tooltip>
-                  <Tooltip title={item.phone_number}>
-                    <Link href={`tel:${item.phone_number}`} underline="none">
+
+                  {item.phone_number && (
+                    <Tooltip title={`Call ${item.phone_number}`}>
                       <Box
+                        component="a"
+                        href={`tel:${item.phone_number}`}
                         sx={{
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          width: 30,
-                          height: 30,
+                          width: { xs: 34, sm: 32 },
+                          height: { xs: 34, sm: 32 },
                           borderRadius: dt.radius.sm,
+                          border: `1px solid ${dt.color.border}`,
+                          bgcolor: dt.color.surface,
                           color: dashboardTones.accent.strong,
-                          transition: `background-color ${dt.motion.fast}, color ${dt.motion.fast}`,
+                          textDecoration: "none",
+                          cursor: "pointer",
+                          transition: dt.motion.fast,
                           "&:hover": {
                             bgcolor: dashboardTones.accent.soft,
-                            color: dashboardTones.accent.on,
+                            borderColor: dashboardTones.accent.strong,
                           },
-                          cursor: "pointer",
                         }}
                       >
                         <PhoneIcon sx={{ fontSize: 16 }} />
                       </Box>
-                    </Link>
-                  </Tooltip>
+                    </Tooltip>
+                  )}
                 </Box>
               </Box>
             );

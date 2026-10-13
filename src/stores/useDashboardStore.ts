@@ -4,8 +4,7 @@ import { todayLocalStr, addDaysLocal } from '@/lib/dates';
 import type { LayoutItem, GlobalFilters, WidgetDefinition } from '@/features/dashboard/types';
 
 // Defaults are viewer-local — when the dashboard config request lands it
-// overrides them with tenant-tz-aware bounds from the server. Using
-// `.toISOString()` here was off-by-one for viewers east of UTC.
+// overrides them with tenant-tz-aware bounds from the server.
 const buildDefaultFilters = (): GlobalFilters => ({
   startDate: addDaysLocal(todayLocalStr(), -30),
   endDate: todayLocalStr(),
@@ -13,8 +12,7 @@ const buildDefaultFilters = (): GlobalFilters => ({
 });
 
 // ============================================================================
-// THE FIX: FRONTEND SOURCE OF TRUTH
-// If the backend doesn't send the catalog, the UI will fall back to this.
+// FRONTEND SOURCE OF TRUTH & CANONICAL LAYOUT
 // ============================================================================
 const FRONTEND_WIDGET_CATALOG: WidgetDefinition[] = [
   { widget_key: 'revenue_kpi', display_name: 'Revenue', description: 'Total Revenue', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
@@ -37,6 +35,50 @@ const FRONTEND_DEFAULT_LAYOUT: LayoutItem[] = [
   { i: 'returns_today', x: 0, y: 3, w: 2, h: 3 },
   { i: 'maintenance_queue', x: 2, y: 3, w: 2, h: 3 },
 ];
+
+function collides(a: LayoutItem, b: LayoutItem): boolean {
+  if (a.i === b.i) return false;
+  if (a.x + a.w <= b.x) return false;
+  if (a.x >= b.x + b.w) return false;
+  if (a.y + a.h <= b.y) return false;
+  if (a.y >= b.y + b.h) return false;
+  return true;
+}
+
+function findFirstAvailableSlot(layout: LayoutItem[], w: number, h: number, cols = 4): { x: number; y: number } {
+  const collidesWithAny = (box: LayoutItem) => layout.some((item) => collides(box, item));
+  for (let y = 0; y < 100; y++) {
+    for (let x = 0; x <= cols - w; x++) {
+      const candidate: LayoutItem = { i: "__temp__", x, y, w, h };
+      if (!collidesWithAny(candidate)) {
+        return { x, y };
+      }
+    }
+  }
+  return { x: 0, y: 0 };
+}
+
+export function compactAndPackLayout(items: LayoutItem[]): LayoutItem[] {
+  const canonicalOrder = FRONTEND_DEFAULT_LAYOUT.map((d) => d.i);
+  // Sort items primarily by canonical ordering (KPIs -> Charts -> Tables), or by (y, x)
+  const sorted = [...items].sort((a, b) => {
+    const idxA = canonicalOrder.indexOf(a.i);
+    const idxB = canonicalOrder.indexOf(b.i);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    return a.y === b.y ? a.x - b.x : a.y - b.y;
+  });
+
+  const packed: LayoutItem[] = [];
+  for (const item of sorted) {
+    const slot = findFirstAvailableSlot(packed, item.w, item.h, 4);
+    packed.push({
+      ...item,
+      x: slot.x,
+      y: slot.y,
+    });
+  }
+  return packed;
+}
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -74,8 +116,10 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     const max_w = layout?.length ? Math.max(...layout.map(item => item.w)) : 0;
     const isOldFormat = !layout?.length || max_w > 4 || max_x < 2;
 
+    const initialLayout = isOldFormat ? FRONTEND_DEFAULT_LAYOUT : layout;
+
     set({
-      layout: isOldFormat ? FRONTEND_DEFAULT_LAYOUT : layout,
+      layout: compactAndPackLayout(initialLayout),
       globalFilters: savedFilters ?? buildDefaultFilters(),
       widgetCatalog: finalCatalog,
       isConfigLoaded: true,
@@ -94,19 +138,32 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   toggleWidget: (def) => {
     const { layout } = get();
-    const exists = layout.find(item => item.i === def.widget_key);
+    const exists = layout.find((item) => item.i === def.widget_key);
+    let newLayout: LayoutItem[];
     if (exists) {
-      set({ layout: layout.filter(item => item.i !== def.widget_key) });
+      // Remove and compact remaining items so no empty holes remain
+      const remaining = layout.filter((item) => item.i !== def.widget_key);
+      newLayout = compactAndPackLayout(remaining);
     } else {
-      const maxY = layout.reduce((m, item) => Math.max(m, item.y + item.h), 0);
-      set({ layout: [...layout, { i: def.widget_key, x: 0, y: maxY, w: def.default_w, h: def.default_h }] });
+      // Re-attach into canonical section without gaps, avoiding orphaned placement at bottom
+      const defaultDef = FRONTEND_DEFAULT_LAYOUT.find((d) => d.i === def.widget_key);
+      const added: LayoutItem = {
+        i: def.widget_key,
+        x: defaultDef?.x ?? 0,
+        y: defaultDef?.y ?? 0,
+        w: def.default_w,
+        h: def.default_h,
+      };
+      newLayout = compactAndPackLayout([...layout, added]);
     }
+    set({ layout: newLayout });
     get()._debouncedSync();
   },
 
   setWidgetWidth: (key, w) => {
     const { layout } = get();
-    set({ layout: layout.map((item) => (item.i === key ? { ...item, w } : item)) });
+    const updated = layout.map((item) => (item.i === key ? { ...item, w } : item));
+    set({ layout: compactAndPackLayout(updated) });
     get()._debouncedSync();
   },
 
