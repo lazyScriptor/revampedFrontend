@@ -8,6 +8,7 @@ import type { EquipmentFilters } from "@/features/equipment/api/equipment.api";
 
 import { EquipmentTable } from "@/features/equipment/components/EquipmentTable";
 import { EquipmentFormDialog } from "@/features/equipment/components/EquipmentFormDialog";
+import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
 import {
   Alert,
@@ -366,9 +367,7 @@ export default function EquipmentRoute() {
       {/* Data Table */}
       <Card elevation={0} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         {isLoading && equipmentList.length === 0 ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-            <CircularProgress />
-          </Box>
+          <GearGridLoader centered size="lg" label="Loading Fleet Inventory..." sublabel="Synchronizing asset specifications & telemetry" />
         ) : (
           <EquipmentTable
             data={equipmentList}

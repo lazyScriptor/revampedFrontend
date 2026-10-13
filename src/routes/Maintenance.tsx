@@ -43,6 +43,7 @@ import {
   useResolveDefect,
   useTechnicianRoster,
 } from "@/features/inventory/hooks/useDefectHooks";
+import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
 // --- KPI WIDGET ---
 const KpiCard = ({
@@ -237,9 +238,7 @@ export default function MaintenanceRoute() {
 
   if (defectsLoading)
     return (
-      <Box p={5} display="flex" justifyContent="center">
-        <CircularProgress />
-      </Box>
+      <GearGridLoader centered size="lg" label="Loading Fleet Diagnostics..." sublabel="Fetching active maintenance tickets and repair schedules" sx={{ py: 10 }} />
     );
 
   return (

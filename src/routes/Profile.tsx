@@ -24,6 +24,7 @@ import { PreferencesSection } from "@/features/profile/components/PreferencesSec
 import { NotificationsSection } from "@/features/profile/components/NotificationsSection";
 import { ActivitySection } from "@/features/profile/components/ActivitySection";
 import { AccessSection } from "@/features/profile/components/AccessSection";
+import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
 const buildTabs = (t: (k: string) => string) => [
   { key: "profile",       label: t("profile.tabs.profile"),       icon: <PersonIcon fontSize="small" /> },
@@ -62,9 +63,7 @@ export default function ProfileRoute() {
 
   if (me.isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-        <CircularProgress />
-      </Box>
+      <GearGridLoader centered size="lg" label="Loading User Profile..." sublabel="Fetching security credentials & organization preferences" sx={{ py: 10 }} />
     );
   }
 

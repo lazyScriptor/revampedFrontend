@@ -10,7 +10,8 @@ interface SuperAdmin {
 interface SuperAdminState {
     isAuthenticated: boolean;
     admin: SuperAdmin | null;
-    setAuth: (admin: SuperAdmin) => void;
+    token: string | null;
+    setAuth: (admin: SuperAdmin, token?: string | null) => void;
     logout: () => void;
 }
 
@@ -19,9 +20,22 @@ export const useSuperAdminStore = create<SuperAdminState>()(
         (set) => ({
             isAuthenticated: false,
             admin: null,
-            setAuth: (admin) => set({ isAuthenticated: true, admin }),
+            token: null,
+            setAuth: (admin, token) =>
+                set((state) => ({
+                    isAuthenticated: true,
+                    admin,
+                    token: token !== undefined ? token : state.token,
+                })),
             logout: () => {
-                set({ isAuthenticated: false, admin: null });
+                // Best-effort clear backend SA cookies
+                try {
+                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8086/api';
+                    fetch(`${apiUrl}/super-admin/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+                } catch {
+                    // ignore
+                }
+                set({ isAuthenticated: false, admin: null, token: null });
                 window.location.href = '/super-admin/login';
             },
         }),

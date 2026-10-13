@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
 import { CategoryTable } from "@/features/equipment/components/CategoryTable";
 import { CategoryFormDrawer } from "@/features/equipment/components/CategoryFormDrawer";
+import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
 import {
   Box,
@@ -52,9 +53,7 @@ export default function CategoriesRoute() {
 
   if (isLoading && categoryList.length === 0) {
     return (
-      <Box className="flex h-full items-center justify-center min-h-[400px]">
-        <CircularProgress />
-      </Box>
+      <GearGridLoader centered size="lg" label="Loading Fleet Categories..." sublabel="Organizing equipment taxonomy & catalog mappings" sx={{ minHeight: 400 }} />
     );
   }
 

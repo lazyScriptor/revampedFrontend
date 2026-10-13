@@ -21,9 +21,12 @@ Read `~/.claude/skills/ui-ux-pro-max/SKILL.md` for the full set of flags and the
 - **Routing**: TanStack Router (file-based in `src/routes/`)
 - **Data**: TanStack Query v5 (queryClient in `src/app/queryClient.ts`)
 - **Forms**: react-hook-form + Zod (`@hookform/resolvers/zod`)
-- **State**: Zustand (`src/stores/useAuthStore.ts`, `useUiStore.ts`) — `useAuthStore` is **persisted** to localStorage under `geargrid-auth-storage`
+- **State**: Zustand (`src/stores/useAuthStore.ts`, `useUiStore.ts`, `useSuperAdminStore.ts`) — `useAuthStore` is **persisted** to localStorage under `geargrid-auth-storage` (includes `user` and `token`).
 - **UI**: **MUI v9** + Emotion. Tailwind utility classes also appear (don't add more — prefer MUI `sx`)
-- **HTTP**: axios via `src/lib/api.ts`. The response interceptor returns `response.data` directly, so hooks receive the unwrapped body (e.g. `{ status, data }`), not the Axios wrapper.
+- **HTTP**: axios via `src/lib/api.ts`.
+  - Request interceptor attaches `Authorization: Bearer <token>` from Zustand store alongside `withCredentials: true` (Dual-Layer Auth).
+  - Response interceptor returns `response.data` directly, so hooks receive the unwrapped body (e.g. `{ status, data }`), not the Axios wrapper.
+  - On 401, attempts silent refresh (`/auth/refresh`), persists the new token, and replays pending requests. Dispatches `auth:unauthorized` only if refresh fails.
 
 ## Commands
 
@@ -33,13 +36,13 @@ Read `~/.claude/skills/ui-ux-pro-max/SKILL.md` for the full set of flags and the
 | Type check | `npx tsc --noEmit` |
 | Lint | `npm run lint` |
 | Build | `npm run build` |
-| Backend API | set `VITE_API_URL=http://localhost:8086/api` in `.env.local` |
+| Backend API | set `VITE_API_URL=http://localhost:8086/api` in `.env` |
 
 ## Definition of done
 
 1. **Type check passes** — `npx tsc --noEmit`. There are a few pre-existing errors in `_authenticated.tsx` and `RentalHistory.tsx` (MUI v9 `primaryTypographyProps` / polymorphic `component={Link}` patterns). **Don't fix them mid-feature**; only touch when explicitly cleaning up that file.
 2. **Test the change in the browser**, not just the type checker. Vite HMR catches most things; full reload after auth-related changes.
-3. **For super-admin work**: cookies have `sameSite: 'none'` + `secure: true` in dev, so the dev server must speak HTTPS or you'll need to keep it on `http://localhost`.
+3. **Dual-Layer Auth (No Login Bounces)**: Always pass `token` to `setAuth(user, token)` in login mutations. Do NOT strip `Authorization: Bearer` in `api.ts` — cross-port dev (`:5173` $\to$ `:8086`) and Safari omit/drop `SameSite=Lax` / `Secure` cookies, which causes instant 401 bounce-backs to `/login` when landing on `/dashboard`. Vite dev proxy in `vite.config.js` also forwards `/api` and `/uploads`.
 
 ## Multi-tenant theming (important)
 

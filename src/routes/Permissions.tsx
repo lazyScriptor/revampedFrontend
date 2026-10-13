@@ -33,6 +33,7 @@ import {
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -626,9 +627,7 @@ function UserPermissionsTab({
 
   if (isLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 6 }}>
-        <CircularProgress />
-      </Box>
+      <GearGridLoader centered size="lg" label="Loading Access Matrix..." sublabel="Compiling role hierarchy & permission overrides" sx={{ py: 10 }} />
     );
   }
 
@@ -1569,9 +1568,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
 
       {/* Role Cards */}
       {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-          <CircularProgress />
-        </Box>
+        <GearGridLoader centered size="md" label="Loading Defined Roles..." />
       ) : (
         <Grid container spacing={{ xs: 1.5, md: 2 }}>
           {sortedRoles.map((role) => {

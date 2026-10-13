@@ -4,6 +4,7 @@ import { useCustomerList } from "@/features/customers/hooks/useCustomerHooks";
 import type { CustomerFilters } from "@/features/customers/hooks/useCustomerHooks";
 import { CustomerTable } from "@/features/customers/components/CustomerTable";
 import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
+import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
 import {
   Alert,
@@ -347,9 +348,7 @@ export default function CustomersRoute() {
       {/* Data Table */}
       <Card elevation={0} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         {isLoading && customerList.length === 0 ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-            <CircularProgress />
-          </Box>
+          <GearGridLoader centered size="lg" label="Loading Client Accounts..." sublabel="Retrieving customer records & credit balances" />
         ) : (
           <CustomerTable
             data={customerList}

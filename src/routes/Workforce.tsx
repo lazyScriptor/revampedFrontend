@@ -55,6 +55,7 @@ import {
   useResolveDefect,
 } from "@/features/inventory/hooks/useDefectHooks";
 import { formatDisplayDate } from "@/lib/dates";
+import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
 // ─────────────────────────────────────────────
 // Shared helpers
@@ -182,9 +183,7 @@ function TechnicianDashboard() {
 
   if (isLoading)
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", pt: 8 }}>
-        <CircularProgress />
-      </Box>
+      <GearGridLoader centered size="lg" label="Loading Technical Roster..." sublabel="Calculating active technician assignments and repair workloads" sx={{ pt: 10 }} />
     );
 
   const statCards = [

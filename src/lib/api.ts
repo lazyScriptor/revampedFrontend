@@ -1,4 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useSuperAdminStore } from '@/stores/useSuperAdminStore';
 
 // 1. Define the shape of your backend's standard error response
 interface ApiErrorResponse {
@@ -6,7 +8,7 @@ interface ApiErrorResponse {
     message: string;
 }
 
-//2. Create the custom Axios Instance
+// 2. Create the custom Axios Instance
 export const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
     withCredentials: true,
@@ -16,25 +18,18 @@ export const api = axios.create({
         Accept: 'application/json',
     },
 });
-// export const api = axios.create({
-//     // Hardcoded for local development
-//     baseURL: 'http://localhost:8086/api',
 
-//     // CRITICAL: This tells the browser to automatically include the 
-//     // HttpOnly JWT cookie in every single request!
-//     withCredentials: true,
-
-//     headers: {
-//         'Content-Type': 'application/json',
-//         Accept: 'application/json',
-//     },
-// });
-
-// 3. Request Interceptor
+// 3. Request Interceptor: Attach Authorization Bearer header alongside cookies for dual-layer resilience
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        // You can add logic here if needed before requests are sent out.
-        // (We do NOT need to attach tokens here because HttpOnly cookies handle it automatically).
+        const isSaEndpoint = config.url?.includes('/super-admin');
+        const token = isSaEndpoint
+            ? (useSuperAdminStore.getState().token || useAuthStore.getState().token)
+            : (useAuthStore.getState().token || useSuperAdminStore.getState().token);
+
+        if (token && !config.headers.Authorization) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
         return config;
     },
     (error: AxiosError) => Promise.reject(error)
@@ -93,7 +88,17 @@ api.interceptors.response.use(
 
             isRefreshing = true;
             try {
-                await api.post('/auth/refresh');
+                const refreshRes: any = await api.post('/auth/refresh');
+                const newToken = refreshRes?.token || refreshRes?.accessToken || refreshRes?.data?.token;
+                if (newToken) {
+                    const currentUser = useAuthStore.getState().user;
+                    if (currentUser) {
+                        useAuthStore.getState().setAuth(currentUser, newToken);
+                    }
+                    if (original.headers) {
+                        original.headers.Authorization = `Bearer ${newToken}`;
+                    }
+                }
                 flushWaiters(true);
                 return api(original);
             } catch {

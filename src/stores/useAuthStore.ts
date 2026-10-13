@@ -26,7 +26,8 @@ interface User {
 interface AuthState {
     isAuthenticated: boolean;
     user: User | null;
-    setAuth: (user: User) => void;
+    token: string | null;
+    setAuth: (user: User, token?: string | null) => void;
     updateUserPartial: (patch: Partial<User>) => void;
     logout: () => void;
     hasPermission: (code: string) => boolean;
@@ -40,8 +41,13 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             isAuthenticated: false,
             user: null,
-            setAuth: (user) => {
-                set({ isAuthenticated: true, user });
+            token: null,
+            setAuth: (user, token) => {
+                set((state) => ({
+                    isAuthenticated: true,
+                    user,
+                    token: token !== undefined ? token : state.token,
+                }));
                 // Apply the backend-resolved language to the i18n instance.
                 // configData.tenant_default_language is set by authService
                 // when there's no user override.
@@ -61,11 +67,16 @@ export const useAuthStore = create<AuthState>()(
             },
 
             logout: () => {
-                // 1. Wipe the Zustand state
-                set({ isAuthenticated: false, user: null });
+                // Best-effort clear backend cookies
+                try {
+                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8086/api';
+                    fetch(`${apiUrl}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+                } catch {
+                    // ignore
+                }
 
-                // Note: You should also call your backend /logout endpoint here eventually 
-                // to clear the HttpOnly cookie!
+                // 1. Wipe the Zustand state
+                set({ isAuthenticated: false, user: null, token: null });
 
                 // 2. Hard redirect to the login page (cleans out the browser memory)
                 window.location.href = '/login';

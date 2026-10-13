@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import { GearGridLoader } from '@/components/ui/GearGridLoader';
 import { api } from '@/lib/api';
 import { useSuperAdminStore } from '@/stores/useSuperAdminStore';
 
@@ -25,11 +26,13 @@ export default function SuperAdminLogin() {
 
     const loginMutation = useMutation({
         mutationFn: async (creds: LoginForm) => {
-            const res = await api.post('/super-admin/login', creds);
-            return res.data;
+            const res: any = await api.post('/super-admin/login', creds);
+            return res.data || res;
         },
-        onSuccess: (data) => {
-            setAuth(data.admin);
+        onSuccess: (data: any) => {
+            const admin = data?.admin || data?.data?.admin || data;
+            const token = data?.token || data?.data?.token || null;
+            setAuth(admin, token);
             navigate({ to: '/super-admin/dashboard' });
         },
     });
@@ -161,7 +164,7 @@ export default function SuperAdminLogin() {
                             }}
                         >
                             {loginMutation.isPending ? (
-                                <CircularProgress size={20} color="inherit" />
+                                <GearGridLoader size="xs" color="white" />
                             ) : (
                                 'Access Console'
                             )}
