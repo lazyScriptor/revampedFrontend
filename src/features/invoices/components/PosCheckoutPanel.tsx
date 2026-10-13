@@ -107,6 +107,8 @@ export function PosCheckoutPanel({
         display: "flex",
         flexDirection: "column",
         height: "100%",
+        minHeight: 0,
+        maxHeight: "100%",
         bgcolor: "#0f172a",
         overflow: "hidden",
       }}
@@ -146,12 +148,14 @@ export function PosCheckoutPanel({
       <Box
         sx={{
           flexGrow: 1,
+          minHeight: 0,
           overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
           p: 3,
           display: "flex",
           flexDirection: "column",
           gap: 2.5,
-          "&::-webkit-scrollbar": { width: "4px" },
+          "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
       >
@@ -168,22 +172,30 @@ export function PosCheckoutPanel({
               fullWidth
               value={fees.transport || ""}
               onChange={(e) => handleFeeChange("transport", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#1e293b",
+                  color: "#f8fafc",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#475569" },
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+                "& .MuiInputBase-input": {
+                  color: "#f8fafc !important",
+                  fontWeight: 600,
+                  WebkitTextFillColor: "#f8fafc !important",
+                },
+              }}
               slotProps={{
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LocalShippingIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                      <LocalShippingIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
                     </InputAdornment>
                   ),
                   inputProps: { min: 0 },
-                  sx: {
-                    color: "white",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
-                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#475569" },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3b82f6" },
-                  },
                 },
-                inputLabel: { sx: { color: "#64748b" } },
+                inputLabel: { sx: { color: "#94a3b8" } },
               }}
             />
             <TextField
@@ -193,22 +205,30 @@ export function PosCheckoutPanel({
               fullWidth
               value={fees.discount || ""}
               onChange={(e) => handleFeeChange("discount", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#1e293b",
+                  color: "#f8fafc",
+                  "& fieldset": { borderColor: "#334155" },
+                  "&:hover fieldset": { borderColor: "#475569" },
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+                "& .MuiInputBase-input": {
+                  color: "#f8fafc !important",
+                  fontWeight: 600,
+                  WebkitTextFillColor: "#f8fafc !important",
+                },
+              }}
               slotProps={{
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <DiscountIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                      <DiscountIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
                     </InputAdornment>
                   ),
                   inputProps: { min: 0 },
-                  sx: {
-                    color: "white",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
-                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#475569" },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3b82f6" },
-                  },
                 },
-                inputLabel: { sx: { color: "#64748b" } },
+                inputLabel: { sx: { color: "#94a3b8" } },
               }}
             />
           </Box>
@@ -306,22 +326,30 @@ export function PosCheckoutPanel({
             fullWidth
             value={fees.advance || ""}
             onChange={(e) => handleFeeChange("advance", e.target.value)}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                bgcolor: "#1e293b",
+                color: "#f8fafc",
+                "& fieldset": { borderColor: "#334155" },
+                "&:hover fieldset": { borderColor: "#475569" },
+                "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+              },
+              "& .MuiInputBase-input": {
+                color: "#f8fafc !important",
+                fontWeight: 600,
+                WebkitTextFillColor: "#f8fafc !important",
+              },
+            }}
             slotProps={{
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PaymentsIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                    <PaymentsIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
                   </InputAdornment>
                 ),
                 inputProps: { min: 0 },
-                sx: {
-                  color: "white",
-                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "#334155" },
-                  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#475569" },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3b82f6" },
-                },
               },
-              inputLabel: { sx: { color: "#64748b" } },
+              inputLabel: { sx: { color: "#94a3b8" } },
             }}
           />
 

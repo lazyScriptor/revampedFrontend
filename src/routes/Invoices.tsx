@@ -267,6 +267,8 @@ export default function InvoicesRoute() {
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
         height: "100%",
+        minHeight: 0,
+        maxHeight: "100%",
       }}
     >
       {posMode === "dispatch" ? (
@@ -440,19 +442,19 @@ export default function InvoicesRoute() {
 
         {/* Mobile: one pane at a time */}
         {isMobile && (
-          <Box sx={{ height: "100%", overflow: "hidden" }}>
+          <Box sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}>
             {activeMobilePane === 0 && (
-              <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
                 {pane1}
               </Box>
             )}
             {activeMobilePane === 1 && (
-              <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
                 {pane2}
               </Box>
             )}
             {activeMobilePane === 2 && (
-              <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
                 {pane3}
               </Box>
             )}

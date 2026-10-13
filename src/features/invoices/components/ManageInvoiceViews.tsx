@@ -796,7 +796,7 @@ export function ManageFinancialPanel({
 
   // ── Expanded terminal ──────────────────────────────────────────────────────
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: "#0f172a", overflow: "hidden" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, maxHeight: "100%", bgcolor: "#0f172a", overflow: "hidden" }}>
       {/* Terminal header */}
       <Box
         sx={{
@@ -824,12 +824,15 @@ export function ManageFinancialPanel({
       <Box
         sx={{
           flexGrow: 1,
+          minHeight: 0,
           overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
           p: 2.5,
+          pb: 4,
           display: "flex",
           flexDirection: "column",
           gap: 2.5,
-          "&::-webkit-scrollbar": { width: "4px" },
+          "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
       >
@@ -906,16 +909,24 @@ export function ManageFinancialPanel({
             sx={{
               flexGrow: 1,
               "& .MuiOutlinedInput-root": {
-                color: "white",
+                bgcolor: "#1e293b",
+                color: "#f8fafc",
+                borderRadius: 1.5,
                 "& fieldset": { borderColor: "#334155" },
                 "&:hover fieldset": { borderColor: "#475569" },
                 "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+              },
+              "& .MuiInputBase-input": {
+                color: "#f8fafc !important",
+                fontWeight: 700,
+                fontSize: "0.95rem",
+                WebkitTextFillColor: "#f8fafc !important",
               },
             }}
             slotProps={{
               input: {
                 startAdornment: (
-                  <Typography sx={{ color: "#64748b", mr: 0.5, fontWeight: 700, fontSize: "0.85rem" }}>
+                  <Typography sx={{ color: "#94a3b8", mr: 0.5, fontWeight: 700, fontSize: "0.85rem" }}>
                     Rs.
                   </Typography>
                 ),
@@ -991,6 +1002,9 @@ export function ManageFinancialPanel({
                   type="number"
                   value={fees.transport}
                   onChange={(e) => setFees({ ...fees, transport: Number(e.target.value) || 0 })}
+                  sx={{
+                    "& .MuiInputBase-input": { color: "#0f172a !important", fontWeight: 600, WebkitTextFillColor: "#0f172a !important" },
+                  }}
                   slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> } }}
                 />
                 <TextField
@@ -999,6 +1013,9 @@ export function ManageFinancialPanel({
                   type="number"
                   value={fees.discount}
                   onChange={(e) => setFees({ ...fees, discount: Number(e.target.value) || 0 })}
+                  sx={{
+                    "& .MuiInputBase-input": { color: "#0f172a !important", fontWeight: 600, WebkitTextFillColor: "#0f172a !important" },
+                  }}
                   slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> } }}
                 />
                 <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
@@ -1071,7 +1088,16 @@ export function ManageFinancialPanel({
               <HistoryIcon fontSize="small" /> {t("orders.transactionLedger")}
             </Typography>
           </AccordionSummary>
-          <AccordionDetails sx={{ p: 0 }}>
+          <AccordionDetails
+            sx={{
+              p: 0,
+              maxHeight: 360,
+              overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
+              "&::-webkit-scrollbar": { width: "4px" },
+              "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "4px" },
+            }}
+          >
             {unifiedLedger.length === 0 ? (
               <Box sx={{ p: 3, textAlign: "center" }}>
                 <Typography variant="body2" color="text.secondary">{t("orders.noTransactions")}</Typography>
