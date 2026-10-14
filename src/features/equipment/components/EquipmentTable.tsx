@@ -17,6 +17,7 @@ import {
   DialogActions,
   Button,
   Avatar,
+  alpha,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -242,19 +243,37 @@ export function EquipmentTable({
     [selectedIds],
   );
 
+  const safePageSizeOptions = useMemo(() => {
+    const set = new Set([10, 20, 50, 100]);
+    if (paginationModel?.pageSize) {
+      set.add(paginationModel.pageSize);
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }, [paginationModel?.pageSize]);
+
   return (
     <>
-      <Box sx={{ height: { xs: 520, md: 650 }, width: "100%", bgcolor: "background.paper" }}>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: { xs: 520, md: 450 },
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.paper",
+        }}
+      >
         <DataGrid
           rows={data}
           columns={columns}
           getRowId={(row) => row.equipment_id}
           loading={isLoading}
           paginationMode="server"
-          rowCount={rowCount}
+          rowCount={Math.max(0, rowCount ?? data.length)}
           paginationModel={paginationModel}
           onPaginationModelChange={onPaginationModelChange}
-          pageSizeOptions={[10, 20, 50]}
+          pageSizeOptions={safePageSizeOptions}
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
           checkboxSelection
@@ -288,7 +307,13 @@ export function EquipmentTable({
             },
           }}
           sx={{
+            flex: 1,
+            minHeight: 0,
             border: "none",
+            "& .MuiDataGrid-main": {
+              flex: 1,
+              minHeight: 0,
+            },
             "& .MuiDataGrid-cell": { borderColor: "#f1f5f9" },
             "& .MuiDataGrid-columnHeaders": {
               bgcolor: "#f8fafc",

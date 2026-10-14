@@ -71,8 +71,9 @@ export default function EquipmentRoute() {
     () => ({
       search: debouncedSearch || undefined,
       category_id: categoryId || undefined,
+      availability: availability !== "all" ? availability : undefined,
     }),
-    [debouncedSearch, categoryId],
+    [debouncedSearch, categoryId, availability],
   );
 
   // Reset to page 1 and clear selection when filters change
@@ -95,21 +96,8 @@ export default function EquipmentRoute() {
     error,
   } = useEquipmentList(paginationModel.page + 1, paginationModel.pageSize, filters);
 
-  // Server-side filtered list, then optional client-side availability bucket
-  const equipmentRaw = response?.equipment || [];
-  const equipmentList = useMemo(() => {
-    if (availability === "all") return equipmentRaw;
-    return equipmentRaw.filter((e: any) => {
-      const available = Number(e.available_qty || 0);
-      const rented = Number(e.rented_qty || 0);
-      const defective = Number(e.defective_qty || 0);
-      if (availability === "in_stock") return available > 0;
-      if (availability === "rented") return rented > 0;
-      if (availability === "in_repair") return defective > 0;
-      return true;
-    });
-  }, [equipmentRaw, availability]);
-  const totalRowCount = response?.total || 0;
+  const equipmentList = response?.equipment || [];
+  const totalRowCount = Number(response?.total || 0);
 
   // Global stats for the KPIs (not affected by filters)
   const { data: globalStats } = useQuery({
@@ -159,7 +147,14 @@ export default function EquipmentRoute() {
   }
 
   return (
-    <div className="space-y-6">
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: { xs: "auto", md: "calc(100vh - 112px)" },
+        gap: { xs: 2, md: 2.5 },
+      }}
+    >
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -365,14 +360,25 @@ export default function EquipmentRoute() {
         <Typography variant="caption" sx={{ color: theme.palette.text.secondary, ml: 0.5 }}>
           {isLoading
             ? "Loading…"
-            : availability === "all"
-              ? `${totalRowCount.toLocaleString()} match${totalRowCount === 1 ? "" : "es"}`
-              : `${equipmentList.length} of ${totalRowCount.toLocaleString()} (this page)`}
+            : `${totalRowCount.toLocaleString()} match${totalRowCount === 1 ? "" : "es"}`}
         </Typography>
       </Card>
 
       {/* Data Table */}
-      <Card elevation={0} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <Card
+        elevation={0}
+        sx={{
+          flex: 1,
+          minHeight: { xs: 520, md: 450 },
+          display: "flex",
+          flexDirection: "column",
+          border: `1px solid ${theme.palette.border.subtle}`,
+          borderRadius: 3,
+          overflow: "hidden",
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+          bgcolor: "background.paper",
+        }}
+      >
         {isLoading && equipmentList.length === 0 ? (
           <GearGridLoader centered size="lg" label="Loading Fleet Inventory..." sublabel="Synchronizing asset specifications & telemetry" />
         ) : (
@@ -481,6 +487,6 @@ export default function EquipmentRoute() {
         selectedIds={selectedIds}
         onSuccess={() => setSelectedIds([])}
       />
-    </div>
+    </Box>
   );
 }

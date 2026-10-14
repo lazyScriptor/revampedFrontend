@@ -212,19 +212,37 @@ export function CustomerTable({
     [selectedIds],
   );
 
+  const safePageSizeOptions = useMemo(() => {
+    const set = new Set([10, 20, 50, 100]);
+    if (paginationModel?.pageSize) {
+      set.add(paginationModel.pageSize);
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }, [paginationModel?.pageSize]);
+
   return (
     <>
-      <Box sx={{ height: { xs: 520, md: 650 }, width: "100%", bgcolor: "background.paper" }}>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: { xs: 520, md: 450 },
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.paper",
+        }}
+      >
         <DataGrid
           rows={data}
           columns={columns}
           getRowId={(row) => row.customer_id}
           loading={isLoading}
           paginationMode="server"
-          rowCount={rowCount}
+          rowCount={Math.max(0, rowCount ?? data.length)}
           paginationModel={paginationModel}
           onPaginationModelChange={onPaginationModelChange}
-          pageSizeOptions={[10, 20, 50]}
+          pageSizeOptions={safePageSizeOptions}
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
           checkboxSelection
@@ -239,7 +257,15 @@ export function CustomerTable({
             }
           }}
           disableRowSelectionOnClick
-          sx={{ border: "none" }}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            border: "none",
+            "& .MuiDataGrid-main": {
+              flex: 1,
+              minHeight: 0,
+            },
+          }}
         />
       </Box>
 

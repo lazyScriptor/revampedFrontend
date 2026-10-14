@@ -137,7 +137,14 @@ export default function CustomersRoute() {
   }
 
   return (
-    <div className="space-y-6">
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: { xs: "auto", md: "calc(100vh - 112px)" },
+        gap: { xs: 2, md: 2.5 },
+      }}
+    >
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -353,7 +360,20 @@ export default function CustomersRoute() {
       </Card>
 
       {/* Data Table */}
-      <Card elevation={0} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <Card
+        elevation={0}
+        sx={{
+          flex: 1,
+          minHeight: { xs: 520, md: 450 },
+          display: "flex",
+          flexDirection: "column",
+          border: `1px solid ${theme.palette.border.subtle}`,
+          borderRadius: 3,
+          overflow: "hidden",
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+          bgcolor: "background.paper",
+        }}
+      >
         {isLoading && customerList.length === 0 ? (
           <GearGridLoader centered size="lg" label="Loading Client Accounts..." sublabel="Retrieving customer records & credit balances" />
         ) : (
@@ -458,7 +478,7 @@ export default function CustomersRoute() {
         selectedIds={selectedIds}
         onSuccess={() => setSelectedIds([])}
       />
-    </div>
+    </Box>
   );
 }
 
