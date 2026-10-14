@@ -4,6 +4,7 @@ import {
   createEquipment,
   deleteEquipment,
   updateEquipment,
+  bulkUpdateEquipment,
   type EquipmentFilters,
 } from '../api/equipment.api';
 
@@ -48,6 +49,17 @@ export const useUpdateEquipment = () => {
     mutationFn: updateEquipment,
     onSuccess: () => {
       // Instantly refresh the table when an item is successfully edited
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+    },
+  });
+};
+
+export const useBulkUpdateEquipment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bulkUpdateEquipment,
+    onSuccess: () => {
+      // Invalidate both equipment list and any cached equipment details
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
     },
   });

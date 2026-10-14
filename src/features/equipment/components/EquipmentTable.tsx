@@ -4,6 +4,7 @@ import {
   GridColDef,
   GridRenderCellParams,
   GridToolbar,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid";
 import {
   Box,
@@ -31,7 +32,9 @@ interface EquipmentTableProps {
   rowCount: number;
   paginationModel: { page: number; pageSize: number };
   onPaginationModelChange: (model: { page: number; pageSize: number }) => void;
-  onEdit: (equipmentRow: any) => void; // <--- ADD THIS
+  onEdit: (equipmentRow: any) => void;
+  selectedIds?: number[];
+  onSelectionChange?: (ids: number[]) => void;
 }
 
 export function EquipmentTable({
@@ -40,7 +43,9 @@ export function EquipmentTable({
   rowCount,
   paginationModel,
   onPaginationModelChange,
-  onEdit, // <--- ADD THIS RIGHT HERE
+  onEdit,
+  selectedIds = [],
+  onSelectionChange,
 }: EquipmentTableProps) {
   const { t } = useTranslation();
   const deleteMutation = useDeleteEquipment();
@@ -244,6 +249,14 @@ export function EquipmentTable({
           pageSizeOptions={[10, 20, 50]}
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
+          checkboxSelection
+          rowSelectionModel={selectedIds}
+          onRowSelectionModelChange={(newModel: GridRowSelectionModel) => {
+            const ids = Array.isArray(newModel)
+              ? (newModel as number[])
+              : Array.from(newModel as any).map(Number);
+            onSelectionChange?.(ids);
+          }}
           disableRowSelectionOnClick
           // 🚀 HIDE NON-ESSENTIAL COLUMNS BY DEFAULT
           initialState={{

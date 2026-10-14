@@ -4,7 +4,9 @@ import { useCustomerList } from "@/features/customers/hooks/useCustomerHooks";
 import type { CustomerFilters } from "@/features/customers/hooks/useCustomerHooks";
 import { CustomerTable } from "@/features/customers/components/CustomerTable";
 import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
+import { CustomerBulkEditDialog } from "@/features/customers/components/CustomerBulkEditDialog";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
+import { Can } from "@/components/auth/Can";
 
 import {
   Alert,
@@ -14,6 +16,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Divider,
   Grid,
   InputAdornment,
   TextField,
@@ -30,6 +33,7 @@ import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ClearOutlinedIcon from "@mui/icons-material/ClearOutlined";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
+import EditNoteIcon from "@mui/icons-material/EditNote";
 
 // Debounce search input so we don't pound the API on every keystroke.
 function useDebounced<T>(value: T, delay = 300): T {
@@ -47,6 +51,8 @@ export default function CustomersRoute() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
 
   // ─── Filter state ───────────────────────────────────────────────────────
   const [searchInput, setSearchInput] = useState("");
@@ -67,9 +73,10 @@ export default function CustomersRoute() {
     [debouncedSearch, type, status, idRetained, hasParent],
   );
 
-  // Reset to page 1 whenever any filter changes
+  // Reset to page 1 and clear selection whenever any filter changes
   useEffect(() => {
     setPaginationModel((m) => (m.page === 0 ? m : { ...m, page: 0 }));
+    setSelectedIds([]);
   }, [debouncedSearch, type, status, idRetained, hasParent]);
 
   const { data: response, isLoading, isError, error } = useCustomerList(
@@ -355,13 +362,102 @@ export default function CustomersRoute() {
             isLoading={isLoading}
             rowCount={totalRowCount}
             paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
+            onPaginationModelChange={(model) => {
+              setPaginationModel(model);
+              setSelectedIds([]);
+            }}
             onEdit={handleOpenEdit}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
           />
         )}
       </Card>
 
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1200,
+            bgcolor: "rgba(15, 23, 42, 0.95)",
+            backdropFilter: "blur(8px)",
+            color: "#fff",
+            px: 2.5,
+            py: 1.25,
+            borderRadius: 9999,
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3)",
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Chip
+              label={selectedIds.length}
+              size="small"
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                color: "#fff",
+                fontWeight: 800,
+                height: 22,
+                minWidth: 22,
+              }}
+            />
+            <Typography variant="body2" sx={{ fontWeight: 600, color: "#fff" }}>
+              client{selectedIds.length === 1 ? "" : "s"} selected
+            </Typography>
+          </Box>
+
+          <Divider orientation="vertical" flexItem sx={{ borderColor: "rgba(255,255,255,0.2)" }} />
+
+          <Can perform={["customer:bulk_edit", "customer:edit"]}>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<EditNoteIcon />}
+              onClick={() => setIsBulkEditOpen(true)}
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                "&:hover": { bgcolor: theme.palette.primary.dark },
+                fontWeight: 700,
+                borderRadius: 9999,
+                textTransform: "none",
+                px: 2,
+              }}
+            >
+              Bulk Edit
+            </Button>
+          </Can>
+
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => setSelectedIds([])}
+            sx={{
+              color: "rgba(255, 255, 255, 0.7)",
+              "&:hover": { color: "#fff", bgcolor: "rgba(255, 255, 255, 0.08)" },
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: 9999,
+            }}
+          >
+            Deselect All
+          </Button>
+        </Box>
+      )}
+
       <CustomerFormDialog open={isDialogOpen} onClose={handleCloseDialog} initialData={editingItem} />
+
+      <CustomerBulkEditDialog
+        open={isBulkEditOpen}
+        onClose={() => setIsBulkEditOpen(false)}
+        selectedIds={selectedIds}
+        onSuccess={() => setSelectedIds([])}
+      />
     </div>
   );
 }

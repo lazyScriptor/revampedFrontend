@@ -41,9 +41,31 @@ export const createEquipment = async (data: EquipmentFormData): Promise<Equipmen
 export const deleteEquipment = async (id: number): Promise<void> => {
   await api.delete(`/equipment/${id}`);
 };
-// Add this below your createEquipment function
 export const updateEquipment = async ({ id, data }: { id: number; data: Partial<EquipmentFormData> }): Promise<Equipment> => {
-  const response = await api.put(`/equipment/${id}`, data); // Change to .patch if your backend uses PATCH
-  console.log("response", response)
+  const response = await api.put(`/equipment/${id}`, data);
+  return response.data;
+};
+
+export interface EquipmentBulkUpdatePayload {
+  ids: number[];
+  updates: {
+    category_id?: number | "";
+    warehouse_id?: number | "";
+    is_bulk_item?: boolean;
+    base_rental_price?: number;
+    minimum_rental_days?: number;
+    extra_daily_rate?: number;
+    price_adjustment?: {
+      type: "percentage" | "fixed";
+      field?: "both" | "base" | "extra";
+      value: number;
+    };
+  };
+}
+
+export const bulkUpdateEquipment = async (
+  payload: EquipmentBulkUpdatePayload,
+): Promise<{ status: string; message: string; data: { updatedCount: number; ids: number[] } }> => {
+  const response = await api.patch("/equipment/bulk", payload);
   return response.data;
 };

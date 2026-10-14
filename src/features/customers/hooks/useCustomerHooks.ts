@@ -162,3 +162,34 @@ export const useParentCustomerOptions = (
         placeholderData: (prev) => prev,
     });
 };
+
+export interface CustomerBulkUpdatePayload {
+    ids: number[];
+    updates: {
+        status?: 'Active' | 'Blacklisted';
+        customer_type?: 'Individual' | 'Business';
+        rating?: number;
+        parent_customer_id?: number | null | '';
+        deposit_balance_adjustment?: {
+            type: 'set' | 'add';
+            value: number;
+        };
+    };
+}
+
+export const bulkUpdateCustomers = async (
+    payload: CustomerBulkUpdatePayload,
+): Promise<{ status: string; message: string; data: { updatedCount: number; ids: number[] } }> => {
+    const response = await api.patch('/customers/bulk', payload);
+    return response.data;
+};
+
+export const useBulkUpdateCustomers = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: bulkUpdateCustomers,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
+        },
+    });
+};

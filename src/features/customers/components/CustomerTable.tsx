@@ -4,6 +4,7 @@ import {
   GridColDef,
   GridRenderCellParams,
   GridToolbar,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid";
 import {
   Box,
@@ -33,6 +34,8 @@ interface CustomerTableProps {
   paginationModel: { page: number; pageSize: number };
   onPaginationModelChange: (model: { page: number; pageSize: number }) => void;
   onEdit: (customerRow: any) => void;
+  selectedIds?: number[];
+  onSelectionChange?: (ids: number[]) => void;
 }
 
 export function CustomerTable({
@@ -42,6 +45,8 @@ export function CustomerTable({
   paginationModel,
   onPaginationModelChange,
   onEdit,
+  selectedIds = [],
+  onSelectionChange,
 }: CustomerTableProps) {
   const deleteMutation = useDeleteCustomer();
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -214,6 +219,14 @@ export function CustomerTable({
           pageSizeOptions={[10, 20, 50]}
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
+          checkboxSelection
+          rowSelectionModel={selectedIds}
+          onRowSelectionModelChange={(newModel: GridRowSelectionModel) => {
+            const ids = Array.isArray(newModel)
+              ? (newModel as number[])
+              : Array.from(newModel as any).map(Number);
+            onSelectionChange?.(ids);
+          }}
           disableRowSelectionOnClick
           sx={{ border: "none" }}
         />
