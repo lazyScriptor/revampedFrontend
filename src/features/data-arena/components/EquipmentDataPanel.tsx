@@ -53,13 +53,39 @@ export function EquipmentDataPanel() {
   const handleImportSubmit = () => {
     if (!file) return;
     importMutation.mutate(file, {
-      onSuccess: (data) => {
-        setToast({
-          open: true,
-          message: `Successfully imported ${data.successCount} items!`,
-          severity: "success",
-        });
-        setFile(null); // Clear the file after success
+      onSuccess: (data: any) => {
+        const count = data?.successCount ?? data?.inserted ?? 0;
+        const errList = data?.errors || [];
+
+        if (count === 0 && errList.length > 0) {
+          setToast({
+            open: true,
+            message: `Import failed: ${errList[0]?.message || "Invalid CSV data"}. Check console for details.`,
+            severity: "error",
+          });
+          console.error("⚠️ CSV IMPORT ERRORS:", errList);
+        } else if (count === 0) {
+          setToast({
+            open: true,
+            message: "No equipment records were imported. Please check your CSV format and columns.",
+            severity: "error",
+          });
+        } else if (errList.length > 0) {
+          setToast({
+            open: true,
+            message: `Imported ${count} items. ${errList.length} rows had errors.`,
+            severity: "error",
+          });
+          console.error("⚠️ CSV IMPORT ERRORS:", errList);
+          setFile(null);
+        } else {
+          setToast({
+            open: true,
+            message: `Successfully imported ${count} items!`,
+            severity: "success",
+          });
+          setFile(null);
+        }
       },
       onError: (error: any) => {
         const msg =

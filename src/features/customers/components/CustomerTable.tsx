@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   DataGrid,
   GridColDef,
@@ -204,6 +204,14 @@ export function CustomerTable({
     },
   ];
 
+  const gridRowSelectionModel: GridRowSelectionModel = useMemo(
+    () => ({
+      type: "include",
+      ids: new Set(selectedIds || []),
+    }),
+    [selectedIds],
+  );
+
   return (
     <>
       <Box sx={{ height: { xs: 520, md: 650 }, width: "100%", bgcolor: "background.paper" }}>
@@ -220,12 +228,15 @@ export function CustomerTable({
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
           checkboxSelection
-          rowSelectionModel={selectedIds}
+          rowSelectionModel={gridRowSelectionModel}
           onRowSelectionModelChange={(newModel: GridRowSelectionModel) => {
-            const ids = Array.isArray(newModel)
-              ? (newModel as number[])
-              : Array.from(newModel as any).map(Number);
-            onSelectionChange?.(ids);
+            if (newModel && newModel.ids instanceof Set) {
+              onSelectionChange?.(Array.from(newModel.ids).map(Number));
+            } else if (Array.isArray(newModel)) {
+              onSelectionChange?.((newModel as any[]).map(Number));
+            } else {
+              onSelectionChange?.([]);
+            }
           }}
           disableRowSelectionOnClick
           sx={{ border: "none" }}

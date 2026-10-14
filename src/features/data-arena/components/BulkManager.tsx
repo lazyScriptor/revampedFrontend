@@ -73,22 +73,38 @@ export function BulkManager({
     try {
       const data = await onImportSubmit(file);
 
-      // NEW: Log partial failures directly to the user!
-      if (data.errors && data.errors.length > 0) {
+      const count = data?.successCount ?? data?.inserted ?? 0;
+      const errList = data?.errors || [];
+
+      if (count === 0 && errList.length > 0) {
         setToast({
           open: true,
-          message: `Imported ${data.successCount} rows. ${data.errors.length} failed. Check Console for details.`,
+          message: `Import failed: ${errList[0]?.message || "All rows contained invalid data"}. Check console for details.`,
+          severity: "error",
+        });
+        console.error("⚠️ CSV IMPORT ERRORS:", errList);
+      } else if (count === 0) {
+        setToast({
+          open: true,
+          message: "No records were imported. Please check your CSV format and column headers.",
+          severity: "error",
+        });
+      } else if (errList.length > 0) {
+        setToast({
+          open: true,
+          message: `Imported ${count} rows. ${errList.length} failed. Check console for details.`,
           severity: "warning",
         });
-        console.error("⚠️ CSV IMPORT ERRORS:", data.errors);
+        console.error("⚠️ CSV IMPORT ERRORS:", errList);
+        setFile(null);
       } else {
         setToast({
           open: true,
-          message: `Successfully imported ${data.successCount} records!`,
+          message: `Successfully imported ${count} records!`,
           severity: "success",
         });
+        setFile(null);
       }
-      setFile(null);
     } catch (error: any) {
       const msg =
         error.response?.data?.message ||
