@@ -113,7 +113,15 @@ export const useUpdateFees = () => {
 
 // features/invoices/hooks/useInvoicePrint.ts
 
-export const handlePrintInvoice = (printContentId: string) => {
+export interface PrintInvoiceOptions {
+    paperWidth?: "80mm" | "58mm";
+    title?: string;
+}
+
+export const handlePrintInvoice = (
+    printContentId: string,
+    options?: PrintInvoiceOptions
+) => {
     const contentElement = document.getElementById(printContentId);
 
     if (!contentElement) {
@@ -121,12 +129,20 @@ export const handlePrintInvoice = (printContentId: string) => {
         return;
     }
 
+    const paperWidth = options?.paperWidth || "80mm";
+    const printableWidth = paperWidth === "58mm" ? "48mm" : "72mm";
+    const pageRollWidth = paperWidth === "58mm" ? "58mm" : "80mm";
+    const title = options?.title || "GearGrid POS Receipt";
+
     // 1. Create an invisible iframe
     const iframe = document.createElement("iframe");
-    iframe.style.position = "absolute";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
     iframe.style.width = "0px";
     iframe.style.height = "0px";
     iframe.style.border = "none";
+    iframe.style.zIndex = "-9999";
     document.body.appendChild(iframe);
 
     const iframeDoc = iframe.contentWindow?.document;
@@ -135,35 +151,87 @@ export const handlePrintInvoice = (printContentId: string) => {
     // 2. Inject Thermal Printer Specific CSS and the Receipt HTML
     iframeDoc.open();
     iframeDoc.write(`
+    <!DOCTYPE html>
     <html>
       <head>
-        <title>Receipt</title>
+        <meta charset="utf-8" />
+        <title>${title}</title>
         <style>
-          /* CRITICAL: Tells the browser this is an 80mm thermal roll */
+          /* Thermal roll page sizing: 80mm (standard) or 58mm (mini) */
           @page {
-            margin: 0;
-            size: 80mm auto; 
+            size: ${pageRollWidth} auto;
+            margin: 0mm;
           }
           
-          body {
-            margin: 0;
-            padding: 4mm; /* Slight padding so text doesn't touch the exact edge */
-            width: 80mm;
-            font-family: 'Courier New', Courier, monospace; /* Best for thermal clarity */
-            color: #000;
-            font-size: 12px; /* Standard thermal legibility size */
+          @media print {
+            html, body {
+              width: ${printableWidth} !important;
+              margin: 0 auto !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+              color: #000000 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
           }
 
-          /* Force all borders/dividers to be stark black for thermal printing */
-          hr {
-            border: none;
-            border-top: 1px dashed #000;
-            margin: 8px 0;
-          }
-
-          /* Strip out MUI specific scaling artifacts inside the iframe */
           * {
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          body {
+            margin: 0 auto;
+            padding: 3mm 2mm 20mm 2mm; /* 20mm bottom margin prevents auto-cutter from clipping signatures */
+            width: ${printableWidth};
+            max-width: ${printableWidth};
+            font-family: 'Courier New', Courier, 'Lucida Console', Monaco, monospace;
+            color: #000000;
+            background-color: #ffffff;
+            font-size: ${paperWidth === "58mm" ? "10px" : "11px"};
+            line-height: 1.25;
+            -webkit-font-smoothing: none;
+            text-rendering: optimizeSpeed;
+          }
+
+          /* Force high-contrast thermal borders and dividers */
+          hr {
+            border: none;
+            border-top: 1px dashed #000000;
+            margin: 6px 0;
+          }
+
+          .divider-dashed {
+            border-top: 1px dashed #000000;
+            margin: 6px 0;
+          }
+
+          .divider-double {
+            border-top: 2px solid #000000;
+            border-bottom: 1px solid #000000;
+            height: 3px;
+            margin: 6px 0;
+          }
+
+          .divider-solid {
+            border-top: 1px solid #000000;
+            margin: 6px 0;
+          }
+
+          .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+
+          th, td {
+            padding: 2px 0;
+            vertical-align: top;
           }
         </style>
       </head>
@@ -181,7 +249,9 @@ export const handlePrintInvoice = (printContentId: string) => {
 
         // 4. Clean up the DOM after the print dialog closes
         setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 1000);
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+            }
+        }, 1500);
     }, 250);
 };

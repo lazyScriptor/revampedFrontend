@@ -16,6 +16,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import DiscountIcon from "@mui/icons-material/Discount";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 
 interface PosCheckoutPanelProps {
@@ -26,6 +27,7 @@ interface PosCheckoutPanelProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onConfirmDispatch: () => void;
+  onPrintEstimate?: () => void;
   isSubmitting: boolean;
 }
 
@@ -37,6 +39,7 @@ export function PosCheckoutPanel({
   isCollapsed,
   onToggleCollapse,
   onConfirmDispatch,
+  onPrintEstimate,
   isSubmitting,
 }: PosCheckoutPanelProps) {
   const subTotal = useMemo(
@@ -376,6 +379,32 @@ export function PosCheckoutPanel({
           <Typography variant="caption" sx={{ color: "#64748b", display: "block", textAlign: "center", mb: 1 }}>
             Add equipment to the order first
           </Typography>
+        )}
+        {cartItems.length > 0 && onPrintEstimate && (
+          <Button
+            variant="outlined"
+            fullWidth
+            size="medium"
+            disabled={!selectedCustomer}
+            onClick={onPrintEstimate}
+            startIcon={<ReceiptLongIcon />}
+            sx={{
+              mb: 1.5,
+              py: 1.2,
+              borderRadius: 2.5,
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              color: selectedCustomer ? "#cbd5e1" : "#475569",
+              borderColor: selectedCustomer ? "#334155" : "#1e293b",
+              "&:hover": {
+                borderColor: "#64748b",
+                bgcolor: "rgba(255,255,255,0.04)",
+                color: "white",
+              },
+            }}
+          >
+            Print Quotation / Estimate Slip
+          </Button>
         )}
         <Button
           variant="contained"

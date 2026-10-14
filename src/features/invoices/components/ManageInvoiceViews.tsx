@@ -29,6 +29,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PrintIcon from "@mui/icons-material/Print";
+import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
 import {
   useInvoiceSearch,
   useInvoiceList,
@@ -619,6 +621,7 @@ export function ManageFinancialPanel({
   const [isEditingFees, setIsEditingFees] = useState(false);
   const [receiptExpanded, setReceiptExpanded] = useState(true);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
 
   const initialTransport = Number(invoice?.transport_fee) || 0;
   const initialDiscount = Number(invoice?.discount_amount) || 0;
@@ -815,9 +818,29 @@ export function ManageFinancialPanel({
             {t("orders.financialTerminal").toUpperCase()}
           </Typography>
         </Box>
-        <IconButton onClick={onToggleCollapse} size="small" sx={{ color: "#475569" }}>
-          <ChevronRightIcon fontSize="small" />
-        </IconButton>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<PrintIcon sx={{ fontSize: 16 }} />}
+            onClick={() => setIsPrintDialogOpen(true)}
+            sx={{
+              color: "#cbd5e1",
+              borderColor: "#334155",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              textTransform: "none",
+              py: 0.35,
+              px: 1.2,
+              "&:hover": { borderColor: "#475569", color: "white", bgcolor: "rgba(255,255,255,0.05)" },
+            }}
+          >
+            Print POS Bill
+          </Button>
+          <IconButton onClick={onToggleCollapse} size="small" sx={{ color: "#475569" }}>
+            <ChevronRightIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Scrollable body */}
@@ -865,6 +888,25 @@ export function ManageFinancialPanel({
               ✓ Fully Settled
             </Typography>
           )}
+
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<PrintIcon />}
+            onClick={() => setIsPrintDialogOpen(true)}
+            sx={{
+              mt: 2,
+              bgcolor: "#2563eb",
+              "&:hover": { bgcolor: "#1d4ed8" },
+              fontWeight: 800,
+              fontSize: "0.82rem",
+              borderRadius: 2,
+              py: 0.9,
+              textTransform: "none",
+            }}
+          >
+            Print POS Bill (INV-{invoice.invoice_id})
+          </Button>
         </Box>
 
         {/* Payment method selector */}
@@ -1205,6 +1247,13 @@ export function ManageFinancialPanel({
           </Button>
         </Box>
       </Box>
+
+      {/* ── Thermal Receipt Print & Preview Dialog ── */}
+      <ReceiptPrintDialog
+        open={isPrintDialogOpen}
+        onClose={() => setIsPrintDialogOpen(false)}
+        invoice={invoice}
+      />
     </Box>
   );
 }

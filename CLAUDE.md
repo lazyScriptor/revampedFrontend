@@ -37,6 +37,8 @@ Read `~/.claude/skills/ui-ux-pro-max/SKILL.md` for the full set of flags and the
 | Lint | `npm run lint` |
 | Build | `npm run build` |
 | Backend API | set `VITE_API_URL=http://localhost:8086/api` in `.env` |
+| Super-Admin | `https://app.geargrid.live/super-admin/login` (`admin7@myrental.com` / `Admin@123`) |
+| Tenant Language | Set in Super Admin `/super-admin/tenants` or DB `system_config.default_language` ('en'/'si'/'ta') |
 
 ## Definition of done
 
@@ -89,6 +91,8 @@ src/
 - **`ListItemText` `primaryTypographyProps` is deprecated** → put styling in `slotProps={{ primary: { sx: ... } }}` or use a custom `<Typography>` as child.
 - **`<Typography fontWeight="bold">` fails strict TS** — write `sx={{ fontWeight: 700 }}` instead.
 - **`<ListItemButton component={Link}>`** (polymorphic + TanStack Router) flags TS2769 in this project — pre-existing, ignore unless cleaning up.
+- **MUI inputs in dark containers (`#0f172a`)**: Global theme sets `MuiOutlinedInput` background to `#FFFFFF`. Setting `color: "white"` without overriding `bgcolor` causes invisible white-on-white text. Always specify `bgcolor: "#1e293b"` and `& .MuiInputBase-input: { color: "#f8fafc !important", WebkitTextFillColor: "#f8fafc !important" }`.
+- **Flex child scrolling**: Any scrollable child (`overflowY: "auto"`) inside a flex column with `height: "100%"` must have `minHeight: 0` on both itself and all parent flex containers, otherwise children refuse to shrink and bottom content is clipped.
 
 ## API patterns
 

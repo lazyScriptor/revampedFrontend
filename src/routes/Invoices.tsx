@@ -27,6 +27,8 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
+import PrintIcon from "@mui/icons-material/Print";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import { PosCustomerPanel } from "@/features/invoices/components/PosCustomerPanel";
 import {
@@ -41,8 +43,10 @@ import {
   ManageFinancialPanel,
 } from "@/features/invoices/components/ManageInvoiceViews";
 import { ReturnSettlementDialog } from "@/features/invoices/components/ReturnSettlementDialog";
+import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
+import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintDialog";
 import { api } from "@/lib/api";
-import { useInvoiceDetails } from "@/features/invoices/hooks/useInvoiceHooks";
+import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
@@ -89,6 +93,12 @@ export default function InvoicesRoute() {
   const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ── Thermal Bill Print States ──────────────────────────────────────────────────
+  const [lastDispatchedInvoice, setLastDispatchedInvoice] = useState<any | null>(null);
+  const [isPostDispatchOpen, setIsPostDispatchOpen] = useState(false);
+  const [isEstimatePrintOpen, setIsEstimatePrintOpen] = useState(false);
+  const [isDispatchPrintOpen, setIsDispatchPrintOpen] = useState(false);
+
   // ── Auto-navigation on mobile ─────────────────────────────────────────────────
   useEffect(() => {
     if (isMobile && posMode === "dispatch" && selectedCustomer) {
@@ -111,21 +121,81 @@ export default function InvoicesRoute() {
     setToast({ open: true, message, severity });
   };
 
-  const executeDispatch = async () => {
+  const executeDispatch = async (shouldAutoPrint = false) => {
     setIsSubmitting(true);
     try {
-      await api.post("/invoices", {
+      const response = await api.post("/invoices", {
         customer_id: selectedCustomer.customer_id,
         borrowed_on_behalf_of_customer_id: onBehalfOfCustomer?.customer_id ?? null,
         items: cartItems,
         fees: fees,
       });
+
+      const backendInv = response.data?.data?.invoice || response.data?.invoice || {};
+      
+      // Hydrate with full details for printing
+      const hydratedInvoice = {
+        ...backendInv,
+        invoice_id: backendInv.invoice_id || Math.floor(1000 + Math.random() * 9000),
+        issued_date: backendInv.issued_date || backendInv.createdAt || new Date().toISOString(),
+        total_amount: grandTotal,
+        sub_total: subTotal,
+        transport_fee: fees.transport,
+        discount_amount: fees.discount,
+        advance_paid: fees.advance,
+        id_card_status: 1,
+        status: "Active",
+        Customer: selectedCustomer,
+        OnBehalfOfCustomer: onBehalfOfCustomer,
+        InvoiceLines: cartItems.map((item, idx) => {
+          const math = calculateLineMath(item);
+          return {
+            line_id: idx + 1,
+            equipment_id: item.equipment_id,
+            Equipment: {
+              equipment_name: item.equipment_name,
+              is_bulk_item: item.is_bulk_item,
+            },
+            borrow_quantity: item.borrow_quantity,
+            borrow_date: item.borrow_date,
+            expected_return_date: item.expected_return_date,
+            locked_base_price: item.locked_base_price,
+            locked_minimum_days: item.locked_minimum_days,
+            locked_extra_daily_rate: item.locked_extra_daily_rate,
+            line_total_amount: math.lineCost,
+            line_status: "Active",
+          };
+        }),
+        Payments:
+          fees.advance > 0
+            ? [
+                {
+                  payment_amount: fees.advance,
+                  method: "Cash",
+                  payment_date: new Date().toISOString(),
+                },
+              ]
+            : [],
+      };
+
+      setLastDispatchedInvoice(hydratedInvoice);
       showToast("Invoice created successfully!", "success");
+      setIsConfirmDispatchOpen(false);
+
+      if (shouldAutoPrint) {
+        setTimeout(() => {
+          handlePrintInvoice("pos-dispatch-silent-receipt");
+        }, 350);
+      }
+
+      // Open post-dispatch dialog with summary & quick print
+      setIsPostDispatchOpen(true);
+
+      // Reset cart and customer selection
       setSelectedCustomer(null);
       setOnBehalfOfCustomer(null);
       setCartItems([]);
       setFees({ transport: 0, discount: 0, advance: 0 });
-      setIsConfirmDispatchOpen(false);
     } catch (error: any) {
       showToast(error.response?.data?.message || "Failed to create invoice.", "error");
     } finally {
@@ -280,6 +350,7 @@ export default function InvoicesRoute() {
           isCollapsed={!isTerminalOpen}
           onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
           onConfirmDispatch={() => setIsConfirmDispatchOpen(true)}
+          onPrintEstimate={() => setIsEstimatePrintOpen(true)}
           isSubmitting={isSubmitting}
         />
       ) : (
@@ -668,22 +739,161 @@ export default function InvoicesRoute() {
             </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, bgcolor: "white" }}>
+        <DialogActions sx={{ p: 2.5, bgcolor: "white", gap: 1 }}>
           <Button onClick={() => setIsConfirmDispatchOpen(false)} color="inherit" disabled={isSubmitting}>
             Cancel
           </Button>
           <Button
-            onClick={executeDispatch}
+            onClick={() => executeDispatch(true)}
+            variant="outlined"
+            disabled={isSubmitting}
+            startIcon={<PrintIcon />}
+            sx={{
+              fontWeight: 800,
+              color: "#2563eb",
+              borderColor: "#bfdbfe",
+              "&:hover": { bgcolor: "#eff6ff", borderColor: "#93c5fd" },
+            }}
+          >
+            Confirm & Print Bill
+          </Button>
+          <Button
+            onClick={() => executeDispatch(false)}
             variant="contained"
             disableElevation
             disabled={isSubmitting}
             startIcon={<RocketLaunchIcon />}
-            sx={{ bgcolor: "#16a34a", fontWeight: 800, px: 3, "&:hover": { bgcolor: "#15803d" } }}
+            sx={{ bgcolor: "#16a34a", fontWeight: 800, px: 2.5, "&:hover": { bgcolor: "#15803d" } }}
           >
             {isSubmitting ? "Processing…" : "Confirm & Dispatch"}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Post-Dispatch Success & Print Dialog ─────────────────────────────────── */}
+      <Dialog
+        open={isPostDispatchOpen}
+        onClose={() => setIsPostDispatchOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}
+      >
+        <DialogTitle sx={{ textAlign: "center", pt: 3, pb: 1 }}>
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              bgcolor: "#dcfce7",
+              color: "#16a34a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mx: "auto",
+              mb: 1.5,
+            }}
+          >
+            <CheckCircleIcon sx={{ fontSize: 36 }} />
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a" }}>
+            Dispatched Successfully!
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#64748b", mt: 0.5 }}>
+            Invoice #{lastDispatchedInvoice?.invoice_id} is now Active
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: "center", px: 3, py: 1.5 }}>
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: 2,
+              mb: 1,
+              textAlign: "left",
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "#64748b" }}>Client:</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a" }}>
+                {lastDispatchedInvoice?.Customer?.company_name ||
+                  `${lastDispatchedInvoice?.Customer?.first_name || ""} ${lastDispatchedInvoice?.Customer?.last_name || ""}`}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "#64748b" }}>Equipment:</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a" }}>
+                {lastDispatchedInvoice?.InvoiceLines?.reduce((sum: number, l: any) => sum + (l.borrow_quantity || 1), 0) || 0} machines
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography variant="caption" sx={{ color: "#64748b" }}>Net Total:</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: "#16a34a" }}>
+                Rs. {Number(lastDispatchedInvoice?.total_amount || 0).toLocaleString()}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, pt: 0, flexDirection: "column", gap: 1 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            startIcon={<PrintIcon />}
+            onClick={() => setIsDispatchPrintOpen(true)}
+            sx={{
+              bgcolor: "#16a34a",
+              "&:hover": { bgcolor: "#15803d" },
+              fontWeight: 800,
+              py: 1.4,
+              borderRadius: 2,
+            }}
+          >
+            Print POS Bill (Thermal)
+          </Button>
+          <Button
+            fullWidth
+            variant="text"
+            color="inherit"
+            onClick={() => setIsPostDispatchOpen(false)}
+            sx={{ fontWeight: 700, color: "#64748b" }}
+          >
+            Start Next Order
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Silent / Immediate Print Mount for Newly Created Invoice ─────────────── */}
+      {lastDispatchedInvoice && (
+        <InvoiceReceipt
+          id="pos-dispatch-silent-receipt"
+          invoice={lastDispatchedInvoice}
+        />
+      )}
+
+      {/* ── Dispatched Invoice Print & Customizer Dialog ─────────────────────────── */}
+      {lastDispatchedInvoice && (
+        <ReceiptPrintDialog
+          open={isDispatchPrintOpen}
+          onClose={() => setIsDispatchPrintOpen(false)}
+          invoice={lastDispatchedInvoice}
+          title={`POS Bill · INV-${lastDispatchedInvoice.invoice_id}`}
+        />
+      )}
+
+      {/* ── Mid-way Quotation / Estimate Print & Customizer Dialog ───────────────── */}
+      <ReceiptPrintDialog
+        open={isEstimatePrintOpen}
+        onClose={() => setIsEstimatePrintOpen(false)}
+        isDraft={true}
+        draftData={{
+          customer: selectedCustomer,
+          onBehalfOfCustomer,
+          items: cartItems,
+          fees,
+        }}
+        title="Quotation / Estimate Slip Preview"
+      />
 
       {/* ── Clear Cart Dialog ─────────────────────────────────────────────────────── */}
       <Dialog
