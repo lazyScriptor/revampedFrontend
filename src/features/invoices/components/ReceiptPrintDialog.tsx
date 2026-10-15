@@ -347,12 +347,12 @@ export function ReceiptPrintDialog({
               }}
             >
               <Typography variant="caption" sx={{ color: "#166534", fontWeight: 800 }}>
-                Xprinter XP-80T / Edge-to-Edge Ready
+                Xprinter XP-80T / 80mm Continuous Roll Ready
               </Typography>
               <Typography variant="caption" sx={{ color: "#15803d", fontSize: "0.74rem", lineHeight: 1.35 }}>
-                • <b>Paper Size:</b> Select <b>72 x 3,274 mm</b> (continuous roll) so it cuts directly after the text without blank paper.<br />
-                • <b>Margins:</b> Set to <b>None</b> for full width.<br />
-                • <b>Darkness:</b> High-contrast bold thermal density active.
+                • <b>Paper Size:</b> Select <b>72 x 3,274 mm</b> (or 80mm continuous roll) — never splits into 2 parts.<br />
+                • <b>Margins:</b> Set to <b>None</b> for full edge-to-edge layout.<br />
+                • <b>Typography:</b> Balanced, high-clarity typography for Sinhala and English.
               </Typography>
             </Box>
           </Box>

@@ -182,6 +182,8 @@ export const handlePrintInvoice = (
               max-width: 100% !important;
               margin: 0 !important;
               padding: 0 !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
           }
 
@@ -189,52 +191,49 @@ export const handlePrintInvoice = (
             box-sizing: border-box;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-            color: #000000 !important;
           }
 
           body {
             margin: 0 !important;
-            padding: 0 0.5mm 1mm 0.5mm !important; /* Edge-to-edge width with zero top margin */
+            padding: 0 1mm 1mm 1mm !important;
             width: 100% !important;
             max-width: 100% !important;
-            font-family: 'Noto Sans Sinhala', 'Iskoola Pota', 'Sinhala Sangam MN', 'Courier New', Courier, monospace, sans-serif;
+            font-family: 'Noto Sans Sinhala', 'Sinhala Sangam MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             color: #000000 !important;
             background-color: #ffffff !important;
-            font-weight: 700 !important; /* Thicker, bolder text for high-contrast thermal burning */
-            -webkit-text-stroke: 0.35px #000000; /* Extra stroke width to ensure rich, pitch-black letters */
-            font-size: ${paperWidth === "58mm" ? "10.5px" : "11.5px"};
-            line-height: 1.25;
+            font-size: ${paperWidth === "58mm" ? "10px" : "11px"};
+            line-height: 1.28;
             -webkit-font-smoothing: antialiased;
-            text-rendering: geometricPrecision;
+            text-rendering: optimizeLegibility;
           }
 
-          /* Force high-contrast thermal borders and dividers */
+          /* High-contrast, clean thermal dividers */
           hr {
             border: none;
-            border-top: 1.5px dashed #000000;
-            margin: 4px 0;
+            border-top: 1px dashed #000000;
+            margin: 3px 0;
           }
 
           .divider-dashed {
-            border-top: 1.5px dashed #000000;
-            margin: 4px 0;
+            border-top: 1px dashed #000000;
+            margin: 3px 0;
           }
 
           .divider-double {
-            border-top: 2px solid #000000;
-            border-bottom: 1.5px solid #000000;
-            height: 3px;
-            margin: 4px 0;
+            border-top: 1.5px solid #000000;
+            border-bottom: 1px solid #000000;
+            height: 2px;
+            margin: 3px 0;
           }
 
           .divider-solid {
-            border-top: 1.5px solid #000000;
-            margin: 4px 0;
+            border-top: 1px solid #000000;
+            margin: 3px 0;
           }
 
           .avoid-break {
-            page-break-inside: avoid;
-            break-inside: avoid;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
 
           table {
@@ -249,7 +248,7 @@ export const handlePrintInvoice = (
         </style>
       </head>
       <body>
-        <div id="receipt-print-wrapper" style="width: 100%; max-width: 100%; margin: 0; padding: 0;">
+        <div id="receipt-print-wrapper" style="width: 100%; max-width: 100%; margin: 0; padding: 0; page-break-inside: avoid; break-inside: avoid;">
           ${contentElement.innerHTML}
         </div>
       </body>
@@ -257,14 +256,14 @@ export const handlePrintInvoice = (
   `);
     iframeDoc.close();
 
-    // 3. Dynamically measure rendered content height and set exact @page size so Chrome does not revert to A4
+    // 3. Dynamically measure rendered content height and set exact @page size so Chrome prints on a single continuous sheet
     setTimeout(() => {
         try {
             const root = iframeDoc.getElementById("receipt-print-wrapper") || iframeDoc.body;
             const scrollHeight = root.scrollHeight || iframeDoc.body.scrollHeight || 600;
             // 1 px = 0.264583 mm at standard 96 DPI screen raster.
-            // Tight 2mm buffer prevents trailing blank feed
-            const calculatedMm = Math.max(50, Math.ceil(scrollHeight * 0.264583) + 2);
+            // Generous 8mm buffer ensures Chrome NEVER creates a 2nd page due to sub-pixel rounding
+            const calculatedMm = Math.max(60, Math.ceil(scrollHeight * 0.264583) + 8);
 
             const pageSizeTag = iframeDoc.getElementById("dynamic-page-size");
             if (pageSizeTag) {
