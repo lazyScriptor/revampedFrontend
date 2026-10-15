@@ -11,11 +11,30 @@
 //   2. DIALOG (fallback) — if the agent is not running, open the browser print
 //      dialog with a dynamically sized @page rule (previous behaviour).
 
+import { api } from "@/lib/api";
+
 export interface PrintInvoiceOptions {
   paperWidth?: "80mm" | "58mm";
   title?: string;
   copies?: number;
   printer?: string;
+  // Audit logging metadata
+  invoiceId?: number | null;
+  docNumber?: string;
+  docType?: "DISPATCH" | "COMPLETED" | "DRAFT" | "RETURN_SETTLEMENT";
+  customerName?: string;
+  customerPhone?: string;
+  totalItems?: number;
+  totalMachines?: number;
+  subtotal?: number;
+  transportFee?: number;
+  discountAmount?: number;
+  grandTotal?: number;
+  totalPaid?: number;
+  balanceDue?: number;
+  language?: string;
+  customNotes?: string;
+  billSnapshot?: any;
 }
 
 export type PrintResult =
@@ -200,7 +219,10 @@ export const handlePrintInvoice = async (
 
     const data = await res.json().catch(() => ({}));
     if (res.ok && data?.ok) {
-      return { method: "direct", jobId: data.jobId ?? null, printer: data.printer, heightMm };
+      const result: PrintResult = { method: "direct", jobId: data.jobId ?? null, printer: data.printer, heightMm };
+      // Asynchronously record print audit log to backend
+      logPrintEventToServer(options, result, heightMm);
+      return result;
     }
     fallbackReason = data?.error || `Agent responded ${res.status}`;
     console.warn("Print agent error, falling back to browser dialog:", fallbackReason);
@@ -226,5 +248,46 @@ export const handlePrintInvoice = async (
   iframe.contentWindow?.focus();
   iframe.contentWindow?.print();
   removeLater(iframe);
-  return { method: "dialog", reason: fallbackReason };
+
+  const fallbackResult: PrintResult = { method: "dialog", reason: fallbackReason };
+  logPrintEventToServer(options, fallbackResult, heightMm);
+  return fallbackResult;
+};
+
+/**
+ * Asynchronously posts print audit log to backend.
+ * Never throws, ensuring UI execution is never disrupted.
+ */
+const logPrintEventToServer = async (
+  options: PrintInvoiceOptions | undefined,
+  result: PrintResult,
+  heightMm: number
+) => {
+  try {
+    await api.post("/invoices/print-logs", {
+      invoice_id: options?.invoiceId || null,
+      doc_number: options?.docNumber || options?.title || "POS Receipt",
+      doc_type: options?.docType || "DISPATCH",
+      customer_name: options?.customerName || null,
+      customer_phone: options?.customerPhone || null,
+      print_method: result.method === "direct" ? "direct_agent" : "browser_dialog",
+      printer_name: result.method === "direct" ? result.printer : (options?.printer || "Browser Default"),
+      paper_width: options?.paperWidth || "80mm",
+      copies: options?.copies || 1,
+      height_mm: heightMm,
+      total_items: options?.totalItems || 0,
+      total_machines: options?.totalMachines || 0,
+      subtotal: options?.subtotal || 0,
+      transport_fee: options?.transportFee || 0,
+      discount_amount: options?.discountAmount || 0,
+      grand_total: options?.grandTotal || 0,
+      total_paid: options?.totalPaid || 0,
+      balance_due: options?.balanceDue || 0,
+      language: options?.language || "en",
+      custom_notes: options?.customNotes || null,
+      bill_snapshot: options?.billSnapshot || null,
+    });
+  } catch (err) {
+    console.warn("Notice: Print audit log could not be saved to backend:", err);
+  }
 };

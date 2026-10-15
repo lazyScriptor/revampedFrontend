@@ -47,16 +47,20 @@ import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
 import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintDialog";
 import { api } from "@/lib/api";
 import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
+import { Can } from "@/components/auth/Can";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { InvoicePrintLogsView } from "@/features/invoices/components/InvoicePrintLogsView";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
   const { t } = useTranslation();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" };
+  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" | "logs" };
+  const hasPrintLogPermission = useAuthStore((s) => s.hasPermission("invoice:print_log:view"));
 
-  const [posMode, setPosMode] = useState<"dispatch" | "manage">(
-    search.mode === "manage" ? "manage" : "dispatch"
+  const [posMode, setPosMode] = useState<"dispatch" | "manage" | "logs">(
+    search.mode === "manage" ? "manage" : search.mode === "logs" ? "logs" : "dispatch"
   );
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   const [activeMobilePane, setActiveMobilePane] = useState(0);
@@ -65,9 +69,13 @@ export default function InvoicesRoute() {
   useEffect(() => {
     if (search.mode === "manage" && posMode !== "manage") setPosMode("manage");
     if (search.mode === "dispatch" && posMode !== "dispatch") setPosMode("dispatch");
-  }, [search.mode]);
+    if (search.mode === "logs" && posMode !== "logs") {
+      if (hasPrintLogPermission) setPosMode("logs");
+      else setPosMode("dispatch");
+    }
+  }, [search.mode, hasPrintLogPermission]);
 
-  const switchPosMode = (next: "dispatch" | "manage") => {
+  const switchPosMode = (next: "dispatch" | "manage" | "logs") => {
     setPosMode(next);
     navigate({ to: "/invoices", search: { mode: next } as any, replace: true });
   };
@@ -184,7 +192,25 @@ export default function InvoicesRoute() {
 
       if (shouldAutoPrint) {
         setTimeout(() => {
-          handlePrintInvoice("pos-dispatch-silent-receipt");
+          const cust = hydratedInvoice.Customer || selectedCustomer;
+          const custName = cust?.company_name || `${cust?.first_name || ""} ${cust?.last_name || ""}`.trim() || "Walk-in Customer";
+          const paid = hydratedInvoice.Payments?.reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0) || 0;
+          handlePrintInvoice("pos-dispatch-silent-receipt", {
+            invoiceId: hydratedInvoice.invoice_id,
+            docNumber: `INV-${hydratedInvoice.invoice_id}`,
+            docType: "DISPATCH",
+            customerName: custName,
+            customerPhone: cust?.phone_number,
+            totalItems: cartItems.length,
+            totalMachines: cartItems.reduce((acc, it) => acc + (it.borrow_quantity || 1), 0),
+            subtotal: Number(hydratedInvoice.sub_total || 0),
+            transportFee: Number(hydratedInvoice.transport_fee || 0),
+            discountAmount: Number(hydratedInvoice.discount_amount || 0),
+            grandTotal: Number(hydratedInvoice.total_amount || 0),
+            totalPaid: paid,
+            balanceDue: Math.max(0, Number(hydratedInvoice.total_amount || 0) - paid),
+            billSnapshot: hydratedInvoice,
+          });
         }, 350);
       }
 
@@ -411,12 +437,18 @@ export default function InvoicesRoute() {
             variant="h5"
             sx={{ fontWeight: 900, color: "#0f172a", lineHeight: 1.1 }}
           >
-            {posMode === "dispatch" ? t("invoices.newDispatch") : t("orders.title")}
+            {posMode === "dispatch"
+              ? t("invoices.newDispatch")
+              : posMode === "manage"
+              ? t("orders.title")
+              : "Bill Printing Audit Logs"}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
             {posMode === "dispatch"
               ? t("invoices.newDispatch") + " — " + t("invoices.findOrder").toLowerCase()
-              : t("orders.subtitle")}
+              : posMode === "manage"
+              ? t("orders.subtitle")
+              : "Complete immutable log of all thermal receipts printed, operator attribution, and point-in-time bill snapshots"}
           </Typography>
         </Box>
 
@@ -482,56 +514,91 @@ export default function InvoicesRoute() {
               {t("invoices.manageOrders")}
             </Box>
           </Box>
+
+          <Can perform="invoice:print_log:view">
+            <Box
+              onClick={() => switchPosMode("logs")}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                px: { xs: 1.5, sm: 2.5 },
+                py: 1,
+                borderRadius: 2,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                bgcolor: posMode === "logs" ? "#7c3aed" : "transparent",
+                color: posMode === "logs" ? "white" : "#64748b",
+                fontWeight: 800,
+                fontSize: "0.8rem",
+                userSelect: "none",
+                "&:hover": {
+                  bgcolor: posMode === "logs" ? "#6d28d9" : "#e2e8f0",
+                },
+              }}
+            >
+              <ReceiptLongIcon sx={{ fontSize: 15 }} />
+              <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                Print Audit Logs
+              </Box>
+            </Box>
+          </Can>
         </Box>
       </Box>
 
       {/* ── Pane area ──────────────────────────────────────────────────────────── */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          minHeight: 0,
-          overflow: "hidden",
-          pb: { xs: isMobile ? "70px" : 0, lg: 0 },
-        }}
-      >
-        {/* Desktop: all 3 panes side by side */}
-        {!isMobile && (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 2.5,
-              height: "100%",
-              overflow: "hidden",
-            }}
-          >
-            {pane1}
-            {pane2}
-            {pane3}
-          </Box>
-        )}
+      {posMode === "logs" ? (
+        <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: "auto", bgcolor: "#f8fafc", borderRadius: 2 }}>
+          <InvoicePrintLogsView />
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            flexGrow: 1,
+            minHeight: 0,
+            overflow: "hidden",
+            pb: { xs: isMobile ? "70px" : 0, lg: 0 },
+          }}
+        >
+          {/* Desktop: all 3 panes side by side */}
+          {!isMobile && (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                gap: 2.5,
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
+              {pane1}
+              {pane2}
+              {pane3}
+            </Box>
+          )}
 
-        {/* Mobile: one pane at a time */}
-        {isMobile && (
-          <Box sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}>
-            {activeMobilePane === 0 && (
-              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                {pane1}
-              </Box>
-            )}
-            {activeMobilePane === 1 && (
-              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                {pane2}
-              </Box>
-            )}
-            {activeMobilePane === 2 && (
-              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                {pane3}
-              </Box>
-            )}
-          </Box>
-        )}
-      </Box>
+          {/* Mobile: one pane at a time */}
+          {isMobile && (
+            <Box sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}>
+              {activeMobilePane === 0 && (
+                <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                  {pane1}
+                </Box>
+              )}
+              {activeMobilePane === 1 && (
+                <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                  {pane2}
+                </Box>
+              )}
+              {activeMobilePane === 2 && (
+                <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                  {pane3}
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+      )}
 
       {/* ── Mobile Bottom Navigation ────────────────────────────────────────────── */}
       {isMobile && (

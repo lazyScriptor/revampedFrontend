@@ -79,11 +79,53 @@ export function ReceiptPrintDialog({
     setPrinting(true);
     setPrintStatus(null);
     try {
+      const cust = isDraft ? draftData?.customer : invoice?.Customer || invoice?.customer;
+      const custName = cust?.company_name || `${cust?.first_name || ""} ${cust?.last_name || ""}`.trim() || "Walk-in Customer";
+      const custPhone = cust?.phone_number || "";
+      const docNum = isDraft ? (draftData?.draftId || "DRAFT-QUOTE") : `INV-${invoice?.invoice_id || "POS"}`;
+      const docType = isDraft ? "DRAFT" : (invoice?.status === "completed" || invoice?.status === "Returned" ? "COMPLETED" : "DISPATCH");
+      const subtotal = isDraft
+        ? (draftData?.items || []).reduce((acc: number, it: any) => acc + (it.line_total || it.base_price || 0), 0)
+        : Number(invoice?.sub_total || 0);
+      const transportFee = Number(isDraft ? draftData?.fees?.transport || 0 : invoice?.transport_fee || 0);
+      const discountAmount = Number(isDraft ? draftData?.fees?.discount || 0 : invoice?.discount_amount || 0);
+      const grandTotal = Number(isDraft ? subtotal + transportFee - discountAmount : invoice?.total_amount || 0);
+      const totalPaid = Number(invoice?.Payments?.reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0) || (isDraft ? draftData?.fees?.advance || 0 : 0));
+      const balanceDue = Math.max(0, grandTotal - totalPaid);
+      const totalItems = isDraft ? (draftData?.items?.length || 0) : (invoice?.InvoiceLines?.length || 0);
+      const totalMachines = isDraft
+        ? (draftData?.items || []).reduce((acc: number, it: any) => acc + Number(it.borrow_quantity || 1), 0)
+        : (invoice?.InvoiceLines || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 1), 0);
+
       const result = await handlePrintInvoice(printDomId, {
         paperWidth,
         title: isDraft
           ? (language === "si" ? "කුලී ඇස්තමේන්තුව" : "Rental Estimate")
           : (language === "si" ? `බිල්පත INV-${invoice?.invoice_id || "POS"}` : `Bill INV-${invoice?.invoice_id || "POS"}`),
+        invoiceId: invoice?.invoice_id || null,
+        docNumber: docNum,
+        docType: docType as any,
+        customerName: custName,
+        customerPhone: custPhone,
+        totalItems,
+        totalMachines,
+        subtotal,
+        transportFee,
+        discountAmount,
+        grandTotal,
+        totalPaid,
+        balanceDue,
+        language,
+        customNotes,
+        billSnapshot: {
+          invoice_id: invoice?.invoice_id,
+          doc_number: docNum,
+          customer: cust,
+          items: isDraft ? draftData?.items : invoice?.InvoiceLines,
+          fees: { subtotal, transportFee, discountAmount, grandTotal, totalPaid, balanceDue },
+          customNotes,
+          language,
+        },
       });
       if (result?.method === "direct") {
         setPrintStatus({ ok: true, text: `Sent to ${result.printer} · ${result.heightMm}mm` });

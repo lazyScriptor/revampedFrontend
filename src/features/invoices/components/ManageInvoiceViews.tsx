@@ -31,6 +31,8 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PrintIcon from "@mui/icons-material/Print";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
+import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
+import { Can } from "@/components/auth/Can";
 import {
   useInvoiceSearch,
   useInvoiceList,
@@ -622,6 +624,7 @@ export function ManageFinancialPanel({
   const [receiptExpanded, setReceiptExpanded] = useState(true);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [isPrintHistoryOpen, setIsPrintHistoryOpen] = useState(false);
 
   const initialTransport = Number(invoice?.transport_fee) || 0;
   const initialDiscount = Number(invoice?.discount_amount) || 0;
@@ -907,6 +910,28 @@ export function ManageFinancialPanel({
           >
             Print POS Bill (INV-{invoice.invoice_id})
           </Button>
+
+          <Can perform="invoice:print_log:view">
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<HistoryIcon />}
+              onClick={() => setIsPrintHistoryOpen(true)}
+              sx={{
+                mt: 1,
+                borderColor: "#334155",
+                color: "#94a3b8",
+                "&:hover": { borderColor: "#475569", color: "#f8fafc", bgcolor: "rgba(255,255,255,0.03)" },
+                fontWeight: 700,
+                fontSize: "0.78rem",
+                borderRadius: 2,
+                py: 0.7,
+                textTransform: "none",
+              }}
+            >
+              View Bill Print History
+            </Button>
+          </Can>
         </Box>
 
         {/* Payment method selector */}
@@ -1253,6 +1278,14 @@ export function ManageFinancialPanel({
         open={isPrintDialogOpen}
         onClose={() => setIsPrintDialogOpen(false)}
         invoice={invoice}
+      />
+
+      {/* ── Print Audit Trail & Reprint Dialog ── */}
+      <InvoicePrintHistoryDialog
+        open={isPrintHistoryOpen}
+        onClose={() => setIsPrintHistoryOpen(false)}
+        invoiceId={invoice.invoice_id}
+        invoiceNumber={invoice.invoice_number || `INV-${invoice.invoice_id}`}
       />
     </Box>
   );
