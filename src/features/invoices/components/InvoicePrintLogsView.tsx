@@ -28,6 +28,8 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  Alert,
+  AlertTitle,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import PrintIcon from "@mui/icons-material/Print";
@@ -91,7 +93,7 @@ export function InvoicePrintLogsView() {
   const [selectedLog, setSelectedLog] = useState<PrintLogItem | null>(null);
   const [reprinting, setReprinting] = useState(false);
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, refetch, isFetching, isError, error } = useQuery({
     queryKey: [
       "invoice-print-logs",
       page,
@@ -112,7 +114,8 @@ export function InvoicePrintLogsView() {
       const res = await api.get("/invoices/print-logs", { params });
       return res.data?.data || { logs: [], totalItems: 0, stats: {} };
     },
-    staleTime: 10000,
+    staleTime: 5000,
+    refetchOnWindowFocus: true,
   });
 
   const logs: PrintLogItem[] = data?.logs || [];
@@ -216,6 +219,22 @@ export function InvoicePrintLogsView() {
           Refresh Logs
         </Button>
       </Box>
+
+      {/* Error Alert */}
+      {isError && (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refetch()}>
+              Retry
+            </Button>
+          }
+          sx={{ borderRadius: 2 }}
+        >
+          <AlertTitle sx={{ fontWeight: 700 }}>Failed to Load Print Logs</AlertTitle>
+          {(error as any)?.response?.data?.message || (error as any)?.message || "An unexpected error occurred while fetching bill printing audit records."}
+        </Alert>
+      )}
 
       {/* KPI Cards */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2 }}>
@@ -354,6 +373,26 @@ export function InvoicePrintLogsView() {
                     <Typography variant="body2" sx={{ color: "#64748b", mt: 1 }}>
                       Loading bill printing audit logs…
                     </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={8} sx={{ textAlign: "center", py: 6 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: "#dc2626" }}>
+                      Unable to load print audit records
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#64748b", mt: 0.5, maxWidth: 450, mx: "auto" }}>
+                      {(error as any)?.response?.data?.message || "Please check your network or user permissions."}
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<RefreshIcon />}
+                      onClick={() => refetch()}
+                      sx={{ mt: 2, fontWeight: 700 }}
+                    >
+                      Retry Loading
+                    </Button>
                   </TableCell>
                 </TableRow>
               ) : logs.length === 0 ? (
