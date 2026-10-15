@@ -96,15 +96,17 @@ export function InvoicePrintHistoryDialog({
     if (!selectedSnapshot) return;
     try {
       setReprinting(true);
-      await handlePrintInvoice({
-        invoice: selectedSnapshot.bill_snapshot?.invoice_id ? selectedSnapshot.bill_snapshot : undefined,
-        isDraft: selectedSnapshot.doc_type === "DRAFT",
-        draftData: selectedSnapshot.doc_type === "DRAFT" ? selectedSnapshot.bill_snapshot : undefined,
+      await handlePrintInvoice("history-reprint-dom", {
+        invoiceId: selectedSnapshot.invoice_id,
+        docNumber: selectedSnapshot.doc_number,
+        docType: selectedSnapshot.doc_type,
+        customerName: selectedSnapshot.customer_name || undefined,
+        customerPhone: selectedSnapshot.customer_phone || undefined,
         paperWidth: (selectedSnapshot.paper_width as any) || "80mm",
         language: (selectedSnapshot.language as any) || "en",
         customNotes: selectedSnapshot.custom_notes || undefined,
         copies: selectedSnapshot.copies || 1,
-        sourceElementId: "history-reprint-dom",
+        billSnapshot: selectedSnapshot.bill_snapshot,
       });
     } catch (err) {
       console.error("Reprint failed:", err);

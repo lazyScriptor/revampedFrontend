@@ -12,12 +12,14 @@
 //      dialog with a dynamically sized @page rule (previous behaviour).
 
 import { api } from "@/lib/api";
+import { queryClient } from "@/app/queryClient";
 
 export interface PrintInvoiceOptions {
   paperWidth?: "80mm" | "58mm";
   title?: string;
   copies?: number;
   printer?: string;
+  sourceElementId?: string;
   // Audit logging metadata
   invoiceId?: number | null;
   docNumber?: string;
@@ -166,20 +168,30 @@ const removeLater = (iframe: HTMLIFrameElement, ms = 2000) =>
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 export const handlePrintInvoice = async (
-  printContentId: string,
+  target: string | (PrintInvoiceOptions & { sourceElementId?: string }),
   options?: PrintInvoiceOptions
 ): Promise<PrintResult | null> => {
-  const contentElement = document.getElementById(printContentId);
+  const resolvedTargetId = typeof target === "string" ? target : target?.sourceElementId || "printable-invoice";
+  const resolvedOptions: PrintInvoiceOptions | undefined = typeof target === "string" ? options : target;
+
+  let contentElement = document.getElementById(resolvedTargetId);
   if (!contentElement) {
-    console.error(`Print element with ID ${printContentId} not found.`);
+    // Resilient fallback: search for any active printable receipt element in the DOM
+    contentElement = document.querySelector('[id^="printable-receipt"]') as HTMLElement ||
+                     document.getElementById("pos-dispatch-silent-receipt") ||
+                     document.getElementById("history-reprint-dom");
+  }
+
+  if (!contentElement) {
+    console.error(`Print element with ID '${resolvedTargetId}' not found.`);
     return null;
   }
 
-  const paperWidth = options?.paperWidth || "80mm";
+  const paperWidth = resolvedOptions?.paperWidth || "80mm";
   const is58 = paperWidth === "58mm";
   const printableWidthMm = is58 ? 48 : 72; // physical printable area of the head
   const fontPx = is58 ? "10px" : "11px";
-  const title = options?.title || "GearGrid POS Receipt";
+  const title = resolvedOptions?.title || "GearGrid POS Receipt";
   const innerHtml = contentElement.innerHTML;
 
   // ── 1. DIRECT: exact-length print through the local agent ────────────────
@@ -210,8 +222,8 @@ export const handlePrintInvoice = async (
         html: finalDoc,
         widthMm: printableWidthMm,
         heightMm,
-        copies: options?.copies || 1,
-        printer: options?.printer,
+        copies: resolvedOptions?.copies || 1,
+        printer: resolvedOptions?.printer,
         jobName: title,
       }),
       signal: ctrl.signal,
@@ -221,7 +233,7 @@ export const handlePrintInvoice = async (
     if (res.ok && data?.ok) {
       const result: PrintResult = { method: "direct", jobId: data.jobId ?? null, printer: data.printer, heightMm };
       // Asynchronously record print audit log to backend
-      logPrintEventToServer(options, result, heightMm);
+      logPrintEventToServer(resolvedOptions, result, heightMm);
       return result;
     }
     fallbackReason = data?.error || `Agent responded ${res.status}`;
@@ -250,12 +262,12 @@ export const handlePrintInvoice = async (
   removeLater(iframe);
 
   const fallbackResult: PrintResult = { method: "dialog", reason: fallbackReason };
-  logPrintEventToServer(options, fallbackResult, heightMm);
+  logPrintEventToServer(resolvedOptions, fallbackResult, heightMm);
   return fallbackResult;
 };
 
 /**
- * Asynchronously posts print audit log to backend.
+ * Asynchronously posts print audit log to backend and refreshes audit views.
  * Never throws, ensuring UI execution is never disrupted.
  */
 const logPrintEventToServer = async (
@@ -264,7 +276,7 @@ const logPrintEventToServer = async (
   heightMm: number
 ) => {
   try {
-    await api.post("/invoices/print-logs", {
+    const payload = {
       invoice_id: options?.invoiceId || null,
       doc_number: options?.docNumber || options?.title || "POS Receipt",
       doc_type: options?.docType || "DISPATCH",
@@ -286,8 +298,11 @@ const logPrintEventToServer = async (
       language: options?.language || "en",
       custom_notes: options?.customNotes || null,
       bill_snapshot: options?.billSnapshot || null,
-    });
-  } catch (err) {
-    console.warn("Notice: Print audit log could not be saved to backend:", err);
+    };
+    const res = await api.post("/invoices/print-logs", payload);
+    console.info("POS Bill print log successfully recorded to audit trail:", res.data);
+    queryClient.invalidateQueries({ queryKey: ["invoice-print-logs"] });
+  } catch (err: any) {
+    console.error("Notice: Print audit log could not be saved to backend:", err?.response?.data || err.message);
   }
 };
