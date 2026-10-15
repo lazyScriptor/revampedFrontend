@@ -347,10 +347,12 @@ export function ReceiptPrintDialog({
               }}
             >
               <Typography variant="caption" sx={{ color: "#166534", fontWeight: 800 }}>
-                Xprinter XP-80T / 80mm Roll Ready
+                Xprinter XP-80T / Edge-to-Edge Ready
               </Typography>
-              <Typography variant="caption" sx={{ color: "#15803d", fontSize: "0.74rem", lineHeight: 1.3 }}>
-                Targeting 80mm continuous roll. In the print dialog, ensure Margins are set to <b>None</b> for neat auto-cutting.
+              <Typography variant="caption" sx={{ color: "#15803d", fontSize: "0.74rem", lineHeight: 1.35 }}>
+                • <b>Paper Size:</b> Select <b>72 x 3,274 mm</b> (continuous roll) so it cuts directly after the text without blank paper.<br />
+                • <b>Margins:</b> Set to <b>None</b> for full width.<br />
+                • <b>Darkness:</b> High-contrast bold thermal density active.
               </Typography>
             </Box>
           </Box>

@@ -542,10 +542,11 @@ export const InvoiceReceipt = ({
         width: is58mm ? "48mm" : "72mm",
         maxWidth: is58mm ? "48mm" : "72mm",
         margin: "0 auto",
-        padding: "4mm 3mm 12mm 3mm",
+        padding: "2mm 2mm 6mm 2mm",
         backgroundColor: "#ffffff",
         color: "#000000",
         fontFamily: activeFont,
+        fontWeight: 700,
         fontSize: fontSizeBase,
         lineHeight,
         boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
@@ -555,6 +556,7 @@ export const InvoiceReceipt = ({
     : {
         display: "none", // Keeps it hidden on dashboard; iframe clones innerHTML directly
         fontFamily: activeFont,
+        fontWeight: 700,
         color: "#000000",
         backgroundColor: "#ffffff",
         fontSize: fontSizeBase,
@@ -564,7 +566,7 @@ export const InvoiceReceipt = ({
   return (
     <Box id={id} sx={containerStyle}>
       {/* ── 1. STORE HEADER ─────────────────────────────────────────────────── */}
-      <div style={{ textAlign: "center", marginBottom: "6px" }}>
+      <div style={{ textAlign: "center", marginBottom: "4px", marginTop: "0" }}>
         <div
           style={{
             fontWeight: 900,
@@ -572,64 +574,65 @@ export const InvoiceReceipt = ({
             textTransform: "uppercase",
             letterSpacing: "0.5px",
             color: "#000000",
+            lineHeight: 1.15,
           }}
         >
           {companyName}
         </div>
-        <div style={{ fontSize: is58mm ? "9px" : "10px", marginTop: "1px", color: "#000000", fontWeight: 700 }}>
+        <div style={{ fontSize: is58mm ? "9.5px" : "10.5px", marginTop: "1px", color: "#000000", fontWeight: 800 }}>
           {t.category}
         </div>
-        <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", marginTop: "2px", color: "#000000" }}>
+        <div style={{ fontSize: is58mm ? "9px" : "10px", marginTop: "1px", color: "#000000", fontWeight: 700 }}>
           {companyAddress}
         </div>
-        <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", color: "#000000" }}>
+        <div style={{ fontSize: is58mm ? "9px" : "10px", color: "#000000", fontWeight: 700 }}>
           Tel: {companyPhone} · {companyEmail}
         </div>
       </div>
 
-      <hr style={{ border: "none", borderTop: "1px dashed #000000", margin: "5px 0" }} />
+      <hr style={{ border: "none", borderTop: "1.5px dashed #000000", margin: "3px 0" }} />
 
       {/* ── 2. DOCUMENT TYPE BANNER & METADATA ───────────────────────────────── */}
       <div
         style={{
-          border: "1px solid #000000",
-          padding: "3px 4px",
+          border: "1.5px solid #000000",
+          padding: "2px 4px",
           textAlign: "center",
-          margin: "4px 0",
+          margin: "3px 0",
         }}
       >
-        <div style={{ fontWeight: 800, fontSize: is58mm ? "10px" : "11.5px", color: "#000000" }}>
+        <div style={{ fontWeight: 900, fontSize: is58mm ? "10.5px" : "12px", color: "#000000" }}>
           {normalized.docTitle}
         </div>
-        <div style={{ fontSize: is58mm ? "8px" : "9px", color: "#000000" }}>
+        <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", color: "#000000", fontWeight: 700 }}>
           {normalized.docSubtitle}
         </div>
       </div>
 
-      <div style={{ fontSize: fontSizeBase, margin: "6px 0 4px 0" }}>
+      <div style={{ fontSize: fontSizeBase, margin: "4px 0 3px 0", fontWeight: 700 }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: "bold" }}>{t.docNumber}</span>
+          <span style={{ fontWeight: 800 }}>{t.docNumber}</span>
           <span style={{ fontWeight: 900 }}>{normalized.docNumber}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>{t.dateTime}</span>
-          <span>{fmtDateTime(normalized.issuedDate)}</span>
+          <span style={{ fontWeight: 700 }}>{fmtDateTime(normalized.issuedDate)}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>{t.operator}</span>
-          <span>{operatorName}</span>
+          <span style={{ fontWeight: 700 }}>{operatorName}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>{t.status}</span>
-          <span style={{ fontWeight: "bold" }}>{normalized.statusDisplay.toUpperCase()}</span>
+          <span style={{ fontWeight: 900 }}>{normalized.statusDisplay.toUpperCase()}</span>
         </div>
       </div>
 
-      <hr style={{ border: "none", borderTop: "1px dashed #000000", margin: "5px 0" }} />
+      <hr style={{ border: "none", borderTop: "1.5px dashed #000000", margin: "3px 0" }} />
 
       {/* ── 3. CLIENT & VERIFICATION DETAILS ─────────────────────────────────── */}
-      <div style={{ fontSize: fontSizeBase, margin: "4px 0" }}>
-        <div style={{ fontWeight: 800, marginBottom: "2px" }}>
+      <div style={{ fontSize: fontSizeBase, margin: "3px 0", fontWeight: 700 }}>
+        <div style={{ fontWeight: 900, marginBottom: "2px" }}>
           {t.client} {normalized.customer.name.toUpperCase()}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -638,12 +641,12 @@ export const InvoiceReceipt = ({
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>{t.phone}</span>
-          <span>{normalized.customer.phone}</span>
+          <span style={{ fontWeight: 700 }}>{normalized.customer.phone}</span>
         </div>
         {normalized.customer.address && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>{t.address}</span>
-            <span style={{ textAlign: "right", maxWidth: "60%" }}>
+            <span style={{ textAlign: "right", maxWidth: "60%", fontWeight: 700 }}>
               {normalized.customer.address}
             </span>
           </div>
@@ -651,21 +654,22 @@ export const InvoiceReceipt = ({
         {normalized.beneficiary && (
           <div
             style={{
-              marginTop: "3px",
+              marginTop: "2px",
               paddingTop: "2px",
               borderTop: "1px dotted #000000",
               fontSize: is58mm ? "9px" : "10px",
+              fontWeight: 700,
             }}
           >
-            <span style={{ fontWeight: "bold" }}>{t.onBehalfOf} </span>
+            <span style={{ fontWeight: 800 }}>{t.onBehalfOf} </span>
             {normalized.beneficiary.name} ({normalized.beneficiary.phone})
           </div>
         )}
         <div
           style={{
-            marginTop: "3px",
-            fontSize: is58mm ? "9px" : "10px",
-            fontWeight: "bold",
+            marginTop: "2px",
+            fontSize: is58mm ? "9.5px" : "10.5px",
+            fontWeight: 800,
           }}
         >
           {t.vaultCollateral} [{normalized.vaultStatus}]
@@ -676,31 +680,31 @@ export const InvoiceReceipt = ({
       <div
         style={{
           borderTop: "2px solid #000000",
-          borderBottom: "1px solid #000000",
+          borderBottom: "1.5px solid #000000",
           height: "2px",
-          margin: "5px 0",
+          margin: "4px 0",
         }}
       />
 
       {/* ── 4. ITEMIZED EQUIPMENT TABLE (OPTIMIZED FOR LONG INVOICES) ────────── */}
-      <div style={{ margin: "4px 0" }}>
+      <div style={{ margin: "3px 0" }}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            fontWeight: 800,
-            fontSize: is58mm ? "9px" : "10px",
-            marginBottom: "4px",
+            fontWeight: 900,
+            fontSize: is58mm ? "9.5px" : "10.5px",
+            marginBottom: "3px",
           }}
         >
           <span>{t.itemCol}</span>
           <span style={{ textAlign: "right" }}>{t.qtyTotalCol}</span>
         </div>
 
-        <hr style={{ border: "none", borderTop: "1px dashed #000000", margin: "4px 0" }} />
+        <hr style={{ border: "none", borderTop: "1.5px dashed #000000", margin: "3px 0" }} />
 
         {normalized.lines.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "8px 0" }}>
+          <div style={{ textAlign: "center", padding: "6px 0", fontWeight: 700 }}>
             {t.noItems}
           </div>
         ) : (
@@ -709,7 +713,7 @@ export const InvoiceReceipt = ({
               key={line.id}
               className="avoid-break"
               style={{
-                marginBottom: isCompact ? "4px" : "6px",
+                marginBottom: isCompact ? "3px" : "5px",
                 pageBreakInside: "avoid",
                 breakInside: "avoid",
               }}
@@ -724,7 +728,7 @@ export const InvoiceReceipt = ({
               >
                 <div
                   style={{
-                    fontWeight: 800,
+                    fontWeight: 900,
                     fontSize: fontSizeBase,
                     textTransform: "uppercase",
                     paddingRight: "4px",
@@ -735,7 +739,7 @@ export const InvoiceReceipt = ({
                 </div>
                 <div
                   style={{
-                    fontWeight: 800,
+                    fontWeight: 900,
                     fontSize: fontSizeBase,
                     textAlign: "right",
                     whiteSpace: "nowrap",
@@ -750,24 +754,26 @@ export const InvoiceReceipt = ({
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  fontSize: is58mm ? "8.5px" : "9.5px",
+                  fontSize: is58mm ? "9px" : "10px",
                   color: "#000000",
-                  paddingLeft: "12px",
+                  fontWeight: 700,
+                  paddingLeft: "10px",
                   marginTop: "1px",
                 }}
               >
                 <span>
                   {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{activeLang === "si" ? " දින" : "d"})
                 </span>
-                <span style={{ fontWeight: "bold" }}>{t.qty}: {line.qty}</span>
+                <span style={{ fontWeight: 800 }}>{t.qty}: {line.qty}</span>
               </div>
 
               {/* Row 3: Pricing math details */}
               <div
                 style={{
-                  fontSize: is58mm ? "8px" : "9px",
+                  fontSize: is58mm ? "8.5px" : "9.5px",
                   color: "#000000",
-                  paddingLeft: "12px",
+                  fontWeight: 700,
+                  paddingLeft: "10px",
                 }}
               >
                 {t.rate}: {line.pricingText}
@@ -777,9 +783,9 @@ export const InvoiceReceipt = ({
               {line.returnedDate && (
                 <div
                   style={{
-                    fontSize: "8.5px",
-                    fontWeight: "bold",
-                    paddingLeft: "12px",
+                    fontSize: "9px",
+                    fontWeight: 800,
+                    paddingLeft: "10px",
                   }}
                 >
                   [{t.returnedOn} {fmtDateTime(line.returnedDate)}]
@@ -791,7 +797,7 @@ export const InvoiceReceipt = ({
                   style={{
                     border: "none",
                     borderTop: "1px dotted #000000",
-                    margin: "4px 0 4px 12px",
+                    margin: "3px 0 3px 10px",
                   }}
                 />
               )}
@@ -803,46 +809,47 @@ export const InvoiceReceipt = ({
       {/* Equipment Metrics Count */}
       <div
         style={{
-          borderTop: "1px dashed #000000",
-          borderBottom: "1px dashed #000000",
-          padding: "3px 0",
+          borderTop: "1.5px dashed #000000",
+          borderBottom: "1.5px dashed #000000",
+          padding: "2.5px 0",
           display: "flex",
           justifyContent: "space-between",
-          fontSize: is58mm ? "8.5px" : "9.5px",
-          margin: "4px 0",
+          fontSize: is58mm ? "9px" : "10px",
+          fontWeight: 800,
+          margin: "3px 0",
         }}
       >
         <span>{t.totalLineItems} {normalized.lines.length}</span>
-        <span style={{ fontWeight: "bold" }}>
+        <span style={{ fontWeight: 900 }}>
           {t.totalMachines} {normalized.totalUnits}
         </span>
       </div>
 
       {/* ── 5. FINANCIAL BREAKDOWN ───────────────────────────────────────────── */}
-      <div style={{ margin: "6px 0", fontSize: fontSizeBase }}>
+      <div style={{ margin: "4px 0", fontSize: fontSizeBase, fontWeight: 700 }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>{t.subtotal}</span>
-          <span>{fmtMoney(normalized.subtotal, currencyCode)}</span>
+          <span style={{ fontWeight: 800 }}>{fmtMoney(normalized.subtotal, currencyCode)}</span>
         </div>
 
         {normalized.transport > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>{t.transport}</span>
-            <span>+{fmtMoney(normalized.transport, currencyCode)}</span>
+            <span style={{ fontWeight: 800 }}>+{fmtMoney(normalized.transport, currencyCode)}</span>
           </div>
         )}
 
         {normalized.discount > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>{t.discount}</span>
-            <span>-{fmtMoney(normalized.discount, currencyCode)}</span>
+            <span style={{ fontWeight: 800 }}>-{fmtMoney(normalized.discount, currencyCode)}</span>
           </div>
         )}
 
         {normalized.lateFees > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>{t.lateFees}</span>
-            <span>+{fmtMoney(normalized.lateFees, currencyCode)}</span>
+            <span style={{ fontWeight: 800 }}>+{fmtMoney(normalized.lateFees, currencyCode)}</span>
           </div>
         )}
 
@@ -851,8 +858,8 @@ export const InvoiceReceipt = ({
           style={{
             borderTop: "2px solid #000000",
             borderBottom: "2px solid #000000",
-            padding: "4px 0",
-            margin: "5px 0",
+            padding: "3px 0",
+            margin: "4px 0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -868,27 +875,28 @@ export const InvoiceReceipt = ({
 
         {/* Itemized Payments */}
         {normalized.payments.length > 0 && (
-          <div style={{ margin: "4px 0" }}>
+          <div style={{ margin: "3px 0" }}>
             {normalized.payments.map((p, pIdx) => (
               <div
                 key={pIdx}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  fontSize: is58mm ? "8.5px" : "9.5px",
+                  fontSize: is58mm ? "9px" : "10px",
+                  fontWeight: 700,
                 }}
               >
                 <span>
                   {p.label} ({p.method}):
                 </span>
-                <span>-{fmtMoney(p.amount, currencyCode)}</span>
+                <span style={{ fontWeight: 800 }}>-{fmtMoney(p.amount, currencyCode)}</span>
               </div>
             ))}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                fontWeight: "bold",
+                fontWeight: 900,
                 marginTop: "2px",
               }}
             >
@@ -901,10 +909,10 @@ export const InvoiceReceipt = ({
         {/* Double Border around BALANCE DUE */}
         <div
           style={{
-            borderTop: "1px dashed #000000",
+            borderTop: "1.5px dashed #000000",
             borderBottom: "2px solid #000000",
-            padding: "4px 0",
-            marginTop: "4px",
+            padding: "3px 0",
+            marginTop: "3px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -928,13 +936,14 @@ export const InvoiceReceipt = ({
       {customNotes && (
         <div
           style={{
-            border: "1px dotted #000000",
-            padding: "4px",
-            margin: "5px 0",
-            fontSize: is58mm ? "8.5px" : "9.5px",
+            border: "1.5px dotted #000000",
+            padding: "3px",
+            margin: "4px 0",
+            fontSize: is58mm ? "9px" : "10px",
+            fontWeight: 700,
           }}
         >
-          <div style={{ fontWeight: "bold" }}>{t.remarks}</div>
+          <div style={{ fontWeight: 900 }}>{t.remarks}</div>
           <div>{customNotes}</div>
         </div>
       )}
@@ -944,20 +953,21 @@ export const InvoiceReceipt = ({
         <div
           className="avoid-break"
           style={{
-            margin: "6px 0",
-            fontSize: is58mm ? "8px" : "8.5px",
-            lineHeight: "1.25",
+            margin: "5px 0",
+            fontSize: is58mm ? "8.5px" : "9px",
+            lineHeight: "1.3",
+            fontWeight: 700,
             pageBreakInside: "avoid",
             breakInside: "avoid",
           }}
         >
-          <div style={{ fontWeight: 800, textAlign: "center", marginBottom: "2px" }}>
+          <div style={{ fontWeight: 900, textAlign: "center", marginBottom: "2px" }}>
             {t.termsTitle}
           </div>
-          <div>{t.term1}</div>
-          <div>{t.term2}</div>
-          <div>{t.term3}</div>
-          <div>{t.term4}</div>
+          <div style={{ margin: "1px 0" }}>{t.term1}</div>
+          <div style={{ margin: "1px 0" }}>{t.term2}</div>
+          <div style={{ margin: "1px 0" }}>{t.term3}</div>
+          <div style={{ margin: "1px 0" }}>{t.term4}</div>
         </div>
       )}
 
@@ -965,23 +975,23 @@ export const InvoiceReceipt = ({
       <div
         className="avoid-break"
         style={{
-          marginTop: "12px",
-          marginBottom: "8px",
-          fontSize: is58mm ? "8.5px" : "9.5px",
+          marginTop: "10px",
+          marginBottom: "6px",
+          fontSize: is58mm ? "9px" : "10px",
           pageBreakInside: "avoid",
           breakInside: "avoid",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
           <div style={{ flex: 1, textAlign: "left" }}>
-            <div style={{ borderBottom: "1px solid #000000", height: "24px", marginBottom: "2px" }} />
-            <div style={{ fontWeight: "bold" }}>{t.custSign}</div>
-            <div style={{ fontSize: "8px" }}>{normalized.customer.name}</div>
+            <div style={{ borderBottom: "1.5px solid #000000", height: "20px", marginBottom: "2px" }} />
+            <div style={{ fontWeight: 900 }}>{t.custSign}</div>
+            <div style={{ fontSize: "8.5px", fontWeight: 700 }}>{normalized.customer.name}</div>
           </div>
           <div style={{ flex: 1, textAlign: "right" }}>
-            <div style={{ borderBottom: "1px solid #000000", height: "24px", marginBottom: "2px" }} />
-            <div style={{ fontWeight: "bold" }}>{t.authSign}</div>
-            <div style={{ fontSize: "8px" }}>{operatorName}</div>
+            <div style={{ borderBottom: "1.5px solid #000000", height: "20px", marginBottom: "2px" }} />
+            <div style={{ fontWeight: 900 }}>{t.authSign}</div>
+            <div style={{ fontSize: "8.5px", fontWeight: 700 }}>{operatorName}</div>
           </div>
         </div>
       </div>
@@ -991,7 +1001,7 @@ export const InvoiceReceipt = ({
         <div className="avoid-break" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
           <Code39Barcode
             value={normalized.docNumber}
-            height={is58mm ? 30 : 36}
+            height={is58mm ? 28 : 34}
             narrowWidth={is58mm ? 1.1 : 1.3}
             wideWidth={is58mm ? 2.6 : 3.2}
           />
@@ -1001,19 +1011,20 @@ export const InvoiceReceipt = ({
       <div
         style={{
           textAlign: "center",
-          marginTop: "4px",
-          fontSize: is58mm ? "8.5px" : "9.5px",
+          marginTop: "3px",
+          fontSize: is58mm ? "9px" : "10px",
+          fontWeight: 800,
           color: "#000000",
         }}
       >
         <div>{t.thankYou(companyName)}</div>
-        <div style={{ fontSize: "8px", marginTop: "1px" }}>
+        <div style={{ fontSize: "8.5px", marginTop: "1px", fontWeight: 700 }}>
           {t.poweredBy}
         </div>
       </div>
 
-      {/* ── 10. CUTTER MARGIN (15mm safety feed space) ──────────────────────── */}
-      <div style={{ height: "15mm", width: "100%" }} />
+      {/* Minimal 2mm cutter gap so footer is never clipped */}
+      <div style={{ height: "2mm", width: "100%" }} />
     </Box>
   );
 };

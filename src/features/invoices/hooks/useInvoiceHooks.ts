@@ -168,8 +168,8 @@ export const handlePrintInvoice = (
         <style>
           @media print {
             html, body {
-              width: ${pageRollWidth} !important;
-              max-width: ${pageRollWidth} !important;
+              width: 100% !important;
+              max-width: 100% !important;
               margin: 0 !important;
               padding: 0 !important;
               background: #ffffff !important;
@@ -177,50 +177,59 @@ export const handlePrintInvoice = (
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
+            #receipt-print-wrapper {
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
           }
 
           * {
             box-sizing: border-box;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            color: #000000 !important;
           }
 
           body {
-            margin: 0 auto;
-            padding: 2mm 1mm 15mm 1mm; /* Safety feed buffer at bottom */
-            width: ${printableWidth};
-            max-width: ${printableWidth};
+            margin: 0 !important;
+            padding: 0 0.5mm 1mm 0.5mm !important; /* Edge-to-edge width with zero top margin */
+            width: 100% !important;
+            max-width: 100% !important;
             font-family: 'Noto Sans Sinhala', 'Iskoola Pota', 'Sinhala Sangam MN', 'Courier New', Courier, monospace, sans-serif;
-            color: #000000;
-            background-color: #ffffff;
-            font-size: ${paperWidth === "58mm" ? "10px" : "11px"};
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            font-weight: 700 !important; /* Thicker, bolder text for high-contrast thermal burning */
+            -webkit-text-stroke: 0.35px #000000; /* Extra stroke width to ensure rich, pitch-black letters */
+            font-size: ${paperWidth === "58mm" ? "10.5px" : "11.5px"};
             line-height: 1.25;
             -webkit-font-smoothing: antialiased;
-            text-rendering: optimizeLegibility;
+            text-rendering: geometricPrecision;
           }
 
           /* Force high-contrast thermal borders and dividers */
           hr {
             border: none;
-            border-top: 1px dashed #000000;
-            margin: 5px 0;
+            border-top: 1.5px dashed #000000;
+            margin: 4px 0;
           }
 
           .divider-dashed {
-            border-top: 1px dashed #000000;
-            margin: 5px 0;
+            border-top: 1.5px dashed #000000;
+            margin: 4px 0;
           }
 
           .divider-double {
             border-top: 2px solid #000000;
-            border-bottom: 1px solid #000000;
+            border-bottom: 1.5px solid #000000;
             height: 3px;
-            margin: 5px 0;
+            margin: 4px 0;
           }
 
           .divider-solid {
-            border-top: 1px solid #000000;
-            margin: 5px 0;
+            border-top: 1.5px solid #000000;
+            margin: 4px 0;
           }
 
           .avoid-break {
@@ -234,13 +243,13 @@ export const handlePrintInvoice = (
           }
 
           th, td {
-            padding: 2px 0;
+            padding: 1.5px 0;
             vertical-align: top;
           }
         </style>
       </head>
       <body>
-        <div id="receipt-print-wrapper" style="width: ${printableWidth}; margin: 0 auto;">
+        <div id="receipt-print-wrapper" style="width: 100%; max-width: 100%; margin: 0; padding: 0;">
           ${contentElement.innerHTML}
         </div>
       </body>
@@ -252,10 +261,10 @@ export const handlePrintInvoice = (
     setTimeout(() => {
         try {
             const root = iframeDoc.getElementById("receipt-print-wrapper") || iframeDoc.body;
-            const scrollHeight = root.scrollHeight || iframeDoc.body.scrollHeight || 700;
+            const scrollHeight = root.scrollHeight || iframeDoc.body.scrollHeight || 600;
             // 1 px = 0.264583 mm at standard 96 DPI screen raster.
-            // Add 10mm cutter buffer to prevent clipping the footer
-            const calculatedMm = Math.max(80, Math.ceil(scrollHeight * 0.264583) + 10);
+            // Tight 2mm buffer prevents trailing blank feed
+            const calculatedMm = Math.max(50, Math.ceil(scrollHeight * 0.264583) + 2);
 
             const pageSizeTag = iframeDoc.getElementById("dynamic-page-size");
             if (pageSizeTag) {
