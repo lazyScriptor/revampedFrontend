@@ -256,12 +256,13 @@ export function EquipmentTable({
       <Box
         sx={{
           flex: 1,
-          minHeight: { xs: 520, md: 450 },
+          minHeight: 0,
           height: "100%",
           width: "100%",
           display: "flex",
           flexDirection: "column",
           bgcolor: "background.paper",
+          overflow: "hidden",
         }}
       >
         <DataGrid
@@ -314,14 +315,26 @@ export function EquipmentTable({
               flex: 1,
               minHeight: 0,
             },
-            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9" },
             "& .MuiDataGrid-columnHeaders": {
+              position: "sticky",
+              top: 0,
+              zIndex: 3,
               bgcolor: "#f8fafc",
               borderBottom: "1px solid #e2e8f0",
             },
+            "& .MuiDataGrid-virtualScroller": {
+              overflowY: "auto !important",
+            },
+            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9" },
             "& .MuiDataGrid-toolbarContainer": {
-              p: 2,
+              p: 1.5,
               borderBottom: "1px solid #f1f5f9",
+              flexShrink: 0,
+            },
+            "& .MuiDataGrid-footerContainer": {
+              borderTop: "1px solid #e2e8f0",
+              bgcolor: "#ffffff",
+              flexShrink: 0,
             },
           }}
         />

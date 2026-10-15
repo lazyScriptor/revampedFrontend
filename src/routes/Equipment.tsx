@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
-import { useEquipmentList } from "@/features/equipment/hooks/useEquipmentHooks";
+import { useEquipmentList, useEquipmentStats } from "@/features/equipment/hooks/useEquipmentHooks";
 import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
 import type { EquipmentFilters } from "@/features/equipment/api/equipment.api";
 
@@ -99,22 +99,14 @@ export default function EquipmentRoute() {
   const equipmentList = response?.equipment || [];
   const totalRowCount = Number(response?.total || 0);
 
-  // Global stats for the KPIs (not affected by filters)
-  const { data: globalStats } = useQuery({
-    queryKey: ["equipment-global-stats"],
-    queryFn: async () => {
-      const res = await api.get("/equipment", { params: { limit: 5000 } });
-      const allItems = res.data?.data?.equipment || res.data?.equipment || [];
-      let available = 0;
-      let maintenance = 0;
-      allItems.forEach((item: any) => {
-        available += Number(item.available_qty || 0);
-        maintenance += Number(item.defective_qty || 0);
-      });
-      return { available, maintenance };
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+  // Global stats from dedicated fast aggregate backend API
+  const { data: statsData } = useEquipmentStats();
+
+  const totalAssetsOwned = statsData?.totalUnitsOwned ?? totalRowCount;
+  const totalModelsCount = statsData?.totalModels ?? 0;
+  const availableUnits = statsData?.availableUnits ?? 0;
+  const maintenanceUnits = statsData?.maintenanceUnits ?? 0;
+  const rentedUnits = statsData?.rentedUnits ?? 0;
 
   const activeFilterCount =
     (categoryId ? 1 : 0) + (availability !== "all" ? 1 : 0) + (debouncedSearch ? 1 : 0);
@@ -151,12 +143,24 @@ export default function EquipmentRoute() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        minHeight: { xs: "auto", md: "calc(100vh - 112px)" },
-        gap: { xs: 2, md: 2.5 },
+        height: "100%",
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden",
+        gap: { xs: 1.5, md: 2 },
       }}
     >
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { sm: "center" },
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
         <div>
           <Typography variant="h4" fontWeight="bold" color="text.primary">
             {t("equipment.title")}
@@ -170,72 +174,153 @@ export default function EquipmentRoute() {
           startIcon={<AddIcon />}
           onClick={handleOpenAdd}
           disableElevation
-          sx={{ py: 1.5, px: 3, borderRadius: 2 }}
+          sx={{ py: 1.25, px: 2.5, borderRadius: 2 }}
         >
           {t("equipment.addEquipment")}
         </Button>
-      </div>
+      </Box>
 
       {/* KPI Cards */}
-      <Grid container spacing={{ xs: 1.5, md: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card elevation={0} className="border border-slate-200 rounded-xl bg-white h-full">
-            <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                <InventoryIcon fontSize="large" />
-              </div>
-              <div>
-                <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  {t("equipment.totalAssets")}
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">{totalRowCount}</Typography>
-              </div>
-            </CardContent>
-          </Card>
+      <Box sx={{ flexShrink: 0 }}>
+        <Grid container spacing={{ xs: 1.5, md: 2 }}>
+          {/* Card 1: Total Assets */}
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Card
+              elevation={0}
+              onClick={() => clearFilters()}
+              sx={{
+                border: "1px solid",
+                borderColor: activeFilterCount === 0 && !debouncedSearch ? "primary.main" : "#e2e8f0",
+                borderRadius: 2.5,
+                bgcolor: "white",
+                height: "100%",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)", boxShadow: 1 },
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+                  <InventoryIcon fontSize="medium" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    {t("equipment.totalAssets")}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                    <Typography variant="h5" fontWeight="bold">
+                      {totalAssetsOwned} {t("equipment.units")}
+                    </Typography>
+                    {(activeFilterCount > 0 || debouncedSearch) && (
+                      <Chip label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`} size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                    {totalModelsCount} equipment models · {rentedUnits} on active hire
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Card 2: Available for Rent */}
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Card
+              elevation={0}
+              onClick={() => setAvailability(availability === "in_stock" ? "all" : "in_stock")}
+              sx={{
+                border: "1px solid",
+                borderColor: availability === "in_stock" ? "success.main" : "#bbf7d0",
+                bgcolor: availability === "in_stock" ? alpha("#22c55e", 0.08) : "#f0fdf4",
+                borderRadius: 2.5,
+                height: "100%",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "success.main", transform: "translateY(-1px)", boxShadow: 1 },
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-green-100 text-green-600 rounded-lg">
+                  <CheckCircleIcon fontSize="medium" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Typography variant="caption" color="success.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    {t("equipment.availableForRent")}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                    <Typography variant="h5" fontWeight="bold" color="success.dark">
+                      {availableUnits} {t("equipment.units")}
+                    </Typography>
+                    {availability === "in_stock" ? (
+                      <Chip label="Filtered View" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "success.main", color: "white" }} />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        in stock
+                      </Typography>
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                    {availability === "in_stock" ? "Showing in-stock items" : "Click to view ready assets"}
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Card 3: In Maintenance */}
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Card
+              elevation={0}
+              onClick={() => setAvailability(availability === "in_repair" ? "all" : "in_repair")}
+              sx={{
+                border: "1px solid",
+                borderColor: availability === "in_repair" ? "warning.main" : "#fed7aa",
+                bgcolor: availability === "in_repair" ? alpha("#f97316", 0.08) : "#fff7ed",
+                borderRadius: 2.5,
+                height: "100%",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "warning.main", transform: "translateY(-1px)", boxShadow: 1 },
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-orange-100 text-orange-600 rounded-lg">
+                  <BuildCircleIcon fontSize="medium" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Typography variant="caption" color="warning.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    {t("equipment.inMaintenance")}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                    <Typography variant="h5" fontWeight="bold" color="warning.dark">
+                      {maintenanceUnits} {t("equipment.units")}
+                    </Typography>
+                    {availability === "in_repair" ? (
+                      <Chip label="Filtered View" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "warning.main", color: "white" }} />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        under inspection
+                      </Typography>
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                    {availability === "in_repair" ? "Showing items in repair" : "Click to view repair queue"}
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card elevation={0} className="border border-green-200 rounded-xl bg-green-50/30 h-full">
-            <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 text-green-600 rounded-lg">
-                <CheckCircleIcon fontSize="large" />
-              </div>
-              <div>
-                <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  {t("equipment.availableForRent")}
-                </Typography>
-                <Typography variant="h5" fontWeight="bold" color="success.dark">
-                  {globalStats?.available || 0} {t("equipment.units")}
-                </Typography>
-              </div>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card elevation={0} className="border border-orange-200 rounded-xl bg-orange-50/30 h-full">
-            <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-orange-100 text-orange-600 rounded-lg">
-                <BuildCircleIcon fontSize="large" />
-              </div>
-              <div>
-                <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  {t("equipment.inMaintenance")}
-                </Typography>
-                <Typography variant="h5" fontWeight="bold" color="warning.dark">
-                  {globalStats?.maintenance || 0} {t("equipment.units")}
-                </Typography>
-              </div>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      </Box>
 
       {/* Filter / search bar */}
       <Card
         elevation={0}
         sx={{
+          flexShrink: 0,
           border: `1px solid ${theme.palette.border.subtle}`,
           borderRadius: 2.5,
-          p: { xs: 1.5, sm: 2 },
+          p: { xs: 1.25, sm: 1.5 },
           display: "flex",
           flexWrap: "wrap",
           gap: 1.25,
@@ -369,7 +454,7 @@ export default function EquipmentRoute() {
         elevation={0}
         sx={{
           flex: 1,
-          minHeight: { xs: 520, md: 450 },
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           border: `1px solid ${theme.palette.border.subtle}`,

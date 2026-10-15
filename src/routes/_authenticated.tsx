@@ -640,11 +640,17 @@ function AuthenticatedLayout() {
           p: { xs: 1.5, sm: 2, md: 3 },
           width: "100%",
           minWidth: 0,
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto",
           overflowX: "hidden",
         }}
       >
-        <DrawerHeader />
-        <Outlet />
+        <DrawerHeader sx={{ flexShrink: 0 }} />
+        <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );

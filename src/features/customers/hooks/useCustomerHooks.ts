@@ -95,6 +95,7 @@ export const useCreateCustomer = () => {
         onSuccess: () => {
             // Invalidate the list so the new customer appears immediately
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
         },
     });
 };
@@ -108,6 +109,7 @@ export const useUpdateCustomer = () => {
             // Invalidate both the master list and the specific customer's detail cache
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             queryClient.invalidateQueries({ queryKey: ['customer', variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
         },
     });
 };
@@ -119,9 +121,37 @@ export const useDeleteCustomer = () => {
         mutationFn: deleteCustomer,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customers'] });
+            queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
         },
     });
+};
+
+export interface CustomerStats {
+    totalClients: number;
+    businessCount: number;
+    individualCount: number;
+    idsInVault: number;
+    totalAdvance: number;
+    linkedToParent: number;
 }
+
+export const useCustomerStats = () => {
+    return useQuery<CustomerStats>({
+        queryKey: ['customer-stats'],
+        queryFn: async () => {
+            const res = await api.get('/customers/stats');
+            return res.data?.data || {
+                totalClients: 0,
+                businessCount: 0,
+                individualCount: 0,
+                idsInVault: 0,
+                totalAdvance: 0,
+                linkedToParent: 0,
+            };
+        },
+        staleTime: 1000 * 30,
+    });
+};
 
 export interface ParentCustomerOption {
     customer_id: number;

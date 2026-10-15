@@ -62,22 +62,14 @@ const equipmentRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/equipment",
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => (
-    <div>
-      <Equipment />
-    </div>
-  ),
+  component: () => <Equipment />,
 });
 
 const equipmentCategoryRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/equipment-category", // Note: Ensure this matches the path in your _authenticated.tsx sidebar ("/equipment-categories" vs "/equipment-category")
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => (
-    <div>
-      <Categories />
-    </div>
-  ),
+  component: () => <Categories />,
 });
 
 const invoicesRoute = createRoute({
@@ -89,11 +81,7 @@ const invoicesRoute = createRoute({
       : undefined,
   }),
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => (
-    <div>
-      <Invoices />
-    </div>
-  ),
+  component: () => <Invoices />,
 });
 
 // NEW: Data Arena Route (Protected by 'admin' permission)
@@ -108,11 +96,7 @@ const dataArenaRoute = createRoute({
       : undefined,
   }),
   beforeLoad: () => requirePermission("inventory_permission"), // CRITICAL: Only admins should access bulk exports
-  component: () => (
-    <div>
-      <DataArena />
-    </div>
-  ),
+  component: () => <DataArena />,
 });
 
 const customersRoute = createRoute({

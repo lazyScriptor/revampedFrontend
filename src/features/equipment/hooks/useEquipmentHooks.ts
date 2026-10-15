@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import {
   fetchEquipment,
   createEquipment,
@@ -28,8 +29,8 @@ export const useCreateEquipment = () => {
   return useMutation({
     mutationFn: createEquipment,
     onSuccess: () => {
-      // Instantly tell the app to re-fetch the equipment list so the table updates!
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-stats'] });
     },
   });
 };
@@ -40,16 +41,18 @@ export const useDeleteEquipment = () => {
     mutationFn: deleteEquipment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-stats'] });
     },
   });
-};// Add this below useCreateEquipment
+};
+
 export const useUpdateEquipment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateEquipment,
     onSuccess: () => {
-      // Instantly refresh the table when an item is successfully edited
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-stats'] });
     },
   });
 };
@@ -59,8 +62,33 @@ export const useBulkUpdateEquipment = () => {
   return useMutation({
     mutationFn: bulkUpdateEquipment,
     onSuccess: () => {
-      // Invalidate both equipment list and any cached equipment details
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-stats'] });
     },
+  });
+};
+
+export interface EquipmentStats {
+  totalModels: number;
+  totalUnitsOwned: number;
+  availableUnits: number;
+  rentedUnits: number;
+  maintenanceUnits: number;
+}
+
+export const useEquipmentStats = () => {
+  return useQuery<EquipmentStats>({
+    queryKey: ['equipment-stats'],
+    queryFn: async () => {
+      const res = await api.get('/equipment/stats');
+      return res.data?.data || {
+        totalModels: 0,
+        totalUnitsOwned: 0,
+        availableUnits: 0,
+        rentedUnits: 0,
+        maintenanceUnits: 0,
+      };
+    },
+    staleTime: 1000 * 30,
   });
 };

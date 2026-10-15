@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useCustomerList } from "@/features/customers/hooks/useCustomerHooks";
+import { useCustomerList, useCustomerStats } from "@/features/customers/hooks/useCustomerHooks";
 import type { CustomerFilters } from "@/features/customers/hooks/useCustomerHooks";
 import { CustomerTable } from "@/features/customers/components/CustomerTable";
 import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
@@ -99,21 +99,14 @@ export default function CustomersRoute() {
     setHasParent("");
   };
 
-  // Live KPIs over the current page (the totals stay correct because they come
-  // from the paginated `totalRowCount` from the API)
-  const { idsInVault, totalAdvance, businessCount, delegatedCount } = useMemo(() => {
-    let ids = 0;
-    let advance = 0;
-    let businesses = 0;
-    let delegated = 0;
-    customerList.forEach((c: any) => {
-      if (c.is_id_retained_currently) ids++;
-      if (c.deposit_balance) advance += Number(c.deposit_balance);
-      if (c.customer_type === "Business") businesses++;
-      if (c.parent_customer_id) delegated++;
-    });
-    return { idsInVault: ids, totalAdvance: advance, businessCount: businesses, delegatedCount: delegated };
-  }, [customerList]);
+  const { data: statsData } = useCustomerStats();
+
+  const totalClients = statsData?.totalClients ?? totalRowCount;
+  const idsInVault = statsData?.idsInVault ?? 0;
+  const totalAdvance = statsData?.totalAdvance ?? 0;
+  const businessCount = statsData?.businessCount ?? 0;
+  const individualCount = statsData?.individualCount ?? Math.max(0, totalClients - businessCount);
+  const delegatedCount = statsData?.linkedToParent ?? 0;
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -141,12 +134,24 @@ export default function CustomersRoute() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        minHeight: { xs: "auto", md: "calc(100vh - 112px)" },
-        gap: { xs: 2, md: 2.5 },
+        height: "100%",
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden",
+        gap: { xs: 1.5, md: 2 },
       }}
     >
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { sm: "center" },
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
         <div>
           <Typography variant="h4" fontWeight="bold" color="text.primary">
             {t("customers.title")}
@@ -160,91 +165,171 @@ export default function CustomersRoute() {
           startIcon={<AddIcon />}
           onClick={handleOpenAdd}
           disableElevation
-          sx={{ py: 1.5, px: 3, borderRadius: 2 }}
+          sx={{ py: 1.25, px: 2.5, borderRadius: 2 }}
         >
           {t("customers.addCustomer")}
         </Button>
-      </div>
+      </Box>
 
       {/* KPI Dashboard */}
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card elevation={0} className="border border-slate-200 rounded-xl bg-white h-full">
-            <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                <PeopleAltIcon fontSize="large" />
-              </div>
-              <div>
-                <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  {t("customers.totalClients")}
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">{totalRowCount}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {businessCount} {t("customers.business")} · {customerList.length - businessCount} {t("customers.individual")}
-                </Typography>
-              </div>
-            </CardContent>
-          </Card>
+      <Box sx={{ flexShrink: 0 }}>
+        <Grid container spacing={{ xs: 1.5, md: 2 }}>
+          {/* Card 1: Total Clients */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              elevation={0}
+              onClick={() => clearFilters()}
+              sx={{
+                border: "1px solid",
+                borderColor: activeFilterCount === 0 && !debouncedSearch ? "primary.main" : "#e2e8f0",
+                borderRadius: 2.5,
+                bgcolor: "white",
+                height: "100%",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)", boxShadow: 1 },
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+                  <PeopleAltIcon fontSize="medium" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    {t("customers.totalClients")}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                    <Typography variant="h5" fontWeight="bold" color="text.primary">
+                      {totalClients}
+                    </Typography>
+                    {(activeFilterCount > 0 || debouncedSearch) && (
+                      <Chip label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`} size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                    {businessCount} {t("customers.business")} · {individualCount} {t("customers.individual")}
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Card 2: Linked to Parent */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              elevation={0}
+              onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
+              sx={{
+                border: "1px solid",
+                borderColor: hasParent === "true" ? "indigo.main" : "#e2e8f0",
+                bgcolor: hasParent === "true" ? alpha("#4f46e5", 0.05) : "white",
+                borderRadius: 2.5,
+                height: "100%",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "indigo.main", transform: "translateY(-1px)", boxShadow: 1 },
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <AccountTreeIcon fontSize="medium" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    {t("customers.linkedToParent")}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                    <Typography variant="h5" fontWeight="bold" color="indigo.dark">
+                      {delegatedCount}
+                    </Typography>
+                    {hasParent === "true" && (
+                      <Chip label="Filtered" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#e0e7ff", color: "#3730a3" }} />
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                    Corporate & delegated staff
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Card 3: IDs in Vault (Always shows true vault total) */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              elevation={0}
+              onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
+              sx={{
+                border: "1px solid",
+                borderColor: idRetained === "true" ? "error.main" : "#fecaca",
+                bgcolor: idRetained === "true" ? alpha("#ef4444", 0.08) : "#fef2f2",
+                borderRadius: 2.5,
+                height: "100%",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "error.main", transform: "translateY(-1px)", boxShadow: 1 },
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-red-100 text-red-600 rounded-lg">
+                  <VerifiedUserIcon fontSize="medium" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Typography variant="caption" color="error.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    {t("customers.idsInVault")}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                    <Typography variant="h5" fontWeight="bold" color="error.main">
+                      {idsInVault}
+                    </Typography>
+                    {idRetained === "true" ? (
+                      <Chip label="Active View" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "error.main", color: "white" }} />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        in safe vault
+                      </Typography>
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                    {idRetained === "true" ? "Showing all vault clients" : "Click to view vault clients"}
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Card 4: Total Advance Held */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card elevation={0} sx={{ border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white", height: "100%" }}>
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-green-50 text-green-600 rounded-lg">
+                  <AccountBalanceWalletIcon fontSize="medium" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    {t("customers.totalAdvanceHeld")}
+                  </Typography>
+                  <Typography variant="h5" fontWeight="bold" color="success.main">
+                    Rs. {totalAdvance.toLocaleString()}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                    Total active customer deposits
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card elevation={0} className="border border-slate-200 rounded-xl bg-white h-full">
-            <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
-                <AccountTreeIcon fontSize="large" />
-              </div>
-              <div>
-                <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  {t("customers.linkedToParent")}
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">{delegatedCount}</Typography>
-                <Typography variant="caption" color="text.secondary">{t("customers.onThisPage")}</Typography>
-              </div>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card elevation={0} className="border border-red-200 rounded-xl bg-red-50/30 h-full">
-            <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 text-red-600 rounded-lg">
-                <VerifiedUserIcon fontSize="large" />
-              </div>
-              <div>
-                <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  {t("customers.idsInVault")}
-                </Typography>
-                <Typography variant="h5" fontWeight="bold" color="error.dark">{idsInVault}</Typography>
-                <Typography variant="caption" color="text.secondary">{t("customers.onThisPage")}</Typography>
-              </div>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card elevation={0} className="border border-slate-200 rounded-xl bg-white h-full">
-            <CardContent className="flex items-center gap-4">
-              <div className="p-3 bg-green-50 text-green-600 rounded-lg">
-                <AccountBalanceWalletIcon fontSize="large" />
-              </div>
-              <div>
-                <Typography variant="body2" color="text.secondary" fontWeight="500">
-                  {t("customers.totalAdvanceHeld")}
-                </Typography>
-                <Typography variant="h5" fontWeight="bold" color="success.main">
-                  Rs. {totalAdvance.toLocaleString()}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">{t("customers.onThisPage")}</Typography>
-              </div>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      </Box>
 
       {/* Filter / search bar */}
       <Card
         elevation={0}
         sx={{
+          flexShrink: 0,
           border: `1px solid ${theme.palette.border.subtle}`,
           borderRadius: 2.5,
-          p: { xs: 1.5, sm: 2 },
+          p: { xs: 1.25, sm: 1.5 },
           display: "flex",
           flexWrap: "wrap",
           gap: 1.25,
@@ -364,7 +449,7 @@ export default function CustomersRoute() {
         elevation={0}
         sx={{
           flex: 1,
-          minHeight: { xs: 520, md: 450 },
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           border: `1px solid ${theme.palette.border.subtle}`,
