@@ -21,7 +21,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TuneIcon from "@mui/icons-material/Tune";
-import { InvoiceReceipt, InvoiceReceiptProps } from "./InvoiceReceipt";
+import { InvoiceReceipt, InvoiceReceiptProps, ReceiptLanguage } from "./InvoiceReceipt";
 import { handlePrintInvoice } from "../hooks/useInvoiceHooks";
 
 export interface ReceiptPrintDialogProps {
@@ -45,6 +45,13 @@ export function ReceiptPrintDialog({
 }: ReceiptPrintDialogProps) {
   const [paperWidth, setPaperWidth] = useState<"80mm" | "58mm">("80mm");
   const [density, setDensity] = useState<"standard" | "compact">("standard");
+  const [language, setLanguage] = useState<ReceiptLanguage>(() => {
+    try {
+      return (localStorage.getItem("pos_receipt_language") as ReceiptLanguage) || "en";
+    } catch {
+      return "en";
+    }
+  });
   const [showTerms, setShowTerms] = useState(true);
   const [showBarcode, setShowBarcode] = useState(true);
   const [customNotes, setCustomNotes] = useState(defaultCustomNotes);
@@ -54,13 +61,17 @@ export function ReceiptPrintDialog({
   const handlePrint = () => {
     handlePrintInvoice(printDomId, {
       paperWidth,
-      title: isDraft ? "Rental Estimate" : `Bill INV-${invoice?.invoice_id || "POS"}`,
+      title: isDraft
+        ? (language === "si" ? "කුලී ඇස්තමේන්තුව" : "Rental Estimate")
+        : (language === "si" ? `බිල්පත INV-${invoice?.invoice_id || "POS"}` : `Bill INV-${invoice?.invoice_id || "POS"}`),
     });
   };
 
   const dialogTitle =
     title ||
-    (isDraft ? "Rental Estimate / Quotation Slip" : `POS Bill · INV-${invoice?.invoice_id || ""}`);
+    (isDraft
+      ? (language === "si" ? "කුලී ඇස්තමේන්තුව / මිල ගණන් පත්‍රිකාව" : "Rental Estimate / Quotation Slip")
+      : (language === "si" ? `POS බිල්පත · INV-${invoice?.invoice_id || ""}` : `POS Bill · INV-${invoice?.invoice_id || ""}`));
 
   return (
     <>
@@ -72,6 +83,7 @@ export function ReceiptPrintDialog({
         draftData={draftData}
         paperWidth={paperWidth}
         density={density}
+        language={language}
         showTerms={showTerms}
         showBarcode={showBarcode}
         customNotes={customNotes}
@@ -169,6 +181,57 @@ export function ReceiptPrintDialog({
               </Typography>
             </Box>
 
+            {/* Receipt Language / භාෂාව Toggle */}
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 1 }}>
+                RECEIPT LANGUAGE / භාෂාව
+              </Typography>
+              <ToggleButtonGroup
+                value={language}
+                exclusive
+                onChange={(_, val) => {
+                  if (val) {
+                    setLanguage(val);
+                    try {
+                      localStorage.setItem("pos_receipt_language", val);
+                    } catch {}
+                  }
+                }}
+                fullWidth
+                size="small"
+              >
+                <ToggleButton
+                  value="en"
+                  sx={{
+                    fontWeight: 700,
+                    textTransform: "none",
+                    py: 0.75,
+                    ...(language === "en" && {
+                      bgcolor: "#2563eb !important",
+                      color: "white !important",
+                    }),
+                  }}
+                >
+                  English
+                </ToggleButton>
+                <ToggleButton
+                  value="si"
+                  sx={{
+                    fontWeight: 700,
+                    textTransform: "none",
+                    py: 0.75,
+                    fontFamily: "'Noto Sans Sinhala', 'Iskoola Pota', sans-serif",
+                    ...(language === "si" && {
+                      bgcolor: "#16a34a !important",
+                      color: "white !important",
+                    }),
+                  }}
+                >
+                  සිංහල (Sinhala)
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
             {/* Roll Size */}
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 1 }}>
@@ -226,7 +289,7 @@ export function ReceiptPrintDialog({
                 }
                 label={
                   <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155" }}>
-                    Rental Terms & Liability
+                    {language === "si" ? "කුලී කොන්දේසි (Terms & Liability)" : "Rental Terms & Liability"}
                   </Typography>
                 }
               />
@@ -241,7 +304,7 @@ export function ReceiptPrintDialog({
                 }
                 label={
                   <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155" }}>
-                    Barcode Code 39
+                    {language === "si" ? "තීරු කේතය (Barcode Code 39)" : "Barcode Code 39"}
                   </Typography>
                 }
               />
@@ -252,12 +315,12 @@ export function ReceiptPrintDialog({
             {/* Custom Delivery/Site Note */}
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 0.75 }}>
-                SITE / DELIVERY NOTE (OPTIONAL)
+                {language === "si" ? "විශේෂ වැඩබිම් සටහන් (විකල්ප)" : "SITE / DELIVERY NOTE (OPTIONAL)"}
               </Typography>
               <TextField
                 size="small"
                 fullWidth
-                placeholder="e.g. Site: Port City Gate 3, Attn: Kamal"
+                placeholder={language === "si" ? "උදා: වරාය නගරය ගේට්ටුව 3, භාරකරු: කමල්" : "e.g. Site: Port City Gate 3, Attn: Kamal"}
                 value={customNotes}
                 onChange={(e) => setCustomNotes(e.target.value)}
                 multiline
@@ -269,6 +332,26 @@ export function ReceiptPrintDialog({
                   },
                 }}
               />
+            </Box>
+
+            {/* Thermal Printer Hardware Tip */}
+            <Box
+              sx={{
+                p: 1.5,
+                bgcolor: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                borderRadius: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.5,
+              }}
+            >
+              <Typography variant="caption" sx={{ color: "#166534", fontWeight: 800 }}>
+                Xprinter XP-80T / 80mm Roll Ready
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#15803d", fontSize: "0.74rem", lineHeight: 1.3 }}>
+                Targeting 80mm continuous roll. In the print dialog, ensure Margins are set to <b>None</b> for neat auto-cutting.
+              </Typography>
             </Box>
           </Box>
 
@@ -288,7 +371,7 @@ export function ReceiptPrintDialog({
             }}
           >
             <Typography variant="caption" sx={{ color: "#94a3b8", mb: 2, fontWeight: 700, letterSpacing: 1 }}>
-              PRINT PREVIEW · {paperWidth.toUpperCase()} THERMAL PAPER ROLL
+              PRINT PREVIEW · {paperWidth.toUpperCase()} THERMAL PAPER ROLL ({language === "si" ? "සිංහල" : "ENGLISH"})
             </Typography>
 
             {/* Simulated thermal receipt paper sheet */}
@@ -309,6 +392,7 @@ export function ReceiptPrintDialog({
                 draftData={draftData}
                 paperWidth={paperWidth}
                 density={density}
+                language={language}
                 showTerms={showTerms}
                 showBarcode={showBarcode}
                 customNotes={customNotes}
@@ -330,7 +414,7 @@ export function ReceiptPrintDialog({
           }}
         >
           <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
-            Cancel
+            {language === "si" ? "අවලංගු කරන්න" : "Cancel"}
           </Button>
 
           <Button
@@ -347,7 +431,9 @@ export function ReceiptPrintDialog({
               borderRadius: 2,
             }}
           >
-            Print POS Bill ({paperWidth})
+            {language === "si"
+              ? `බිල්පත මුද්‍රණය කරන්න (${paperWidth})`
+              : `Print POS Bill (${paperWidth})`}
           </Button>
         </DialogActions>
       </Dialog>

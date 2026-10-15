@@ -146,7 +146,124 @@ const calculateDays = (start: string, end: string) => {
   return diff < 1 || isNaN(diff) ? 1 : diff;
 };
 
-// ─── Interface Definition ────────────────────────────────────────────────────
+// ─── Interface Definition & Localization Dictionary ──────────────────────────
+export type ReceiptLanguage = "en" | "si";
+
+export const RECEIPT_LABELS = {
+  en: {
+    category: "HEAVY MACHINERY & EQUIPMENT RENTALS",
+    estimateTitle: "*** RENTAL ESTIMATE / QUOTATION ***",
+    estimateSubtitle: "* ESTIMATE ONLY · GOODS NOT YET DISPATCHED *",
+    dispatchTitle: "*** OFFICIAL RENTAL DISPATCH BILL ***",
+    dispatchSubtitle: "* GEAR DISPATCHED · HIRER ACKNOWLEDGED *",
+    completedTitle: "*** RENTAL INVOICE (COMPLETED & SETTLED) ***",
+    completedSubtitle: "* ALL EQUIPMENT RETURNED & SETTLED *",
+    docNumber: "DOC NUMBER:",
+    dateTime: "DATE & TIME:",
+    operator: "OPERATOR:",
+    status: "STATUS:",
+    statusActive: "ACTIVE",
+    statusCompleted: "COMPLETED",
+    statusDraft: "DRAFT",
+    client: "CLIENT:",
+    nicReg: "NIC / REG NO:",
+    phone: "PHONE:",
+    address: "ADDRESS:",
+    onBehalfOf: "ON BEHALF OF:",
+    vaultCollateral: "VAULT COLLATERAL:",
+    vaultHeld: "HELD IN VAULT",
+    vaultReleased: "RELEASED / NONE",
+    vaultPending: "PENDING CHECK-IN",
+    walkInCustomer: "Walk-in Customer",
+    notOnFile: "Not on file",
+    itemCol: "ITEM / RENTAL PERIOD",
+    qtyTotalCol: "QTY & TOTAL",
+    noItems: "[ No equipment items selected ]",
+    qty: "Qty",
+    rate: "Rate",
+    returnedOn: "RETURNED ON:",
+    totalLineItems: "TOTAL LINE ITEMS:",
+    totalMachines: "TOTAL MACHINES:",
+    subtotal: "EQUIPMENT SUBTOTAL:",
+    transport: "TRANSPORT / DELIVERY:",
+    discount: "DISCOUNT APPLIED:",
+    lateFees: "LATE / OVERDUE CHARGES:",
+    netTotal: "NET TOTAL:",
+    advanceDeposit: "Advance Deposit",
+    initialAdvance: "Initial Advance",
+    payment: "Payment",
+    totalPaid: "TOTAL PAID TO DATE:",
+    balanceDue: "BALANCE DUE:",
+    paidInFull: "PAID IN FULL",
+    remarks: "REMARKS / SITE NOTE:",
+    termsTitle: "RENTAL ACKNOWLEDGEMENT & CONDITIONS",
+    term1: "1. Hirer accepts equipment in good working order with all standard fittings.",
+    term2: "2. Return on or before agreed date; late returns incur daily overdue rates.",
+    term3: "3. Hirer is strictly liable for breakdown due to negligence, loss, or bad fuel.",
+    term4: "4. Retained collateral/NIC released upon inspection and complete settlement.",
+    custSign: "Customer Signature",
+    authSign: "Authorized Signatory",
+    thankYou: (company: string) => `Thank you for choosing ${company}!`,
+    poweredBy: "Powered by GearGrid System · www.geargrid.live",
+  },
+  si: {
+    category: "බර යන්ත්‍රෝපකරණ සහ උපකරණ කුලියට දීම",
+    estimateTitle: "*** කුලී ඇස්තමේන්තුව / මිල ගණන් පත්‍රිකාව ***",
+    estimateSubtitle: "* ඇස්තමේන්තුවක් පමණි · භාණ්ඩ නිකුත් කර නැත *",
+    dispatchTitle: "*** නිල කුලී නිකුත් කිරීමේ බිල්පත ***",
+    dispatchSubtitle: "* උපකරණ නිකුත් කරන ලදී · කුලීකරු එකඟ විය *",
+    completedTitle: "*** කුලී බිල්පත (සම්පූර්ණ කර අවසන්) ***",
+    completedSubtitle: "* සියලු උපකරණ භාරගෙන ගෙවීම් අවසන් *",
+    docNumber: "බිල්පත් අංකය:",
+    dateTime: "දිනය සහ වේලාව:",
+    operator: "නිකුත් කළේ:",
+    status: "තත්ත්වය:",
+    statusActive: "ක්‍රියාත්මකයි",
+    statusCompleted: "සම්පූර්ණයි",
+    statusDraft: "ඇස්තමේන්තුව",
+    client: "පාරිභෝගිකයා:",
+    nicReg: "ජා.හැ. / ලියාපදිංචි අංකය:",
+    phone: "දුරකථන:",
+    address: "ලිපිනය:",
+    onBehalfOf: "වෙනුවෙන් නිකුත් කළේ:",
+    vaultCollateral: "ඇප සුරැකුම (හැඳුනුම්පත):",
+    vaultHeld: "ආරක්ෂිතව රඳවා ඇත",
+    vaultReleased: "නිදහස් කර ඇත / නැත",
+    vaultPending: "රඳවා ගැනීමට නියමිතයි",
+    walkInCustomer: "පැමිණි පාරිභෝගිකයා",
+    notOnFile: "සටහන් කර නැත",
+    itemCol: "උපකරණය / කුලී කාලය",
+    qtyTotalCol: "ප්‍රමාණය සහ එකතුව",
+    noItems: "[ කිසිදු උපකරණයක් තෝරාගෙන නැත ]",
+    qty: "ප්‍රමාණය",
+    rate: "ගාස්තුව",
+    returnedOn: "භාරගත් දිනය:",
+    totalLineItems: "මුළු උපකරණ වර්ග:",
+    totalMachines: "මුළු යන්ත්‍ර සංඛ්‍යාව:",
+    subtotal: "උපකරණ අතුරු එකතුව:",
+    transport: "ප්‍රවාහන ගාස්තු:",
+    discount: "ලබාදුන් වට්ටම්:",
+    lateFees: "ප්‍රමාද ගාස්තු:",
+    netTotal: "මුළු මුදල:",
+    advanceDeposit: "මූලික අත්තිකාරම් තැන්පතුව",
+    initialAdvance: "මූලික අත්තිකාරම",
+    payment: "ගෙවීම",
+    totalPaid: "මුළු ගෙවූ මුදල:",
+    balanceDue: "ගෙවිය යුතු ශේෂය:",
+    paidInFull: "සම්පූර්ණයෙන්ම ගෙවා ඇත",
+    remarks: "විශේෂ සටහන් / වැඩබිම් විස්තරය:",
+    termsTitle: "කුලී කොන්දේසි සහ වගකීම් ප්‍රකාශය",
+    term1: "1. උපකරණ නිසි ක්‍රියාකාරී තත්ත්වයෙන් හා සියලු උපාංග සහිතව පරීක්ෂා කර භාරගන්නා ලදී.",
+    term2: "2. නියමිත දිනට හෝ ඊට පෙර භාරදිය යුතු අතර, ප්‍රමාද වන දින සඳහා අමතර දෛනික ගාස්තු අය කෙරේ.",
+    term3: "3. නොසැලකිලිමත් භාවිතය, අලාභහානි, වැරදි ඉන්ධන හෝ අස්ථානගතවීම් සඳහා කුලීකරු සම්පූර්ණයෙන් වගකිව යුතුය.",
+    term4: "4. සියලු ගෙවීම් අවසන් කර උපකරණ පරීක්ෂාවෙන් පසු ඇපයට තබාගත් හැඳුනුම්පත නිදහස් කෙරේ.",
+    custSign: "පාරිභෝගික අත්සන",
+    authSign: "බලයලත් නිලධාරී අත්සන",
+    thankYou: (company: string) => `${company} තෝරාගත් ඔබට ස්තූතියි!`,
+    poweredBy: "GearGrid පද්ධතිය මගින් ක්‍රියාත්මකයි · www.geargrid.live",
+  },
+};
+
 export interface InvoiceReceiptProps {
   id: string; // DOM element ID to be printed
   invoice?: any; // Full invoice from backend (Active / Completed)
@@ -160,6 +277,7 @@ export interface InvoiceReceiptProps {
   };
   paperWidth?: "80mm" | "58mm";
   density?: "standard" | "compact";
+  language?: ReceiptLanguage; // Supports "en" (English) or "si" (Sinhala)
   showTerms?: boolean;
   showBarcode?: boolean;
   customNotes?: string;
@@ -174,6 +292,7 @@ export const InvoiceReceipt = ({
   draftData,
   paperWidth = "80mm",
   density = "standard",
+  language,
   showTerms = true,
   showBarcode = true,
   customNotes,
@@ -182,6 +301,14 @@ export const InvoiceReceipt = ({
 }: InvoiceReceiptProps) => {
   const user = useAuthStore((s) => s.user);
   const config = (user as any)?.configData || {};
+
+  const activeLang: ReceiptLanguage =
+    language ||
+    (typeof window !== "undefined"
+      ? ((localStorage.getItem("pos_receipt_language") as ReceiptLanguage) || "en")
+      : "en");
+
+  const t = RECEIPT_LABELS[activeLang] || RECEIPT_LABELS.en;
 
   // Company Branding from Tenant Config with fallbacks
   const companyName =
@@ -205,7 +332,7 @@ export const InvoiceReceipt = ({
     cashierName ||
     (user?.first_name
       ? `${user.first_name} ${user.last_name || ""}`.trim()
-      : user?.username || "Authorized Operator");
+      : user?.username || (activeLang === "si" ? "බලයලත් නිලධාරී" : "Authorized Operator"));
 
   // Normalization logic: handles BOTH active/completed invoices AND mid-way draft quotes
   const normalized = useMemo(() => {
@@ -217,15 +344,25 @@ export const InvoiceReceipt = ({
 
       const lines = items.map((item, idx) => {
         const math = calculateLineMath(item);
+        let pricingText = math.calculationText;
+        if (activeLang === "si") {
+          const isDailyDraft =
+            Number(item.minimum_rental_period || 1) <= 1 &&
+            Number(item.base_price || 0) === Number(item.extra_daily_rate || item.base_price || 0);
+          pricingText = isDailyDraft
+            ? `දින ${math.totalDays}ක් (දිනකට ${fmtMoney(item.daily_rate || item.base_price, currencyCode)})`
+            : `මූලික: ${fmtMoney(item.base_price, currencyCode)} (දින ${item.minimum_rental_period || 1}) + අමතර: ${fmtMoney(item.extra_daily_rate, currencyCode)}/දිනකට`;
+        }
+
         return {
           id: item.cart_id || `draft-line-${idx}`,
-          name: item.equipment_name || "Equipment Item",
+          name: item.equipment_name || (activeLang === "si" ? "උපකරණය" : "Equipment Item"),
           qty: item.borrow_quantity || 1,
           start: item.borrow_date,
           end: item.expected_return_date,
           days: math.totalDays,
           lineTotal: math.lineCost,
-          pricingText: math.calculationText,
+          pricingText,
           status: "Draft",
           returnedDate: null,
         };
@@ -240,16 +377,16 @@ export const InvoiceReceipt = ({
 
       return {
         docType: "ESTIMATE" as const,
-        docTitle: "*** RENTAL ESTIMATE / QUOTATION ***",
-        docSubtitle: "* ESTIMATE ONLY · GOODS NOT YET DISPATCHED *",
+        docTitle: t.estimateTitle,
+        docSubtitle: t.estimateSubtitle,
         docNumber: draftData?.draftId || `EST-${Math.floor(100000 + Math.random() * 900000)}`,
         issuedDate: new Date().toISOString(),
         customer: {
           name:
             cust.customer_type === "Business" && cust.company_name
               ? cust.company_name
-              : `${cust.first_name || ""} ${cust.last_name || ""}`.trim() || "Walk-in Customer",
-          nic: cust.nic_number || "Not on file",
+              : `${cust.first_name || ""} ${cust.last_name || ""}`.trim() || t.walkInCustomer,
+          nic: cust.nic_number || t.notOnFile,
           phone: cust.phone_number || "N/A",
           address: cust.address_line1 || cust.city || "",
           depositBalance: Number(cust.deposit_balance || 0),
@@ -271,12 +408,19 @@ export const InvoiceReceipt = ({
         grandTotal,
         payments:
           advance > 0
-            ? [{ label: "Advance Deposit", amount: advance, method: "Cash/Wallet", date: new Date().toISOString() }]
+            ? [
+                {
+                  label: t.advanceDeposit,
+                  amount: advance,
+                  method: activeLang === "si" ? "මුදලින් (Cash)" : "Cash/Wallet",
+                  date: new Date().toISOString(),
+                },
+              ]
             : [],
         totalPaid: advance,
         balanceDue,
-        vaultStatus: "Pending Check-in",
-        status: "Draft",
+        vaultStatus: t.vaultPending,
+        statusDisplay: t.statusDraft,
       };
     }
 
@@ -285,19 +429,25 @@ export const InvoiceReceipt = ({
     const benef = invoice.OnBehalfOfCustomer;
     const invLines = invoice.InvoiceLines || [];
     const payments = invoice.Payments || [];
+    const isCompleted = invoice.status === "Completed";
 
     const lines = invLines.map((line: any, idx: number) => {
       const days = calculateDays(line.borrow_date, line.expected_return_date);
       const isDaily =
         Number(line.locked_minimum_days) <= 1 &&
         Number(line.locked_base_price) === Number(line.locked_extra_daily_rate);
+
       const pricingText = isDaily
-        ? `${days} day${days !== 1 ? "s" : ""} @ ${fmtMoney(line.locked_base_price, currencyCode)}/d`
-        : `Base: ${fmtMoney(line.locked_base_price, currencyCode)} (${line.locked_minimum_days}d) + Extra: ${fmtMoney(line.locked_extra_daily_rate, currencyCode)}/d`;
+        ? (activeLang === "si"
+            ? `දින ${days}ක් (දිනකට ${fmtMoney(line.locked_base_price, currencyCode)})`
+            : `${days} day${days !== 1 ? "s" : ""} @ ${fmtMoney(line.locked_base_price, currencyCode)}/d`)
+        : (activeLang === "si"
+            ? `මූලික: ${fmtMoney(line.locked_base_price, currencyCode)} (දින ${line.locked_minimum_days}) + අමතර: ${fmtMoney(line.locked_extra_daily_rate, currencyCode)}/දිනකට`
+            : `Base: ${fmtMoney(line.locked_base_price, currencyCode)} (${line.locked_minimum_days}d) + Extra: ${fmtMoney(line.locked_extra_daily_rate, currencyCode)}/d`);
 
       return {
         id: line.line_id || `line-${idx}`,
-        name: line.Equipment?.equipment_name || `Equipment #${line.equipment_id}`,
+        name: line.Equipment?.equipment_name || (activeLang === "si" ? `උපකරණ අංක #${line.equipment_id}` : `Equipment #${line.equipment_id}`),
         qty: Number(line.borrow_quantity) || 1,
         start: line.borrow_date,
         end: line.expected_return_date,
@@ -319,24 +469,27 @@ export const InvoiceReceipt = ({
       0
     );
     const balanceDue = Math.max(0, grandTotal - totalPaid);
-    const isCompleted = invoice.status === "Completed";
+
+    const formatPaymentMethod = (m: string) => {
+      if (!m) return activeLang === "si" ? "මුදලින්" : "Cash";
+      if (m.toLowerCase().includes("cash")) return activeLang === "si" ? "මුදලින් (Cash)" : "Cash";
+      if (m.toLowerCase().includes("bank")) return activeLang === "si" ? "බැංකු (Bank)" : "Bank Transfer";
+      if (m.toLowerCase().includes("card")) return activeLang === "si" ? "කාඩ්පත් (Card)" : "Card";
+      return m;
+    };
 
     return {
       docType: isCompleted ? ("COMPLETED" as const) : ("DISPATCH" as const),
-      docTitle: isCompleted
-        ? "*** RENTAL INVOICE (COMPLETED & SETTLED) ***"
-        : "*** OFFICIAL RENTAL DISPATCH BILL ***",
-      docSubtitle: isCompleted
-        ? "* ALL EQUIPMENT RETURNED & SETTLED *"
-        : "* GEAR DISPATCHED · HIRER ACKNOWLEDGED *",
+      docTitle: isCompleted ? t.completedTitle : t.dispatchTitle,
+      docSubtitle: isCompleted ? t.completedSubtitle : t.dispatchSubtitle,
       docNumber: `INV-${invoice.invoice_id}`,
       issuedDate: invoice.issued_date || invoice.createdAt || new Date().toISOString(),
       customer: {
         name:
           cust.customer_type === "Business" && cust.company_name
             ? cust.company_name
-            : `${cust.first_name || ""} ${cust.last_name || ""}`.trim() || "Walk-in Customer",
-        nic: cust.nic_number || "Not on file",
+            : `${cust.first_name || ""} ${cust.last_name || ""}`.trim() || t.walkInCustomer,
+        nic: cust.nic_number || t.notOnFile,
         phone: cust.phone_number || "N/A",
         address: cust.address_line1 || cust.city || "",
         depositBalance: Number(cust.deposit_balance || 0),
@@ -357,17 +510,17 @@ export const InvoiceReceipt = ({
       lateFees,
       grandTotal,
       payments: payments.map((p: any, idx: number) => ({
-        label: idx === 0 ? "Initial Advance" : `Payment ${idx + 1}`,
+        label: idx === 0 ? t.initialAdvance : `${t.payment} ${idx + 1}`,
         amount: Math.abs(Number(p.payment_amount || 0)),
-        method: p.method || "Cash",
+        method: formatPaymentMethod(p.method),
         date: p.payment_date || p.createdAt,
       })),
       totalPaid,
       balanceDue,
-      vaultStatus: invoice.id_card_status ? "HELD IN VAULT" : "RELEASED / NONE",
-      status: invoice.status || "Active",
+      vaultStatus: invoice.id_card_status ? t.vaultHeld : t.vaultReleased,
+      statusDisplay: isCompleted ? t.statusCompleted : t.statusActive,
     };
-  }, [invoice, isDraft, draftData, currencyCode]);
+  }, [invoice, isDraft, draftData, currencyCode, activeLang, t]);
 
   // Styling metrics based on paperWidth & density
   const is58mm = paperWidth === "58mm";
@@ -377,8 +530,11 @@ export const InvoiceReceipt = ({
   const fontSizeTotal = is58mm ? "13px" : "15px";
   const lineHeight = "1.25";
 
-  // Monospace font stack guaranteeing alignment
-  const monoFont = "'Courier New', Courier, 'Lucida Console', Monaco, monospace";
+  // Monospace or Sinhala font stack
+  const activeFont =
+    activeLang === "si"
+      ? "'Noto Sans Sinhala', 'Iskoola Pota', 'Sinhala Sangam MN', 'Courier New', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      : "'Courier New', Courier, 'Lucida Console', Monaco, monospace";
 
   // Container styling
   const containerStyle: React.CSSProperties = isPreview
@@ -389,7 +545,7 @@ export const InvoiceReceipt = ({
         padding: "4mm 3mm 12mm 3mm",
         backgroundColor: "#ffffff",
         color: "#000000",
-        fontFamily: monoFont,
+        fontFamily: activeFont,
         fontSize: fontSizeBase,
         lineHeight,
         boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
@@ -398,7 +554,7 @@ export const InvoiceReceipt = ({
       }
     : {
         display: "none", // Keeps it hidden on dashboard; iframe clones innerHTML directly
-        fontFamily: monoFont,
+        fontFamily: activeFont,
         color: "#000000",
         backgroundColor: "#ffffff",
         fontSize: fontSizeBase,
@@ -420,8 +576,8 @@ export const InvoiceReceipt = ({
         >
           {companyName}
         </div>
-        <div style={{ fontSize: is58mm ? "9px" : "10px", marginTop: "1px", color: "#000000" }}>
-          HEAVY MACHINERY & EQUIPMENT RENTALS
+        <div style={{ fontSize: is58mm ? "9px" : "10px", marginTop: "1px", color: "#000000", fontWeight: 700 }}>
+          {t.category}
         </div>
         <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", marginTop: "2px", color: "#000000" }}>
           {companyAddress}
@@ -452,20 +608,20 @@ export const InvoiceReceipt = ({
 
       <div style={{ fontSize: fontSizeBase, margin: "6px 0 4px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: "bold" }}>DOC NUMBER:</span>
+          <span style={{ fontWeight: "bold" }}>{t.docNumber}</span>
           <span style={{ fontWeight: 900 }}>{normalized.docNumber}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>DATE & TIME:</span>
+          <span>{t.dateTime}</span>
           <span>{fmtDateTime(normalized.issuedDate)}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>OPERATOR:</span>
+          <span>{t.operator}</span>
           <span>{operatorName}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>STATUS:</span>
-          <span style={{ fontWeight: "bold" }}>{normalized.status.toUpperCase()}</span>
+          <span>{t.status}</span>
+          <span style={{ fontWeight: "bold" }}>{normalized.statusDisplay.toUpperCase()}</span>
         </div>
       </div>
 
@@ -474,19 +630,19 @@ export const InvoiceReceipt = ({
       {/* ── 3. CLIENT & VERIFICATION DETAILS ─────────────────────────────────── */}
       <div style={{ fontSize: fontSizeBase, margin: "4px 0" }}>
         <div style={{ fontWeight: 800, marginBottom: "2px" }}>
-          CLIENT: {normalized.customer.name.toUpperCase()}
+          {t.client} {normalized.customer.name.toUpperCase()}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>NIC / REG NO:</span>
+          <span>{t.nicReg}</span>
           <span style={{ fontWeight: 800 }}>{normalized.customer.nic}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>PHONE:</span>
+          <span>{t.phone}</span>
           <span>{normalized.customer.phone}</span>
         </div>
         {normalized.customer.address && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>ADDRESS:</span>
+            <span>{t.address}</span>
             <span style={{ textAlign: "right", maxWidth: "60%" }}>
               {normalized.customer.address}
             </span>
@@ -501,7 +657,7 @@ export const InvoiceReceipt = ({
               fontSize: is58mm ? "9px" : "10px",
             }}
           >
-            <span style={{ fontWeight: "bold" }}>ON BEHALF OF: </span>
+            <span style={{ fontWeight: "bold" }}>{t.onBehalfOf} </span>
             {normalized.beneficiary.name} ({normalized.beneficiary.phone})
           </div>
         )}
@@ -512,7 +668,7 @@ export const InvoiceReceipt = ({
             fontWeight: "bold",
           }}
         >
-          VAULT COLLATERAL: [{normalized.vaultStatus}]
+          {t.vaultCollateral} [{normalized.vaultStatus}]
         </div>
       </div>
 
@@ -537,15 +693,15 @@ export const InvoiceReceipt = ({
             marginBottom: "4px",
           }}
         >
-          <span>ITEM / RENTAL PERIOD</span>
-          <span style={{ textAlign: "right" }}>QTY & TOTAL</span>
+          <span>{t.itemCol}</span>
+          <span style={{ textAlign: "right" }}>{t.qtyTotalCol}</span>
         </div>
 
         <hr style={{ border: "none", borderTop: "1px dashed #000000", margin: "4px 0" }} />
 
         {normalized.lines.length === 0 ? (
           <div style={{ textAlign: "center", padding: "8px 0" }}>
-            [ No equipment items selected ]
+            {t.noItems}
           </div>
         ) : (
           normalized.lines.map((line, idx) => (
@@ -601,9 +757,9 @@ export const InvoiceReceipt = ({
                 }}
               >
                 <span>
-                  {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}d)
+                  {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{activeLang === "si" ? " දින" : "d"})
                 </span>
-                <span style={{ fontWeight: "bold" }}>Qty: {line.qty}</span>
+                <span style={{ fontWeight: "bold" }}>{t.qty}: {line.qty}</span>
               </div>
 
               {/* Row 3: Pricing math details */}
@@ -614,10 +770,10 @@ export const InvoiceReceipt = ({
                   paddingLeft: "12px",
                 }}
               >
-                Rate: {line.pricingText}
+                {t.rate}: {line.pricingText}
               </div>
 
-              {/* Line Status Badge (if Returned or Overdue) */}
+              {/* Line Status Badge (if Returned) */}
               {line.returnedDate && (
                 <div
                   style={{
@@ -626,7 +782,7 @@ export const InvoiceReceipt = ({
                     paddingLeft: "12px",
                   }}
                 >
-                  [RETURNED ON: {fmtDateTime(line.returnedDate)}]
+                  [{t.returnedOn} {fmtDateTime(line.returnedDate)}]
                 </div>
               )}
 
@@ -656,36 +812,36 @@ export const InvoiceReceipt = ({
           margin: "4px 0",
         }}
       >
-        <span>TOTAL LINE ITEMS: {normalized.lines.length}</span>
+        <span>{t.totalLineItems} {normalized.lines.length}</span>
         <span style={{ fontWeight: "bold" }}>
-          TOTAL MACHINES: {normalized.totalUnits}
+          {t.totalMachines} {normalized.totalUnits}
         </span>
       </div>
 
       {/* ── 5. FINANCIAL BREAKDOWN ───────────────────────────────────────────── */}
       <div style={{ margin: "6px 0", fontSize: fontSizeBase }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>EQUIPMENT SUBTOTAL:</span>
+          <span>{t.subtotal}</span>
           <span>{fmtMoney(normalized.subtotal, currencyCode)}</span>
         </div>
 
         {normalized.transport > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>TRANSPORT / DELIVERY:</span>
+            <span>{t.transport}</span>
             <span>+{fmtMoney(normalized.transport, currencyCode)}</span>
           </div>
         )}
 
         {normalized.discount > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>DISCOUNT APPLIED:</span>
+            <span>{t.discount}</span>
             <span>-{fmtMoney(normalized.discount, currencyCode)}</span>
           </div>
         )}
 
         {normalized.lateFees > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>LATE / OVERDUE CHARGES:</span>
+            <span>{t.lateFees}</span>
             <span>+{fmtMoney(normalized.lateFees, currencyCode)}</span>
           </div>
         )}
@@ -703,7 +859,7 @@ export const InvoiceReceipt = ({
           }}
         >
           <span style={{ fontWeight: 900, fontSize: fontSizeTotal }}>
-            NET TOTAL:
+            {t.netTotal}
           </span>
           <span style={{ fontWeight: 900, fontSize: fontSizeTotal }}>
             {fmtMoney(normalized.grandTotal, currencyCode)}
@@ -736,7 +892,7 @@ export const InvoiceReceipt = ({
                 marginTop: "2px",
               }}
             >
-              <span>TOTAL PAID TO DATE:</span>
+              <span>{t.totalPaid}</span>
               <span>{fmtMoney(normalized.totalPaid, currencyCode)}</span>
             </div>
           </div>
@@ -755,7 +911,7 @@ export const InvoiceReceipt = ({
           }}
         >
           <span style={{ fontWeight: 900, fontSize: fontSizeTotal }}>
-            BALANCE DUE:
+            {t.balanceDue}
           </span>
           <span
             style={{
@@ -763,7 +919,7 @@ export const InvoiceReceipt = ({
               fontSize: fontSizeTotal,
             }}
           >
-            {normalized.balanceDue === 0 ? "PAID IN FULL" : fmtMoney(normalized.balanceDue, currencyCode)}
+            {normalized.balanceDue === 0 ? t.paidInFull : fmtMoney(normalized.balanceDue, currencyCode)}
           </span>
         </div>
       </div>
@@ -778,7 +934,7 @@ export const InvoiceReceipt = ({
             fontSize: is58mm ? "8.5px" : "9.5px",
           }}
         >
-          <div style={{ fontWeight: "bold" }}>REMARKS / SITE NOTE:</div>
+          <div style={{ fontWeight: "bold" }}>{t.remarks}</div>
           <div>{customNotes}</div>
         </div>
       )}
@@ -790,18 +946,18 @@ export const InvoiceReceipt = ({
           style={{
             margin: "6px 0",
             fontSize: is58mm ? "8px" : "8.5px",
-            lineHeight: "1.2",
+            lineHeight: "1.25",
             pageBreakInside: "avoid",
             breakInside: "avoid",
           }}
         >
           <div style={{ fontWeight: 800, textAlign: "center", marginBottom: "2px" }}>
-            RENTAL ACKNOWLEDGEMENT & CONDITIONS
+            {t.termsTitle}
           </div>
-          <div>1. Hirer accepts equipment in good working order with all standard fittings.</div>
-          <div>2. Return on or before agreed date; late returns incur daily overdue rates.</div>
-          <div>3. Hirer is strictly liable for breakdown due to negligence, loss, or bad fuel.</div>
-          <div>4. Retained collateral/NIC released upon inspection and complete settlement.</div>
+          <div>{t.term1}</div>
+          <div>{t.term2}</div>
+          <div>{t.term3}</div>
+          <div>{t.term4}</div>
         </div>
       )}
 
@@ -819,12 +975,12 @@ export const InvoiceReceipt = ({
         <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
           <div style={{ flex: 1, textAlign: "left" }}>
             <div style={{ borderBottom: "1px solid #000000", height: "24px", marginBottom: "2px" }} />
-            <div style={{ fontWeight: "bold" }}>Customer Signature</div>
+            <div style={{ fontWeight: "bold" }}>{t.custSign}</div>
             <div style={{ fontSize: "8px" }}>{normalized.customer.name}</div>
           </div>
           <div style={{ flex: 1, textAlign: "right" }}>
             <div style={{ borderBottom: "1px solid #000000", height: "24px", marginBottom: "2px" }} />
-            <div style={{ fontWeight: "bold" }}>Authorized Signatory</div>
+            <div style={{ fontWeight: "bold" }}>{t.authSign}</div>
             <div style={{ fontSize: "8px" }}>{operatorName}</div>
           </div>
         </div>
@@ -850,14 +1006,14 @@ export const InvoiceReceipt = ({
           color: "#000000",
         }}
       >
-        <div>Thank you for choosing {companyName}!</div>
+        <div>{t.thankYou(companyName)}</div>
         <div style={{ fontSize: "8px", marginTop: "1px" }}>
-          Powered by GearGrid System · www.geargrid.live
+          {t.poweredBy}
         </div>
       </div>
 
-      {/* ── 10. CUTTER MARGIN (20mm safety feed space) ──────────────────────── */}
-      <div style={{ height: "20mm", width: "100%" }} />
+      {/* ── 10. CUTTER MARGIN (15mm safety feed space) ──────────────────────── */}
+      <div style={{ height: "15mm", width: "100%" }} />
     </Box>
   );
 };

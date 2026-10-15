@@ -134,14 +134,16 @@ export const handlePrintInvoice = (
     const pageRollWidth = paperWidth === "58mm" ? "58mm" : "80mm";
     const title = options?.title || "GearGrid POS Receipt";
 
-    // 1. Create an invisible iframe
+    // 1. Create an offscreen iframe configured with the exact roll width for layout calculation
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
     iframe.style.bottom = "0";
-    iframe.style.width = "0px";
-    iframe.style.height = "0px";
+    iframe.style.width = pageRollWidth;
+    iframe.style.height = "auto";
     iframe.style.border = "none";
+    iframe.style.opacity = "0.01";
+    iframe.style.pointerEvents = "none";
     iframe.style.zIndex = "-9999";
     document.body.appendChild(iframe);
 
@@ -149,6 +151,7 @@ export const handlePrintInvoice = (
     if (!iframeDoc) return;
 
     // 2. Inject Thermal Printer Specific CSS and the Receipt HTML
+    // Valid @page length rule avoids Chrome falling back to default A4 sheet.
     iframeDoc.open();
     iframeDoc.write(`
     <!DOCTYPE html>
@@ -156,17 +159,18 @@ export const handlePrintInvoice = (
       <head>
         <meta charset="utf-8" />
         <title>${title}</title>
-        <style>
-          /* Thermal roll page sizing: 80mm (standard) or 58mm (mini) */
+        <style id="dynamic-page-size">
           @page {
-            size: ${pageRollWidth} auto;
-            margin: 0mm;
+            size: ${pageRollWidth} 297mm;
+            margin: 0mm !important;
           }
-          
+        </style>
+        <style>
           @media print {
             html, body {
-              width: ${printableWidth} !important;
-              margin: 0 auto !important;
+              width: ${pageRollWidth} !important;
+              max-width: ${pageRollWidth} !important;
+              margin: 0 !important;
               padding: 0 !important;
               background: #ffffff !important;
               color: #000000 !important;
@@ -183,40 +187,40 @@ export const handlePrintInvoice = (
 
           body {
             margin: 0 auto;
-            padding: 3mm 2mm 20mm 2mm; /* 20mm bottom margin prevents auto-cutter from clipping signatures */
+            padding: 2mm 1mm 15mm 1mm; /* Safety feed buffer at bottom */
             width: ${printableWidth};
             max-width: ${printableWidth};
-            font-family: 'Courier New', Courier, 'Lucida Console', Monaco, monospace;
+            font-family: 'Noto Sans Sinhala', 'Iskoola Pota', 'Sinhala Sangam MN', 'Courier New', Courier, monospace, sans-serif;
             color: #000000;
             background-color: #ffffff;
             font-size: ${paperWidth === "58mm" ? "10px" : "11px"};
             line-height: 1.25;
-            -webkit-font-smoothing: none;
-            text-rendering: optimizeSpeed;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
           }
 
           /* Force high-contrast thermal borders and dividers */
           hr {
             border: none;
             border-top: 1px dashed #000000;
-            margin: 6px 0;
+            margin: 5px 0;
           }
 
           .divider-dashed {
             border-top: 1px dashed #000000;
-            margin: 6px 0;
+            margin: 5px 0;
           }
 
           .divider-double {
             border-top: 2px solid #000000;
             border-bottom: 1px solid #000000;
             height: 3px;
-            margin: 6px 0;
+            margin: 5px 0;
           }
 
           .divider-solid {
             border-top: 1px solid #000000;
-            margin: 6px 0;
+            margin: 5px 0;
           }
 
           .avoid-break {
@@ -236,14 +240,42 @@ export const handlePrintInvoice = (
         </style>
       </head>
       <body>
-        ${contentElement.innerHTML}
+        <div id="receipt-print-wrapper" style="width: ${printableWidth}; margin: 0 auto;">
+          ${contentElement.innerHTML}
+        </div>
       </body>
     </html>
   `);
     iframeDoc.close();
 
-    // 3. Wait slightly for the iframe to paint, then trigger the printer
+    // 3. Dynamically measure rendered content height and set exact @page size so Chrome does not revert to A4
     setTimeout(() => {
+        try {
+            const root = iframeDoc.getElementById("receipt-print-wrapper") || iframeDoc.body;
+            const scrollHeight = root.scrollHeight || iframeDoc.body.scrollHeight || 700;
+            // 1 px = 0.264583 mm at standard 96 DPI screen raster.
+            // Add 10mm cutter buffer to prevent clipping the footer
+            const calculatedMm = Math.max(80, Math.ceil(scrollHeight * 0.264583) + 10);
+
+            const pageSizeTag = iframeDoc.getElementById("dynamic-page-size");
+            if (pageSizeTag) {
+                pageSizeTag.textContent = `
+                    @page {
+                        size: ${pageRollWidth} ${calculatedMm}mm;
+                        margin: 0mm !important;
+                    }
+                    @media print {
+                        @page {
+                            size: ${pageRollWidth} ${calculatedMm}mm;
+                            margin: 0mm !important;
+                        }
+                    }
+                `;
+            }
+        } catch (err) {
+            console.warn("Could not dynamically measure receipt height for @page:", err);
+        }
+
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
 
@@ -252,6 +284,6 @@ export const handlePrintInvoice = (
             if (document.body.contains(iframe)) {
                 document.body.removeChild(iframe);
             }
-        }, 1500);
+        }, 2000);
     }, 250);
 };
