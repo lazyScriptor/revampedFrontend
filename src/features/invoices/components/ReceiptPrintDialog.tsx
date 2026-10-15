@@ -1,5 +1,5 @@
 // features/invoices/components/ReceiptPrintDialog.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -16,13 +16,15 @@ import {
   TextField,
   Divider,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TuneIcon from "@mui/icons-material/Tune";
 import { InvoiceReceipt, InvoiceReceiptProps, ReceiptLanguage } from "./InvoiceReceipt";
-import { handlePrintInvoice } from "../hooks/useInvoiceHooks";
+import { handlePrintInvoice, checkPrintAgent } from "../hooks/useInvoiceHooks";
+import type { PrintAgentHealth } from "../utils/thermalPrint";
 
 export interface ReceiptPrintDialogProps {
   open: boolean;
@@ -58,13 +60,39 @@ export function ReceiptPrintDialog({
 
   const printDomId = `printable-receipt-${isDraft ? "draft" : invoice?.invoice_id || "active"}`;
 
-  const handlePrint = () => {
-    handlePrintInvoice(printDomId, {
-      paperWidth,
-      title: isDraft
-        ? (language === "si" ? "කුලී ඇස්තමේන්තුව" : "Rental Estimate")
-        : (language === "si" ? `බිල්පත INV-${invoice?.invoice_id || "POS"}` : `Bill INV-${invoice?.invoice_id || "POS"}`),
-    });
+  const [agent, setAgent] = useState<PrintAgentHealth | null>(null);
+  const [printing, setPrinting] = useState(false);
+  const [printStatus, setPrintStatus] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    setAgent(null);
+    setPrintStatus(null);
+    checkPrintAgent().then((h) => alive && setAgent(h));
+    return () => {
+      alive = false;
+    };
+  }, [open]);
+
+  const handlePrint = async () => {
+    setPrinting(true);
+    setPrintStatus(null);
+    try {
+      const result = await handlePrintInvoice(printDomId, {
+        paperWidth,
+        title: isDraft
+          ? (language === "si" ? "කුලී ඇස්තමේන්තුව" : "Rental Estimate")
+          : (language === "si" ? `බිල්පත INV-${invoice?.invoice_id || "POS"}` : `Bill INV-${invoice?.invoice_id || "POS"}`),
+      });
+      if (result?.method === "direct") {
+        setPrintStatus({ ok: true, text: `Sent to ${result.printer} · ${result.heightMm}mm` });
+      } else if (result?.method === "dialog") {
+        setPrintStatus({ ok: false, text: "Printed via browser dialog (agent offline)" });
+      }
+    } finally {
+      setPrinting(false);
+    }
   };
 
   const dialogTitle =
@@ -346,13 +374,22 @@ export function ReceiptPrintDialog({
                 gap: 0.5,
               }}
             >
-              <Typography variant="caption" sx={{ color: "#166534", fontWeight: 800 }}>
-                Xprinter XP-80T / 80mm Continuous Roll Ready
+              <Typography variant="caption" sx={{ color: agent?.ok ? "#166534" : "#92400e", fontWeight: 800 }}>
+                {agent === null
+                  ? "Checking direct printer connection…"
+                  : agent.ok
+                    ? `● Direct printing ready · ${agent.defaultPrinter || "default printer"}`
+                    : "○ Direct printing offline — browser dialog will be used"}
               </Typography>
-              <Typography variant="caption" sx={{ color: "#15803d", fontSize: "0.74rem", lineHeight: 1.35 }}>
-                • <b>Paper Size:</b> Select <b>72 x 3,274 mm</b> (or 80mm continuous roll) — never splits into 2 parts.<br />
-                • <b>Margins:</b> Set to <b>None</b> for full edge-to-edge layout.<br />
-                • <b>Typography:</b> Balanced, high-clarity typography for Sinhala and English.
+              <Typography variant="caption" sx={{ color: agent?.ok ? "#15803d" : "#92400e", fontSize: "0.74rem", lineHeight: 1.35 }}>
+                {agent?.ok ? (
+                  <>Prints instantly with no dialog. Paper feeds exactly to the end of the bill, then cuts.</>
+                ) : (
+                  <>
+                    Start the GearGrid Print Agent on this computer for exact-length, dialog-free printing.<br />
+                    Fallback: choose <b>Margins: None</b> in the print dialog.
+                  </>
+                )}
               </Typography>
             </Box>
           </Box>
@@ -419,11 +456,21 @@ export function ReceiptPrintDialog({
             {language === "si" ? "අවලංගු කරන්න" : "Cancel"}
           </Button>
 
+          {printStatus && (
+            <Typography
+              variant="caption"
+              sx={{ flex: 1, mx: 2, fontWeight: 600, color: printStatus.ok ? "#15803d" : "#b45309" }}
+            >
+              {printStatus.text}
+            </Typography>
+          )}
+
           <Button
             variant="contained"
             disableElevation
-            startIcon={<PrintIcon />}
+            startIcon={printing ? <CircularProgress size={16} color="inherit" /> : <PrintIcon />}
             onClick={handlePrint}
+            disabled={printing}
             sx={{
               fontWeight: 800,
               bgcolor: isDraft ? "#d97706" : "#16a34a",

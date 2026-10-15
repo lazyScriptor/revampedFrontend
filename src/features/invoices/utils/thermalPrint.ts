@@ -1,0 +1,230 @@
+// features/invoices/utils/thermalPrint.ts
+//
+// Thermal receipt print engine.
+//
+// Strategy (in order):
+//   1. DIRECT (preferred) — send the receipt HTML + its measured height to the
+//      local GearGrid Print Agent (geargrid-print-agent/). The agent renders a
+//      PDF whose page is exactly the content height and submits it to CUPS with
+//      PageSize=Custom.<W>x<H>mm. The printer feeds only what is printed, then
+//      cuts. No dialog, no wasted paper, no mid-bill splits.
+//   2. DIALOG (fallback) — if the agent is not running, open the browser print
+//      dialog with a dynamically sized @page rule (previous behaviour).
+
+export interface PrintInvoiceOptions {
+  paperWidth?: "80mm" | "58mm";
+  title?: string;
+  copies?: number;
+  printer?: string;
+}
+
+export type PrintResult =
+  | { method: "direct"; jobId: string | null; printer: string; heightMm: number }
+  | { method: "dialog"; reason?: string };
+
+export const PRINT_AGENT_URL: string =
+  (import.meta as any).env?.VITE_PRINT_AGENT_URL || "http://127.0.0.1:17888";
+
+const PX_PER_MM = 96 / 25.4; // CSS reference: 1mm = 3.7795px
+const BOTTOM_BUFFER_MM = 3; // tiny safety margin so the last line is never clipped
+const MIN_HEIGHT_MM = 30;
+
+export interface PrintAgentHealth {
+  ok: boolean;
+  version?: string;
+  printers?: string[];
+  defaultPrinter?: string | null;
+  chrome?: boolean;
+}
+
+/** Quick (≤1.2s) probe of the local print agent. Never throws. */
+export const checkPrintAgent = async (): Promise<PrintAgentHealth> => {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 1200);
+  try {
+    const res = await fetch(`${PRINT_AGENT_URL}/health`, { signal: ctrl.signal });
+    if (!res.ok) return { ok: false };
+    return (await res.json()) as PrintAgentHealth;
+  } catch {
+    return { ok: false };
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+// ─── Document builder ───────────────────────────────────────────────────────
+const buildReceiptDocument = (
+  innerHtml: string,
+  opts: { title: string; pageWidth: string; pageHeight: string; fontPx: string }
+) => `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${opts.title.replace(/</g, "&lt;")}</title>
+    <style id="dynamic-page-size">
+      @page { size: ${opts.pageWidth} ${opts.pageHeight}; margin: 0mm !important; }
+    </style>
+    <style>
+      html, body {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body {
+        padding: 0 1mm 0 1mm !important;
+        font-family: 'Noto Sans Sinhala', 'Sinhala Sangam MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color: #000000 !important;
+        font-size: ${opts.fontPx};
+        line-height: 1.28;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      #receipt-print-wrapper {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flow-root; /* contains child margins so height measurement is exact */
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      hr { border: none; border-top: 1px dashed #000000; margin: 3px 0; }
+      .avoid-break { page-break-inside: avoid !important; break-inside: avoid !important; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 1.5px 0; vertical-align: top; }
+    </style>
+  </head>
+  <body>
+    <div id="receipt-print-wrapper">${innerHtml}</div>
+  </body>
+</html>`;
+
+/** Renders the document in a hidden iframe of the given width and returns it with the content height in mm. */
+const renderAndMeasure = async (
+  html: string,
+  widthCss: string
+): Promise<{ iframe: HTMLIFrameElement; heightMm: number }> => {
+  const iframe = document.createElement("iframe");
+  Object.assign(iframe.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    width: widthCss,
+    height: "100px",
+    border: "none",
+    opacity: "0",
+    pointerEvents: "none",
+  } as CSSStyleDeclaration);
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow!.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  // Wait for web/system fonts (Sinhala shaping changes line heights) and layout.
+  try {
+    await (doc as any).fonts?.ready;
+  } catch {
+    /* ignore */
+  }
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const wrapper = doc.getElementById("receipt-print-wrapper");
+  const px = Math.max(
+    wrapper?.getBoundingClientRect().height || 0,
+    doc.body.scrollHeight || 0
+  );
+  const heightMm = Math.max(MIN_HEIGHT_MM, Math.ceil(px / PX_PER_MM) + BOTTOM_BUFFER_MM);
+  return { iframe, heightMm };
+};
+
+const removeLater = (iframe: HTMLIFrameElement, ms = 2000) =>
+  setTimeout(() => iframe.parentNode?.removeChild(iframe), ms);
+
+// ─── Public API ─────────────────────────────────────────────────────────────
+export const handlePrintInvoice = async (
+  printContentId: string,
+  options?: PrintInvoiceOptions
+): Promise<PrintResult | null> => {
+  const contentElement = document.getElementById(printContentId);
+  if (!contentElement) {
+    console.error(`Print element with ID ${printContentId} not found.`);
+    return null;
+  }
+
+  const paperWidth = options?.paperWidth || "80mm";
+  const is58 = paperWidth === "58mm";
+  const printableWidthMm = is58 ? 48 : 72; // physical printable area of the head
+  const fontPx = is58 ? "10px" : "11px";
+  const title = options?.title || "GearGrid POS Receipt";
+  const innerHtml = contentElement.innerHTML;
+
+  // ── 1. DIRECT: exact-length print through the local agent ────────────────
+  let fallbackReason = "Print agent not running";
+  try {
+    const measureDoc = buildReceiptDocument(innerHtml, {
+      title,
+      pageWidth: `${printableWidthMm}mm`,
+      pageHeight: "1000mm",
+      fontPx,
+    });
+    const { iframe, heightMm } = await renderAndMeasure(measureDoc, `${printableWidthMm}mm`);
+    iframe.parentNode?.removeChild(iframe);
+
+    const finalDoc = buildReceiptDocument(innerHtml, {
+      title,
+      pageWidth: `${printableWidthMm}mm`,
+      pageHeight: `${heightMm}mm`,
+      fontPx,
+    });
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 30000);
+    const res = await fetch(`${PRINT_AGENT_URL}/print`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        html: finalDoc,
+        widthMm: printableWidthMm,
+        heightMm,
+        copies: options?.copies || 1,
+        printer: options?.printer,
+        jobName: title,
+      }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(timer));
+
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data?.ok) {
+      return { method: "direct", jobId: data.jobId ?? null, printer: data.printer, heightMm };
+    }
+    fallbackReason = data?.error || `Agent responded ${res.status}`;
+    console.warn("Print agent error, falling back to browser dialog:", fallbackReason);
+  } catch (err) {
+    // Connection refused / timeout → agent not installed or not running.
+    fallbackReason = (err as Error)?.message || fallbackReason;
+  }
+
+  // ── 2. FALLBACK: browser print dialog with dynamically sized @page ───────
+  const rollWidth = is58 ? "58mm" : "80mm";
+  const dialogDoc = buildReceiptDocument(innerHtml, {
+    title,
+    pageWidth: rollWidth,
+    pageHeight: "297mm",
+    fontPx,
+  });
+  const { iframe, heightMm } = await renderAndMeasure(dialogDoc, rollWidth);
+  const doc = iframe.contentWindow!.document;
+  const tag = doc.getElementById("dynamic-page-size");
+  if (tag) {
+    tag.textContent = `@page { size: ${rollWidth} ${heightMm + 5}mm; margin: 0mm !important; }`;
+  }
+  iframe.contentWindow?.focus();
+  iframe.contentWindow?.print();
+  removeLater(iframe);
+  return { method: "dialog", reason: fallbackReason };
+};
