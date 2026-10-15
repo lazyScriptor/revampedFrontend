@@ -87,7 +87,13 @@ export const useAuthStore = create<AuthState>()(
              * Usage: useAuthStore.getState().hasPermission('invoice:field:edit_discount')
              */
             hasPermission: (code: string) => {
-                const permissions = get().user?.permissions || [];
+                const user = get().user;
+                if (!user) return false;
+                const roles = user.roles || [];
+                if (roles.some((r) => ['admin', 'superadmin', 'super_admin', 'owner'].includes(r.toLowerCase()))) {
+                    return true;
+                }
+                const permissions = user.permissions || [];
                 return permissions.includes(code);
             },
 
@@ -95,7 +101,13 @@ export const useAuthStore = create<AuthState>()(
              * Check if the user has ANY of the listed permissions.
              */
             hasAnyPermission: (...codes: string[]) => {
-                const permissions = get().user?.permissions || [];
+                const user = get().user;
+                if (!user) return false;
+                const roles = user.roles || [];
+                if (roles.some((r) => ['admin', 'superadmin', 'super_admin', 'owner'].includes(r.toLowerCase()))) {
+                    return true;
+                }
+                const permissions = user.permissions || [];
                 return codes.some((code) => permissions.includes(code));
             },
 

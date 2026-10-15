@@ -25,10 +25,21 @@ import { syncLanguageFromAuth } from "@/i18n";
 // persisted), apply their saved language preference right away. Without this,
 // a returning user would see the browser-detected default for a frame.
 (() => {
-  const u = useAuthStore.getState().user;
-  if (u) {
-    const tenantDefault = (u.configData as any)?.tenant_default_language ?? null;
-    syncLanguageFromAuth(u.language ?? null, tenantDefault).catch(() => {});
+  const { user, isAuthenticated, updateUserPartial } = useAuthStore.getState();
+  if (user) {
+    const tenantDefault = (user.configData as any)?.tenant_default_language ?? null;
+    syncLanguageFromAuth(user.language ?? null, tenantDefault).catch(() => {});
+  }
+  if (isAuthenticated) {
+    import("@/lib/api").then(({ api }) => {
+      api.get("/me").then((res) => {
+        if (res.data?.data?.permissions) {
+          updateUserPartial({
+            permissions: res.data.data.permissions,
+          });
+        }
+      }).catch(() => {});
+    });
   }
 })();
 
