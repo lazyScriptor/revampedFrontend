@@ -50,6 +50,11 @@ window.addEventListener('auth:unauthorized', () => {
   if (isAuthenticated) logout();
 });
 
+// Auto-reload on new deployments when an active tab requests a stale code-split chunk
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload();
+});
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
