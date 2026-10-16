@@ -98,39 +98,15 @@ const DashboardEngine: React.FC = () => {
     setLayout(merged);
   };
 
-  if (configLoading || !isConfigLoaded) {
-    return (
-      <Box
-        sx={{
-          p: { xs: 2, md: 3 },
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
-          gap: 2,
-        }}
-      >
-        {([1, 1, 1, 1, 2, 2] as const).map((span, i) => (
-          <Skeleton
-            key={i}
-            variant="rectangular"
-            height={span === 1 ? 130 : 310}
-            sx={{
-              borderRadius: dt.radius.lg,
-              bgcolor: dt.color.surfaceMuted,
-              gridColumn: `span ${span}`,
-            }}
-          />
-        ))}
-      </Box>
-    );
-  }
-
-  const visibleLayout = layout.filter((item) => {
-    const def = catalogMap[item.i];
-    return (
-      def &&
-      (!def.required_permission || hasPermission(def.required_permission))
-    );
-  });
+  const visibleLayout = useMemo(() => {
+    return layout.filter((item) => {
+      const def = catalogMap[item.i];
+      return (
+        def &&
+        (!def.required_permission || hasPermission(def.required_permission))
+      );
+    });
+  }, [layout, catalogMap, hasPermission]);
 
   // Desktop RGL Layout
   const desktopLayouts = useMemo(
@@ -173,6 +149,32 @@ const DashboardEngine: React.FC = () => {
       return a.x - b.x;
     });
   }, [visibleLayout]);
+
+  if (configLoading || !isConfigLoaded) {
+    return (
+      <Box
+        sx={{
+          p: { xs: 2, md: 3 },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
+          gap: 2,
+        }}
+      >
+        {([1, 1, 1, 1, 2, 2] as const).map((span, i) => (
+          <Skeleton
+            key={i}
+            variant="rectangular"
+            height={span === 1 ? 130 : 310}
+            sx={{
+              borderRadius: dt.radius.lg,
+              bgcolor: dt.color.surfaceMuted,
+              gridColumn: `span ${span}`,
+            }}
+          />
+        ))}
+      </Box>
+    );
+  }
 
   const renderCardContent = (item: StoreLayoutItem) => {
     const WidgetComponent = WIDGET_COMPONENTS[item.i];
