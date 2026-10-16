@@ -7,6 +7,8 @@ import { CustomerFormDialog } from "@/features/customers/components/CustomerForm
 import { CustomerBulkEditDialog } from "@/features/customers/components/CustomerBulkEditDialog";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import { Can } from "@/components/auth/Can";
+import { ResponsiveKpiStrip } from "@/components/ui/ResponsiveKpiStrip";
+import { KpiTile } from "@/components/reports/KpiTile";
 
 import {
   Alert,
@@ -172,155 +174,94 @@ export default function CustomersRoute() {
       </Box>
 
       {/* KPI Dashboard */}
-      <Box sx={{ flexShrink: 0 }}>
-        <Grid container spacing={{ xs: 1.25, sm: 1.5, md: 2 }}>
-          {/* Card 1: Total Clients */}
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Card
-              elevation={0}
-              onClick={() => clearFilters()}
-              sx={{
-                border: "1px solid",
-                borderColor: activeFilterCount === 0 && !debouncedSearch ? "primary.main" : "#e2e8f0",
-                borderRadius: 2.5,
-                bgcolor: "white",
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)", boxShadow: 1 },
-              }}
-            >
-              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
-                <div className="p-2 sm:p-2.5 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0">
-                  <PeopleAltIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
-                    {t("customers.totalClients")}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
-                    <Typography variant="h5" fontWeight="bold" color="text.primary" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
-                      {totalClients}
-                    </Typography>
-                    {(activeFilterCount > 0 || debouncedSearch) && (
-                      <Chip label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`} size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
-                    )}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
-                    {businessCount} {t("customers.business")} · {individualCount} {t("customers.individual")}
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+      <ResponsiveKpiStrip mobileLabel="Customer Overview">
+        <KpiTile
+          label={t("customers.totalClients")}
+          value={totalClients}
+          hint={`${businessCount} ${t("customers.business")} · ${individualCount} ${t("customers.individual")}`}
+          icon={<PeopleAltIcon />}
+          tone="default"
+          onClick={clearFilters}
+          active={activeFilterCount === 0 && !debouncedSearch}
+          compact
+          badge={
+            activeFilterCount > 0 || debouncedSearch ? (
+              <Chip
+                label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(56, 189, 248, 0.2)" : "#eff6ff"),
+                  color: (t) => (t.palette.mode === "dark" ? "#38bdf8" : "#1d4ed8"),
+                }}
+              />
+            ) : null
+          }
+        />
 
-          {/* Card 2: Linked to Parent */}
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Card
-              elevation={0}
-              onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
-              sx={{
-                border: "1px solid",
-                borderColor: hasParent === "true" ? "indigo.main" : "#e2e8f0",
-                bgcolor: hasParent === "true" ? alpha("#4f46e5", 0.05) : "white",
-                borderRadius: 2.5,
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "indigo.main", transform: "translateY(-1px)", boxShadow: 1 },
-              }}
-            >
-              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
-                <div className="p-2 sm:p-2.5 bg-indigo-50 text-indigo-600 rounded-lg flex-shrink-0">
-                  <AccountTreeIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
-                    {t("customers.linkedToParent")}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
-                    <Typography variant="h5" fontWeight="bold" color="indigo.dark" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
-                      {delegatedCount}
-                    </Typography>
-                    {hasParent === "true" && (
-                      <Chip label="Filtered" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#e0e7ff", color: "#3730a3" }} />
-                    )}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
-                    Corporate & staff
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+        <KpiTile
+          label={t("customers.linkedToParent")}
+          value={delegatedCount}
+          hint="Corporate & Staff Accounts"
+          icon={<AccountTreeIcon />}
+          tone="info"
+          onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
+          active={hasParent === "true"}
+          compact
+          badge={
+            hasParent === "true" ? (
+              <Chip
+                label="Filtered"
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(99, 102, 241, 0.2)" : "#e0e7ff"),
+                  color: (t) => (t.palette.mode === "dark" ? "#818cf8" : "#3730a3"),
+                }}
+              />
+            ) : null
+          }
+        />
 
-          {/* Card 3: IDs in Vault (Always shows true vault total) */}
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Card
-              elevation={0}
-              onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
-              sx={{
-                border: "1px solid",
-                borderColor: idRetained === "true" ? "error.main" : "#fecaca",
-                bgcolor: idRetained === "true" ? alpha("#ef4444", 0.08) : "#fef2f2",
-                borderRadius: 2.5,
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "error.main", transform: "translateY(-1px)", boxShadow: 1 },
-              }}
-            >
-              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
-                <div className="p-2 sm:p-2.5 bg-red-100 text-red-600 rounded-lg flex-shrink-0">
-                  <VerifiedUserIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="error.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
-                    {t("customers.idsInVault")}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
-                    <Typography variant="h5" fontWeight="bold" color="error.main" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
-                      {idsInVault}
-                    </Typography>
-                    {idRetained === "true" ? (
-                      <Chip label="Active" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "error.main", color: "white" }} />
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        in safe vault
-                      </Typography>
-                    )}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
-                    {idRetained === "true" ? "Showing vault clients" : "Click to view vault"}
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+        <KpiTile
+          label={t("customers.idsInVault")}
+          value={idsInVault}
+          hint={idRetained === "true" ? "Filtered: Vault clients" : "ID Card collateral in vault"}
+          icon={<VerifiedUserIcon />}
+          tone="error"
+          onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
+          active={idRetained === "true"}
+          compact
+          badge={
+            idRetained === "true" ? (
+              <Chip
+                label="Active"
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 800,
+                  bgcolor: "error.main",
+                  color: "#ffffff",
+                }}
+              />
+            ) : null
+          }
+        />
 
-          {/* Card 4: Total Advance Held */}
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Card elevation={0} sx={{ border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white", height: "100%" }}>
-              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
-                <div className="p-2 sm:p-2.5 bg-green-50 text-green-600 rounded-lg flex-shrink-0">
-                  <AccountBalanceWalletIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
-                    {t("customers.totalAdvanceHeld")}
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold" color="success.main" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
-                    Rs. {totalAdvance.toLocaleString()}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
-                    Total active customer deposits
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
+        <KpiTile
+          label={t("customers.totalAdvanceHeld")}
+          value={`Rs. ${totalAdvance.toLocaleString()}`}
+          hint="Active client advance balances"
+          icon={<AccountBalanceWalletIcon />}
+          tone="success"
+          compact
+        />
+      </ResponsiveKpiStrip>
 
       {/* Filter / search bar */}
       <Card
@@ -331,9 +272,10 @@ export default function CustomersRoute() {
           borderRadius: 2.5,
           p: { xs: 1.25, sm: 1.5 },
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: { xs: "column", sm: "row" },
           gap: 1.25,
-          alignItems: "center",
+          alignItems: { xs: "stretch", sm: "center" },
+          bgcolor: theme.palette.background.paper,
         }}
       >
         <TextField
@@ -341,7 +283,11 @@ export default function CustomersRoute() {
           placeholder={t("customers.searchPlaceholder")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ minWidth: { xs: "100%", sm: 300 }, flex: { xs: "1 1 100%", sm: "initial" } }}
+          sx={{
+            width: { xs: "100%", sm: 260, md: 320 },
+            flexShrink: 0,
+            "& .MuiInputBase-input": { fontSize: "0.84rem", py: 0.8 },
+          }}
           slotProps={{
             input: {
               startAdornment: (
@@ -363,83 +309,96 @@ export default function CustomersRoute() {
           }}
         />
 
-        {/* Type chips */}
-        <FilterChipGroup
-          label={t("common.type")}
-          value={type}
-          onChange={(v) => setType(v as any)}
-          options={[
-            { value: "", label: t("common.all") },
-            { value: "Individual", label: t("customers.individual") },
-            { value: "Business", label: t("customers.business") },
-          ]}
-        />
-
-        {/* Status chips */}
-        <FilterChipGroup
-          label={t("common.status")}
-          value={status}
-          onChange={(v) => setStatus(v as any)}
-          options={[
-            { value: "", label: t("common.all") },
-            { value: "Active", label: t("common.active"), color: theme.palette.success.main },
-            { value: "Blacklisted", label: t("customers.blacklisted"), color: theme.palette.error.main },
-          ]}
-        />
-
-        {/* Toggle chips */}
-        <Chip
-          label={t("customers.idInVault")}
-          onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
-          size="small"
-          icon={<VerifiedUserIcon sx={{ fontSize: "14px !important" }} />}
+        {/* Swipeable Filter Chips on Mobile, Inline on Desktop */}
+        <Box
           sx={{
-            fontWeight: 700,
-            height: 28,
-            cursor: "pointer",
-            color: idRetained === "true" ? theme.palette.error.contrastText : theme.palette.text.secondary,
-            bgcolor: idRetained === "true" ? theme.palette.error.main : "transparent",
-            border: `1px solid ${idRetained === "true" ? theme.palette.error.main : theme.palette.border.subtle}`,
-            "&:hover": {
-              bgcolor: idRetained === "true" ? theme.palette.error.dark : alpha(theme.palette.error.main, 0.08),
-            },
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            overflowX: { xs: "auto", sm: "visible" },
+            flexWrap: { xs: "nowrap", sm: "wrap" },
+            pb: { xs: 0.5, sm: 0 },
+            "&::-webkit-scrollbar": { height: 3 },
+            "&::-webkit-scrollbar-thumb": { background: theme.palette.border.subtle, borderRadius: 3 },
+            "& > *": { flexShrink: 0 },
+            flex: 1,
           }}
-        />
-        <Chip
-          label={t("customers.hasParent")}
-          onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
-          size="small"
-          icon={<AccountTreeIcon sx={{ fontSize: "14px !important" }} />}
-          sx={{
-            fontWeight: 700,
-            height: 28,
-            cursor: "pointer",
-            color: hasParent === "true" ? theme.palette.primary.contrastText : theme.palette.text.secondary,
-            bgcolor: hasParent === "true" ? theme.palette.primary.main : "transparent",
-            border: `1px solid ${hasParent === "true" ? theme.palette.primary.main : theme.palette.border.subtle}`,
-            "&:hover": {
-              bgcolor:
-                hasParent === "true" ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.08),
-            },
-          }}
-        />
+        >
+          {/* Type chips */}
+          <FilterChipGroup
+            label={t("common.type")}
+            value={type}
+            onChange={(v) => setType(v as any)}
+            options={[
+              { value: "", label: t("common.all") },
+              { value: "Individual", label: t("customers.individual") },
+              { value: "Business", label: t("customers.business") },
+            ]}
+          />
 
-        <Box sx={{ flex: 1 }} />
+          {/* Status chips */}
+          <FilterChipGroup
+            label={t("common.status")}
+            value={status}
+            onChange={(v) => setStatus(v as any)}
+            options={[
+              { value: "", label: t("common.all") },
+              { value: "Active", label: t("common.active"), color: theme.palette.success.main },
+              { value: "Blacklisted", label: t("customers.blacklisted"), color: theme.palette.error.main },
+            ]}
+          />
 
-        {activeFilterCount > 0 || debouncedSearch ? (
-          <Button
+          {/* Toggle chips */}
+          <Chip
+            label={t("customers.idInVault")}
+            onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
             size="small"
-            color="inherit"
-            startIcon={<FilterAltOutlinedIcon />}
-            onClick={clearFilters}
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            Clear {activeFilterCount + (debouncedSearch ? 1 : 0)} filter
-            {activeFilterCount + (debouncedSearch ? 1 : 0) > 1 ? "s" : ""}
-          </Button>
-        ) : null}
+            icon={<VerifiedUserIcon sx={{ fontSize: "14px !important" }} />}
+            sx={{
+              fontWeight: 700,
+              height: 26,
+              cursor: "pointer",
+              color: idRetained === "true" ? theme.palette.error.contrastText : theme.palette.text.secondary,
+              bgcolor: idRetained === "true" ? theme.palette.error.main : "transparent",
+              border: `1px solid ${idRetained === "true" ? theme.palette.error.main : theme.palette.border.subtle}`,
+              "&:hover": {
+                bgcolor: idRetained === "true" ? theme.palette.error.dark : alpha(theme.palette.error.main, 0.08),
+              },
+            }}
+          />
+          <Chip
+            label={t("customers.hasParent")}
+            onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
+            size="small"
+            icon={<AccountTreeIcon sx={{ fontSize: "14px !important" }} />}
+            sx={{
+              fontWeight: 700,
+              height: 26,
+              cursor: "pointer",
+              color: hasParent === "true" ? theme.palette.primary.contrastText : theme.palette.text.secondary,
+              bgcolor: hasParent === "true" ? theme.palette.primary.main : "transparent",
+              border: `1px solid ${hasParent === "true" ? theme.palette.primary.main : theme.palette.border.subtle}`,
+              "&:hover": {
+                bgcolor:
+                  hasParent === "true" ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.08),
+              },
+            }}
+          />
 
-        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, ml: 0.5 }}>
+          {activeFilterCount > 0 || debouncedSearch ? (
+            <Button
+              size="small"
+              color="inherit"
+              startIcon={<FilterAltOutlinedIcon />}
+              onClick={clearFilters}
+              sx={{ textTransform: "none", fontWeight: 700, ml: { sm: "auto" } }}
+            >
+              Clear filters
+            </Button>
+          ) : null}
+        </Box>
+
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, whiteSpace: "nowrap", flexShrink: 0 }}>
           {isLoading ? "Loading…" : `${totalRowCount.toLocaleString()} match${totalRowCount === 1 ? "" : "es"}`}
         </Typography>
       </Card>

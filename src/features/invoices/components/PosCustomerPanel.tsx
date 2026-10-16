@@ -23,9 +23,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import BadgeIcon from "@mui/icons-material/Badge";
 import PhoneIcon from "@mui/icons-material/Phone";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
 import { usePosCustomerSearch } from "../hooks/usePosSearch";
-import { useCustomerDetails } from "@/features/customers/hooks/useCustomerHooks";
+import { useCustomerDetails, useCustomerInvoices } from "@/features/customers/hooks/useCustomerHooks";
+import { ReadOnlyInvoiceModal } from "./ReadOnlyInvoiceModal";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
@@ -41,6 +43,7 @@ export function PosCustomerPanel({
   onChangeOnBehalfOfCustomer,
 }: PosCustomerPanelProps) {
   const [inputValue, setInputValue] = useState("");
+  const [selectedPreviewInvoice, setSelectedPreviewInvoice] = useState<any | null>(null);
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
 
   // Fetch nested parent + workers for the selected customer so we know whether
@@ -49,6 +52,22 @@ export function PosCustomerPanel({
   const { data: selectedCustomerDetails } = useCustomerDetails(
     selectedCustomer?.customer_id ?? null,
   );
+
+  // Fetch client invoices & live stats (Total, Active, Completed) with caching
+  const { data: customerInvoicesData, isLoading: loadingInvoices } = useCustomerInvoices(
+    selectedCustomer?.customer_id ?? null,
+  );
+  const invoiceStats = customerInvoicesData?.stats || { total: 0, active: 0, completed: 0 };
+  const pastInvoices = customerInvoicesData?.invoices || [];
+
+  const relDate = (dateStr: string) => {
+    if (!dateStr) return "—";
+    const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+    if (d === 0) return "Today";
+    if (d === 1) return "Yesterday";
+    if (d < 7) return `${d}d ago`;
+    return new Date(dateStr).toLocaleDateString();
+  };
 
   const relationshipOptions = useMemo(() => {
     const list: Array<{ id: number; label: string; subtitle: string; data: any; relation: "parent" | "worker" }> = [];

@@ -101,8 +101,44 @@ export function CustomerTable({
         );
       },
     },
-    { field: "nic_number", headerName: "NIC / Passport", flex: 0.7, minWidth: 140 },
-    { field: "phone_number", headerName: "Phone", flex: 0.6, minWidth: 130 },
+    {
+      field: "nic_number",
+      headerName: "NIC / Passport",
+      flex: 0.7,
+      minWidth: 140,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: "text.primary",
+            fontSize: "0.82rem",
+          }}
+        >
+          {params.value || "-"}
+        </Typography>
+      ),
+    },
+    {
+      field: "phone_number",
+      headerName: "Phone",
+      flex: 0.6,
+      minWidth: 130,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: "text.secondary",
+            fontSize: "0.82rem",
+          }}
+        >
+          {params.value || "-"}
+        </Typography>
+      ),
+    },
 
     // --- COLLATERAL & FINANCE COLUMNS ---
     {
@@ -120,9 +156,10 @@ export function CustomerTable({
               size="small"
               variant="outlined"
               sx={{
-                fontWeight: 600,
-                bgcolor: "#fef2f2",
-                border: "1px solid #fca5a5",
+                fontWeight: 700,
+                fontSize: "0.72rem",
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(239, 68, 68, 0.15)" : "#fef2f2"),
+                borderColor: (t) => (t.palette.mode === "dark" ? "rgba(239, 68, 68, 0.4)" : "#fca5a5"),
               }}
             />
           );
@@ -142,8 +179,12 @@ export function CustomerTable({
       renderCell: (params: GridRenderCellParams) => (
         <Typography
           variant="body2"
-          fontWeight="600"
-          color={Number(params.value) > 0 ? "success.main" : "text.secondary"}
+          fontWeight="700"
+          sx={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: Number(params.value) > 0 ? "success.main" : "text.secondary",
+          }}
         >
           Rs. {Number(params.value || 0).toLocaleString()}
         </Typography>
@@ -168,7 +209,7 @@ export function CustomerTable({
             label={params.value}
             color={isBlacklisted ? "error" : "success"}
             size="small"
-            sx={{ fontWeight: 500, borderRadius: 1.5 }}
+            sx={{ fontWeight: 700, fontSize: "0.72rem", borderRadius: 1.5 }}
           />
         );
       },
@@ -180,12 +221,18 @@ export function CustomerTable({
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
-        <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
+        <Box sx={{ display: "flex", gap: 0.75, alignItems: "center", height: "100%" }}>
           <Tooltip title="Edit Profile">
             <IconButton
               size="small"
               color="primary"
               onClick={() => onEdit(params.row)}
+              sx={{
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.08)"),
+                "&:hover": {
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.22)" : "rgba(245, 158, 11, 0.16)"),
+                },
+              }}
             >
               <EditIcon fontSize="small" />
             </IconButton>
@@ -195,6 +242,12 @@ export function CustomerTable({
               size="small"
               color="error"
               onClick={() => setDeleteId(params.row.customer_id)}
+              sx={{
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(239, 68, 68, 0.12)" : "rgba(239, 68, 68, 0.08)"),
+                "&:hover": {
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(239, 68, 68, 0.22)" : "rgba(239, 68, 68, 0.16)"),
+                },
+              }}
             >
               <DeleteIcon fontSize="small" />
             </IconButton>
@@ -272,22 +325,41 @@ export function CustomerTable({
               position: "sticky",
               top: 0,
               zIndex: 3,
-              bgcolor: "#f8fafc",
-              borderBottom: "1px solid #e2e8f0",
+              bgcolor: (t) => (t.palette.mode === "dark" ? "#1e293b" : "#f8fafc"),
+              color: (t) => (t.palette.mode === "dark" ? "#94a3b8" : "#475569"),
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              borderBottom: (t) => `1px solid ${t.palette.border.subtle}`,
             },
             "& .MuiDataGrid-row": {
               minHeight: "56px !important",
+              borderBottom: (t) => `1px solid ${t.palette.mode === "dark" ? "rgba(51, 65, 85, 0.4)" : "#f1f5f9"}`,
+              transition: "background-color 120ms ease",
+              "&:nth-of-type(even)": {
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(30, 41, 59, 0.3)" : "#fafbfc"),
+              },
+              "&:hover": {
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(30, 41, 59, 0.7)" : "#f1f5f9"),
+              },
+              "&.Mui-selected": {
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.15)" : "#fef3c7"),
+                "&:hover": {
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.25)" : "#fde68a"),
+                },
+              },
             },
             "& .MuiDataGrid-virtualScroller": {
               overflowY: "auto !important",
             },
             "& .MuiDataGrid-cell": {
-              borderColor: "#f1f5f9",
+              borderColor: (t) => (t.palette.mode === "dark" ? "rgba(51, 65, 85, 0.4)" : "#f1f5f9"),
               py: 1.25,
             },
             "& .MuiDataGrid-toolbarContainer": {
               p: 1.5,
-              borderBottom: "1px solid #f1f5f9",
+              borderBottom: (t) => `1px solid ${t.palette.border.subtle}`,
               flexShrink: 0,
             },
             "& .MuiDataGrid-footerContainer": {

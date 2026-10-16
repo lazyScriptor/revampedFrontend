@@ -14,17 +14,23 @@ export function useDebounce<T>(value: T, delay: number): T {
 
 // --- Customer Search Hook ---
 export const usePosCustomerSearch = (searchTerm: string) => {
-    const debouncedSearch = useDebounce(searchTerm, 300); // Wait 300ms before firing API
+    const debouncedSearch = useDebounce(searchTerm, 200); // Wait 200ms for snappy response
 
     return useQuery({
         queryKey: ['pos-customer-search', debouncedSearch],
         queryFn: async () => {
-            if (!debouncedSearch) return [];
-            // Assuming your backend has or will have a search parameter like ?search= or ?q=
-            const response = await api.get('/customers', { params: { search: debouncedSearch, limit: 10 } });
-            return response.data?.data?.customers || response.data?.customers || [];
+            const trimmed = debouncedSearch.trim();
+            const params: Record<string, any> = {
+                limit: 15,
+                skip_count: true,
+            };
+            if (trimmed.length > 0) {
+                params.search = trimmed;
+            }
+            const response: any = await api.get('/customers', { params });
+            return response?.data?.customers || response?.customers || [];
         },
-        enabled: debouncedSearch.length >= 2, // Only search if they typed at least 2 characters
-        staleTime: 1000 * 60, // Cache results for a minute to keep the POS snappy
+        staleTime: 5 * 60 * 1000, // Cache results for 5 minutes to keep POS snappy
+        gcTime: 15 * 60 * 1000,
     });
 };

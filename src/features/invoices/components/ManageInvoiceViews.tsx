@@ -86,11 +86,12 @@ export function ManageSearchPanel({
   const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
+  const [pageSize, setPageSize] = useState(25);
 
   const { data: searchResults = [], isLoading: searching } = useInvoiceSearch(searchInput);
-  const { data: listData, isLoading: listLoading } = useInvoiceList(
+  const { data: listData, isLoading: listLoading, isFetching } = useInvoiceList(
     1,
-    25,
+    pageSize,
     statusFilter === "All" ? undefined : statusFilter
   );
 
@@ -99,6 +100,14 @@ export function ManageSearchPanel({
     ? searchResults
     : listData?.invoices || [];
   const isLoading = isSearchMode ? searching : listLoading;
+
+  const counts = listData?.counts || { all: 0, active: 0, completed: 0 };
+  const currentFilterTotal =
+    statusFilter === "All"
+      ? counts.all
+      : statusFilter === "Active"
+        ? counts.active
+        : counts.completed;
 
   const borderColor = (inv: any) => {
     if (inv.invoice_id === selectedInvoiceId) return "#2563eb";
@@ -134,31 +143,47 @@ export function ManageSearchPanel({
         />
       </Box>
 
-      {/* Status filter chips */}
-      <Box sx={{ px: 2, pb: 1.5, display: "flex", gap: 1, flexShrink: 0 }}>
+      {/* Status filter chips with exact counts */}
+      <Box sx={{ px: 2, pb: 1.5, display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
         {(["All", "Active", "Completed"] as const).map((s) => {
-          const label =
+          const count = s === "All" ? counts.all : s === "Active" ? counts.active : counts.completed;
+          const baseLabel =
             s === "All"
               ? t("common.all")
               : s === "Active"
                 ? t("invoices.active")
                 : t("invoices.completed");
+          const label = `${baseLabel} (${count})`;
+
           return (
             <Chip
               key={s}
               size="small"
               label={label}
               clickable
-              onClick={() => setStatusFilter(s)}
+              onClick={() => {
+                setStatusFilter(s);
+                setPageSize(25);
+              }}
               variant={statusFilter === s ? "filled" : "outlined"}
               color={statusFilter === s ? (s === "Active" ? "warning" : s === "Completed" ? "success" : "primary") : "default"}
-              sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+              sx={{ fontWeight: 700, fontSize: "0.72rem", fontVariantNumeric: "tabular-nums" }}
             />
           );
         })}
-        {!isSearchMode && listData?.totalItems != null && (
-          <Typography variant="caption" color="text.secondary" sx={{ ml: "auto", alignSelf: "center" }}>
-            {t("invoices.totalCount", { count: listData.totalItems })}
+        {!isSearchMode && currentFilterTotal > 0 && (
+          <Typography
+            variant="caption"
+            sx={{
+              ml: "auto",
+              alignSelf: "center",
+              fontVariantNumeric: "tabular-nums",
+              fontWeight: 700,
+              color: "text.secondary",
+              fontSize: "0.72rem",
+            }}
+          >
+            {displayInvoices.length} of {currentFilterTotal}
           </Typography>
         )}
       </Box>
@@ -246,6 +271,31 @@ export function ManageSearchPanel({
               </Box>
             );
           })}
+
+        {!isSearchMode && displayInvoices.length < currentFilterTotal && (
+          <Box sx={{ p: 2, textAlign: "center" }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => setPageSize((prev) => prev + 25)}
+              disabled={isFetching}
+              sx={{
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                borderRadius: 2,
+                textTransform: "none",
+                color: "primary.main",
+                borderColor: "#cbd5e1",
+                fontVariantNumeric: "tabular-nums",
+                px: 2,
+                py: 0.75,
+              }}
+            >
+              {isFetching ? <CircularProgress size={14} sx={{ mr: 1 }} /> : null}
+              Load More Invoices ({currentFilterTotal - displayInvoices.length} remaining)
+            </Button>
+          </Box>
+        )}
       </Box>
     </Box>
   );

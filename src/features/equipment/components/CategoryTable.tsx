@@ -3,7 +3,6 @@ import {
   DataGrid,
   GridColDef,
   GridRenderCellParams,
-  GridToolbar,
 } from "@mui/x-data-grid";
 import {
   Box,
@@ -16,9 +15,14 @@ import {
   Button,
   Snackbar,
   Alert,
+  Typography,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useDeleteCategory } from "../hooks/useCategoryHooks";
 import { formatDisplayDate } from "@/lib/dates";
@@ -40,6 +44,8 @@ export function CategoryTable({
   onPaginationModelChange,
   onEdit,
 }: CategoryTableProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const deleteMutation = useDeleteCategory();
 
   // Dialog State
@@ -68,7 +74,6 @@ export function CategoryTable({
     if (deleteId) {
       deleteMutation.mutate(deleteId, {
         onSuccess: () => {
-          // Show success toast and close the dialog
           setToast({
             open: true,
             message: "Category successfully deleted.",
@@ -77,13 +82,10 @@ export function CategoryTable({
           setDeleteId(null);
         },
         onError: (error: any) => {
-          // Extract the exact custom message from our Express backend (e.g., "Cannot delete... equipment attached")
           const errorMessage =
             error.response?.data?.message ||
             error.message ||
             "Failed to delete category.";
-
-          // Show error toast and close the dialog
           setToast({ open: true, message: errorMessage, severity: "error" });
           setDeleteId(null);
         },
@@ -92,40 +94,140 @@ export function CategoryTable({
   };
 
   const columns: GridColDef[] = [
-    { field: "category_id", headerName: "ID", width: 90 },
+    {
+      field: "category_id",
+      headerName: "ID",
+      width: 80,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography
+          variant="caption"
+          sx={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            fontWeight: 700,
+            color: "text.secondary",
+            bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+            px: 1,
+            py: 0.35,
+            borderRadius: 1,
+          }}
+        >
+          #{params.value}
+        </Typography>
+      ),
+    },
     {
       field: "category_name",
       headerName: "Category Name",
-      flex: 1,
-      minWidth: 200,
-      fontWeight: "bold",
+      flex: 1.2,
+      minWidth: 220,
+      renderCell: (params: GridRenderCellParams) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0, py: 0.5 }}>
+          <Box
+            sx={{
+              width: 34,
+              height: 34,
+              borderRadius: 1.75,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: isDark ? "rgba(99, 102, 241, 0.15)" : "#eef2ff",
+              color: isDark ? "#818cf8" : "#4f46e5",
+              flexShrink: 0,
+            }}
+          >
+            <CategoryOutlinedIcon sx={{ fontSize: 18 }} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                whiteSpace: "normal",
+                wordBreak: "break-word",
+                lineHeight: 1.3,
+              }}
+            >
+              {params.value}
+            </Typography>
+            {params.row.equipment_count !== undefined && (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontVariantNumeric: "tabular-nums",
+                  fontWeight: 500,
+                }}
+              >
+                {params.row.equipment_count} asset{params.row.equipment_count === 1 ? "" : "s"}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      ),
     },
     {
       field: "description",
       headerName: "Description",
       flex: 2,
-      minWidth: 300,
+      minWidth: 280,
       sortable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography
+          variant="body2"
+          sx={{
+            color: params.value ? "text.secondary" : "text.disabled",
+            fontStyle: params.value ? "normal" : "italic",
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            lineHeight: 1.4,
+            py: 0.5,
+          }}
+        >
+          {params.value || "No description provided"}
+        </Typography>
+      ),
     },
     {
       field: "createdAt",
       headerName: "Date Created",
       width: 150,
-      valueFormatter: (value) => (value ? formatDisplayDate(value) : "N/A"),
+      renderCell: (params: GridRenderCellParams) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          <CalendarMonthOutlinedIcon sx={{ fontSize: 15, color: "text.disabled" }} />
+          <Typography
+            variant="body2"
+            sx={{
+              fontVariantNumeric: "tabular-nums",
+              color: "text.secondary",
+              fontSize: "0.82rem",
+            }}
+          >
+            {params.value ? formatDisplayDate(params.value) : "—"}
+          </Typography>
+        </Box>
+      ),
     },
     {
       field: "actions",
       headerName: "Actions",
-      width: 100,
+      width: 110,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
-        <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
           <Tooltip title="Edit Category">
             <IconButton
               size="small"
-              color="primary"
               onClick={() => onEdit(params.row)}
+              aria-label={`Edit ${params.row.category_name}`}
+              sx={{
+                color: isDark ? "#93c5fd" : "#2563eb",
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(59, 130, 246, 0.15)" : "#eff6ff",
+                },
+              }}
             >
               <EditIcon fontSize="small" />
             </IconButton>
@@ -133,8 +235,14 @@ export function CategoryTable({
           <Tooltip title="Delete Category">
             <IconButton
               size="small"
-              color="error"
               onClick={() => setDeleteId(params.row.category_id)}
+              aria-label={`Delete ${params.row.category_name}`}
+              sx={{
+                color: isDark ? "#fca5a5" : "#dc2626",
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(239, 68, 68, 0.15)" : "#fef2f2",
+                },
+              }}
             >
               <DeleteIcon fontSize="small" />
             </IconButton>
@@ -146,7 +254,7 @@ export function CategoryTable({
 
   return (
     <>
-      <Box sx={{ height: 600, width: "100%", bgcolor: "background.paper" }}>
+      <Box sx={{ flex: 1, minHeight: 0, height: "100%", width: "100%", bgcolor: "background.paper" }}>
         <DataGrid
           rows={data}
           columns={columns}
@@ -157,8 +265,6 @@ export function CategoryTable({
           paginationModel={paginationModel}
           onPaginationModelChange={onPaginationModelChange}
           pageSizeOptions={[10, 20, 50]}
-          slots={{ toolbar: GridToolbar }}
-          slotProps={{ toolbar: { showQuickFilter: true } }}
           disableRowSelectionOnClick
           getRowHeight={() => "auto"}
           getEstimatedRowHeight={() => 56}
@@ -166,32 +272,64 @@ export function CategoryTable({
             border: "none",
             "& .MuiDataGrid-row": {
               minHeight: "56px !important",
+              transition: "background-color 150ms ease",
+              "&:hover": {
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.04) !important" : "rgba(248, 250, 252, 0.9) !important",
+              },
+              "&:nth-of-type(even)": {
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.015)" : "rgba(241, 245, 249, 0.35)",
+              },
             },
-            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9", py: 1 },
+            "& .MuiDataGrid-cell": {
+              borderColor: theme.palette.border.subtle,
+              py: 1.25,
+              px: 1.5,
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+              display: "flex",
+              alignItems: "center",
+            },
             "& .MuiDataGrid-columnHeaders": {
-              bgcolor: "#f8fafc",
-              borderBottom: "1px solid #e2e8f0",
+              bgcolor: isDark ? alpha(theme.palette.background.paper, 0.8) : "#f8fafc",
+              borderBottom: `1px solid ${theme.palette.border.subtle}`,
+              textTransform: "uppercase",
+              fontSize: "0.6875rem",
+              letterSpacing: "0.05em",
+              fontWeight: 700,
+              color: "text.secondary",
             },
-            "& .MuiDataGrid-toolbarContainer": {
-              p: 2,
-              borderBottom: "1px solid #f1f5f9",
+            "& .MuiDataGrid-footerContainer": {
+              borderTop: `1px solid ${theme.palette.border.subtle}`,
             },
           }}
         />
       </Box>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
-        <DialogTitle className="font-bold text-slate-800">
+      <Dialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              bgcolor: theme.palette.background.paper,
+              border: `1px solid ${theme.palette.border.subtle}`,
+            },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, color: "text.primary" }}>
           Delete Category
         </DialogTitle>
         <DialogContent>
-          Are you sure you want to delete this category? If there is equipment
-          attached to it, this action might fail depending on your database
-          rules.
+          <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+            Are you sure you want to delete this category? If there is equipment
+            attached to it, this action will fail to preserve database integrity.
+          </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setDeleteId(null)} color="inherit">
+        <DialogActions sx={{ p: 2, pt: 0, gap: 1 }}>
+          <Button onClick={() => setDeleteId(null)} color="inherit" sx={{ textTransform: "none", fontWeight: 600 }}>
             Cancel
           </Button>
           <Button
@@ -200,8 +338,9 @@ export function CategoryTable({
             variant="contained"
             disabled={deleteMutation.isPending}
             disableElevation
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
           >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            {deleteMutation.isPending ? "Deleting..." : "Delete Category"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -217,7 +356,7 @@ export function CategoryTable({
           onClose={handleCloseToast}
           severity={toast.severity}
           variant="filled"
-          sx={{ width: "100%", fontWeight: 500, boxShadow: 3 }}
+          sx={{ width: "100%", fontWeight: 600, boxShadow: 3, borderRadius: 2 }}
         >
           {toast.message}
         </Alert>

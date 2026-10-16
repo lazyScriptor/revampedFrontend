@@ -6,14 +6,34 @@ export interface PaginatedCategoryResponse {
     total: number;
 }
 
-export const fetchCategories = async (page: number, limit: number): Promise<PaginatedCategoryResponse> => {
-    const response = await api.get('/categories', { params: { page, limit } });
+export const fetchCategories = async (
+  page: number,
+  limit: number,
+  search?: string
+): Promise<PaginatedCategoryResponse> => {
+  const response = await api.get('/categories', {
+    params: {
+      page,
+      limit,
+      search: search || undefined,
+    },
+  });
 
-    // Safely extract data based on your Express backend's structure
-    const categories = response.data?.categories || response.data?.data || response.data || [];
-    const total = response.data?.total || response.data?.meta?.total || categories.length;
+  // Safely extract data based on Express backend's structure
+  const categories =
+    response.data?.categories ||
+    response.data?.data?.categories ||
+    response.data?.data ||
+    response.data ||
+    [];
+  const total =
+    response.data?.totalItems ??
+    response.data?.data?.totalItems ??
+    response.data?.total ??
+    response.data?.meta?.total ??
+    categories.length;
 
-    return { categories, total };
+  return { categories, total };
 };
 
 export const createCategory = async (data: CategoryFormData): Promise<Category> => {

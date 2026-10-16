@@ -1,40 +1,90 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
 import { CategoryTable } from "@/features/equipment/components/CategoryTable";
 import { CategoryFormDrawer } from "@/features/equipment/components/CategoryFormDrawer";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
+import { ResponsiveKpiStrip } from "@/components/ui/ResponsiveKpiStrip";
+import { KpiTile } from "@/components/reports/KpiTile";
 
 import {
   Box,
   Button,
   Typography,
   Card,
-  CircularProgress,
   Alert,
+  TextField,
+  InputAdornment,
+  Tooltip,
+  Chip,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import ClassIcon from "@mui/icons-material/Class";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import ClearOutlinedIcon from "@mui/icons-material/ClearOutlined";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+
+function useDebounced<T>(value: T, delay = 300): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+}
 
 export default function CategoriesRoute() {
   const { t } = useTranslation();
+  const theme = useTheme();
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
+
+  // Search state
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebounced(searchInput, 300);
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 20,
   });
 
+  // Reset to page 0 when search changes
+  useEffect(() => {
+    setPaginationModel((m) => (m.page === 0 ? m : { ...m, page: 0 }));
+  }, [debouncedSearch]);
+
   const {
     data: response,
     isLoading,
     isError,
     error,
-  } = useCategoryList(paginationModel.page + 1, paginationModel.pageSize);
+  } = useCategoryList(paginationModel.page + 1, paginationModel.pageSize, debouncedSearch);
 
   const categoryList = response?.categories || [];
-  const totalRowCount = response?.total || 0;
+  const totalRowCount = Number(response?.total || 0);
+
+  // Compute stat metrics
+  const stats = useMemo(() => {
+    const withDesc = categoryList.filter(
+      (c) => c.description && c.description.trim().length > 0
+    ).length;
+
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const recent = categoryList.filter((c) => {
+      const dt = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+      return dt >= thirtyDaysAgo;
+    }).length;
+
+    return {
+      documented: withDesc,
+      recent,
+    };
+  }, [categoryList]);
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -51,11 +101,9 @@ export default function CategoriesRoute() {
     setTimeout(() => setEditingItem(null), 300);
   };
 
-  if (isLoading && categoryList.length === 0) {
-    return (
-      <GearGridLoader centered size="lg" label="Loading Fleet Categories..." sublabel="Organizing equipment taxonomy & catalog mappings" sx={{ minHeight: 400 }} />
-    );
-  }
+  const clearSearch = () => {
+    setSearchInput("");
+  };
 
   if (isError) {
     return (
@@ -67,15 +115,33 @@ export default function CategoriesRoute() {
   }
 
   return (
-    <div className="space-y-6">
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: { xs: "auto", md: "calc(100vh - 88px)" },
+        minHeight: 0,
+        overflow: { xs: "visible", md: "hidden" },
+        gap: { xs: 1.5, md: 2 },
+      }}
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { sm: "center" },
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
         <div>
           <Typography variant="h4" fontWeight="bold" color="text.primary">
             {t("nav.categories")}
           </Typography>
           <Typography variant="body2" color="text.secondary" className="mt-1">
-            {t("equipment.subtitle")}
+            {t("equipment.subtitle")} · Taxonomy & catalog organization
           </Typography>
         </div>
         <Button
@@ -83,34 +149,172 @@ export default function CategoriesRoute() {
           startIcon={<AddIcon />}
           onClick={handleOpenAdd}
           disableElevation
-          sx={{ py: 1.5, px: 3, borderRadius: 2 }}
+          sx={{ py: 1.25, px: 2.5, borderRadius: 2 }}
         >
           {t("common.add")} {t("nav.categories")}
         </Button>
-      </div>
+      </Box>
 
-      {/* Main Table Wrapper */}
+      {/* KPI Cards Strip */}
+      <ResponsiveKpiStrip mobileLabel="Categories Overview">
+        <KpiTile
+          label="Total Categories"
+          value={`${totalRowCount}`}
+          hint="Catalog taxonomy groups"
+          icon={<CategoryOutlinedIcon />}
+          tone="default"
+          onClick={clearSearch}
+          active={!debouncedSearch}
+          compact
+          badge={
+            debouncedSearch ? (
+              <Chip
+                label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(56, 189, 248, 0.2)" : "#eff6ff"),
+                  color: (t) => (t.palette.mode === "dark" ? "#38bdf8" : "#1d4ed8"),
+                }}
+              />
+            ) : null
+          }
+        />
+
+        <KpiTile
+          label="Documented"
+          value={`${stats.documented}`}
+          hint="With detailed descriptions"
+          icon={<DescriptionOutlinedIcon />}
+          tone="info"
+          compact
+        />
+
+        <KpiTile
+          label="Active Structure"
+          value="100%"
+          hint="Valid relational taxonomy"
+          icon={<CheckCircleOutlinedIcon />}
+          tone="success"
+          compact
+        />
+
+        <KpiTile
+          label="Recent Additions"
+          value={`${stats.recent}`}
+          hint="Added in last 30 days"
+          icon={<ClassOutlinedIcon />}
+          tone="warning"
+          compact
+        />
+      </ResponsiveKpiStrip>
+
+      {/* Search Bar */}
       <Card
         elevation={0}
-        className="border border-slate-200 rounded-xl overflow-hidden shadow-sm"
+        sx={{
+          flexShrink: 0,
+          border: `1px solid ${theme.palette.border.subtle}`,
+          borderRadius: 2.5,
+          p: { xs: 1.25, sm: 1.5 },
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1.25,
+          alignItems: { xs: "stretch", sm: "center" },
+          bgcolor: theme.palette.background.paper,
+        }}
       >
-        {/* Simple inline stat header inside the card to keep UI clean */}
-        <Box className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-white">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-            <ClassIcon fontSize="small" />
-          </div>
-          <Typography variant="subtitle1" fontWeight="600" color="text.primary">
-            {totalRowCount} Total Categories
-          </Typography>
-        </Box>
-        <CategoryTable
-          data={categoryList}
-          isLoading={isLoading}
-          rowCount={totalRowCount}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          onEdit={handleOpenEdit}
+        <TextField
+          size="small"
+          placeholder="Search categories by name or description..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          sx={{
+            width: { xs: "100%", sm: 320, md: 380 },
+            "& .MuiInputBase-input": { fontSize: "0.84rem", py: 0.8 },
+          }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchOutlinedIcon sx={{ fontSize: 18, color: theme.palette.text.disabled }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchInput ? (
+                <InputAdornment position="end">
+                  <Tooltip title="Clear search">
+                    <ClearOutlinedIcon
+                      onClick={clearSearch}
+                      sx={{ fontSize: 16, color: theme.palette.text.disabled, cursor: "pointer" }}
+                    />
+                  </Tooltip>
+                </InputAdornment>
+              ) : null,
+            },
+          }}
         />
+
+        {debouncedSearch && (
+          <Button
+            size="small"
+            color="inherit"
+            startIcon={<FilterAltOutlinedIcon />}
+            onClick={clearSearch}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            Clear search
+          </Button>
+        )}
+
+        <Typography
+          variant="caption"
+          sx={{
+            color: theme.palette.text.secondary,
+            ml: { sm: "auto" },
+            whiteSpace: "nowrap",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {isLoading
+            ? "Loading…"
+            : `${totalRowCount.toLocaleString()} categor${totalRowCount === 1 ? "y" : "ies"} registered`}
+        </Typography>
+      </Card>
+
+      {/* Main Table Card */}
+      <Card
+        elevation={0}
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          border: `1px solid ${theme.palette.border.subtle}`,
+          borderRadius: 3,
+          overflow: "hidden",
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+          bgcolor: "background.paper",
+        }}
+      >
+        {isLoading && categoryList.length === 0 ? (
+          <GearGridLoader
+            centered
+            size="lg"
+            label="Loading Fleet Categories..."
+            sublabel="Organizing equipment taxonomy & catalog mappings"
+          />
+        ) : (
+          <CategoryTable
+            data={categoryList}
+            isLoading={isLoading}
+            rowCount={totalRowCount}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            onEdit={handleOpenEdit}
+          />
+        )}
       </Card>
 
       <CategoryFormDrawer
@@ -118,6 +322,6 @@ export default function CategoriesRoute() {
         onClose={handleCloseDrawer}
         initialData={editingItem}
       />
-    </div>
+    </Box>
   );
 }

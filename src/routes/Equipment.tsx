@@ -11,6 +11,8 @@ import { EquipmentFormDialog } from "@/features/equipment/components/EquipmentFo
 import { EquipmentBulkEditDialog } from "@/features/equipment/components/EquipmentBulkEditDialog";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import { Can } from "@/components/auth/Can";
+import { ResponsiveKpiStrip } from "@/components/ui/ResponsiveKpiStrip";
+import { KpiTile } from "@/components/reports/KpiTile";
 
 import {
   Alert,
@@ -181,137 +183,111 @@ export default function EquipmentRoute() {
       </Box>
 
       {/* KPI Cards */}
-      <Box sx={{ flexShrink: 0 }}>
-        <Grid container spacing={{ xs: 1.25, sm: 1.5, md: 2 }}>
-          {/* Card 1: Total Assets */}
-          <Grid size={{ xs: 12, sm: 4, md: 4 }}>
-            <Card
-              elevation={0}
-              onClick={() => clearFilters()}
-              sx={{
-                border: "1px solid",
-                borderColor: activeFilterCount === 0 && !debouncedSearch ? "primary.main" : "#e2e8f0",
-                borderRadius: 2.5,
-                bgcolor: "white",
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)", boxShadow: 1 },
-              }}
-            >
-              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
-                <div className="p-2 sm:p-2.5 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0">
-                  <InventoryIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
-                    {t("equipment.totalAssets")}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}>
-                    <Typography variant="h5" fontWeight="bold" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
-                      {totalAssetsOwned} {t("equipment.units")}
-                    </Typography>
-                    {(activeFilterCount > 0 || debouncedSearch) && (
-                      <Chip label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`} size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
-                    )}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
-                    {totalModelsCount} equipment models · {rentedUnits} on active hire
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+      <ResponsiveKpiStrip mobileLabel="Equipment Overview">
+        <KpiTile
+          label={t("equipment.totalAssets")}
+          value={`${totalAssetsOwned} ${t("equipment.units")}`}
+          hint={`${totalModelsCount} models · ${rentedUnits} on rent`}
+          icon={<InventoryIcon />}
+          tone="default"
+          onClick={clearFilters}
+          active={activeFilterCount === 0 && !debouncedSearch}
+          compact
+          badge={
+            activeFilterCount > 0 || debouncedSearch ? (
+              <Chip
+                label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(56, 189, 248, 0.2)" : "#eff6ff"),
+                  color: (t) => (t.palette.mode === "dark" ? "#38bdf8" : "#1d4ed8"),
+                }}
+              />
+            ) : null
+          }
+        />
 
-          {/* Card 2: Available for Rent */}
-          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
-            <Card
-              elevation={0}
-              onClick={() => setAvailability(availability === "in_stock" ? "all" : "in_stock")}
-              sx={{
-                border: "1px solid",
-                borderColor: availability === "in_stock" ? "success.main" : "#bbf7d0",
-                bgcolor: availability === "in_stock" ? alpha("#22c55e", 0.08) : "#f0fdf4",
-                borderRadius: 2.5,
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "success.main", transform: "translateY(-1px)", boxShadow: 1 },
-              }}
-            >
-              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
-                <div className="p-2 sm:p-2.5 bg-green-100 text-green-600 rounded-lg flex-shrink-0">
-                  <CheckCircleIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="success.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
-                    {t("equipment.availableForRent")}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
-                    <Typography variant="h5" fontWeight="bold" color="success.dark" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
-                      {availableUnits} {t("equipment.units")}
-                    </Typography>
-                    {availability === "in_stock" ? (
-                      <Chip label="Filtered" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "success.main", color: "white" }} />
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        in stock
-                      </Typography>
-                    )}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
-                    {availability === "in_stock" ? "Showing ready" : "Click to view ready"}
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+        <KpiTile
+          label={t("equipment.availableForRent")}
+          value={`${availableUnits} ${t("equipment.units")}`}
+          hint="Warehouse ready stock"
+          icon={<CheckCircleIcon />}
+          tone="success"
+          onClick={() => setAvailability(availability === "in_stock" ? "all" : "in_stock")}
+          active={availability === "in_stock"}
+          compact
+          badge={
+            availability === "in_stock" ? (
+              <Chip
+                label="Filtered"
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(16, 185, 129, 0.2)" : "#d1fae5"),
+                  color: (t) => (t.palette.mode === "dark" ? "#34d399" : "#047857"),
+                }}
+              />
+            ) : null
+          }
+        />
 
-          {/* Card 3: In Maintenance */}
-          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
-            <Card
-              elevation={0}
-              onClick={() => setAvailability(availability === "in_repair" ? "all" : "in_repair")}
-              sx={{
-                border: "1px solid",
-                borderColor: availability === "in_repair" ? "warning.main" : "#fed7aa",
-                bgcolor: availability === "in_repair" ? alpha("#f97316", 0.08) : "#fff7ed",
-                borderRadius: 2.5,
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "warning.main", transform: "translateY(-1px)", boxShadow: 1 },
-              }}
-            >
-              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
-                <div className="p-2 sm:p-2.5 bg-orange-100 text-orange-600 rounded-lg flex-shrink-0">
-                  <BuildCircleIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="warning.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
-                    {t("equipment.inMaintenance")}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
-                    <Typography variant="h5" fontWeight="bold" color="warning.dark" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
-                      {maintenanceUnits} {t("equipment.units")}
-                    </Typography>
-                    {availability === "in_repair" ? (
-                      <Chip label="Filtered" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "warning.main", color: "white" }} />
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        repair
-                      </Typography>
-                    )}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
-                    {availability === "in_repair" ? "Showing in repair" : "Click to view queue"}
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
+        <KpiTile
+          label={t("equipment.inMaintenance")}
+          value={`${maintenanceUnits} ${t("equipment.units")}`}
+          hint="Workshop repair queue"
+          icon={<BuildCircleIcon />}
+          tone="warning"
+          onClick={() => setAvailability(availability === "in_repair" ? "all" : "in_repair")}
+          active={availability === "in_repair"}
+          compact
+          badge={
+            availability === "in_repair" ? (
+              <Chip
+                label="Filtered"
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.2)" : "#fef3c7"),
+                  color: (t) => (t.palette.mode === "dark" ? "#fbbf24" : "#b45309"),
+                }}
+              />
+            ) : null
+          }
+        />
+
+        <KpiTile
+          label={t("equipment.rented")}
+          value={`${rentedUnits} ${t("equipment.units")}`}
+          hint="Active on customer hire"
+          icon={<InventoryIcon />}
+          tone="info"
+          onClick={() => setAvailability(availability === "rented" ? "all" : "rented")}
+          active={availability === "rented"}
+          compact
+          badge={
+            availability === "rented" ? (
+              <Chip
+                label="Filtered"
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(56, 189, 248, 0.2)" : "#e0f2fe"),
+                  color: (t) => (t.palette.mode === "dark" ? "#38bdf8" : "#0369a1"),
+                }}
+              />
+            ) : null
+          }
+        />
+      </ResponsiveKpiStrip>
 
       {/* Filter / search bar */}
       <Card
@@ -322,67 +298,89 @@ export default function EquipmentRoute() {
           borderRadius: 2.5,
           p: { xs: 1.25, sm: 1.5 },
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: { xs: "column", sm: "row" },
           gap: 1.25,
-          alignItems: "center",
+          alignItems: { xs: "stretch", sm: "center" },
+          bgcolor: theme.palette.background.paper,
         }}
       >
-        <TextField
-          size="small"
-          placeholder={t("equipment.searchPlaceholder")}
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ minWidth: { xs: "100%", sm: 280 }, flex: { xs: "1 1 100%", sm: "initial" } }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchOutlinedIcon sx={{ fontSize: 18, color: theme.palette.text.disabled }} />
-                </InputAdornment>
-              ),
-              endAdornment: searchInput ? (
-                <InputAdornment position="end">
-                  <Tooltip title="Clear">
-                    <ClearOutlinedIcon
-                      onClick={() => setSearchInput("")}
-                      sx={{ fontSize: 16, color: theme.palette.text.disabled, cursor: "pointer" }}
-                    />
-                  </Tooltip>
-                </InputAdornment>
-              ) : null,
-            },
-          }}
-        />
+        <Box sx={{ display: "flex", gap: 1.25, flexDirection: { xs: "column", sm: "row" }, flexShrink: 0 }}>
+          <TextField
+            size="small"
+            placeholder={t("equipment.searchPlaceholder")}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{
+              width: { xs: "100%", sm: 240, md: 280 },
+              "& .MuiInputBase-input": { fontSize: "0.84rem", py: 0.8 },
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchOutlinedIcon sx={{ fontSize: 18, color: theme.palette.text.disabled }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchInput ? (
+                  <InputAdornment position="end">
+                    <Tooltip title="Clear">
+                      <ClearOutlinedIcon
+                        onClick={() => setSearchInput("")}
+                        sx={{ fontSize: 16, color: theme.palette.text.disabled, cursor: "pointer" }}
+                      />
+                    </Tooltip>
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
+          />
 
-        {/* Category dropdown */}
-        <TextField
-          select
-          size="small"
-          value={categoryId}
-          onChange={(e) =>
-            setCategoryId(e.target.value === "" ? "" : Number(e.target.value))
-          }
-          sx={{ minWidth: { xs: "100%", sm: 200 }, flex: { xs: "1 1 100%", sm: "initial" } }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <CategoryOutlinedIcon sx={{ fontSize: 16, color: theme.palette.text.disabled }} />
-                </InputAdornment>
-              ),
-            },
+          {/* Category dropdown */}
+          <TextField
+            select
+            size="small"
+            value={categoryId}
+            onChange={(e) =>
+              setCategoryId(e.target.value === "" ? "" : Number(e.target.value))
+            }
+            sx={{
+              width: { xs: "100%", sm: 180, md: 200 },
+              "& .MuiInputBase-input": { fontSize: "0.84rem", py: 0.8 },
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CategoryOutlinedIcon sx={{ fontSize: 16, color: theme.palette.text.disabled }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          >
+            <MenuItem value="">{t("equipment.allCategories")}</MenuItem>
+            {categories.map((c: any) => (
+              <MenuItem key={c.category_id} value={c.category_id}>
+                {c.category_name}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Box>
+
+        {/* Availability chips in swipeable row on mobile */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            overflowX: { xs: "auto", sm: "visible" },
+            flexWrap: { xs: "nowrap", sm: "wrap" },
+            pb: { xs: 0.5, sm: 0 },
+            "&::-webkit-scrollbar": { height: 3 },
+            "&::-webkit-scrollbar-thumb": { background: theme.palette.border.subtle, borderRadius: 3 },
+            "& > *": { flexShrink: 0 },
+            flex: 1,
           }}
         >
-          <MenuItem value="">{t("equipment.allCategories")}</MenuItem>
-          {categories.map((c: any) => (
-            <MenuItem key={c.category_id} value={c.category_id}>
-              {c.category_name}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        {/* Availability chips */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
           <Typography
             variant="caption"
             sx={{
@@ -426,26 +424,22 @@ export default function EquipmentRoute() {
               />
             );
           })}
+
+          {activeFilterCount > 0 && (
+            <Button
+              size="small"
+              color="inherit"
+              startIcon={<FilterAltOutlinedIcon />}
+              onClick={clearFilters}
+              sx={{ textTransform: "none", fontWeight: 700, ml: { sm: "auto" } }}
+            >
+              Clear filters
+            </Button>
+          )}
         </Box>
 
-        <Box sx={{ flex: 1 }} />
-
-        {activeFilterCount > 0 && (
-          <Button
-            size="small"
-            color="inherit"
-            startIcon={<FilterAltOutlinedIcon />}
-            onClick={clearFilters}
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
-          </Button>
-        )}
-
-        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, ml: 0.5 }}>
-          {isLoading
-            ? "Loading…"
-            : `${totalRowCount.toLocaleString()} match${totalRowCount === 1 ? "" : "es"}`}
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, whiteSpace: "nowrap", flexShrink: 0 }}>
+          {isLoading ? "Loading…" : `${totalRowCount.toLocaleString()} match${totalRowCount === 1 ? "" : "es"}`}
         </Typography>
       </Card>
 

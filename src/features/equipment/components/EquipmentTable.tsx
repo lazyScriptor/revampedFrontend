@@ -112,50 +112,113 @@ export function EquipmentTable({
     {
       field: "base_rental_price",
       headerName: t("equipment.dailyRate"),
-      width: 110,
+      width: 120,
       renderCell: (params) => (
-        <span className="font-medium">
-          ${Number(params.value || 0).toFixed(2)}
-        </span>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 700,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: "text.primary",
+          }}
+        >
+          Rs. {Number(params.value || 0).toLocaleString()}
+        </Typography>
       ),
     },
     {
       field: "extra_daily_rate",
       headerName: t("equipment.extraDailyRate"),
-      width: 150,
+      width: 140,
       renderCell: (params) => (
-        <span>${Number(params.value || 0).toFixed(2)}</span>
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: "text.secondary",
+          }}
+        >
+          Rs. {Number(params.value || 0).toLocaleString()}
+        </Typography>
       ),
     },
     {
       field: "minimum_rental_days",
       headerName: t("equipment.minRentalDays"),
-      width: 100,
+      width: 110,
       type: "number",
+      renderCell: (params) => (
+        <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", color: "text.secondary" }}>
+          {params.value || 1} day{(params.value || 1) > 1 ? "s" : ""}
+        </Typography>
+      ),
     },
     {
       field: "purchase_cost",
       headerName: t("equipment.purchaseCost"),
-      width: 130,
-      renderCell: (params) =>
-        params.value ? `$${Number(params.value).toFixed(2)}` : "N/A",
+      width: 140,
+      renderCell: (params) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: "text.secondary",
+          }}
+        >
+          {params.value ? `Rs. ${Number(params.value).toLocaleString()}` : "N/A"}
+        </Typography>
+      ),
     },
 
     // --- Inventory Quantities ---
     {
       field: "total_owned_qty",
       headerName: t("equipment.totalOwned"),
-      width: 100,
+      width: 110,
       type: "number",
+      renderCell: (params) => (
+        <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+          {params.value ?? 0}
+        </Typography>
+      ),
     },
-    { field: "rented_qty", headerName: t("equipment.rented"), width: 100, type: "number" },
     {
-      field: "available_qty",
-      headerName: t("equipment.availableQty"),
+      field: "rented_qty",
+      headerName: t("equipment.rented"),
       width: 100,
       type: "number",
       renderCell: (params) => (
-        <span className="font-bold text-slate-800">{params.value}</span>
+        <Typography
+          variant="body2"
+          sx={{
+            fontVariantNumeric: "tabular-nums",
+            fontWeight: 600,
+            color: Number(params.value) > 0 ? "info.main" : "text.secondary",
+          }}
+        >
+          {params.value ?? 0}
+        </Typography>
+      ),
+    },
+    {
+      field: "available_qty",
+      headerName: t("equipment.availableQty"),
+      width: 110,
+      type: "number",
+      renderCell: (params) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontVariantNumeric: "tabular-nums",
+            fontWeight: 800,
+            color: Number(params.value) > 0 ? "success.main" : "warning.main",
+          }}
+        >
+          {params.value ?? 0}
+        </Typography>
       ),
     },
     {
@@ -171,6 +234,11 @@ export function EquipmentTable({
       headerName: t("equipment.warrantyMonths"),
       width: 120,
       type: "number",
+      renderCell: (params) => (
+        <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", color: "text.secondary" }}>
+          {params.value ? `${params.value} mo` : "-"}
+        </Typography>
+      ),
     },
     {
       field: "end_of_warranty_date",
@@ -198,7 +266,7 @@ export function EquipmentTable({
             color={isAvailable ? "success" : "warning"}
             size="small"
             variant="filled"
-            sx={{ fontWeight: 600, borderRadius: 1.5 }}
+            sx={{ fontWeight: 700, fontSize: "0.72rem", borderRadius: 1.5 }}
           />
         );
       },
@@ -209,14 +277,20 @@ export function EquipmentTable({
       width: 100,
       sortable: false,
       filterable: false,
-      pinned: "right", // Pins the actions to the right side
+      pinned: "right",
       renderCell: (params: GridRenderCellParams) => (
-        <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
+        <Box sx={{ display: "flex", gap: 0.75, alignItems: "center", height: "100%" }}>
           <Tooltip title={t("common.edit")}>
             <IconButton
               size="small"
               color="primary"
               onClick={() => onEdit(params.row)}
+              sx={{
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.08)"),
+                "&:hover": {
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.22)" : "rgba(245, 158, 11, 0.16)"),
+                },
+              }}
             >
               <EditIcon fontSize="small" />
             </IconButton>
@@ -226,6 +300,12 @@ export function EquipmentTable({
               size="small"
               color="error"
               onClick={() => setDeleteId(params.row.equipment_id)}
+              sx={{
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(239, 68, 68, 0.12)" : "rgba(239, 68, 68, 0.08)"),
+                "&:hover": {
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(239, 68, 68, 0.22)" : "rgba(239, 68, 68, 0.16)"),
+                },
+              }}
             >
               <DeleteIcon fontSize="small" />
             </IconButton>
@@ -321,24 +401,46 @@ export function EquipmentTable({
               position: "sticky",
               top: 0,
               zIndex: 3,
-              bgcolor: "#f8fafc",
-              borderBottom: "1px solid #e2e8f0",
+              bgcolor: (t) => (t.palette.mode === "dark" ? "#1e293b" : "#f8fafc"),
+              color: (t) => (t.palette.mode === "dark" ? "#94a3b8" : "#475569"),
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              borderBottom: (t) => `1px solid ${t.palette.border.subtle}`,
             },
             "& .MuiDataGrid-row": {
               minHeight: "56px !important",
+              borderBottom: (t) => `1px solid ${t.palette.mode === "dark" ? "rgba(51, 65, 85, 0.4)" : "#f1f5f9"}`,
+              transition: "background-color 120ms ease",
+              "&:nth-of-type(even)": {
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(30, 41, 59, 0.3)" : "#fafbfc"),
+              },
+              "&:hover": {
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(30, 41, 59, 0.7)" : "#f1f5f9"),
+              },
+              "&.Mui-selected": {
+                bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.15)" : "#fef3c7"),
+                "&:hover": {
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.25)" : "#fde68a"),
+                },
+              },
             },
             "& .MuiDataGrid-virtualScroller": {
               overflowY: "auto !important",
             },
-            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9", py: 1 },
+            "& .MuiDataGrid-cell": {
+              borderColor: (t) => (t.palette.mode === "dark" ? "rgba(51, 65, 85, 0.4)" : "#f1f5f9"),
+              py: 1.25,
+            },
             "& .MuiDataGrid-toolbarContainer": {
               p: 1.5,
-              borderBottom: "1px solid #f1f5f9",
+              borderBottom: (t) => `1px solid ${t.palette.border.subtle}`,
               flexShrink: 0,
             },
             "& .MuiDataGrid-footerContainer": {
-              borderTop: "1px solid #e2e8f0",
-              bgcolor: "#ffffff",
+              borderTop: (t) => `1px solid ${t.palette.border.subtle}`,
+              bgcolor: (t) => t.palette.background.paper,
               flexShrink: 0,
             },
           }}

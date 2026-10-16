@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../api/category.api';
 
-export const useCategoryList = (page: number, limit: number) => {
+export const useCategoryList = (page: number, limit: number, search?: string) => {
     return useQuery({
-        queryKey: ['categories', page, limit],
-        queryFn: () => fetchCategories(page, limit),
+        queryKey: ['categories', page, limit, search],
+        queryFn: () => fetchCategories(page, limit, search),
         placeholderData: keepPreviousData,
     });
 };

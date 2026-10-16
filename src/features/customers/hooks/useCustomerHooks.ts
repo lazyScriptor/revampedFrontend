@@ -84,6 +84,34 @@ export const useCustomerDetails = (id: number | null) => {
         queryKey: ['customer', id],
         queryFn: () => fetchCustomerById(id as number),
         enabled: !!id, // Only run the query if an ID is provided
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
+    });
+};
+
+export interface CustomerInvoiceStats {
+    total: number;
+    active: number;
+    completed: number;
+}
+
+export interface CustomerInvoicesResponse {
+    invoices: any[];
+    stats: CustomerInvoiceStats;
+}
+
+const fetchCustomerInvoices = async (id: number): Promise<CustomerInvoicesResponse> => {
+    const response: any = await api.get(`/customers/${id}/invoices`);
+    return response?.data || response || { invoices: [], stats: { total: 0, active: 0, completed: 0 } };
+};
+
+// Hook for fetching customer's past invoices and live stats (Total, Active, Completed)
+export const useCustomerInvoices = (id: number | null) => {
+    return useQuery<CustomerInvoicesResponse>({
+        queryKey: ['customer-invoices', id],
+        queryFn: () => fetchCustomerInvoices(id as number),
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent redundant re-fetching
+        gcTime: 15 * 60 * 1000,
     });
 };
 

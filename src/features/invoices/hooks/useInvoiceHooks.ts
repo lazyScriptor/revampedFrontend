@@ -14,8 +14,8 @@ export const useInvoiceList = (page: number, limit: number, status?: string) => 
                 params.status = status;
             }
 
-            const response = await api.get('/invoices', { params });
-            return response?.data || { invoices: [], totalItems: 0 };
+            const response: any = await api.get('/invoices', { params });
+            return response?.data || response || { invoices: [], totalItems: 0, counts: { all: 0, active: 0, completed: 0 } };
         },
     });
 };
@@ -27,10 +27,10 @@ export const useInvoiceSearch = (searchTerm: string) => {
         queryKey: ['invoice-search', debouncedSearch],
         queryFn: async () => {
             if (!debouncedSearch) return [];
-            const response = await api.get('/invoices', { params: { search: debouncedSearch, limit: 10 } });
+            const response: any = await api.get('/invoices', { params: { search: debouncedSearch, limit: 10 } });
 
             // BULLETPROOF: Check multiple levels of the response object
-            return response.data?.data?.invoices || response.data?.invoices || [];
+            return response.data?.data?.invoices || response.data?.invoices || response?.invoices || [];
         },
         enabled: debouncedSearch.length >= 1,
     });
@@ -42,10 +42,10 @@ export const useInvoiceDetails = (invoiceId: number | null) => {
         queryKey: ['invoice', invoiceId],
         queryFn: async () => {
             if (!invoiceId) return null;
-            const response = await api.get(`/invoices/${invoiceId}`);
+            const response: any = await api.get(`/invoices/${invoiceId}`);
 
             // BULLETPROOF: Check multiple levels of the response object
-            return response.data?.data?.invoice || response.data?.invoice || null;
+            return response.data?.data?.invoice || response.data?.invoice || response?.invoice || null;
         },
         enabled: !!invoiceId,
     });
@@ -56,8 +56,8 @@ export const useProcessReturn = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (payload: { id: number, data: any }) => {
-            const response = await api.post(`/invoices/${payload.id}/return`, payload.data);
-            return response.data;
+            const response: any = await api.post(`/invoices/${payload.id}/return`, payload.data);
+            return response?.data || response;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -72,26 +72,57 @@ export const useAddPayment = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (payload: { id: number, data: { amount: number, method: string, is_refund: boolean } }) => {
-            const response = await api.post(`/invoices/${payload.id}/payments`, payload.data);
-            return response.data;
+            const response: any = await api.post(`/invoices/${payload.id}/payments`, payload.data);
+            return response?.data || response;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
         },
     });
 };
 
-// 6. NEW: Vault Toggle
+// 6. NEW: Vault Toggle with Instant Optimistic Cache Updates
 export const useToggleVault = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (id: number) => {
-            const response = await api.patch(`/invoices/${id}/vault`);
-            return response.data;
+            const response: any = await api.patch(`/invoices/${id}/vault`);
+            return response?.data || response;
         },
-        onSuccess: (_, id) => {
+        onMutate: async (id: number) => {
+            // Cancel outgoing refetches so they don't overwrite our optimistic update
+            await queryClient.cancelQueries({ queryKey: ['invoice', id] });
+
+            // Snapshot the previous invoice detail value
+            const previousInvoice = queryClient.getQueryData(['invoice', id]);
+
+            // Optimistically update the detail cache immediately (< 16ms feedback)
+            queryClient.setQueryData(['invoice', id], (old: any) => {
+                if (!old) return old;
+                const nextStatus = old.id_card_status ? 0 : 1;
+                return {
+                    ...old,
+                    id_card_status: nextStatus,
+                    Customer: old.Customer
+                        ? { ...old.Customer, is_id_retained_currently: Boolean(nextStatus) }
+                        : old.Customer,
+                };
+            });
+
+            return { previousInvoice };
+        },
+        onError: (_err, id, context) => {
+            if (context?.previousInvoice) {
+                queryClient.setQueryData(['invoice', id], context.previousInvoice);
+            }
+        },
+        onSettled: (_, __, id) => {
+            // Re-sync all affected queries with server state
             queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['invoice-search'] });
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
         },
     });
 };
