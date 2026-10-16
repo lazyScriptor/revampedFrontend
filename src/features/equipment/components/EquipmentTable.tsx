@@ -17,6 +17,7 @@ import {
   DialogActions,
   Button,
   Avatar,
+  Typography,
   alpha,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -407,7 +408,7 @@ export function EquipmentTable({
               fontSize: "0.75rem",
               textTransform: "uppercase",
               letterSpacing: "0.05em",
-              borderBottom: (t) => `1px solid ${t.palette.border.subtle}`,
+              borderBottom: (t) => `1px solid ${(t.palette as any).border?.subtle || t.palette.divider}`,
             },
             "& .MuiDataGrid-row": {
               minHeight: "56px !important",
@@ -435,11 +436,11 @@ export function EquipmentTable({
             },
             "& .MuiDataGrid-toolbarContainer": {
               p: 1.5,
-              borderBottom: (t) => `1px solid ${t.palette.border.subtle}`,
+              borderBottom: (t) => `1px solid ${(t.palette as any).border?.subtle || t.palette.divider}`,
               flexShrink: 0,
             },
             "& .MuiDataGrid-footerContainer": {
-              borderTop: (t) => `1px solid ${t.palette.border.subtle}`,
+              borderTop: (t) => `1px solid ${(t.palette as any).border?.subtle || t.palette.divider}`,
               bgcolor: (t) => t.palette.background.paper,
               flexShrink: 0,
             },

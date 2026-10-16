@@ -281,7 +281,7 @@ export function CategoryTable({
               },
             },
             "& .MuiDataGrid-cell": {
-              borderColor: theme.palette.border.subtle,
+              borderColor: (theme.palette as any).border?.subtle || theme.palette.divider,
               py: 1.25,
               px: 1.5,
               whiteSpace: "normal",
@@ -291,7 +291,7 @@ export function CategoryTable({
             },
             "& .MuiDataGrid-columnHeaders": {
               bgcolor: isDark ? alpha(theme.palette.background.paper, 0.8) : "#f8fafc",
-              borderBottom: `1px solid ${theme.palette.border.subtle}`,
+              borderBottom: `1px solid ${(theme.palette as any).border?.subtle || theme.palette.divider}`,
               textTransform: "uppercase",
               fontSize: "0.6875rem",
               letterSpacing: "0.05em",
@@ -299,7 +299,7 @@ export function CategoryTable({
               color: "text.secondary",
             },
             "& .MuiDataGrid-footerContainer": {
-              borderTop: `1px solid ${theme.palette.border.subtle}`,
+              borderTop: `1px solid ${(theme.palette as any).border?.subtle || theme.palette.divider}`,
             },
           }}
         />
@@ -314,7 +314,7 @@ export function CategoryTable({
             sx: {
               borderRadius: 3,
               bgcolor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.border.subtle}`,
+              border: `1px solid ${(theme.palette as any).border?.subtle || theme.palette.divider}`,
             },
           },
         }}
