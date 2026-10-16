@@ -247,6 +247,35 @@ export function PosCheckoutPanel({
               Rs. {subTotal.toLocaleString()}
             </Typography>
           </Box>
+          {cartItems.length > 0 && (
+            <Box
+              sx={{
+                maxHeight: 120,
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+                my: 0.5,
+                pr: 0.5,
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.5,
+                scrollbarWidth: "thin",
+                scrollbarColor: "#334155 transparent",
+                "&::-webkit-scrollbar": { width: "3px" },
+                "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "3px" },
+              }}
+            >
+              {cartItems.map((item) => (
+                <Box key={item.equipment_id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography variant="caption" sx={{ color: "#94a3b8", maxWidth: "65%" }} noWrap>
+                    {item.borrowed_qty}× {item.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#cbd5e1", fontWeight: 600 }}>
+                    Rs. {calculateLineMath(item).lineCost.toLocaleString()}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
           {fees.transport > 0 && (
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography variant="body2" sx={{ color: "#64748b" }}>Transport</Typography>

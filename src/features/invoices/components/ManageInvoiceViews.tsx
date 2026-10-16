@@ -13,6 +13,12 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import SecurityIcon from "@mui/icons-material/Security";
@@ -669,6 +675,7 @@ export function ManageFinancialPanel({
     );
 
   const payments = invoice.Payments || [];
+  const rawLines = invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
   const totalPaid = payments.reduce((sum: number, p: any) => sum + Number(p.payment_amount), 0) || 0;
   const subTotal = Number(invoice.sub_total) || 0;
   const grandTotal = Number(invoice.total_amount) || 0;
@@ -1025,18 +1032,88 @@ export function ManageFinancialPanel({
           </AccordionSummary>
           <AccordionDetails
             sx={{
-              px: 2.5,
+              px: 2,
               py: 2,
               display: "flex",
               flexDirection: "column",
-              gap: 1,
-              maxHeight: 280,
+              gap: 1.25,
+              maxHeight: 320,
               overflowY: "auto",
               WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "thin",
+              scrollbarColor: "#cbd5e1 transparent",
               "&::-webkit-scrollbar": { width: "4px" },
               "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "4px" },
             }}
           >
+            {/* Scrollable Itemized rental charges table */}
+            {rawLines.length > 0 && (
+              <Box sx={{ mb: 0.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                  <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, textTransform: "uppercase", fontSize: "0.68rem" }}>
+                    Rental Items ({rawLines.length})
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 600, fontSize: "0.65rem" }}>
+                    Scrollable Items
+                  </Typography>
+                </Box>
+                <TableContainer
+                  sx={{
+                    maxHeight: 140,
+                    overflowY: "auto",
+                    WebkitOverflowScrolling: "touch",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 2,
+                    bgcolor: "#f8fafc",
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "#cbd5e1 transparent",
+                    "&::-webkit-scrollbar": { width: "4px" },
+                    "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "4px" },
+                  }}
+                >
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 800, fontSize: "0.7rem", bgcolor: "#f1f5f9", py: 0.5, color: "#475569" }}>
+                          Item
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 800, fontSize: "0.7rem", bgcolor: "#f1f5f9", py: 0.5, textAlign: "center", color: "#475569" }}>
+                          Qty
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 800, fontSize: "0.7rem", bgcolor: "#f1f5f9", py: 0.5, textAlign: "right", color: "#475569" }}>
+                          Cost
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {rawLines.map((l: any, idx: number) => {
+                        const name = l.Equipment?.name || l.equipment_name || `Equipment #${l.equipment_id || idx + 1}`;
+                        const qty = Number(l.quantity || l.borrowed_qty || 1);
+                        const rate = Number(l.rent_rate || 0);
+                        const lineTotal = Number(l.total_cost || l.sub_total || (rate * qty));
+                        return (
+                          <TableRow key={l.line_id || idx} hover sx={{ "&:last-child td": { borderBottom: 0 } }}>
+                            <TableCell sx={{ fontSize: "0.72rem", py: 0.5, fontWeight: 600, color: "#1e293b" }}>
+                              {name}
+                              <Typography variant="caption" sx={{ display: "block", color: "#94a3b8", fontSize: "0.65rem" }}>
+                                Rs. {rate.toLocaleString()} / {l.rent_rate_type?.toLowerCase() || "day"}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ fontSize: "0.72rem", py: 0.5, textAlign: "center", color: "#64748b", fontWeight: 700 }}>
+                              {qty}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: "0.72rem", py: 0.5, textAlign: "right", fontWeight: 800, color: "#0f172a" }}>
+                              Rs. {lineTotal.toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )}
+
             {!isEditingFees && !isCompleted && (
               <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <Button
