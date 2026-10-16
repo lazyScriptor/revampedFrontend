@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Box, Typography, LinearProgress } from "@mui/material";
+import { Box, Typography, LinearProgress, useTheme } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import { ReportShell } from "@/components/reports/ReportShell";
 import { DateRangeFilter } from "@/components/reports/DateRangeFilter";
 import { KpiTile } from "@/components/reports/KpiTile";
@@ -11,9 +12,13 @@ import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useEquipmentUtilization } from "../hooks/useReportsHooks";
 import { todayLocalStr, addDaysLocal } from "@/lib/dates";
 
-const formatCurrency = (n: number) => `Rs. ${Number(n || 0).toLocaleString()}`;
+const formatCurrency = (n: number) =>
+  `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function UtilizationReport() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark" || true;
+
   const [range, setRange] = useState({
     from: addDaysLocal(todayLocalStr(), -30),
     to: todayLocalStr(),
@@ -40,22 +45,36 @@ export default function UtilizationReport() {
   const avgUtil = totals.units ? Math.round(totals.avgUtilization / totals.units) : 0;
 
   const downloadCsv = () => {
-    const headers = ["Equipment", "Serial", "Category", "Warehouse", "Owned", "Rented", "Available", "Defective", "Utilization %", "Revenue", "ROI %"];
+    const headers = [
+      "Equipment",
+      "Serial",
+      "Category",
+      "Warehouse",
+      "Owned",
+      "Rented",
+      "Available",
+      "Defective",
+      "Utilization %",
+      "Revenue",
+      "ROI %",
+    ];
     const lines = [headers.join(",")];
     rows.forEach((r: any) => {
-      lines.push([
-        `"${r.equipment_name || ""}"`,
-        r.serial_number || "",
-        r.category_name || "",
-        r.warehouse || "",
-        r.total_owned_qty || 0,
-        r.rented_qty || 0,
-        r.available_qty || 0,
-        r.defective_qty || 0,
-        r.utilizationPct || 0,
-        Number(r.total_revenue || 0).toFixed(2),
-        r.roiPct ?? "",
-      ].join(","));
+      lines.push(
+        [
+          `"${r.equipment_name || ""}"`,
+          r.serial_number || "",
+          r.category_name || "",
+          r.warehouse || "",
+          r.total_owned_qty || 0,
+          r.rented_qty || 0,
+          r.available_qty || 0,
+          r.defective_qty || 0,
+          r.utilizationPct || 0,
+          Number(r.total_revenue || 0).toFixed(2),
+          r.roiPct ?? "",
+        ].join(","),
+      );
     });
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -67,24 +86,120 @@ export default function UtilizationReport() {
   };
 
   const columns: GridColDef[] = [
-    { field: "equipment_name", headerName: "Equipment", flex: 1.2, minWidth: 200 },
-    { field: "category_name", headerName: "Category", width: 140 },
-    { field: "warehouse", headerName: "Warehouse", width: 140 },
-    { field: "total_owned_qty", headerName: "Owned", width: 90, type: "number" },
-    { field: "rented_qty", headerName: "Rented", width: 90, type: "number" },
-    { field: "available_qty", headerName: "Avail", width: 90, type: "number" },
+    {
+      field: "equipment_name",
+      headerName: "Equipment",
+      flex: 1.2,
+      minWidth: 200,
+      renderCell: (p) => (
+        <Box sx={{ minWidth: 0, py: 0.5 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 700,
+              lineHeight: 1.25,
+              color: isDark ? "#f8fafc" : "#0f172a",
+            }}
+            noWrap
+          >
+            {p.value}
+          </Typography>
+          {p.row.serial_number && (
+            <Typography
+              variant="caption"
+              sx={{
+                fontFamily: "'JetBrains Mono', monospace",
+                color: "#f59e0b",
+                fontSize: "0.72rem",
+                display: "block",
+              }}
+              noWrap
+            >
+              {p.row.serial_number}
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: "category_name",
+      headerName: "Category",
+      width: 140,
+      renderCell: (p) => (
+        <span className="text-xs font-medium text-slate-300">{p.value || "—"}</span>
+      ),
+    },
+    {
+      field: "warehouse",
+      headerName: "Warehouse",
+      width: 130,
+      renderCell: (p) => (
+        <span className="text-xs text-slate-400">{p.value || "Main"}</span>
+      ),
+    },
+    {
+      field: "total_owned_qty",
+      headerName: "Owned",
+      width: 85,
+      type: "number",
+      renderCell: (p) => (
+        <span className="tabular-nums font-mono font-medium text-xs text-slate-200">
+          {p.value}
+        </span>
+      ),
+    },
+    {
+      field: "rented_qty",
+      headerName: "Rented",
+      width: 85,
+      type: "number",
+      renderCell: (p) => (
+        <span className="tabular-nums font-mono font-semibold text-xs text-amber-400">
+          {p.value}
+        </span>
+      ),
+    },
+    {
+      field: "available_qty",
+      headerName: "Avail",
+      width: 85,
+      type: "number",
+      renderCell: (p) => (
+        <span className="tabular-nums font-mono font-medium text-xs text-emerald-400">
+          {p.value}
+        </span>
+      ),
+    },
     {
       field: "utilizationPct",
       headerName: "Utilization",
-      width: 180,
+      width: 170,
       renderCell: (p) => {
-        const v = Number(p.value) || 0;
+        const v = Math.min(100, Math.max(0, Number(p.value) || 0));
+        const color = v >= 70 ? "#10b981" : v >= 40 ? "#f59e0b" : "#64748b";
         return (
-          <Box sx={{ width: "100%" }}>
+          <Box sx={{ width: "100%", pr: 1 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 700 }}>{v}%</Typography>
+              <span
+                style={{ color }}
+                className="font-mono text-xs font-bold tabular-nums"
+              >
+                {v}%
+              </span>
             </Box>
-            <LinearProgress variant="determinate" value={v} sx={{ height: 6, borderRadius: 3 }} />
+            <LinearProgress
+              variant="determinate"
+              value={v}
+              sx={{
+                height: 6,
+                borderRadius: 3,
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+                "& .MuiLinearProgress-bar": {
+                  bgcolor: color,
+                  borderRadius: 3,
+                },
+              }}
+            />
           </Box>
         );
       },
@@ -92,32 +207,86 @@ export default function UtilizationReport() {
     {
       field: "total_revenue",
       headerName: "Revenue",
-      width: 140,
+      width: 145,
       type: "number",
       renderCell: (p) => (
-        <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatCurrency(Number(p.value))}</Typography>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 700,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: isDark ? "#f8fafc" : "#0f172a",
+          }}
+        >
+          {formatCurrency(Number(p.value))}
+        </Typography>
       ),
     },
     {
       field: "roiPct",
-      headerName: "ROI %",
-      width: 100,
-      renderCell: (p) => p.value != null ? `${p.value}%` : "—",
+      headerName: "ROI",
+      width: 95,
+      renderCell: (p) => {
+        if (p.value == null) return <span className="text-slate-500">—</span>;
+        const roi = Number(p.value);
+        return (
+          <span
+            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold tabular-nums ${
+              roi >= 50
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"
+                : "bg-slate-500/10 text-slate-400 border border-slate-500/25"
+            }`}
+          >
+            {roi}%
+          </span>
+        );
+      },
     },
   ];
 
   return (
     <ReportShell
       title="Equipment Utilization"
-      subtitle="Per-unit utilization, revenue contribution, and ROI"
-      actionsSlot={<ExportMenu onExport={(f) => f === "csv" ? downloadCsv() : undefined} />}
+      subtitle="Per-unit rental deployment rate, revenue generation, and return on investment"
+      actionsSlot={
+        <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
+      }
       filterSlot={<DateRangeFilter from={range.from} to={range.to} onChange={setRange} />}
     >
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: 2 }}>
-        <KpiTile label="Units tracked" value={totals.units} icon={<ConstructionIcon />} tone="info" loading={isLoading} />
-        <KpiTile label="Avg Utilization" value={`${avgUtil}%`} icon={<TrendingUpIcon />} tone={avgUtil >= 60 ? "success" : "warning"} loading={isLoading} />
-        <KpiTile label="Total Revenue" value={formatCurrency(totals.totalRevenue)} tone="success" loading={isLoading} />
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(3, 1fr)",
+          },
+          gap: 2,
+        }}
+      >
+        <KpiTile
+          label="Tracked Equipment Units"
+          value={totals.units}
+          icon={<ConstructionIcon />}
+          tone="info"
+          loading={isLoading}
+        />
+        <KpiTile
+          label="Fleet Avg Utilization"
+          value={`${avgUtil}%`}
+          icon={<TrendingUpIcon />}
+          tone={avgUtil >= 60 ? "success" : "warning"}
+          loading={isLoading}
+        />
+        <KpiTile
+          label="Total Equipment Revenue"
+          value={formatCurrency(totals.totalRevenue)}
+          icon={<AttachMoneyIcon />}
+          tone="success"
+          loading={isLoading}
+        />
       </Box>
+
       <StatTable
         rows={rows}
         columns={columns}

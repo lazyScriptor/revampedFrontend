@@ -16,38 +16,18 @@ interface StatTableProps {
   rowCount?: number;
   getRowId?: (row: any) => string | number;
   paginationMode?: "client" | "server";
-  /**
-   * Optional controlled paginationModel. When omitted, the component manages
-   * its own internal pagination state so the dropdown + next/prev buttons
-   * always work regardless of caller wiring.
-   */
   paginationModel?: GridPaginationModel;
   onPaginationModelChange?: (m: GridPaginationModel) => void;
   sortModel?: GridSortModel;
   onSortModelChange?: (m: GridSortModel) => void;
   pageSizeOptions?: number[];
-  /**
-   * Height behavior:
-   *  - "fill"        — table fills its parent (parent must be flex, height-known); recommended for list pages
-   *  - number/string — fixed height (e.g. 560 or "70vh"); legacy default for backwards compat
-   */
   height?: number | string | "fill";
-  /**
-   * Initial page size used when no paginationModel is passed. Defaults to the
-   * first value in pageSizeOptions so the dropdown UI matches the active size.
-   */
   initialPageSize?: number;
-  /** Show row-selection checkboxes. */
   checkboxSelection?: boolean;
-  /** Controlled row selection model. */
   rowSelectionModel?: GridRowSelectionModel;
-  /** Called when row selection changes (passes the raw v9 model). */
   onRowSelectionModelChange?: (model: GridRowSelectionModel) => void;
 }
 
-// Thin wrapper around MUI DataGrid with the project's consistent styling.
-// Designed to "just work" when callers pass minimal props — internal
-// pagination state kicks in if the caller doesn't supply paginationModel.
 export function StatTable({
   rows,
   columns,
@@ -67,10 +47,20 @@ export function StatTable({
   onRowSelectionModelChange,
 }: StatTableProps) {
   const theme = useTheme();
-  const memoCols = useMemo(() => columns, [columns]);
+  const isDark = theme.palette.mode === "dark" || true;
 
-  // Internal fallback model so reports that forget to pass paginationModel
-  // still get a working "10 / 25 / 50 / 100" dropdown that actually paginates.
+  // Enhance columns with default tabular numerics and crisp headers
+  const enhancedCols = useMemo(() => {
+    return columns.map((col) => ({
+      ...col,
+      headerClassName: "report-grid-header",
+      cellClassName: (params: any) => {
+        const custom = typeof col.cellClassName === "function" ? col.cellClassName(params) : col.cellClassName || "";
+        return `${custom} ${col.type === "number" ? "tabular-nums" : ""}`;
+      },
+    }));
+  }, [columns]);
+
   const initialModel = useMemo(
     () => ({
       page: 0,
@@ -86,8 +76,6 @@ export function StatTable({
     onPaginationModelChange?.(m);
   };
 
-  // Make sure the active pageSize is always part of the dropdown options;
-  // MUI X v9 won't render the menu correctly if the current size is missing.
   const safeOptions = useMemo(() => {
     const set = new Set(pageSizeOptions);
     set.add(effectiveModel.pageSize);
@@ -97,26 +85,27 @@ export function StatTable({
   const heightStyles =
     height === "fill"
       ? { flex: 1, minHeight: 0, height: "100%" }
-      : { height };
+      : { height, minHeight: 0 };
 
   return (
     <Box
       sx={{
         ...heightStyles,
         width: "100%",
-        bgcolor: theme.palette.background.paper,
-        borderRadius: 2.5,
+        bgcolor: isDark ? "#0f172a" : "#ffffff",
+        border: "1px solid",
+        borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+        borderRadius: 3,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        boxShadow: isDark ? "0 4px 20px -2px rgba(0,0,0,0.3)" : "none",
       }}
     >
       <DataGrid
         rows={rows}
-        columns={memoCols}
+        columns={enhancedCols}
         loading={loading}
-        // Always provide a numeric rowCount in server mode — undefined makes v9
-        // disable the next-page button entirely while data is loading.
         rowCount={
           paginationMode === "server" ? Math.max(0, rowCount ?? rows.length) : undefined
         }
@@ -132,24 +121,49 @@ export function StatTable({
         rowSelectionModel={rowSelectionModel}
         onRowSelectionModelChange={onRowSelectionModelChange}
         disableRowSelectionOnClick
+        density="compact"
         sx={{
           flex: 1,
           minHeight: 0,
           border: "none",
+          color: isDark ? "#f8fafc" : "#0f172a",
+          fontFamily: "'Inter', sans-serif",
           "& .MuiDataGrid-columnHeaders": {
-            bgcolor: theme.palette.surface.muted,
+            bgcolor: isDark ? "#1e293b" : "#f8fafc",
             fontWeight: 700,
-            borderBottom: `1px solid ${theme.palette.border.subtle}`,
+            fontSize: "0.75rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: isDark ? "#94a3b8" : "#475569",
+            borderBottom: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
           },
-          "& .MuiDataGrid-cell": { borderColor: theme.palette.border.subtle },
-          "& .MuiDataGrid-row:hover": { bgcolor: theme.palette.surface.muted },
-          "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within": { outline: "none" },
+          "& .MuiDataGrid-cell": {
+            borderColor: isDark ? "rgba(51, 65, 85, 0.4)" : "#f1f5f9",
+            py: 1.25,
+            fontSize: "0.85rem",
+            "&.tabular-nums": {
+              fontVariantNumeric: "tabular-nums",
+              fontFamily: "'JetBrains Mono', monospace",
+            },
+          },
+          "& .MuiDataGrid-row:hover": {
+            bgcolor: isDark ? "rgba(30, 41, 59, 0.7)" : "#f8fafc",
+          },
+          "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within": {
+            outline: "none",
+          },
           "& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within": {
             outline: "none",
           },
           "& .MuiDataGrid-footerContainer": {
-            borderTop: `1px solid ${theme.palette.border.subtle}`,
-            bgcolor: theme.palette.background.paper,
+            borderTop: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
+            bgcolor: isDark ? "#1e293b" : "#ffffff",
+            color: isDark ? "#94a3b8" : "#64748b",
+            fontSize: "0.8rem",
+            "& .MuiTablePagination-root": {
+              color: isDark ? "#94a3b8" : "inherit",
+              fontVariantNumeric: "tabular-nums",
+            },
           },
         }}
       />

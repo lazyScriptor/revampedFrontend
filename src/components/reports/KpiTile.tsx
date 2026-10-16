@@ -1,4 +1,4 @@
-import { Box, Card, Skeleton, Typography } from "@mui/material";
+import { Box, Card, Skeleton, Typography, useTheme } from "@mui/material";
 
 interface KpiTileProps {
   label: string;
@@ -9,61 +9,155 @@ interface KpiTileProps {
   loading?: boolean;
 }
 
-const TONES: Record<NonNullable<KpiTileProps["tone"]>, { bg: string; fg: string; border: string }> = {
-  default: { bg: "#f8fafc", fg: "#0f172a", border: "#e2e8f0" },
-  success: { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0" },
-  warning: { bg: "#fffbeb", fg: "#b45309", border: "#fde68a" },
-  error: { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca" },
-  info: { bg: "#eff6ff", fg: "#1d4ed8", border: "#bfdbfe" },
+const TONES: Record<
+  NonNullable<KpiTileProps["tone"]>,
+  { bg: string; fg: string; border: string; glow: string }
+> = {
+  default: {
+    bg: "rgba(100, 116, 139, 0.12)",
+    fg: "#94a3b8",
+    border: "rgba(100, 116, 139, 0.25)",
+    glow: "rgba(100, 116, 139, 0.05)",
+  },
+  success: {
+    bg: "rgba(16, 185, 129, 0.12)",
+    fg: "#10b981",
+    border: "rgba(16, 185, 129, 0.25)",
+    glow: "rgba(16, 185, 129, 0.08)",
+  },
+  warning: {
+    bg: "rgba(245, 158, 11, 0.12)",
+    fg: "#f59e0b",
+    border: "rgba(245, 158, 11, 0.25)",
+    glow: "rgba(245, 158, 11, 0.08)",
+  },
+  error: {
+    bg: "rgba(239, 68, 68, 0.12)",
+    fg: "#ef4444",
+    border: "rgba(239, 68, 68, 0.25)",
+    glow: "rgba(239, 68, 68, 0.08)",
+  },
+  info: {
+    bg: "rgba(14, 165, 233, 0.12)",
+    fg: "#0ea5e9",
+    border: "rgba(14, 165, 233, 0.25)",
+    glow: "rgba(14, 165, 233, 0.08)",
+  },
 };
 
-export function KpiTile({ label, value, hint, icon, tone = "default", loading }: KpiTileProps) {
+export function KpiTile({
+  label,
+  value,
+  hint,
+  icon,
+  tone = "default",
+  loading,
+}: KpiTileProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark" || true; // GearGrid defaults to slate dark panels
   const t = TONES[tone];
+
   return (
     <Card
       elevation={0}
       sx={{
-        p: 2,
-        bgcolor: "white",
+        p: { xs: 1.75, sm: 2.25 },
+        bgcolor: isDark ? "#1e293b" : "#ffffff",
         border: "1px solid",
-        borderColor: t.border,
-        borderRadius: 2.5,
+        borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : t.border,
+        borderRadius: 3,
         display: "flex",
-        gap: 1.5,
+        gap: { xs: 1.5, sm: 2 },
         alignItems: "center",
         height: "100%",
+        minWidth: 0,
+        position: "relative",
+        overflow: "hidden",
+        transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        "&:hover": {
+          borderColor: t.fg,
+          transform: "translateY(-1px)",
+          boxShadow: `0 4px 20px -2px ${t.glow}`,
+        },
       }}
     >
       {icon && (
         <Box
           sx={{
             flexShrink: 0,
-            width: 44,
-            height: 44,
-            borderRadius: 2,
+            width: { xs: 40, sm: 48 },
+            height: { xs: 40, sm: 48 },
+            borderRadius: 2.5,
             bgcolor: t.bg,
             color: t.fg,
+            border: `1px solid ${t.border}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            "& svg": {
+              fontSize: { xs: "1.25rem", sm: "1.5rem" },
+            },
           }}
         >
           {icon}
         </Box>
       )}
+
       <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: isDark ? "#94a3b8" : "text.secondary",
+            fontSize: "0.7rem",
+            lineHeight: 1.2,
+            mb: 0.5,
+          }}
+          noWrap
+        >
           {label}
         </Typography>
+
         {loading ? (
-          <Skeleton variant="text" width={120} height={32} />
+          <Skeleton
+            variant="text"
+            width={120}
+            height={36}
+            sx={{ bgcolor: isDark ? "rgba(255,255,255,0.06)" : undefined }}
+          />
         ) : (
-          <Typography variant="h5" sx={{ fontWeight: 800, color: t.fg, lineHeight: 1.2 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 800,
+              color: isDark ? "#f8fafc" : t.fg,
+              lineHeight: 1.15,
+              fontSize: { xs: "1.15rem", sm: "1.45rem" },
+              letterSpacing: "-0.02em",
+              fontFamily: "'JetBrains Mono', 'Plus Jakarta Sans', sans-serif",
+              fontVariantNumeric: "tabular-nums",
+            }}
+            noWrap
+          >
             {value}
           </Typography>
         )}
+
         {hint && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              mt: 0.5,
+              color: isDark ? "#64748b" : "text.secondary",
+              fontSize: "0.72rem",
+              lineHeight: 1.2,
+            }}
+            noWrap
+          >
             {hint}
           </Typography>
         )}

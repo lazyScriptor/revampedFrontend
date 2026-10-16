@@ -1,8 +1,7 @@
-import { Box, TextField, Chip, Typography } from "@mui/material";
+import { Box, TextField, Chip, Typography, useTheme } from "@mui/material";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import { todayLocalStr, addDaysLocal } from "@/lib/dates";
 
-// Presets cover the common periods a manager wants to skim. Custom is implicit
-// — once the user types into the date inputs we drop the preset highlight.
 type PresetKey = "today" | "7d" | "30d" | "90d" | "month" | "lastMonth" | "ytd" | "all";
 
 const presetRange = (key: PresetKey): { from: string; to: string } => {
@@ -26,7 +25,6 @@ const presetRange = (key: PresetKey): { from: string; to: string } => {
       const lastY = m === 1 ? y - 1 : y;
       const lastM = m === 1 ? 12 : m - 1;
       const first = `${lastY}-${String(lastM).padStart(2, "0")}-01`;
-      // last day of last month = day 0 of this month
       const lastDay = new Date(y, m - 1, 0).getDate();
       const last = `${lastY}-${String(lastM).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
       return { from: first, to: last };
@@ -59,20 +57,50 @@ interface DateRangeFilterProps {
   showLabel?: boolean;
 }
 
-export function DateRangeFilter({ from, to, onChange, showLabel = true }: DateRangeFilterProps) {
+export function DateRangeFilter({
+  from,
+  to,
+  onChange,
+  showLabel = true,
+}: DateRangeFilterProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark" || true;
+
   const activePreset = PRESETS.find((p) => {
     const r = presetRange(p.key);
     return r.from === from && r.to === to;
   })?.key;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
       {showLabel && (
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", letterSpacing: 0.5 }}>
-          DATE RANGE
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <CalendarMonthIcon sx={{ fontSize: 16, color: "#f59e0b" }} />
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 800,
+              color: isDark ? "#94a3b8" : "text.secondary",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              fontSize: "0.7rem",
+            }}
+          >
+            DATE RANGE
+          </Typography>
+        </Box>
       )}
-      <Box sx={{ display: "flex", flexDirection: "row", gap: 1, flexWrap: "wrap" }}>
+
+      {/* Preset Pills Bar */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          gap: 0.75,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         {PRESETS.map((p) => {
           const selected = activePreset === p.key;
           return (
@@ -82,31 +110,133 @@ export function DateRangeFilter({ from, to, onChange, showLabel = true }: DateRa
               size="small"
               clickable
               onClick={() => onChange(presetRange(p.key))}
-              variant={selected ? "filled" : "outlined"}
-              color={selected ? "primary" : "default"}
-              sx={{ fontWeight: 700, borderRadius: 1.5 }}
+              sx={{
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                borderRadius: "999px",
+                height: 28,
+                px: 0.5,
+                transition: "all 0.15s ease",
+                bgcolor: selected
+                  ? "#f59e0b"
+                  : isDark
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(0, 0, 0, 0.04)",
+                color: selected ? "#0f172a" : isDark ? "#94a3b8" : "#475569",
+                border: "1px solid",
+                borderColor: selected
+                  ? "#f59e0b"
+                  : isDark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "#e2e8f0",
+                "&:hover": {
+                  bgcolor: selected
+                    ? "#d97706"
+                    : isDark
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "rgba(0, 0, 0, 0.08)",
+                  color: selected ? "#0f172a" : isDark ? "#f8fafc" : "#0f172a",
+                },
+              }}
             />
           );
         })}
       </Box>
-      <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+
+      {/* Custom Date Inputs */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1.5,
+          alignItems: { xs: "stretch", sm: "center" },
+        }}
+      >
         <TextField
           type="date"
           size="small"
           label="From"
           value={from}
           onChange={(e) => onChange({ from: e.target.value, to })}
-          InputLabelProps={{ shrink: true }}
-          sx={{ width: 170 }}
+          slotProps={{
+            inputLabel: {
+              shrink: true,
+              sx: {
+                color: isDark ? "#94a3b8" : undefined,
+                fontWeight: 600,
+                fontSize: "0.85rem",
+              },
+            },
+            input: {
+              className: "tabular-nums text-sm",
+            },
+          }}
+          sx={{
+            width: { xs: "100%", sm: 180 },
+            bgcolor: isDark ? "#0f172a" : "#f8fafc",
+            borderRadius: 2,
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#f59e0b",
+            },
+            "& .MuiInputBase-input": {
+              color: isDark ? "#f8fafc !important" : undefined,
+              fontSize: "0.85rem",
+              fontWeight: 500,
+              fontFamily: "'JetBrains Mono', monospace",
+            },
+          }}
         />
+
+        <Typography
+          variant="caption"
+          sx={{
+            display: { xs: "none", sm: "block" },
+            color: isDark ? "#64748b" : "text.secondary",
+            fontWeight: 700,
+          }}
+        >
+          to
+        </Typography>
+
         <TextField
           type="date"
           size="small"
           label="To"
           value={to}
           onChange={(e) => onChange({ from, to: e.target.value })}
-          InputLabelProps={{ shrink: true }}
-          sx={{ width: 170 }}
+          slotProps={{
+            inputLabel: {
+              shrink: true,
+              sx: {
+                color: isDark ? "#94a3b8" : undefined,
+                fontWeight: 600,
+                fontSize: "0.85rem",
+              },
+            },
+            input: {
+              className: "tabular-nums text-sm",
+            },
+          }}
+          sx={{
+            width: { xs: "100%", sm: 180 },
+            bgcolor: isDark ? "#0f172a" : "#f8fafc",
+            borderRadius: 2,
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#f59e0b",
+            },
+            "& .MuiInputBase-input": {
+              color: isDark ? "#f8fafc !important" : undefined,
+              fontSize: "0.85rem",
+              fontWeight: 500,
+              fontFamily: "'JetBrains Mono', monospace",
+            },
+          }}
         />
       </Box>
     </Box>

@@ -1,8 +1,10 @@
 import { useMemo } from "react";
-import { Box, Typography, Avatar } from "@mui/material";
+import { Box, Typography, Avatar, useTheme } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import BusinessIcon from "@mui/icons-material/Business";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { ReportShell } from "@/components/reports/ReportShell";
 import { KpiTile } from "@/components/reports/KpiTile";
 import { StatTable } from "@/components/reports/StatTable";
@@ -10,9 +12,13 @@ import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useInvoiceAging } from "../hooks/useReportsHooks";
 import { formatDisplayDate } from "@/lib/dates";
 
-const formatCurrency = (n: number) => `Rs. ${Number(n || 0).toLocaleString()}`;
+const formatCurrency = (n: number) =>
+  `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function AgingReport() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark" || true;
+
   const { data, isLoading, isFetching } = useInvoiceAging();
 
   const buckets = data?.buckets;
@@ -22,18 +28,21 @@ export default function AgingReport() {
     const headers = ["Invoice", "Customer", "Issued", "Total", "Paid", "Balance", "Days Overdue"];
     const lines = [headers.join(",")];
     rows.forEach((r: any) => {
-      const name = r.customer_type === "Business" && r.company_name
-        ? r.company_name
-        : `${r.first_name || ""} ${r.last_name || ""}`.trim();
-      lines.push([
-        `INV-${r.invoice_id}`,
-        `"${name}"`,
-        r.issued_date,
-        Number(r.total_amount || 0).toFixed(2),
-        Number(r.total_paid || 0).toFixed(2),
-        Number(r.balance_due || 0).toFixed(2),
-        r.days_overdue,
-      ].join(","));
+      const name =
+        r.customer_type === "Business" && r.company_name
+          ? r.company_name
+          : `${r.first_name || ""} ${r.last_name || ""}`.trim();
+      lines.push(
+        [
+          `INV-${r.invoice_id}`,
+          `"${name}"`,
+          r.issued_date,
+          Number(r.total_amount || 0).toFixed(2),
+          Number(r.total_paid || 0).toFixed(2),
+          Number(r.balance_due || 0).toFixed(2),
+          r.days_overdue,
+        ].join(","),
+      );
     });
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -47,9 +56,13 @@ export default function AgingReport() {
   const columns: GridColDef[] = [
     {
       field: "invoice_id",
-      headerName: "Invoice",
-      width: 120,
-      renderCell: (p) => <Typography sx={{ fontWeight: 700 }}>INV-{p.value}</Typography>,
+      headerName: "Invoice #",
+      width: 125,
+      renderCell: (p) => (
+        <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+          INV-{p.value}
+        </span>
+      ),
     },
     {
       field: "customer",
@@ -59,17 +72,47 @@ export default function AgingReport() {
       renderCell: (p) => {
         const r = p.row;
         const isBusiness = r.customer_type === "Business";
-        const name = isBusiness && r.company_name
-          ? r.company_name
-          : `${r.first_name || ""} ${r.last_name || ""}`.trim();
+        const name =
+          isBusiness && r.company_name
+            ? r.company_name
+            : `${r.first_name || ""} ${r.last_name || ""}`.trim();
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-            <Avatar sx={{ width: 30, height: 30, bgcolor: isBusiness ? "primary.main" : "#475569", fontSize: "0.8rem" }}>
+            <Avatar
+              sx={{
+                width: 30,
+                height: 30,
+                bgcolor: isBusiness ? "#f59e0b" : "#334155",
+                color: isBusiness ? "#0f172a" : "#f8fafc",
+                fontSize: "0.8rem",
+                fontWeight: 700,
+              }}
+            >
               {isBusiness ? <BusinessIcon fontSize="small" /> : (r.first_name?.[0] || "?")}
             </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>{name}</Typography>
-              <Typography variant="caption" color="text.secondary">{r.phone_number}</Typography>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 700,
+                  lineHeight: 1.25,
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                }}
+                noWrap
+              >
+                {name}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: isDark ? "#94a3b8" : "text.secondary",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontVariantNumeric: "tabular-nums",
+                  fontSize: "0.72rem",
+                }}
+              >
+                {r.phone_number || "No phone"}
+              </Typography>
             </Box>
           </Box>
         );
@@ -79,42 +122,92 @@ export default function AgingReport() {
       field: "issued_date",
       headerName: "Issued",
       width: 130,
-      renderCell: (p) => formatDisplayDate(p.value),
+      renderCell: (p) => (
+        <span className="tabular-nums font-mono text-xs text-slate-400">
+          {formatDisplayDate(p.value)}
+        </span>
+      ),
     },
     {
       field: "total_amount",
       headerName: "Total",
-      width: 130,
+      width: 140,
       type: "number",
-      renderCell: (p) => formatCurrency(Number(p.value)),
+      renderCell: (p) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 700,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: isDark ? "#f8fafc" : "#0f172a",
+          }}
+        >
+          {formatCurrency(Number(p.value))}
+        </Typography>
+      ),
     },
     {
       field: "total_paid",
       headerName: "Paid",
-      width: 130,
+      width: 140,
       type: "number",
-      renderCell: (p) => formatCurrency(Number(p.value)),
+      renderCell: (p) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: "#10b981",
+            fontWeight: 600,
+          }}
+        >
+          {formatCurrency(Number(p.value))}
+        </Typography>
+      ),
     },
     {
       field: "balance_due",
       headerName: "Balance",
-      width: 140,
+      width: 145,
       type: "number",
       renderCell: (p) => (
-        <Typography variant="body2" sx={{ fontWeight: 800, color: "error.main" }}>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 800,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: "#ef4444",
+          }}
+        >
           {formatCurrency(Number(p.value))}
         </Typography>
       ),
     },
     {
       field: "days_overdue",
-      headerName: "Days overdue",
-      width: 130,
+      headerName: "Days Overdue",
+      width: 145,
       type: "number",
       renderCell: (p) => {
         const v = Number(p.value) || 0;
-        const tone = v > 90 ? "error.main" : v > 60 ? "warning.dark" : v > 30 ? "warning.main" : "text.secondary";
-        return <Typography variant="body2" sx={{ fontWeight: 700, color: tone }}>{v}</Typography>;
+        const isCritical = v > 90;
+        const isWarning = v > 60;
+        return (
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums border ${
+              isCritical
+                ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                : isWarning
+                ? "bg-amber-500/10 text-amber-400 border-amber-500/25"
+                : "bg-slate-500/10 text-slate-300 border-slate-500/25"
+            }`}
+          >
+            <AccessTimeIcon sx={{ fontSize: 13 }} />
+            {v} days
+          </span>
+        );
       },
     },
   ];
@@ -122,15 +215,54 @@ export default function AgingReport() {
   return (
     <ReportShell
       title="Invoice Aging"
-      subtitle="Active invoices with unpaid balances, age-bucketed"
-      actionsSlot={<ExportMenu onExport={(f) => f === "csv" ? downloadCsv() : undefined} />}
+      subtitle="Outstanding receivable invoices categorized by overdue aging buckets"
+      actionsSlot={
+        <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
+      }
     >
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 2 }}>
-        <KpiTile label="0-30 Days" value={formatCurrency(buckets?.current?.total || 0)} hint={`${buckets?.current?.rows?.length || 0} invoices`} tone="info" loading={isLoading} />
-        <KpiTile label="31-60 Days" value={formatCurrency(buckets?.thirtyToSixty?.total || 0)} hint={`${buckets?.thirtyToSixty?.rows?.length || 0} invoices`} tone="warning" loading={isLoading} />
-        <KpiTile label="61-90 Days" value={formatCurrency(buckets?.sixtyToNinety?.total || 0)} hint={`${buckets?.sixtyToNinety?.rows?.length || 0} invoices`} tone="warning" loading={isLoading} />
-        <KpiTile label="90+ Days" value={formatCurrency(buckets?.overNinety?.total || 0)} hint={`${buckets?.overNinety?.rows?.length || 0} invoices`} icon={<AccountBalanceWalletIcon />} tone="error" loading={isLoading} />
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            lg: "repeat(4, 1fr)",
+          },
+          gap: 2,
+        }}
+      >
+        <KpiTile
+          label="0-30 Days"
+          value={formatCurrency(buckets?.current?.total || 0)}
+          hint={`${buckets?.current?.rows?.length || 0} invoices`}
+          tone="info"
+          loading={isLoading}
+        />
+        <KpiTile
+          label="31-60 Days"
+          value={formatCurrency(buckets?.thirtyToSixty?.total || 0)}
+          hint={`${buckets?.thirtyToSixty?.rows?.length || 0} invoices`}
+          tone="warning"
+          loading={isLoading}
+        />
+        <KpiTile
+          label="61-90 Days"
+          value={formatCurrency(buckets?.sixtyToNinety?.total || 0)}
+          hint={`${buckets?.sixtyToNinety?.rows?.length || 0} invoices`}
+          icon={<WarningAmberIcon />}
+          tone="warning"
+          loading={isLoading}
+        />
+        <KpiTile
+          label="90+ Days (High Risk)"
+          value={formatCurrency(buckets?.overNinety?.total || 0)}
+          hint={`${buckets?.overNinety?.rows?.length || 0} invoices`}
+          icon={<AccountBalanceWalletIcon />}
+          tone="error"
+          loading={isLoading}
+        />
       </Box>
+
       <StatTable
         rows={rows}
         columns={columns}
