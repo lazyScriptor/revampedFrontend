@@ -24,8 +24,10 @@ import AgingReport from "@/features/reports/invoices/AgingReport";
 import RentalHistoryReport from "@/features/reports/invoices/RentalHistoryReport";
 import ProfitLossReport from "@/features/reports/financials/ProfitLossReport";
 import CashFlowReport from "@/features/reports/financials/CashFlowReport";
+import PrintIcon from "@mui/icons-material/Print";
+import { InvoicePrintLogsView } from "@/features/invoices/components/InvoicePrintLogsView";
 
-type CategoryKey = "customers" | "equipment" | "invoices" | "financials";
+type CategoryKey = "customers" | "equipment" | "invoices" | "financials" | "audit";
 
 interface ReportDef {
   key: string;
@@ -78,6 +80,15 @@ const CATEGORIES: {
     reports: [
       { key: "profit-loss", label: "Profit & Loss", component: ProfitLossReport },
       { key: "cash-flow", label: "Cash Flow", component: CashFlowReport },
+    ],
+  },
+  {
+    key: "audit",
+    label: "Print Audit",
+    subtitle: "Complete immutable log of all thermal receipts printed, operator attribution, and point-in-time bill snapshots",
+    icon: <PrintIcon fontSize="small" />,
+    reports: [
+      { key: "logs", label: "Print Audit Logs", component: InvoicePrintLogsView },
     ],
   },
 ];

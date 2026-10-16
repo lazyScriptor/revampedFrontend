@@ -49,18 +49,16 @@ import { api } from "@/lib/api";
 import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
 import { Can } from "@/components/auth/Can";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { InvoicePrintLogsView } from "@/features/invoices/components/InvoicePrintLogsView";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
   const { t } = useTranslation();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" | "logs" };
-  const hasPrintLogPermission = useAuthStore((s) => s.hasPermission("invoice:print_log:view"));
+  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" };
 
-  const [posMode, setPosMode] = useState<"dispatch" | "manage" | "logs">(
-    search.mode === "manage" ? "manage" : search.mode === "logs" ? "logs" : "dispatch"
+  const [posMode, setPosMode] = useState<"dispatch" | "manage">(
+    search.mode === "manage" ? "manage" : "dispatch"
   );
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   const [activeMobilePane, setActiveMobilePane] = useState(0);
@@ -69,13 +67,9 @@ export default function InvoicesRoute() {
   useEffect(() => {
     if (search.mode === "manage" && posMode !== "manage") setPosMode("manage");
     if (search.mode === "dispatch" && posMode !== "dispatch") setPosMode("dispatch");
-    if (search.mode === "logs" && posMode !== "logs") {
-      if (hasPrintLogPermission) setPosMode("logs");
-      else setPosMode("dispatch");
-    }
-  }, [search.mode, hasPrintLogPermission]);
+  }, [search.mode]);
 
-  const switchPosMode = (next: "dispatch" | "manage" | "logs") => {
+  const switchPosMode = (next: "dispatch" | "manage") => {
     setPosMode(next);
     navigate({ to: "/invoices", search: { mode: next } as any, replace: true });
   };
@@ -514,91 +508,56 @@ export default function InvoicesRoute() {
               {t("invoices.manageOrders")}
             </Box>
           </Box>
-
-          <Can perform="invoice:print_log:view">
-            <Box
-              onClick={() => switchPosMode("logs")}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                px: { xs: 1.5, sm: 2.5 },
-                py: 1,
-                borderRadius: 2,
-                cursor: "pointer",
-                transition: "all 0.2s",
-                bgcolor: posMode === "logs" ? "#7c3aed" : "transparent",
-                color: posMode === "logs" ? "white" : "#64748b",
-                fontWeight: 800,
-                fontSize: "0.8rem",
-                userSelect: "none",
-                "&:hover": {
-                  bgcolor: posMode === "logs" ? "#6d28d9" : "#e2e8f0",
-                },
-              }}
-            >
-              <ReceiptLongIcon sx={{ fontSize: 15 }} />
-              <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-                Print Audit Logs
-              </Box>
-            </Box>
-          </Can>
         </Box>
       </Box>
 
       {/* ── Pane area ──────────────────────────────────────────────────────────── */}
-      {posMode === "logs" ? (
-        <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: "auto", bgcolor: "#f8fafc", borderRadius: 2 }}>
-          <InvoicePrintLogsView />
-        </Box>
-      ) : (
-        <Box
-          sx={{
-            flexGrow: 1,
-            minHeight: 0,
-            overflow: "hidden",
-            pb: { xs: isMobile ? "70px" : 0, lg: 0 },
-          }}
-        >
-          {/* Desktop: all 3 panes side by side */}
-          {!isMobile && (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "row",
-                gap: 2.5,
-                height: "100%",
-                overflow: "hidden",
-              }}
-            >
-              {pane1}
-              {pane2}
-              {pane3}
-            </Box>
-          )}
+      <Box
+        sx={{
+          flexGrow: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          pb: { xs: isMobile ? "70px" : 0, lg: 0 },
+        }}
+      >
+        {/* Desktop: all 3 panes side by side */}
+        {!isMobile && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 2.5,
+              height: "100%",
+              overflow: "hidden",
+            }}
+          >
+            {pane1}
+            {pane2}
+            {pane3}
+          </Box>
+        )}
 
-          {/* Mobile: one pane at a time */}
-          {isMobile && (
-            <Box sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}>
-              {activeMobilePane === 0 && (
-                <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  {pane1}
-                </Box>
-              )}
-              {activeMobilePane === 1 && (
-                <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  {pane2}
-                </Box>
-              )}
-              {activeMobilePane === 2 && (
-                <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  {pane3}
-                </Box>
-              )}
-            </Box>
-          )}
-        </Box>
-      )}
+        {/* Mobile: one pane at a time */}
+        {isMobile && (
+          <Box sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}>
+            {activeMobilePane === 0 && (
+              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                {pane1}
+              </Box>
+            )}
+            {activeMobilePane === 1 && (
+              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                {pane2}
+              </Box>
+            )}
+            {activeMobilePane === 2 && (
+              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                {pane3}
+              </Box>
+            )}
+          </Box>
+        )}
+      </Box>
 
       {/* ── Mobile Bottom Navigation ────────────────────────────────────────────── */}
       {isMobile && (

@@ -556,176 +556,9 @@ export function ManageLedgerPanel({
           );
         })}
 
-        {/* Dedicated Bill Printing History & Trace Section */}
-        <Can perform="invoice:print_log:view">
-          <InvoicePrintTraceSection invoice={invoice} />
-        </Can>
-
         {/* Reviews thread — staff-only ratings + comments for this invoice */}
         <InvoiceReviewsSection invoiceId={invoice.invoice_id} />
       </Box>
-    </Box>
-  );
-}
-
-// Dedicated space for Bill Printing History & Trace inside the main invoice board
-function InvoicePrintTraceSection({ invoice }: { invoice: any }) {
-  const [isPrintHistoryOpen, setIsPrintHistoryOpen] = useState(false);
-
-  const rawTraces =
-    invoice.InvoiceTraces ||
-    invoice.InvoiceTrace ||
-    invoice.invoice_traces ||
-    invoice.traces ||
-    [];
-
-  const printEvents = rawTraces
-    .filter((t: any) => t.event_action === "RECEIPT_PRINTED")
-    .map((t: any) => {
-      let payload = t.state_payload || {};
-      if (typeof payload === "string") {
-        try {
-          payload = JSON.parse(payload);
-        } catch {
-          payload = {};
-        }
-      }
-      const isDirect =
-        payload.print_method === "direct_agent" || payload.print_method === "direct";
-      return {
-        id: `print-${t.trace_id}`,
-        amount: Number(payload.grand_total || invoice.total_amount || 0),
-        method: isDirect ? "Direct Thermal" : "Browser Dialog",
-        isDirect,
-        printer: payload.printer_name || "Default Thermal POS",
-        printedBy: payload.printed_by_name || "Staff Operator",
-        role: payload.printed_by_role || "",
-        comment: t.comments || t.operator_comment || "POS receipt printed",
-        date: t.occurred_at || t.createdAt,
-      };
-    })
-    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  return (
-    <Box
-      sx={{
-        mt: 1,
-        p: 2,
-        bgcolor: "white",
-        border: "1px solid #e2e8f0",
-        borderRadius: 2.5,
-        display: "flex",
-        flexDirection: "column",
-        gap: 1.5,
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <PrintIcon sx={{ fontSize: 16, color: "#2563eb" }} />
-          <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#1e293b", fontSize: "0.7rem" }}>
-            BILL PRINTING HISTORY & TRACE
-          </Typography>
-          <Chip
-            size="small"
-            label={`${printEvents.length} ${printEvents.length === 1 ? "print" : "prints"}`}
-            sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "#eff6ff", color: "#1d4ed8" }}
-          />
-        </Box>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<HistoryIcon sx={{ fontSize: 15 }} />}
-          onClick={() => setIsPrintHistoryOpen(true)}
-          sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            fontSize: "0.75rem",
-            borderRadius: 1.5,
-            py: 0.3,
-          }}
-        >
-          View Snapshots & Audit Log
-        </Button>
-      </Box>
-
-      {printEvents.length === 0 ? (
-        <Box sx={{ py: 1.5, px: 2, bgcolor: "#f8fafc", borderRadius: 2, border: "1px dashed #cbd5e1" }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            No POS bills have been printed for this invoice yet.
-          </Typography>
-        </Box>
-      ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {printEvents.map((ev: any) => (
-            <Box
-              key={ev.id}
-              onClick={() => setIsPrintHistoryOpen(true)}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1.5,
-                p: 1.25,
-                bgcolor: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: 2,
-                cursor: "pointer",
-                transition: "all 0.15s",
-                "&:hover": { bgcolor: "#eff6ff", borderColor: "#bfdbfe" },
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
-                <Box
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 1.5,
-                    bgcolor: "#dbeafe",
-                    color: "#2563eb",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <PrintIcon sx={{ fontSize: 16 }} />
-                </Box>
-                <Box sx={{ minWidth: 0 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "#0f172a" }}>
-                      POS Bill Printed · Rs. {ev.amount.toLocaleString()}
-                    </Typography>
-                    <Chip
-                      size="small"
-                      label={ev.method}
-                      sx={{
-                        height: 18,
-                        fontSize: "0.62rem",
-                        fontWeight: 800,
-                        bgcolor: ev.isDirect ? "#dcfce7" : "#dbeafe",
-                        color: ev.isDirect ? "#166534" : "#1e40af",
-                      }}
-                    />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 500 }} noWrap>
-                    Printed by {ev.printedBy}{ev.role ? ` (${ev.role})` : ""} · {ev.printer}
-                  </Typography>
-                </Box>
-              </Box>
-              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, flexShrink: 0 }}>
-                {new Date(ev.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      )}
-
-      <InvoicePrintHistoryDialog
-        open={isPrintHistoryOpen}
-        onClose={() => setIsPrintHistoryOpen(false)}
-        invoiceId={invoice.invoice_id}
-        invoiceNumber={invoice.invoice_number || `INV-${invoice.invoice_id}`}
-      />
     </Box>
   );
 }
@@ -991,6 +824,27 @@ export function ManageFinancialPanel({
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Button
+            size="small"
+            variant={invoice.id_card_status ? "contained" : "outlined"}
+            color={invoice.id_card_status ? "warning" : "inherit"}
+            startIcon={<SecurityIcon sx={{ fontSize: 14 }} />}
+            onClick={() => vaultMutation.mutate(invoice.invoice_id)}
+            disabled={vaultMutation.isPending}
+            sx={{
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              textTransform: "none",
+              py: 0.35,
+              px: 1.2,
+              borderRadius: 1.5,
+              ...(invoice.id_card_status
+                ? { bgcolor: "#fde047", color: "#854d0e", "&:hover": { bgcolor: "#facc15" } }
+                : { borderColor: "#334155", color: "#94a3b8", "&:hover": { borderColor: "#475569", color: "#f8fafc" } }),
+            }}
+          >
+            {invoice.id_card_status ? "Release ID" : "Retain ID"}
+          </Button>
           <IconButton onClick={onToggleCollapse} size="small" sx={{ color: "#475569" }}>
             <ChevronRightIcon fontSize="small" />
           </IconButton>
@@ -1037,8 +891,14 @@ export function ManageFinancialPanel({
           >
             Rs. {balance.toLocaleString()}
           </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, my: 0.5 }}>
+            <SecurityIcon sx={{ fontSize: 14, color: invoice.id_card_status ? "#fde047" : "#64748b" }} />
+            <Typography variant="caption" sx={{ color: invoice.id_card_status ? "#fde047" : "#94a3b8", fontWeight: 700 }}>
+              {invoice.id_card_status ? "ID Currently Held in Vault" : "ID Released to Client"}
+            </Typography>
+          </Box>
           {isCompleted && balance === 0 && (
-            <Typography variant="caption" sx={{ color: "#4ade80", fontWeight: 700 }}>
+            <Typography variant="caption" sx={{ color: "#4ade80", fontWeight: 700, display: "block" }}>
               ✓ Fully Settled
             </Typography>
           )}
@@ -1083,37 +943,6 @@ export function ManageFinancialPanel({
               View Bill Print History{printCount > 0 ? ` (${printCount})` : ""}
             </Button>
           </Can>
-        </Box>
-
-        {/* Payment method selector */}
-        <Box>
-          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, display: "block", mb: 1 }}>
-            {t("orders.paymentMethod").toUpperCase()}
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {PAYMENT_METHODS.map((m) => (
-              <Button
-                key={m}
-                size="small"
-                variant={paymentMethod === m ? "contained" : "outlined"}
-                disableElevation
-                onClick={() => setPaymentMethod(m)}
-                sx={{
-                  flex: 1,
-                  textTransform: "none",
-                  fontWeight: 700,
-                  fontSize: "0.72rem",
-                  color: paymentMethod === m ? "white" : "#475569",
-                  borderColor: paymentMethod === m ? "primary.main" : "#334155",
-                  bgcolor: paymentMethod === m ? "primary.main" : "transparent",
-                  "&:hover": { borderColor: "primary.main" },
-                  minWidth: 0,
-                }}
-              >
-                {m}
-              </Button>
-            ))}
-          </Box>
         </Box>
 
         {/* Payment input */}
@@ -1194,7 +1023,20 @@ export function ManageFinancialPanel({
               <ReceiptLongIcon fontSize="small" /> {t("orders.receiptBreakdown")}
             </Typography>
           </AccordionSummary>
-          <AccordionDetails sx={{ px: 2.5, py: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          <AccordionDetails
+            sx={{
+              px: 2.5,
+              py: 2,
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              maxHeight: 280,
+              overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
+              "&::-webkit-scrollbar": { width: "4px" },
+              "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "4px" },
+            }}
+          >
             {!isEditingFees && !isCompleted && (
               <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <Button
@@ -1309,7 +1151,7 @@ export function ManageFinancialPanel({
           <AccordionDetails
             sx={{
               p: 0,
-              maxHeight: 360,
+              maxHeight: 320,
               overflowY: "auto",
               WebkitOverflowScrolling: "touch",
               "&::-webkit-scrollbar": { width: "4px" },
@@ -1385,43 +1227,6 @@ export function ManageFinancialPanel({
             )}
           </AccordionDetails>
         </Accordion>
-
-        {/* Vault control */}
-        <Box
-          sx={{
-            bgcolor: invoice.id_card_status ? "#1a1200" : "white",
-            border: "1px solid",
-            borderColor: invoice.id_card_status ? "#fde047" : "#334155",
-            borderRadius: 2.5,
-            p: 2,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
-            <SecurityIcon sx={{ fontSize: 16, color: invoice.id_card_status ? "#fde047" : "#475569" }} />
-            <Typography variant="body2" sx={{ fontWeight: 700, color: invoice.id_card_status ? "#fde047" : "#94a3b8" }}>
-              {t("orders.securityVault")}
-            </Typography>
-          </Box>
-          <Typography variant="caption" sx={{ color: invoice.id_card_status ? "#fde047" : "#64748b", display: "block", mb: 1.5 }}>
-            {invoice.id_card_status ? t("orders.idInVault") : t("orders.idReleased")}
-          </Typography>
-          <Button
-            fullWidth
-            variant={invoice.id_card_status ? "outlined" : "contained"}
-            color={invoice.id_card_status ? "warning" : "inherit"}
-            onClick={() => vaultMutation.mutate(invoice.invoice_id)}
-            disabled={vaultMutation.isPending}
-            disableElevation
-            size="small"
-            sx={{
-              fontWeight: 700,
-              borderRadius: 1.5,
-              ...(!invoice.id_card_status && { bgcolor: "#1e293b", color: "#94a3b8", "&:hover": { bgcolor: "#334155" } }),
-            }}
-          >
-            {invoice.id_card_status ? t("orders.releaseId") : t("orders.retainIdInVault")}
-          </Button>
-        </Box>
       </Box>
 
       {/* ── Thermal Receipt Print & Preview Dialog ── */}

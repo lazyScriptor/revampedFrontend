@@ -96,13 +96,40 @@ src/
 
 ## API patterns
 
-- `api.ts` interceptor unwraps `response.data`. Hook signatures look like:
-  ```ts
-  const res = await api.get('/super-admin/tenants');
-  return res.data.tenants as Tenant[];   // res is already response.data
-  ```
+- **`api.ts` interceptor ALREADY unwraps `response.data` (CRITICAL TRAP)**:
+  - `api.interceptors.response.use((response) => response.data)` returns the backend JSON envelope `{ status: 'success', data: ... }` directly.
+  - **NEVER** write `res.data?.data` without checking `res.data` first! Doing `return res.data?.data || []` will evaluate to `undefined` and silently return an empty fallback `[]` even when the API returned `200 OK` with records.
+  - Correct pattern:
+    ```ts
+    const res: any = await api.get('/invoices/print-logs', { params });
+    return res?.data?.logs !== undefined ? res.data : res?.data?.data || res;
+    ```
 - File uploads: build a `FormData`, pass `headers: { 'Content-Type': 'multipart/form-data' }`. See `useUploadTenantLogo`.
 - Tenant data JSON fields (`branding`, `feature_flags`, `cors_whitelist`) come back as real objects/arrays — backend normalizes. There's still a `parseJson()` guard in `TenantDetailPanel.tsx`; keep it as belt-and-braces.
+
+## POS Thermal Printing & Print Audit Logs
+
+- **Thermal Print Engine (`src/features/invoices/utils/thermalPrint.ts`)**:
+  - Measures exact receipt DOM height (`heightMm`) and injects `@page { size: 80mm ${heightMm}mm; margin: 0 !important; }` with `page-break-inside: avoid` to prevent mid-bill splits and paper waste on continuous thermal rolls.
+  - Supports direct silent printing via local `geargrid-print-agent` (`http://127.0.0.1:17420`) with automatic fallback to an isolated iframe browser print dialog.
+  - **Log Before Print**: Always `await logPrintEventToServer(...)` **before** calling `iframe.contentWindow.print()` (which blocks the JS main thread) and immediately invalidate `["invoice-print-logs"]`, `["invoices"]`, and `["invoice", invoiceId]`.
+- **Snapshot Receipt Normalization (`src/features/invoices/components/InvoiceReceipt.tsx`)**:
+  - `buildSnapshotReceiptProps(log)` normalizes both full Sequelize snapshots (`{ Customer, InvoiceLines, Payments, sub_total, total_amount }`) and summary snapshots (`{ customer, items, fees }`) so historical point-in-time previews in `InvoicePrintLogsView.tsx` and `InvoicePrintHistoryDialog.tsx` always render complete customer, item, payment, and balance details.
+- **Dedicated Print Audit Section in Reports (`/reports?category=audit`)**:
+  - `InvoicePrintLogsView` is integrated into the Reports analytics suite with deep-linking (`/reports?category=audit`) and sidebar integration under `Reports → Print Audit`.
+  - Guarded by granular permission `invoice:print_log:view` for RBAC compliance.
+  - Features high-performance sticky headers (`stickyHeader`) and max-height internal table scroll.
+- **Streamlined Manage Orders & Financial Panel Layout (`ManageInvoiceViews.tsx`)**:
+  - **Reclaimed Vertical Real Estate**: The bulky bottom ID Vault box was eliminated. ID Vault operations are now exposed via a compact button in the terminal header (`Release ID` / `Retain ID`), and status is rendered inline within the Balance Due card (`ID Currently Held in Vault`).
+  - **Maximized Scrollable Accordions**: Vertical space reclaimed from the vault box expands `Receipt Breakdown` (`maxHeight: 280, overflowY: "auto"`) and `Transaction Ledger` (`maxHeight: 320, overflowY: "auto"`), both styled with slim, non-intrusive scrollbars.
+  - **Removed Redundant Controls**: Payment method selector buttons (`Cash`, `Card`, `Transfer`, `Cheque`) were removed to declutter the financial action area (payments default cleanly to cash or recorded method).
+  - **Asset Board Focus**: Removed bill printing trace cards from the main board (`ManageLedgerPanel`) to keep line items and returns uncluttered. Bill printing is triggered via the single primary blue `Print POS Bill (INV-XX)` button in the Balance Due card, with full per-invoice history in `InvoicePrintHistoryDialog`.
+
+## Viewport-Locked Tables & Global KPI Stats (`Customers.tsx` & `Equipment.tsx`)
+
+- **100% Viewport Lock**: The outer page container uses `height: { xs: "auto", md: "calc(100vh - 88px)" }, overflow: { xs: "visible", md: "hidden" }, display: "flex", flexDirection: "column"`.
+- **Fixed Upper Cards + Internal Table Scroll**: Header, KPI statistic cards, and search/filter bars have `flexShrink: 0`. The table card uses `flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden"`, and `<TableContainer sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}><Table stickyHeader>` scrolls only the `<tbody>` while `<thead>` stays sticky.
+- **Decoupled Global KPIs**: Upper KPI cards fetch true database-wide totals via `useCustomerStats()` (`/api/customers/stats`) and `useEquipmentStats()` (`/api/equipment/stats`) so filtering or paginating the table never distorts vault/fleet totals. When filters narrow the table view, a secondary badge (`Showing X in table`) indicates the filtered count.
 
 ## Conventions
 
@@ -115,3 +142,4 @@ src/
 
 - Adding a super-admin endpoint: hook in `features/super-admin/hooks/useSuperAdminHooks.ts` → component in `features/super-admin/components/` → wire from `src/routes/SuperAdmin.tsx`.
 - Adding a tenant page: file in `src/routes/<Page>.tsx`, register under `_authenticated`, add to `allNavItems` in `_authenticated.tsx` with the right `requiredPermission`.
+

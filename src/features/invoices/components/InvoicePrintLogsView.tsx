@@ -359,8 +359,8 @@ export function InvoicePrintLogsView() {
 
       {/* ── 3. AUDIT LOGS TABLE ────────────────────────────────────────────── */}
       <Paper elevation={0} sx={{ borderRadius: 2.5, border: "1px solid #e2e8f0", overflow: "hidden", bgcolor: "white" }}>
-        <TableContainer>
-          <Table size="medium">
+        <TableContainer sx={{ maxHeight: { xs: 500, md: 620 }, overflowY: "auto" }}>
+          <Table size="medium" stickyHeader>
             <TableHead sx={{ bgcolor: "#f8fafc" }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 800, color: "#475569", fontSize: "0.78rem" }}>PRINTED AT</TableCell>

@@ -59,6 +59,7 @@ import MoneyOffIcon from "@mui/icons-material/MoneyOff";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PieChartIcon from "@mui/icons-material/PieChart";
+import PrintIcon from "@mui/icons-material/Print";
 
 const drawerWidth = 260;
 
@@ -134,6 +135,7 @@ function AuthenticatedLayout() {
   const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
+  const hasPermission = useAuthStore((state) => state.hasPermission);
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
   const navigate = useNavigate();
@@ -167,6 +169,7 @@ function AuthenticatedLayout() {
     path: string;
     icon?: React.ReactNode;
     search?: Record<string, string>;
+    requiredPermission?: string;
   };
   type NavItem = {
     text: string;
@@ -254,6 +257,7 @@ function AuthenticatedLayout() {
         { text: "Equipment", label: t("nav.equipment"), path: "/reports", search: { category: "equipment" }, icon: <ConstructionIcon fontSize="small" /> },
         { text: "Invoices", label: t("nav.invoices"), path: "/reports", search: { category: "invoices" }, icon: <ReceiptIcon fontSize="small" /> },
         { text: "Financials", label: t("nav.financials"), path: "/reports", search: { category: "financials" }, icon: <PieChartIcon fontSize="small" /> },
+        { text: "Print Audit", label: "Print Audit", path: "/reports", search: { category: "audit" }, icon: <PrintIcon fontSize="small" />, requiredPermission: "invoice:print_log:view" },
       ],
     },
     {
@@ -268,10 +272,10 @@ function AuthenticatedLayout() {
     },
   ];
 
-  // 2. Filter the items based on the user's permission array
+  // 2. Filter the items based on permissions
   const visibleNavItems = allNavItems.filter((item) => {
     if (!item.requiredPermission) return true;
-    return user?.permissions?.includes(item.requiredPermission) || false;
+    return hasPermission(item.requiredPermission);
   });
 
   const handleDrawerToggle = () => {
@@ -376,7 +380,9 @@ function AuthenticatedLayout() {
                   unmountOnExit
                 >
                   <List component="div" disablePadding>
-                    {item.children.map((child) => {
+                    {item.children
+                      .filter((child) => !child.requiredPermission || hasPermission(child.requiredPermission))
+                      .map((child) => {
                       const childSearch = child.search || {};
                       const currentSearch = (location.search as Record<string, string>) || {};
                       const isActive =
