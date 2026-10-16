@@ -138,6 +138,7 @@ src/
 - **100% Full-Width Screen Occupancy**: In view mode (`!isEditMode`), the dashboard uses native fluid CSS Grid (`gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }`), guaranteeing edge-to-edge coverage across all monitor resolutions without dead white space or RGL column mismatch issues.
 - **Unified 4-Column Breakpoints in Edit Mode**: When edit mode is active, `ResponsiveGridLayout` uses `breakpoints={{ lg: 1200, md: 900, sm: 600, xs: 0 }}` and `cols={{ lg: 4, md: 4, sm: 4, xs: 4 }}` with measured `gridWidth`, ensuring cards never drop to 6 default columns on sub-900px widths.
 - **Dual Drawer Dismissal**: `EditModePanel` features both a header close icon and a sticky bottom full-width `Done Customizing` button. Dismissing the drawer automatically resets `isEditMode: false` to seamlessly return the user to live view mode.
+- **Strict Hook Ordering (React #310)**: All hooks (`useMemo`, `useState`, `useEffect`) in `DashboardEngine.tsx` must be declared at the top level BEFORE `if (configLoading || !isConfigLoaded) return <Skeleton />`. Never place hooks below conditional early returns.
 
 ## Conventions
 
