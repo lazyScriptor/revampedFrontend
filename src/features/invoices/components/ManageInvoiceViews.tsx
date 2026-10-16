@@ -14,6 +14,7 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import SecurityIcon from "@mui/icons-material/Security";
 import AssignmentReturnedIcon from "@mui/icons-material/AssignmentReturned";
@@ -84,6 +85,7 @@ export function ManageSearchPanel({
   selectedInvoiceId?: number | null;
 }) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
   const [pageSize, setPageSize] = useState(25);
@@ -111,7 +113,7 @@ export function ManageSearchPanel({
 
   const borderColor = (inv: any) => {
     if (inv.invoice_id === selectedInvoiceId) return "#2563eb";
-    return inv.status === "Active" ? "#fbbf24" : "#e2e8f0";
+    return inv.status === "Active" ? "#f59e0b" : "#10b981";
   };
 
   const bgColor = (inv: any) => {
@@ -131,12 +133,19 @@ export function ManageSearchPanel({
           onChange={(e) => setSearchInput(e.target.value)}
           slotProps={{
             input: {
-              startAdornment: <SearchIcon sx={{ color: "action.disabled", mr: 1, fontSize: 18 }} />,
+              startAdornment: <SearchIcon sx={{ color: "text.secondary", mr: 1, fontSize: 18 }} />,
               endAdornment: isLoading ? <CircularProgress size={16} /> : null,
               sx: {
                 borderRadius: 2,
-                bgcolor: "white",
-                "& fieldset": { borderColor: "#e2e8f0" },
+                bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+                "& .MuiInputBase-input": {
+                  color: theme.palette.mode === "dark" ? "#f8fafc" : "#0f172a",
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                },
+                "& fieldset": { borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0" },
+                "&:hover fieldset": { borderColor: theme.palette.mode === "dark" ? "#475569" : "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: "primary.main" },
               },
             },
           }}
@@ -144,7 +153,7 @@ export function ManageSearchPanel({
       </Box>
 
       {/* Status filter chips with exact counts */}
-      <Box sx={{ px: 2, pb: 1.5, display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+      <Box sx={{ px: 2, pb: 1.5, display: "flex", alignItems: "center", gap: 1, flexShrink: 0, overflowX: "auto" }}>
         {(["All", "Active", "Completed"] as const).map((s) => {
           const count = s === "All" ? counts.all : s === "Active" ? counts.active : counts.completed;
           const baseLabel =
@@ -181,6 +190,7 @@ export function ManageSearchPanel({
               fontWeight: 700,
               color: "text.secondary",
               fontSize: "0.72rem",
+              whiteSpace: "nowrap",
             }}
           >
             {displayInvoices.length} of {currentFilterTotal}
@@ -227,7 +237,7 @@ export function ManageSearchPanel({
                   px: 2,
                   py: 1.5,
                   borderBottom: "1px solid #f1f5f9",
-                  borderLeft: "3px solid",
+                  borderLeft: "4px solid",
                   borderLeftColor: borderColor(inv),
                   bgcolor: bgColor(inv),
                   cursor: "pointer",
@@ -238,9 +248,17 @@ export function ManageSearchPanel({
                   },
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: isSelected ? "primary.main" : "#1e293b" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 800,
+                        color: isSelected ? "primary.main" : "#0f172a",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
                       INV-{inv.invoice_id}
                     </Typography>
                     <Chip
@@ -248,23 +266,42 @@ export function ManageSearchPanel({
                       label={inv.status}
                       color={isActive ? "warning" : "success"}
                       variant={isSelected ? "filled" : "outlined"}
-                      sx={{ fontWeight: 700, fontSize: "0.65rem", height: 18 }}
+                      sx={{ fontWeight: 800, fontSize: "0.65rem", height: 18 }}
                     />
                   </Box>
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: balance > 0 ? "#dc2626" : "#059669" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 800,
+                      color: balance > 0 ? "#dc2626" : "#059669",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
                     Rs. {Number(inv.total_amount).toLocaleString()}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: "65%" }}>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: "65%", fontWeight: 500 }}>
                     {customerName}
                   </Typography>
-                  <Typography variant="caption" color="text.disabled">
+                  <Typography variant="caption" color="text.disabled" sx={{ fontSize: "0.68rem" }}>
                     {relDate(inv.issued_date)}
                   </Typography>
                 </Box>
                 {balance > 0 && isActive && (
-                  <Typography variant="caption" sx={{ color: "#dc2626", fontWeight: 600, fontSize: "0.68rem" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#dc2626",
+                      fontWeight: 700,
+                      fontSize: "0.68rem",
+                      display: "block",
+                      mt: 0.25,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
                     Balance due: Rs. {balance.toLocaleString()}
                   </Typography>
                 )}
@@ -460,6 +497,7 @@ export function ManageLedgerPanel({
                 borderRadius: 2.5,
                 overflow: "hidden",
                 flexShrink: 0,
+                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
               }}
             >
               {/* Line header */}
@@ -467,7 +505,7 @@ export function ManageLedgerPanel({
                 sx={{
                   px: 2.5,
                   py: 1.5,
-                  bgcolor: "#fafafa",
+                  bgcolor: "#f8fafc",
                   borderBottom: "1px solid #f1f5f9",
                   display: "flex",
                   alignItems: "center",
@@ -478,7 +516,7 @@ export function ManageLedgerPanel({
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <StatusDot color={isActive ? (isOverdue ? "#ef4444" : "#f59e0b") : "#10b981"} />
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: "#0f172a" }}>
                     {equipName}
                   </Typography>
                 </Box>
@@ -487,7 +525,7 @@ export function ManageLedgerPanel({
                   label={isActive ? (isOverdue ? "Overdue" : "Out on Rent") : "Returned"}
                   color={isActive ? (isOverdue ? "error" : "warning") : "success"}
                   variant={isActive ? "filled" : "outlined"}
-                  sx={{ fontWeight: 700, fontSize: "0.7rem" }}
+                  sx={{ fontWeight: 800, fontSize: "0.7rem", height: 22 }}
                 />
               </Box>
 
@@ -495,21 +533,32 @@ export function ManageLedgerPanel({
               <Box sx={{ p: 2, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 2fr" }, gap: 2 }}>
                 {/* Timeline */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", display: "block", mb: 0.5, letterSpacing: 0.5, fontSize: "0.68rem" }}>
                     {t("orders.timeline")}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontVariantNumeric: "tabular-nums" }}>
                     {t("orders.out")}: {formatDisplayDate(line.borrow_date)}
                   </Typography>
                   <Typography
                     variant="body2"
-                    sx={{ fontWeight: 500, color: isOverdue ? "error.main" : "text.primary", display: "flex", alignItems: "center", gap: 0.5 }}
+                    sx={{
+                      fontWeight: 600,
+                      color: isOverdue ? "error.main" : "#0f172a",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      fontVariantNumeric: "tabular-nums",
+                    }}
                   >
                     {isOverdue && <AccessTimeIcon sx={{ fontSize: 13 }} />}
                     {t("orders.due")}: {formatDisplayDate(line.expected_return_date)}
                   </Typography>
                   {isActive && (
-                    <Typography variant="caption" color={isOverdue ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
+                    <Typography
+                      variant="caption"
+                      color={isOverdue ? "error.main" : "text.secondary"}
+                      sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+                    >
                       {t("orders.daysOverdue", { count: daysOut })}
                     </Typography>
                   )}
@@ -517,18 +566,20 @@ export function ManageLedgerPanel({
 
                 {/* Qty stats */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", display: "block", mb: 0.5, letterSpacing: 0.5, fontSize: "0.68rem" }}>
                     {t("orders.quantities")}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{t("orders.borrowed")}: {borrowQty}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontVariantNumeric: "tabular-nums" }}>
+                    {t("orders.borrowed")}: <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{borrowQty}</span>
+                  </Typography>
                   {alreadyReturned > 0 && (
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "success.main" }}>
-                      {t("orders.returned")}: {alreadyReturned}
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "success.main", fontVariantNumeric: "tabular-nums" }}>
+                      {t("orders.returned")}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{alreadyReturned}</span>
                     </Typography>
                   )}
                   {isActive && (
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>
-                      {t("orders.pending")}: {pending}
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark", fontVariantNumeric: "tabular-nums" }}>
+                      {t("orders.pending")}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{pending}</span>
                     </Typography>
                   )}
                 </Box>
@@ -543,7 +594,7 @@ export function ManageLedgerPanel({
                   }}
                 >
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.68rem" }}>
                       {t("orders.costFinal")}
                     </Typography>
                     <Chip
@@ -554,13 +605,29 @@ export function ManageLedgerPanel({
                       sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
                     />
                   </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 900, color: isActive ? "primary.main" : "text.primary" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      color: isActive ? "primary.main" : "#0f172a",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
                     Rs. {formattedCost}
                   </Typography>
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ display: "block", borderTop: "1px dashed #cbd5e1", pt: 0.5, mt: 0.5, lineHeight: 1.3 }}
+                    sx={{
+                      display: "block",
+                      borderTop: "1px dashed #cbd5e1",
+                      pt: 0.5,
+                      mt: 0.5,
+                      lineHeight: 1.3,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: "0.72rem",
+                    }}
                   >
                     {breakdownFormula}
                   </Typography>
@@ -570,7 +637,7 @@ export function ManageLedgerPanel({
               {/* Return iterations */}
               {lineIterations.length > 0 && (
                 <Box sx={{ bgcolor: "#f8fafc", borderTop: "1px dashed #e2e8f0", p: 2 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", display: "block", mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", display: "block", mb: 1, letterSpacing: 0.5, fontSize: "0.68rem" }}>
                     {t("orders.handoverHistory")}
                   </Typography>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
@@ -588,14 +655,14 @@ export function ManageLedgerPanel({
                         }}
                       >
                         <SubdirectoryArrowRightIcon sx={{ color: "#94a3b8", fontSize: 15 }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ width: 130 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ width: 130, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                           {new Date(iter.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                         </Typography>
                         {iter.good > 0 && (
-                          <Chip size="small" label={`${iter.good} Good`} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
+                          <Chip size="small" label={`${iter.good} Good`} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
                         )}
                         {iter.defective > 0 && (
-                          <Chip size="small" label={`${iter.defective} Broken`} color="error" variant="filled" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
+                          <Chip size="small" label={`${iter.defective} Broken`} color="error" variant="filled" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
                         )}
                       </Box>
                     ))}
@@ -944,7 +1011,7 @@ export function ManageFinancialPanel({
             border: "1px solid #334155",
           }}
         >
-          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1.5 }}>
+          <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 700, letterSpacing: 1.5 }}>
             {t("orders.balanceDue").toUpperCase()}
           </Typography>
           <Typography
@@ -954,6 +1021,9 @@ export function ManageFinancialPanel({
               color: balance > 0 ? "#f87171" : "#4ade80",
               my: 1,
               fontSize: { xs: "2rem", md: "2.5rem" },
+              fontFamily: "'JetBrains Mono', monospace",
+              fontVariantNumeric: "tabular-nums",
+              letterSpacing: -1,
             }}
           >
             Rs. {balance.toLocaleString()}
@@ -1005,6 +1075,7 @@ export function ManageFinancialPanel({
                 borderRadius: 2,
                 py: 0.7,
                 textTransform: "none",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               View Bill Print History{printCount > 0 ? ` (${printCount})` : ""}
@@ -1034,6 +1105,8 @@ export function ManageFinancialPanel({
                 color: "#f8fafc !important",
                 fontWeight: 700,
                 fontSize: "0.95rem",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontVariantNumeric: "tabular-nums",
                 WebkitTextFillColor: "#f8fafc !important",
               },
             }}
@@ -1120,7 +1193,9 @@ export function ManageFinancialPanel({
             )}
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography variant="body2" color="text.secondary">Base Subtotal</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>Rs. {subTotal.toLocaleString()}</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                Rs. {subTotal.toLocaleString()}
+              </Typography>
             </Box>
 
             {isEditingFees ? (
@@ -1132,7 +1207,13 @@ export function ManageFinancialPanel({
                   value={fees.transport}
                   onChange={(e) => setFees({ ...fees, transport: Number(e.target.value) || 0 })}
                   sx={{
-                    "& .MuiInputBase-input": { color: "#0f172a !important", fontWeight: 600, WebkitTextFillColor: "#0f172a !important" },
+                    "& .MuiInputBase-input": {
+                      color: "#0f172a !important",
+                      fontWeight: 600,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                      WebkitTextFillColor: "#0f172a !important",
+                    },
                   }}
                   slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> } }}
                 />
@@ -1143,7 +1224,13 @@ export function ManageFinancialPanel({
                   value={fees.discount}
                   onChange={(e) => setFees({ ...fees, discount: Number(e.target.value) || 0 })}
                   sx={{
-                    "& .MuiInputBase-input": { color: "#0f172a !important", fontWeight: 600, WebkitTextFillColor: "#0f172a !important" },
+                    "& .MuiInputBase-input": {
+                      color: "#0f172a !important",
+                      fontWeight: 600,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                      WebkitTextFillColor: "#0f172a !important",
+                    },
                   }}
                   slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> } }}
                 />
@@ -1173,11 +1260,15 @@ export function ManageFinancialPanel({
                   <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <LocalShippingIcon sx={{ fontSize: 14 }} /> Transport
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>+ Rs. {initialTransport.toLocaleString()}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                    + Rs. {initialTransport.toLocaleString()}
+                  </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="body2" color="text.secondary">Discount</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: "error.main" }}>− Rs. {initialDiscount.toLocaleString()}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "error.main", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                    − Rs. {initialDiscount.toLocaleString()}
+                  </Typography>
                 </Box>
               </>
             )}
@@ -1185,18 +1276,24 @@ export function ManageFinancialPanel({
             {lateFees > 0 && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" sx={{ color: "error.main", fontWeight: 700 }}>Late Fees</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "error.main" }}>+ Rs. {lateFees.toLocaleString()}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "error.main", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                  + Rs. {lateFees.toLocaleString()}
+                </Typography>
               </Box>
             )}
 
             <Divider sx={{ borderStyle: "dashed" }} />
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Grand Total</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>Rs. {grandTotal.toLocaleString()}</Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Grand Total</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                Rs. {grandTotal.toLocaleString()}
+              </Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700 }}>Total Paid</Typography>
-              <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700 }}>− Rs. {totalPaid.toLocaleString()}</Typography>
+              <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                − Rs. {totalPaid.toLocaleString()}
+              </Typography>
             </Box>
           </AccordionDetails>
         </Accordion>
@@ -1270,7 +1367,7 @@ export function ManageFinancialPanel({
                     {item.type === "FEE_ADJUSTMENT" ? (
                       <>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>Fees Adjusted</Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                           Transport: Rs.{(item as any).transport} · Discount: Rs.{(item as any).discount}
                         </Typography>
                       </>
@@ -1279,7 +1376,12 @@ export function ManageFinancialPanel({
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                           <Typography
                             variant="body2"
-                            sx={{ fontWeight: 700, color: item.type === "REFUND" ? "error.main" : "success.main" }}
+                            sx={{
+                              fontWeight: 700,
+                              color: item.type === "REFUND" ? "error.main" : "success.main",
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontVariantNumeric: "tabular-nums",
+                            }}
                           >
                             {(item as any).label || (item.type === "REFUND" ? "Refund" : "Payment")} · Rs.{(item as any).amount.toLocaleString()}
                           </Typography>
@@ -1287,7 +1389,7 @@ export function ManageFinancialPanel({
                         </Box>
                       </>
                     )}
-                    <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 600 }}>
+                    <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                       {new Date(item.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                     </Typography>
                   </Box>

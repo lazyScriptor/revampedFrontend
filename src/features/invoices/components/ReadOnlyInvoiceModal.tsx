@@ -315,7 +315,7 @@ export function ReadOnlyInvoiceModal({
                             <Chip size="small" label="Bulk Asset" sx={{ height: 16, fontSize: "0.6rem", mt: 0.25 }} />
                           )}
                         </TableCell>
-                        <TableCell sx={{ textAlign: "center", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>
+                        <TableCell sx={{ textAlign: "center", fontVariantNumeric: "tabular-nums", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
                           {qty}
                         </TableCell>
                         <TableCell sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.78rem" }}>
@@ -328,7 +328,7 @@ export function ReadOnlyInvoiceModal({
                             Min {line.locked_minimum_days || 1} day(s) · Extra Rs. {Number(line.locked_extra_daily_rate || 0).toLocaleString()}/day
                           </Typography>
                         </TableCell>
-                        <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                        <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                           Rs. {Number(line.locked_base_price || 0).toLocaleString()}
                         </TableCell>
                         <TableCell sx={{ textAlign: "center" }}>
@@ -336,10 +336,10 @@ export function ReadOnlyInvoiceModal({
                             size="small"
                             label={isFullyReturned ? "Returned" : `${returnedQty}/${qty} Ret.`}
                             color={isFullyReturned ? "success" : "warning"}
-                            sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
+                            sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20, fontVariantNumeric: "tabular-nums" }}
                           />
                         </TableCell>
-                        <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 800, color: "#0f172a" }}>
+                        <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 800, color: "#0f172a", fontFamily: "'JetBrains Mono', monospace" }}>
                           Rs. {lineTotal.toLocaleString()}
                         </TableCell>
                       </TableRow>
@@ -369,26 +369,26 @@ export function ReadOnlyInvoiceModal({
               </Typography>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">Subtotal</Typography>
-                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {Number(invoice.sub_total || 0).toLocaleString()}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">Transport Fee</Typography>
-                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                   + Rs. {Number(invoice.transport_fee || 0).toLocaleString()}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">Discount</Typography>
-                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#10b981" }}>
+                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>
                   - Rs. {Number(invoice.discount_amount || 0).toLocaleString()}
                 </Typography>
               </Box>
               <Divider sx={{ my: 0.5 }} />
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a" }}>Grand Total</Typography>
-                <Typography variant="subtitle1" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 900, color: "#0f172a" }}>
+                <Typography variant="subtitle1" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 900, color: "#0f172a", fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {totalAmount.toLocaleString()}
                 </Typography>
               </Box>
@@ -401,7 +401,7 @@ export function ReadOnlyInvoiceModal({
               </Typography>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">Total Paid</Typography>
-                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#059669" }}>
+                <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#059669", fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {totalPaid.toLocaleString()}
                 </Typography>
               </Box>
@@ -418,7 +418,7 @@ export function ReadOnlyInvoiceModal({
                       <Typography variant="caption" color="text.secondary">
                         {p.method || "Cash"} ({p.payment_date ? new Date(p.payment_date).toLocaleDateString() : "—"})
                       </Typography>
-                      <Typography variant="caption" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                         Rs. {Number(p.payment_amount).toLocaleString()}
                       </Typography>
                     </Box>

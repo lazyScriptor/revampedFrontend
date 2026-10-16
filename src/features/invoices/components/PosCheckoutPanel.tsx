@@ -194,6 +194,8 @@ export function PosCheckoutPanel({
                 "& .MuiInputBase-input": {
                   color: "#f8fafc !important",
                   fontWeight: 600,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontVariantNumeric: "tabular-nums",
                   WebkitTextFillColor: "#f8fafc !important",
                 },
               }}
@@ -227,6 +229,8 @@ export function PosCheckoutPanel({
                 "& .MuiInputBase-input": {
                   color: "#f8fafc !important",
                   fontWeight: 600,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontVariantNumeric: "tabular-nums",
                   WebkitTextFillColor: "#f8fafc !important",
                 },
               }}
@@ -246,35 +250,68 @@ export function PosCheckoutPanel({
         </Box>
 
         {/* Financial breakdown */}
-        <Box sx={{ bgcolor: "#1e293b", borderRadius: 2, p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ bgcolor: "#1e293b", borderRadius: 2, p: 2, border: "1px solid #334155", display: "flex", flexDirection: "column", gap: 1 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
+            <Typography variant="body2" sx={{ color: "#94a3b8" }}>
               Subtotal ({cartItems.length} items)
             </Typography>
-            <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 600 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#f8fafc",
+                fontWeight: 700,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
               Rs. {subTotal.toLocaleString()}
             </Typography>
           </Box>
           {fees.transport > 0 && (
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" sx={{ color: "#64748b" }}>Transport</Typography>
-              <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 600 }}>
+              <Typography variant="body2" sx={{ color: "#94a3b8" }}>Transport</Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#cbd5e1",
+                  fontWeight: 600,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
                 + Rs. {fees.transport.toLocaleString()}
               </Typography>
             </Box>
           )}
           {fees.discount > 0 && (
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" sx={{ color: "#64748b" }}>Discount</Typography>
-              <Typography variant="body2" sx={{ color: "#f87171", fontWeight: 600 }}>
+              <Typography variant="body2" sx={{ color: "#94a3b8" }}>Discount</Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#f87171",
+                  fontWeight: 600,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
                 − Rs. {fees.discount.toLocaleString()}
               </Typography>
             </Box>
           )}
           <Divider sx={{ borderColor: "#334155", my: 0.5 }} />
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 700 }}>Grand Total</Typography>
-            <Typography variant="h6" sx={{ color: "white", fontWeight: 900 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 800 }}>Grand Total</Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                fontWeight: 900,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontVariantNumeric: "tabular-nums",
+                letterSpacing: -0.5,
+              }}
+            >
               Rs. {grandTotal.toLocaleString()}
             </Typography>
           </Box>
@@ -307,7 +344,15 @@ export function PosCheckoutPanel({
                   <Typography variant="caption" sx={{ color: "#4ade80", fontWeight: 700, display: "block" }}>
                     Client Wallet
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#86efac", fontWeight: 700 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#86efac",
+                      fontWeight: 800,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
                     Rs. {Number(selectedCustomer.deposit_balance).toLocaleString()}
                   </Typography>
                 </Box>
@@ -347,7 +392,9 @@ export function PosCheckoutPanel({
               },
               "& .MuiInputBase-input": {
                 color: "#f8fafc !important",
-                fontWeight: 600,
+                fontWeight: 700,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontVariantNumeric: "tabular-nums",
                 WebkitTextFillColor: "#f8fafc !important",
               },
             }}
@@ -364,11 +411,16 @@ export function PosCheckoutPanel({
             }}
           />
 
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1.5 }}>
-            <Typography variant="caption" sx={{ color: "#64748b" }}>Remaining balance</Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", mt: 1.5 }}>
+            <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 700 }}>Remaining balance</Typography>
             <Typography
-              variant="body2"
-              sx={{ fontWeight: 800, color: balanceDue > 0 ? "#f87171" : "#4ade80" }}
+              variant="body1"
+              sx={{
+                fontWeight: 900,
+                color: balanceDue > 0 ? "#f87171" : "#4ade80",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontVariantNumeric: "tabular-nums",
+              }}
             >
               Rs. {balanceDue.toLocaleString()}
             </Typography>

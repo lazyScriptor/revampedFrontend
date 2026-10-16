@@ -235,24 +235,58 @@ export default function InvoicesRoute() {
     <Paper
       elevation={0}
       sx={{
-        flex: { lg: "0 0 300px", xl: "0 0 340px" },
+        flex: { lg: "0 0 310px", xl: "0 0 350px" },
         width: { xs: "100%", lg: "auto" },
         display: "flex",
         flexDirection: "column",
-        border: "1px solid #e2e8f0",
+        border: `1px solid ${(theme.palette as any).border?.subtle || theme.palette.divider}`,
         borderRadius: 3,
-        bgcolor: "#f8fafc",
+        bgcolor: theme.palette.mode === "dark" ? "background.paper" : "#f8fafc",
         overflow: "hidden",
         minHeight: 0,
+        boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.04)",
       }}
     >
-      <Box sx={{ px: 2.5, py: 2, bgcolor: "white", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
-        <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b", fontSize: "0.68rem" }}>
-          {posMode === "dispatch" ? t("invoices.selectCustomer").toUpperCase() : t("invoices.invoiceSearch").toUpperCase()}
-        </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a", mt: 0.25 }}>
-          {posMode === "dispatch" ? t("invoices.selectCustomer") : t("invoices.findOrder")}
-        </Typography>
+      <Box
+        sx={{
+          px: 2.5,
+          py: 1.75,
+          bgcolor: theme.palette.mode === "dark" ? "background.paper" : "#ffffff",
+          borderBottom: `1px solid ${(theme.palette as any).border?.subtle || theme.palette.divider}`,
+          flexShrink: 0,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Box>
+          <Typography
+            variant="overline"
+            sx={{
+              fontWeight: 800,
+              letterSpacing: 1.5,
+              color: "text.secondary",
+              fontSize: "0.68rem",
+              display: "block",
+            }}
+          >
+            {posMode === "dispatch" ? t("invoices.selectCustomer").toUpperCase() : t("invoices.invoiceSearch").toUpperCase()}
+          </Typography>
+          <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary", mt: 0.25 }}>
+            {posMode === "dispatch" ? t("invoices.selectCustomer") : t("invoices.findOrder")}
+          </Typography>
+        </Box>
+        <Chip
+          size="small"
+          label={posMode === "dispatch" ? "Step 1" : "Index"}
+          sx={{
+            height: 20,
+            fontSize: "0.65rem",
+            fontWeight: 800,
+            bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
+            color: "text.secondary",
+          }}
+        />
       </Box>
       <Box sx={{ flexGrow: 1, overflowY: "auto", minHeight: 0, p: 2 }}>
         {posMode === "dispatch" ? (
@@ -280,30 +314,49 @@ export default function InvoicesRoute() {
         width: { xs: "100%", lg: "auto" },
         display: "flex",
         flexDirection: "column",
-        border: "1px solid #e2e8f0",
+        border: `1px solid ${(theme.palette as any).border?.subtle || theme.palette.divider}`,
         borderRadius: 3,
-        bgcolor: "#f8fafc",
+        bgcolor: theme.palette.mode === "dark" ? "background.paper" : "#f8fafc",
         overflow: "hidden",
         minHeight: 0,
+        boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.04)",
       }}
     >
       <Box
         sx={{
           flexShrink: 0,
           px: 2.5,
-          py: 2,
-          bgcolor: "white",
-          borderBottom: "1px solid #e2e8f0",
+          py: 1.75,
+          bgcolor: theme.palette.mode === "dark" ? "background.paper" : "#ffffff",
+          borderBottom: `1px solid ${(theme.palette as any).border?.subtle || theme.palette.divider}`,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
         <Box>
-          <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b", fontSize: "0.68rem" }}>
+          <Typography
+            variant="overline"
+            sx={{
+              fontWeight: 800,
+              letterSpacing: 1.5,
+              color: "text.secondary",
+              fontSize: "0.68rem",
+              display: "block",
+            }}
+          >
             {posMode === "dispatch" ? t("invoices.dispatch").toUpperCase() : t("orders.orderLedger").toUpperCase()}
           </Typography>
-          <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a", mt: 0.25 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 800,
+              color: "text.primary",
+              mt: 0.25,
+              fontFamily: activeInvoice && posMode === "manage" ? "'JetBrains Mono', monospace" : undefined,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
             {posMode === "dispatch"
               ? t("invoices.lineItem", { count: cartItems.length })
               : activeInvoice
@@ -318,7 +371,14 @@ export default function InvoicesRoute() {
             color="error"
             onClick={() => setIsClearCartOpen(true)}
             disabled={cartItems.length === 0}
-            sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.72rem" }}
+            sx={{
+              borderRadius: 2,
+              fontWeight: 700,
+              fontSize: "0.72rem",
+              textTransform: "none",
+              py: 0.5,
+              px: 1.5,
+            }}
           >
             Clear Cart
           </Button>
@@ -346,12 +406,12 @@ export default function InvoicesRoute() {
       elevation={0}
       sx={{
         flex: isTerminalOpen
-          ? { lg: "0 0 300px", xl: "0 0 420px" }
+          ? { lg: "0 0 310px", xl: "0 0 420px" }
           : "0 0 70px",
         width: { xs: "100%", lg: "auto" },
         display: "flex",
         flexDirection: "column",
-        border: "1px solid #e2e8f0",
+        border: `1px solid ${theme.palette.mode === "dark" ? "#1e293b" : "#1e293b"}`,
         borderRadius: 3,
         bgcolor: "#0f172a",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -359,6 +419,7 @@ export default function InvoicesRoute() {
         height: "100%",
         minHeight: 0,
         maxHeight: "100%",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2)",
       }}
     >
       {posMode === "dispatch" ? (
@@ -409,10 +470,10 @@ export default function InvoicesRoute() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: { xs: "auto", md: "calc(100vh - 100px)" },
-        minHeight: { xs: "calc(100vh - 100px)", md: "auto" },
+        height: { xs: "auto", md: "calc(100vh - 88px)" },
+        minHeight: { xs: "calc(100vh - 88px)", md: "auto" },
         overflow: { xs: "visible", md: "hidden" },
-        gap: { xs: 1.5, lg: 2.5 },
+        gap: { xs: 1.5, lg: 2 },
       }}
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}
@@ -427,53 +488,102 @@ export default function InvoicesRoute() {
         }}
       >
         <Box>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 900, color: "#0f172a", lineHeight: 1.1 }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 900, color: "text.primary", lineHeight: 1.1, tracking: "-0.02em" }}
+            >
+              {posMode === "dispatch"
+                ? t("invoices.newDispatch")
+                : posMode === "manage"
+                ? t("orders.title")
+                : "Bill Printing Audit Logs"}
+            </Typography>
+            {posMode === "dispatch" && cartItems.length > 0 && (
+              <Chip
+                icon={<ShoppingCartIcon sx={{ fontSize: "14px !important" }} />}
+                label={`${cartItems.length} items · Rs. ${subTotal.toLocaleString()}`}
+                size="small"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: "0.72rem",
+                  fontVariantNumeric: "tabular-nums",
+                  bgcolor: (t) => t.palette.mode === "dark" ? "rgba(56, 189, 248, 0.15)" : "#eff6ff",
+                  color: (t) => t.palette.mode === "dark" ? "#38bdf8" : "#1d4ed8",
+                  border: (t) => `1px solid ${t.palette.mode === "dark" ? "rgba(56, 189, 248, 0.3)" : "#bfdbfe"}`,
+                }}
+              />
+            )}
+            {posMode === "manage" && activeInvoice && (
+              <Chip
+                icon={<ReceiptLongIcon sx={{ fontSize: "14px !important" }} />}
+                label={`INV-${activeInvoice.invoice_id} · ${activeInvoice.status}`}
+                size="small"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: "0.72rem",
+                  fontVariantNumeric: "tabular-nums",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  bgcolor: (t) =>
+                    activeInvoice.status === "Active"
+                      ? (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.15)" : "#fffbeb")
+                      : (t.palette.mode === "dark" ? "rgba(16, 185, 129, 0.15)" : "#f0fdf4"),
+                  color: (t) =>
+                    activeInvoice.status === "Active"
+                      ? (t.palette.mode === "dark" ? "#fbbf24" : "#b45309")
+                      : (t.palette.mode === "dark" ? "#34d399" : "#15803d"),
+                  border: (t) =>
+                    `1px solid ${
+                      activeInvoice.status === "Active"
+                        ? (t.palette.mode === "dark" ? "rgba(245, 158, 11, 0.3)" : "#fde68a")
+                        : (t.palette.mode === "dark" ? "rgba(16, 185, 129, 0.3)" : "#bbf7d0")
+                    }`,
+                }}
+              />
+            )}
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, mt: 0.25, display: "block" }}>
             {posMode === "dispatch"
-              ? t("invoices.newDispatch")
+              ? t("invoices.newDispatch") + " — Point of Sale & asset checkout manifest"
               : posMode === "manage"
-              ? t("orders.title")
-              : "Bill Printing Audit Logs"}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-            {posMode === "dispatch"
-              ? t("invoices.newDispatch") + " — " + t("invoices.findOrder").toLowerCase()
-              : posMode === "manage"
-              ? t("orders.subtitle")
+              ? t("orders.subtitle") + " — Ledger tracking, returns, & financial terminal"
               : "Complete immutable log of all thermal receipts printed, operator attribution, and point-in-time bill snapshots"}
           </Typography>
         </Box>
 
-        {/* Mode toggle — custom styled, not MUI ToggleButtonGroup */}
+        {/* Mode toggle — custom styled segmented control */}
         <Box
           sx={{
             display: "flex",
-            bgcolor: "#f1f5f9",
+            bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+            border: (t) => `1px solid ${(t.palette as any).border?.subtle || t.palette.divider}`,
             borderRadius: 2.5,
             p: 0.5,
             gap: 0.5,
           }}
         >
           <Box
+            role="button"
+            tabIndex={0}
             onClick={() => switchPosMode("dispatch")}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") switchPosMode("dispatch"); }}
             sx={{
               display: "flex",
               alignItems: "center",
               gap: 1,
               px: { xs: 1.5, sm: 2.5 },
-              py: 1,
+              py: 0.9,
               borderRadius: 2,
               cursor: "pointer",
-              transition: "all 0.2s",
-              bgcolor: posMode === "dispatch" ? "#0f172a" : "transparent",
-              color: posMode === "dispatch" ? "white" : "#64748b",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              bgcolor: posMode === "dispatch" ? (theme.palette.mode === "dark" ? "#1e293b" : "#0f172a") : "transparent",
+              color: posMode === "dispatch" ? "white" : "text.secondary",
               fontWeight: 800,
               fontSize: "0.8rem",
               userSelect: "none",
+              boxShadow: posMode === "dispatch" ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
               "&:hover": {
-                bgcolor: posMode === "dispatch" ? "#1e293b" : "#e2e8f0",
+                bgcolor: posMode === "dispatch" ? (theme.palette.mode === "dark" ? "#334155" : "#1e293b") : "rgba(0,0,0,0.04)",
               },
             }}
           >
@@ -483,23 +593,27 @@ export default function InvoicesRoute() {
             </Box>
           </Box>
           <Box
+            role="button"
+            tabIndex={0}
             onClick={() => switchPosMode("manage")}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") switchPosMode("manage"); }}
             sx={{
               display: "flex",
               alignItems: "center",
               gap: 1,
               px: { xs: 1.5, sm: 2.5 },
-              py: 1,
+              py: 0.9,
               borderRadius: 2,
               cursor: "pointer",
-              transition: "all 0.2s",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               bgcolor: posMode === "manage" ? "#2563eb" : "transparent",
-              color: posMode === "manage" ? "white" : "#64748b",
+              color: posMode === "manage" ? "white" : "text.secondary",
               fontWeight: 800,
               fontSize: "0.8rem",
               userSelect: "none",
+              boxShadow: posMode === "manage" ? "0 2px 8px rgba(37,99,235,0.25)" : "none",
               "&:hover": {
-                bgcolor: posMode === "manage" ? "#1d4ed8" : "#e2e8f0",
+                bgcolor: posMode === "manage" ? "#1d4ed8" : "rgba(0,0,0,0.04)",
               },
             }}
           >

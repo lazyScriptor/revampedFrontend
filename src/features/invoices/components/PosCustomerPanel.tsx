@@ -12,6 +12,7 @@ import {
   Tooltip,
   MenuItem,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import LockIcon from "@mui/icons-material/Lock";
@@ -117,6 +118,8 @@ export function PosCustomerPanel({
       ? c?.company_name
       : `${c?.first_name} ${c?.last_name}`;
 
+  const theme = useTheme();
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
       {/* Search */}
@@ -143,7 +146,7 @@ export function PosCustomerPanel({
                 input: {
                   ...((params as any).slotProps?.input || {}),
                   startAdornment: (
-                    <SearchIcon sx={{ color: "action.disabled", ml: 0.5, mr: 0.5, fontSize: 18 }} />
+                    <SearchIcon sx={{ color: "text.secondary", ml: 0.5, mr: 0.5, fontSize: 18 }} />
                   ),
                   endAdornment: (
                     <>
@@ -153,8 +156,15 @@ export function PosCustomerPanel({
                   ),
                   sx: {
                     borderRadius: 2,
-                    bgcolor: "white",
-                    "& fieldset": { borderColor: "#e2e8f0" },
+                    bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+                    "& .MuiInputBase-input": {
+                      color: theme.palette.mode === "dark" ? "#f8fafc" : "#0f172a",
+                      fontWeight: 500,
+                      fontSize: "0.875rem",
+                    },
+                    "& fieldset": { borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0" },
+                    "&:hover fieldset": { borderColor: theme.palette.mode === "dark" ? "#475569" : "#cbd5e1" },
+                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
                   },
                 },
               }}
@@ -180,26 +190,39 @@ export function PosCustomerPanel({
               >
                 <Avatar
                   sx={{
-                    width: 34,
-                    height: 34,
-                    fontSize: "0.85rem",
-                    fontWeight: 700,
+                    width: 36,
+                    height: 36,
+                    fontSize: "0.9rem",
+                    fontWeight: 800,
                     bgcolor:
                       option.status === "Blacklisted"
-                        ? "error.light"
+                        ? "error.main"
                         : option.customer_type === "Business"
                         ? "primary.main"
                         : "#475569",
                   }}
                 >
-                  {option.first_name?.charAt(0)}
+                  {option.first_name?.charAt(0) || option.company_name?.charAt(0) || "C"}
                 </Avatar>
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }} noWrap>
                     {displayName(option)}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap>
-                    {option.nic_number} · {option.phone_number}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    noWrap
+                    sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.25 }}
+                  >
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                      {option.nic_number || "No NIC"}
+                    </span>
+                    {option.phone_number && (
+                      <>
+                        <span>·</span>
+                        <span style={{ fontVariantNumeric: "tabular-nums" }}>{option.phone_number}</span>
+                      </>
+                    )}
                   </Typography>
                 </Box>
                 {option.status === "Blacklisted" && (
@@ -221,14 +244,17 @@ export function PosCustomerPanel({
         <Box
           sx={{
             flex: 1,
-            bgcolor: "white",
+            bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
             border: "1px solid",
-            borderColor: isBlacklisted ? "#fca5a5" : "#e2e8f0",
+            borderColor: isBlacklisted
+              ? "#fca5a5"
+              : (theme.palette as any).border?.subtle || "#e2e8f0",
             borderRadius: 2.5,
             overflowY: "auto",
             display: "flex",
             flexDirection: "column",
             minHeight: 0,
+            boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
           }}
         >
           {/* Card header with accent bar */}
@@ -244,6 +270,7 @@ export function PosCustomerPanel({
                 : selectedCustomer.customer_type === "Business"
                 ? "primary.main"
                 : "#475569",
+              bgcolor: isBlacklisted ? "rgba(239, 68, 68, 0.04)" : "transparent",
             }}
           >
             <Avatar
@@ -258,27 +285,80 @@ export function PosCustomerPanel({
                   ? "primary.main"
                   : "#475569",
                 flexShrink: 0,
+                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
               }}
             >
-              {selectedCustomer.first_name?.charAt(0)}
+              {selectedCustomer.first_name?.charAt(0) || selectedCustomer.company_name?.charAt(0) || "C"}
             </Avatar>
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }} noWrap>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 800,
+                  lineHeight: 1.25,
+                  color: "#0f172a",
+                  letterSpacing: "-0.01em",
+                }}
+                noWrap
+              >
                 {displayName(selectedCustomer)}
               </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}>
-                {selectedCustomer.customer_type === "Business" ? (
-                  <BusinessIcon sx={{ fontSize: 12, color: "text.secondary" }} />
-                ) : (
-                  <PersonIcon sx={{ fontSize: 12, color: "text.secondary" }} />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5, flexWrap: "wrap" }}>
+                <Chip
+                  size="small"
+                  icon={selectedCustomer.customer_type === "Business" ? <BusinessIcon sx={{ fontSize: 13 }} /> : <PersonIcon sx={{ fontSize: 13 }} />}
+                  label={selectedCustomer.customer_type}
+                  variant="outlined"
+                  sx={{
+                    height: 20,
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    borderColor: "#cbd5e1",
+                    color: "#475569",
+                  }}
+                />
+                {selectedCustomer.nic_number && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <BadgeIcon sx={{ fontSize: 13, color: "text.secondary" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontVariantNumeric: "tabular-nums",
+                        color: "text.secondary",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {selectedCustomer.nic_number}
+                    </Typography>
+                  </Box>
                 )}
-                <Typography variant="caption" color="text.secondary">
-                  {selectedCustomer.customer_type}
-                </Typography>
+                {selectedCustomer.phone_number && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <PhoneIcon sx={{ fontSize: 13, color: "text.secondary" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontVariantNumeric: "tabular-nums",
+                        color: "text.secondary",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {selectedCustomer.phone_number}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             </Box>
             <Tooltip title="Remove selection">
-              <IconButton size="small" onClick={() => onSelectCustomer(null)} sx={{ color: "action.disabled" }}>
+              <IconButton
+                size="small"
+                onClick={() => onSelectCustomer(null)}
+                sx={{
+                  color: "text.secondary",
+                  "&:hover": { color: "error.main", bgcolor: "rgba(239,68,68,0.08)" },
+                }}
+              >
                 <CloseIcon sx={{ fontSize: 16 }} />
               </IconButton>
             </Tooltip>
@@ -286,30 +366,13 @@ export function PosCustomerPanel({
 
           <Divider />
 
-          {/* Quick info rows */}
-          <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <BadgeIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "monospace" }}>
-                {selectedCustomer.nic_number || "—"}
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <PhoneIcon sx={{ fontSize: 14, color: "text.secondary", flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary">
-                {selectedCustomer.phone_number || "—"}
-              </Typography>
-            </Box>
-          </Box>
-
           {/* Stats row */}
           <Box
             sx={{
-              mx: 2,
-              mb: 2,
+              p: 2,
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: 1,
+              gap: 1.25,
             }}
           >
             <Box
@@ -317,23 +380,7 @@ export function PosCustomerPanel({
                 p: 1.5,
                 bgcolor: "#f8fafc",
                 borderRadius: 2,
-                border: "1px solid #f1f5f9",
-              }}
-            >
-              <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5, fontWeight: 700, mb: 0.5 }}>
-                <StarIcon sx={{ fontSize: 12, color: "#eab308" }} /> Trust Score
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                {selectedCustomer.rating?.toFixed(1) || "5.0"} / 5
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                p: 1.5,
-                bgcolor: hasWallet ? "#f0fdf4" : "#f8fafc",
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: hasWallet ? "#bbf7d0" : "#f1f5f9",
+                border: "1px solid #e2e8f0",
               }}
             >
               <Typography
@@ -344,12 +391,62 @@ export function PosCustomerPanel({
                   gap: 0.5,
                   fontWeight: 700,
                   mb: 0.5,
-                  color: hasWallet ? "success.dark" : "text.secondary",
+                  color: "#64748b",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  fontSize: "0.68rem",
                 }}
               >
-                <AccountBalanceWalletIcon sx={{ fontSize: 12 }} /> Wallet
+                <StarIcon sx={{ fontSize: 13, color: "#eab308" }} /> Trust Score
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800, color: hasWallet ? "success.main" : "text.secondary" }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  fontVariantNumeric: "tabular-nums",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: "0.95rem",
+                }}
+              >
+                {selectedCustomer.rating ? Number(selectedCustomer.rating).toFixed(1) : "5.0"} <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>/ 5.0</span>
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                p: 1.5,
+                bgcolor: hasWallet ? "#f0fdf4" : "#f8fafc",
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: hasWallet ? "#bbf7d0" : "#e2e8f0",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  fontWeight: 700,
+                  mb: 0.5,
+                  color: hasWallet ? "#15803d" : "#64748b",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  fontSize: "0.68rem",
+                }}
+              >
+                <AccountBalanceWalletIcon sx={{ fontSize: 13 }} /> Client Wallet
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 800,
+                  color: hasWallet ? "#16a34a" : "#64748b",
+                  fontVariantNumeric: "tabular-nums",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: "0.95rem",
+                }}
+              >
                 Rs. {Number(selectedCustomer.deposit_balance || 0).toLocaleString()}
               </Typography>
             </Box>
@@ -732,20 +829,34 @@ export function PosCustomerPanel({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            border: "2px dashed #e2e8f0",
+            border: "2px dashed #cbd5e1",
             borderRadius: 2.5,
             p: 3,
             textAlign: "center",
-            gap: 1,
-            color: "#94a3b8",
+            gap: 1.5,
+            color: "#64748b",
           }}
         >
-          <PersonIcon sx={{ fontSize: 40, opacity: 0.3 }} />
-          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          <Box
+            sx={{
+              width: 52,
+              height: 52,
+              borderRadius: "50%",
+              bgcolor: "#f1f5f9",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#94a3b8",
+              mb: 0.5,
+            }}
+          >
+            <PersonIcon sx={{ fontSize: 28 }} />
+          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 800, color: "#1e293b" }}>
             No Client Selected
           </Typography>
-          <Typography variant="caption">
-            Search by name, NIC, or phone number above.
+          <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 220, lineHeight: 1.4 }}>
+            Scan NIC, phone, or search by client name above to link to this order.
           </Typography>
         </Box>
       )}

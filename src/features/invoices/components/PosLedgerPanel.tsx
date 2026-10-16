@@ -11,6 +11,7 @@ import {
   Button,
   InputAdornment,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
@@ -218,6 +219,8 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
 
   const cartSubtotal = cartItems.reduce((t, i) => t + calculateLineMath(i).lineCost, 0);
 
+  const theme = useTheme();
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* ── Equipment Search ── */}
@@ -240,7 +243,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                 input: {
                   ...((params as any).slotProps?.input || {}),
                   startAdornment: (
-                    <SearchIcon sx={{ color: "action.disabled", ml: 0.5, mr: 0.5, fontSize: 18 }} />
+                    <SearchIcon sx={{ color: "text.secondary", ml: 0.5, mr: 0.5, fontSize: 18 }} />
                   ),
                   endAdornment: (
                     <>
@@ -250,8 +253,15 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   ),
                   sx: {
                     borderRadius: 2,
-                    bgcolor: "white",
-                    "& fieldset": { borderColor: "#e2e8f0" },
+                    bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+                    "& .MuiInputBase-input": {
+                      color: theme.palette.mode === "dark" ? "#f8fafc" : "#0f172a",
+                      fontWeight: 500,
+                      fontSize: "0.875rem",
+                    },
+                    "& fieldset": { borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0" },
+                    "&:hover fieldset": { borderColor: theme.palette.mode === "dark" ? "#475569" : "#cbd5e1" },
+                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
                   },
                 },
               }}
@@ -295,13 +305,25 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   <ConstructionIcon sx={{ fontSize: 16, color: inStock ? "primary.main" : "action.disabled" }} />
                 </Box>
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }} noWrap>
                     {option.equipment_name}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {isDaily
-                      ? `Rs.${Number(option.base_rental_price).toLocaleString()}/day`
-                      : `Rs.${Number(option.base_rental_price).toLocaleString()} base · ${option.minimum_rental_days}d cover`}
+                    {isDaily ? (
+                      <>
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                          Rs. {Number(option.base_rental_price).toLocaleString()}
+                        </span>
+                        /day
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                          Rs. {Number(option.base_rental_price).toLocaleString()}
+                        </span>
+                        {" base · "}{option.minimum_rental_days}d cover
+                      </>
+                    )}
                   </Typography>
                 </Box>
                 <Chip
@@ -309,7 +331,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   label={inStock ? `${option.available_qty} avail.` : "Out of Stock"}
                   color={inStock ? "success" : "error"}
                   variant={inStock ? "outlined" : "filled"}
-                  sx={{ fontWeight: 700, fontSize: "0.7rem", height: 22 }}
+                  sx={{ fontWeight: 700, fontSize: "0.7rem", height: 22, fontVariantNumeric: "tabular-nums" }}
                 />
               </Box>
             );
@@ -322,7 +344,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
         <Box
           sx={{
             mx: { xs: 1.5, sm: 2.5 },
-            mb: 1,
+            mb: 1.5,
             px: 2,
             py: 1,
             borderRadius: 2,
@@ -334,10 +356,18 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
             flexShrink: 0,
           }}
         >
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark" }}>
-            {cartItems.length} item{cartItems.length !== 1 ? "s" : ""} in order
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "flex", alignItems: "center", gap: 0.75 }}>
+            <span style={{ fontVariantNumeric: "tabular-nums" }}>{cartItems.length}</span> item{cartItems.length !== 1 ? "s" : ""} in order
           </Typography>
-          <Typography variant="body2" sx={{ fontWeight: 900, color: "primary.dark" }}>
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 900,
+              color: "primary.dark",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
             Rs. {cartSubtotal.toLocaleString()}
           </Typography>
         </Box>
@@ -366,17 +396,35 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              border: "2px dashed #e2e8f0",
+              border: "2px dashed #cbd5e1",
               borderRadius: 3,
-              color: "#94a3b8",
-              gap: 1,
+              p: 3,
+              color: "#64748b",
+              gap: 1.5,
+              textAlign: "center",
             }}
           >
-            <ShoppingCartCheckoutIcon sx={{ fontSize: 40, opacity: 0.4 }} />
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                bgcolor: "#f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#94a3b8",
+                mb: 0.5,
+              }}
+            >
+              <ShoppingCartCheckoutIcon sx={{ fontSize: 28 }} />
+            </Box>
+            <Typography variant="body1" sx={{ fontWeight: 800, color: "#1e293b" }}>
               Order manifest is empty
             </Typography>
-            <Typography variant="caption">Search and add equipment above to begin.</Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 240, lineHeight: 1.4 }}>
+              Search and add equipment items above to build the rental manifest.
+            </Typography>
           </Box>
         ) : (
           cartItems.map((item) => {
@@ -395,8 +443,9 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   bgcolor: "white",
                   overflow: "hidden",
                   flexShrink: 0,
+                  boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
                   "&:hover": { borderColor: "#93c5fd" },
-                  transition: "border-color 0.15s",
+                  transition: "all 0.15s ease-in-out",
                 }}
               >
                 {/* Item header */}
@@ -404,33 +453,39 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   sx={{
                     px: 2,
                     py: 1.25,
-                    bgcolor: "#fafafa",
+                    bgcolor: "#f8fafc",
                     borderBottom: "1px solid #f1f5f9",
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
                   }}
                 >
-                  <ConstructionIcon sx={{ fontSize: 15, color: "primary.main", flexShrink: 0 }} />
+                  <ConstructionIcon sx={{ fontSize: 16, color: "primary.main", flexShrink: 0 }} />
                   <Typography
                     variant="body2"
-                    sx={{ fontWeight: 700, flexGrow: 1, color: "#1e293b" }}
+                    sx={{ fontWeight: 800, flexGrow: 1, color: "#0f172a" }}
                     noWrap
                   >
                     {item.equipment_name}
                   </Typography>
                   <Chip
                     size="small"
-                    label={isDailyMode ? "Daily" : "Tiered"}
+                    label={isDailyMode ? "Daily Mode" : "Tiered Mode"}
                     sx={{
                       height: 20,
                       fontSize: "0.65rem",
                       fontWeight: 800,
                       bgcolor: isDailyMode ? "#eff6ff" : "#f0fdf4",
                       color: isDailyMode ? "#2563eb" : "#059669",
+                      border: "1px solid",
+                      borderColor: isDailyMode ? "#bfdbfe" : "#bbf7d0",
                     }}
                   />
-                  <IconButton size="small" color="error" onClick={() => removeItem(item.cart_id)}>
+                  <IconButton
+                    size="small"
+                    onClick={() => removeItem(item.cart_id)}
+                    sx={{ color: "text.secondary", "&:hover": { color: "error.main", bgcolor: "rgba(239, 68, 68, 0.08)" } }}
+                  >
                     <DeleteOutlineIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Box>
@@ -450,7 +505,16 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     }}
                     disabled={!item.is_bulk_item}
                     slotProps={{ input: { inputProps: { min: 1, max: item.available_qty } } }}
-                    sx={{ width: 72 }}
+                    sx={{
+                      width: 76,
+                      "& .MuiInputBase-input": {
+                        color: "#0f172a !important",
+                        fontWeight: 700,
+                        fontVariantNumeric: "tabular-nums",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        WebkitTextFillColor: "#0f172a !important",
+                      },
+                    }}
                   />
                   <TextField
                     type="date"
@@ -479,7 +543,15 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                         updateItem(item.cart_id, "borrow_date", next);
                       }
                     }}
-                    sx={{ flex: 1, minWidth: 130 }}
+                    sx={{
+                      flex: 1,
+                      minWidth: 130,
+                      "& .MuiInputBase-input": {
+                        color: "#0f172a !important",
+                        fontWeight: 600,
+                        WebkitTextFillColor: "#0f172a !important",
+                      },
+                    }}
                   />
                   {item.track_overdue ? (
                     <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, flex: 1, minWidth: 160 }}>
@@ -495,7 +567,14 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                         onChange={(e) => updateItem(item.cart_id, "expected_return_date", e.target.value)}
                         error={returnBeforeBorrow}
                         helperText={returnBeforeBorrow ? "Must be on or after dispatch" : undefined}
-                        sx={{ flex: 1 }}
+                        sx={{
+                          flex: 1,
+                          "& .MuiInputBase-input": {
+                            color: "#0f172a !important",
+                            fontWeight: 600,
+                            WebkitTextFillColor: "#0f172a !important",
+                          },
+                        }}
                       />
                       <IconButton
                         size="small"
@@ -520,7 +599,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                         color: "text.secondary",
                         fontWeight: 600,
                         fontSize: "0.72rem",
-                        height: 32,
+                        height: 34,
                         "&:hover": {
                           borderStyle: "solid",
                           borderColor: "primary.main",
@@ -568,7 +647,16 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                           ),
                         },
                       }}
-                      sx={{ width: 140 }}
+                      sx={{
+                        width: 140,
+                        "& .MuiInputBase-input": {
+                          color: "#0f172a !important",
+                          fontWeight: 700,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontVariantNumeric: "tabular-nums",
+                          WebkitTextFillColor: "#0f172a !important",
+                        },
+                      }}
                     />
                   ) : (
                     <>
@@ -589,7 +677,16 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                             ),
                           },
                         }}
-                        sx={{ width: 110 }}
+                        sx={{
+                          width: 110,
+                          "& .MuiInputBase-input": {
+                            color: "#0f172a !important",
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontVariantNumeric: "tabular-nums",
+                            WebkitTextFillColor: "#0f172a !important",
+                          },
+                        }}
                       />
                       <TextField
                         type="number"
@@ -599,7 +696,16 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                         onChange={(e) =>
                           updateItem(item.cart_id, "locked_minimum_days", parseInt(e.target.value) || 1)
                         }
-                        sx={{ width: 105 }}
+                        sx={{
+                          width: 105,
+                          "& .MuiInputBase-input": {
+                            color: "#0f172a !important",
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontVariantNumeric: "tabular-nums",
+                            WebkitTextFillColor: "#0f172a !important",
+                          },
+                        }}
                       />
                       <TextField
                         type="number"
@@ -618,7 +724,16 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                             ),
                           },
                         }}
-                        sx={{ width: 110 }}
+                        sx={{
+                          width: 110,
+                          "& .MuiInputBase-input": {
+                            color: "#0f172a !important",
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontVariantNumeric: "tabular-nums",
+                            WebkitTextFillColor: "#0f172a !important",
+                          },
+                        }}
                       />
                     </>
                   )}
@@ -637,7 +752,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                       minWidth: 0,
                     }}
                   >
-                    {isDailyMode ? "Tiered" : "Daily"}
+                    Switch to {isDailyMode ? "Tiered" : "Daily"}
                   </Button>
                 </Box>
 
@@ -648,15 +763,23 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     justifyContent: "space-between",
                     alignItems: "center",
                     px: 2,
-                    py: 1,
+                    py: 1.25,
                     bgcolor: "#eff6ff",
                     borderTop: "1px solid #bfdbfe",
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600 }}>
-                    {totalDays}d · {item.borrow_quantity} unit{item.borrow_quantity !== 1 ? "s" : ""} · {calculationText}
+                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <span style={{ fontVariantNumeric: "tabular-nums" }}>{totalDays}d</span> · <span style={{ fontVariantNumeric: "tabular-nums" }}>{item.borrow_quantity}</span> unit{item.borrow_quantity !== 1 ? "s" : ""} · {calculationText}
                   </Typography>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "primary.dark" }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 900,
+                      color: "primary.dark",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
                     Rs. {lineCost.toLocaleString()}
                   </Typography>
                 </Box>
