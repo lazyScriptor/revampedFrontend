@@ -34,4 +34,25 @@ describe('KpiTile Component', () => {
     expect(screen.getByText('42 units')).toBeInTheDocument();
     expect(screen.getByText('Across 18 customers')).toBeInTheDocument();
   });
+
+  it('renders interactive state with onClick and active glow without error', () => {
+    const handleClick = vi.fn();
+    render(
+      <KpiTile
+        label="Clickable Tile"
+        value="100"
+        onClick={handleClick}
+        active={true}
+        badge={<span>Filtered</span>}
+      />
+    );
+
+    expect(screen.getByText('Clickable Tile')).toBeInTheDocument();
+    expect(screen.getByText('100')).toBeInTheDocument();
+    expect(screen.getByText('Filtered')).toBeInTheDocument();
+
+    const tile = screen.getByRole('button');
+    tile.click();
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
 });

@@ -1,4 +1,4 @@
-import { Box, Card, Skeleton, Typography, useTheme } from "@mui/material";
+import { Box, Card, Skeleton, Typography, useTheme, alpha } from "@mui/material";
 
 export interface KpiTileProps {
   label: string;
