@@ -23,6 +23,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TuneIcon from "@mui/icons-material/Tune";
 import { InvoiceReceipt, InvoiceReceiptProps, ReceiptLanguage } from "./InvoiceReceipt";
+import { calculateLineMath } from "./PosLedgerPanel";
 import { handlePrintInvoice, checkPrintAgent } from "../hooks/useInvoiceHooks";
 import type { PrintAgentHealth } from "../utils/thermalPrint";
 
@@ -83,19 +84,25 @@ export function ReceiptPrintDialog({
       const custName = cust?.company_name || `${cust?.first_name || ""} ${cust?.last_name || ""}`.trim() || "Walk-in Customer";
       const custPhone = cust?.phone_number || "";
       const docNum = isDraft ? (draftData?.draftId || "DRAFT-QUOTE") : `INV-${invoice?.invoice_id || "POS"}`;
-      const docType = isDraft ? "DRAFT" : (invoice?.status === "completed" || invoice?.status === "Returned" ? "COMPLETED" : "DISPATCH");
+      const docType = isDraft
+        ? "DRAFT"
+        : (invoice?.status || "").toLowerCase() === "completed" || invoice?.status === "Returned"
+        ? "COMPLETED"
+        : "DISPATCH";
       const subtotal = isDraft
-        ? (draftData?.items || []).reduce((acc: number, it: any) => acc + (it.line_total || it.base_price || 0), 0)
+        ? (draftData?.items || []).reduce((acc: number, it: any) => acc + (calculateLineMath(it).lineCost || Number(it.line_total || it.base_price || 0)), 0)
         : Number(invoice?.sub_total || 0);
       const transportFee = Number(isDraft ? draftData?.fees?.transport || 0 : invoice?.transport_fee || 0);
       const discountAmount = Number(isDraft ? draftData?.fees?.discount || 0 : invoice?.discount_amount || 0);
-      const grandTotal = Number(isDraft ? subtotal + transportFee - discountAmount : invoice?.total_amount || 0);
+      const grandTotal = Number(isDraft ? Math.max(0, subtotal + transportFee - discountAmount) : invoice?.total_amount || 0);
       const totalPaid = Number(invoice?.Payments?.reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0) || (isDraft ? draftData?.fees?.advance || 0 : 0));
       const balanceDue = Math.max(0, grandTotal - totalPaid);
-      const totalItems = isDraft ? (draftData?.items?.length || 0) : (invoice?.InvoiceLines?.length || 0);
-      const totalMachines = isDraft
-        ? (draftData?.items || []).reduce((acc: number, it: any) => acc + Number(it.borrow_quantity || 1), 0)
-        : (invoice?.InvoiceLines || []).reduce((acc: number, it: any) => acc + Number(it.quantity || 1), 0);
+      const lines = isDraft ? (draftData?.items || []) : (invoice?.InvoiceLines || []);
+      const totalItems = lines.length;
+      const totalMachines = lines.reduce(
+        (acc: number, it: any) => acc + Number(it.borrow_quantity || it.quantity || 1),
+        0
+      );
 
       const result = await handlePrintInvoice(printDomId, {
         paperWidth,
@@ -118,11 +125,37 @@ export function ReceiptPrintDialog({
         language,
         customNotes,
         billSnapshot: {
-          invoice_id: invoice?.invoice_id,
+          ...(isDraft ? draftData : invoice),
+          invoice_id: invoice?.invoice_id || null,
           doc_number: docNum,
+          status: invoice?.status || (docType === "COMPLETED" ? "Completed" : "Active"),
+          issued_date: invoice?.issued_date || new Date().toISOString(),
+          Customer: cust,
           customer: cust,
-          items: isDraft ? draftData?.items : invoice?.InvoiceLines,
-          fees: { subtotal, transportFee, discountAmount, grandTotal, totalPaid, balanceDue },
+          OnBehalfOfCustomer: isDraft ? draftData?.onBehalfOfCustomer : invoice?.OnBehalfOfCustomer,
+          onBehalfOfCustomer: isDraft ? draftData?.onBehalfOfCustomer : invoice?.OnBehalfOfCustomer,
+          InvoiceLines: lines,
+          items: lines,
+          Payments: invoice?.Payments || [],
+          sub_total: subtotal,
+          transport_fee: transportFee,
+          discount_amount: discountAmount,
+          total_amount: grandTotal,
+          fees: {
+            subtotal,
+            transportFee,
+            discountAmount,
+            grandTotal,
+            totalPaid,
+            balanceDue,
+            transport: transportFee,
+            discount: discountAmount,
+            advance: totalPaid,
+          },
+          paperWidth,
+          density,
+          showTerms,
+          showBarcode,
           customNotes,
           language,
         },

@@ -772,7 +772,26 @@ export function ManageFinancialPanel({
       };
     });
 
-  const unifiedLedger = [...paymentEvents, ...feeEvents].sort(
+  const printEvents = rawTraces
+    .filter((t: any) => t.event_action === "RECEIPT_PRINTED")
+    .map((t: any) => {
+      let payload = t.state_payload || {};
+      if (typeof payload === "string") {
+        try { payload = JSON.parse(payload); } catch { payload = {}; }
+      }
+      return {
+        id: `print-${t.trace_id}`,
+        type: "BILL_PRINTED",
+        amount: Number(payload.grand_total || invoice.total_amount || 0),
+        method: payload.print_method === "direct" ? "Direct POS" : "Browser Dialog",
+        printer: payload.printer_name || "POS Thermal",
+        comment: t.operator_comment || "POS receipt printed",
+        logId: payload.log_id,
+        date: t.occurred_at || t.createdAt,
+      };
+    });
+
+  const unifiedLedger = [...paymentEvents, ...feeEvents, ...printEvents].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
@@ -929,7 +948,7 @@ export function ManageFinancialPanel({
                 textTransform: "none",
               }}
             >
-              View Bill Print History
+              View Bill Print History{printEvents.length > 0 ? ` (${printEvents.length})` : ""}
             </Button>
           </Can>
         </Box>
@@ -1173,6 +1192,7 @@ export function ManageFinancialPanel({
               unifiedLedger.map((item, index) => (
                 <Box
                   key={item.id}
+                  onClick={item.type === "BILL_PRINTED" ? () => setIsPrintHistoryOpen(true) : undefined}
                   sx={{
                     px: 2.5,
                     py: 1.5,
@@ -1180,6 +1200,8 @@ export function ManageFinancialPanel({
                     display: "flex",
                     gap: 1.5,
                     alignItems: "flex-start",
+                    cursor: item.type === "BILL_PRINTED" ? "pointer" : "default",
+                    "&:hover": item.type === "BILL_PRINTED" ? { bgcolor: "#f8fafc" } : {},
                   }}
                 >
                   <Box
@@ -1192,6 +1214,8 @@ export function ManageFinancialPanel({
                           ? "#f0fdf4"
                           : item.type === "REFUND"
                           ? "#fef2f2"
+                          : item.type === "BILL_PRINTED"
+                          ? "#eff6ff"
                           : "#fffbeb",
                       display: "flex",
                       alignItems: "center",
@@ -1203,13 +1227,30 @@ export function ManageFinancialPanel({
                     {item.type === "PAYMENT" && <PaymentIcon sx={{ fontSize: 14, color: "success.main" }} />}
                     {item.type === "REFUND" && <PaymentIcon sx={{ fontSize: 14, color: "error.main" }} />}
                     {item.type === "FEE_ADJUSTMENT" && <EditIcon sx={{ fontSize: 14, color: "warning.main" }} />}
+                    {item.type === "BILL_PRINTED" && <PrintIcon sx={{ fontSize: 14, color: "#2563eb" }} />}
                   </Box>
                   <Box sx={{ flexGrow: 1 }}>
                     {item.type === "FEE_ADJUSTMENT" ? (
                       <>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>Fees Adjusted</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Transport: Rs.{item.transport} · Discount: Rs.{item.discount}
+                          Transport: Rs.{(item as any).transport} · Discount: Rs.{(item as any).discount}
+                        </Typography>
+                      </>
+                    ) : item.type === "BILL_PRINTED" ? (
+                      <>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "#1d4ed8" }}>
+                            POS Bill Printed · Rs.{Number((item as any).amount || 0).toLocaleString()}
+                          </Typography>
+                          <Chip
+                            size="small"
+                            label={(item as any).method}
+                            sx={{ height: 16, fontSize: "0.6rem", fontWeight: 700, bgcolor: "#dbeafe", color: "#1e40af" }}
+                          />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                          {(item as any).comment}
                         </Typography>
                       </>
                     ) : (
@@ -1219,9 +1260,9 @@ export function ManageFinancialPanel({
                             variant="body2"
                             sx={{ fontWeight: 700, color: item.type === "REFUND" ? "error.main" : "success.main" }}
                           >
-                            {(item as any).label || (item.type === "REFUND" ? "Refund" : "Payment")} · Rs.{item.amount.toLocaleString()}
+                            {(item as any).label || (item.type === "REFUND" ? "Refund" : "Payment")} · Rs.{(item as any).amount.toLocaleString()}
                           </Typography>
-                          <Chip size="small" label={item.method} sx={{ height: 16, fontSize: "0.6rem", fontWeight: 700 }} />
+                          <Chip size="small" label={(item as any).method} sx={{ height: 16, fontSize: "0.6rem", fontWeight: 700 }} />
                         </Box>
                       </>
                     )}

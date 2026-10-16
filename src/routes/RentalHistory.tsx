@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -13,7 +13,6 @@ import {
   CardContent,
   Avatar,
   Drawer,
-  Divider,
   ToggleButtonGroup,
   ToggleButton,
   Tabs,
@@ -23,9 +22,9 @@ import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 // Icons
 import PrintIcon from "@mui/icons-material/Print";
+import HistoryIcon from "@mui/icons-material/History";
 import AssignmentReturnedIcon from "@mui/icons-material/AssignmentReturned";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlineOutlined"; // Fixed import name
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -35,7 +34,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useInvoiceList } from "@/features/invoices/hooks/useInvoiceHooks";
 import { ReturnSettlementDialog } from "@/features/invoices/components/ReturnSettlementDialog";
 import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
-import { handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
+import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintDialog";
+import { InvoicePrintHistoryDialog } from "@/features/invoices/components/InvoicePrintHistoryDialog";
+import { Can } from "@/components/auth/Can";
 import { formatDisplayDate } from "@/lib/dates";
 import { useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
 import { ReviewThread } from "@/features/reviews/components/ReviewThread";
@@ -58,8 +59,9 @@ export default function RentalHistoryRoute() {
   );
   const [drawerTab, setDrawerTab] = useState<"details" | "reviews">("details");
 
-  // NEW: Dedicated state for printing to prevent timing issues
+  // Dedicated state for POS receipt preview & print dialog and print history modal
   const [invoiceToPrint, setInvoiceToPrint] = useState<any | null>(null);
+  const [invoiceForPrintHistory, setInvoiceForPrintHistory] = useState<any | null>(null);
 
   // Fetch reviews for the open invoice (skips until something's selected).
   const { data: drawerReviews = [], isLoading: drawerReviewsLoading } =
@@ -82,17 +84,6 @@ export default function RentalHistoryRoute() {
     message: string,
     severity: "success" | "error" = "success",
   ) => setToast({ open: true, message, severity });
-
-  // --- 3. PRINT ENGINE TRIGGER ---
-  // Senior Move: Watch the print state. When it's set, the DOM renders the receipt,
-  // and we trigger the print function once React finishes the paint cycle.
-  useEffect(() => {
-    if (invoiceToPrint) {
-      handlePrintInvoice("printable-invoice");
-      // Reset the state so the same invoice can be printed again if needed
-      setInvoiceToPrint(null);
-    }
-  }, [invoiceToPrint]);
 
   // --- 4. ANALYTICS ENGINE (KPIs) ---
   const kpis = useMemo(() => {
@@ -219,10 +210,10 @@ export default function RentalHistoryRoute() {
     {
       field: "actions",
       headerName: "Actions",
-      width: 160,
+      width: 200,
       sortable: false,
       renderCell: (params) => (
-        <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
+        <Box sx={{ display: "flex", gap: 0.75, pt: 0.5 }}>
           <Tooltip title="Inspect Details">
             <IconButton
               size="small"
@@ -236,12 +227,23 @@ export default function RentalHistoryRoute() {
           <Tooltip title="Print POS Bill">
             <IconButton
               size="small"
-              onClick={() => setInvoiceToPrint(params.row)} // SUCCESS: This triggers the useEffect above
+              onClick={() => setInvoiceToPrint(params.row)}
               sx={{ color: "slate.500", bgcolor: "slate.100" }}
             >
               <PrintIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+          <Can perform="invoice:print_log:view">
+            <Tooltip title="Bill Print History">
+              <IconButton
+                size="small"
+                onClick={() => setInvoiceForPrintHistory(params.row)}
+                sx={{ color: "#2563eb", bgcolor: "#eff6ff" }}
+              >
+                <HistoryIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Can>
           {params.row.status === "Active" && (
             <Tooltip title="Process Handover">
               <Button
@@ -458,12 +460,36 @@ export default function RentalHistoryRoute() {
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 Issued:{" "}
-                {new Date(viewInvoiceDetails?.issued_date).toLocaleString()}
+                {viewInvoiceDetails?.issued_date
+                  ? new Date(viewInvoiceDetails.issued_date).toLocaleString()
+                  : "—"}
               </Typography>
             </Box>
-            <IconButton onClick={() => setViewInvoiceDetails(null)}>
-              <CloseIcon />
-            </IconButton>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Can perform="invoice:print_log:view">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<HistoryIcon fontSize="small" />}
+                  onClick={() => setInvoiceForPrintHistory(viewInvoiceDetails)}
+                  sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
+                >
+                  Print History
+                </Button>
+              </Can>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<PrintIcon fontSize="small" />}
+                onClick={() => setInvoiceToPrint(viewInvoiceDetails)}
+                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
+              >
+                Print Bill
+              </Button>
+              <IconButton onClick={() => setViewInvoiceDetails(null)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
           </Box>
 
           <Tabs
@@ -472,7 +498,7 @@ export default function RentalHistoryRoute() {
             variant="fullWidth"
             sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}
           >
-            <Tab value="details" label="Details" />
+            <Tab value="details" label="Receipt Preview" />
             <Tab value="reviews" label={`Reviews${drawerReviews.length ? ` (${drawerReviews.length})` : ""}`} />
           </Tabs>
 
@@ -486,12 +512,9 @@ export default function RentalHistoryRoute() {
               gap: 2,
             }}
           >
-            {drawerTab === "details" && (
-              <Box sx={{ color: "text.secondary" }}>
-                {/* Existing detail summary lives elsewhere; the drawer is reserved for the print/receipt view. */}
-                <Typography variant="body2">
-                  Open the printable receipt via the print button to see the full breakdown.
-                </Typography>
+            {drawerTab === "details" && viewInvoiceDetails && (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+                <InvoiceReceipt isPreview={true} invoice={viewInvoiceDetails} />
               </Box>
             )}
             {drawerTab === "reviews" && viewInvoiceDetails && (
@@ -508,7 +531,7 @@ export default function RentalHistoryRoute() {
         </Box>
       </Drawer>
 
-      {/* MODALS & HIDDEN PRINTABLES */}
+      {/* MODALS & PRINT DIALOGS */}
       <ReturnSettlementDialog
         open={!!selectedInvoiceForReturn}
         onClose={() => setSelectedInvoiceForReturn(null)}
@@ -516,16 +539,21 @@ export default function RentalHistoryRoute() {
         showToast={showToast}
       />
 
-      {/* 
-        IMPORTANT: This component must be in the DOM to be printed.
-        We pass 'invoiceToPrint' OR 'viewInvoiceDetails' as a fallback.
-      */}
-      <InvoiceReceipt
-        id="printable-invoice"
-        invoice={
-          invoiceToPrint || viewInvoiceDetails || selectedInvoiceForReturn
-        }
+      <ReceiptPrintDialog
+        open={!!invoiceToPrint}
+        onClose={() => setInvoiceToPrint(null)}
+        invoice={invoiceToPrint}
+        onPrinted={(msg, sev) => showToast(msg, sev)}
       />
+
+      {invoiceForPrintHistory && (
+        <InvoicePrintHistoryDialog
+          open={!!invoiceForPrintHistory}
+          onClose={() => setInvoiceForPrintHistory(null)}
+          invoiceId={invoiceForPrintHistory.invoice_id}
+          docNumber={`INV-${invoiceForPrintHistory.invoice_id}`}
+        />
+      )}
 
       <Snackbar
         open={toast.open}

@@ -44,7 +44,7 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutlined";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { InvoiceReceipt } from "./InvoiceReceipt";
+import { InvoiceReceipt, buildSnapshotReceiptProps } from "./InvoiceReceipt";
 import { handlePrintInvoice } from "../utils/thermalPrint";
 
 interface PrintLogItem {
@@ -447,13 +447,16 @@ export function InvoicePrintLogsView() {
                           src={log.PrintedBy?.avatar_url}
                           sx={{ width: 28, height: 28, fontSize: "0.75rem", bgcolor: "#0f172a", color: "white" }}
                         >
-                          {(log.printed_by_name || "U").charAt(0).toUpperCase()}
+                          {(log.PrintedBy?.first_name || log.printed_by_name || "U").charAt(0).toUpperCase()}
                         </Avatar>
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                            {log.printed_by_name}
+                            {log.PrintedBy?.first_name
+                              ? `${log.PrintedBy.first_name} ${log.PrintedBy.last_name || ""}`.trim()
+                              : log.printed_by_name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: "#64748b", display: "block" }}>
+                            {log.PrintedBy?.username ? `@${log.PrintedBy.username} · ` : ""}
                             {log.printed_by_role}
                           </Typography>
                         </Box>
@@ -596,7 +599,12 @@ export function InvoicePrintLogsView() {
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1, fontSize: "0.85rem" }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <span style={{ color: "#64748b" }}>Printed By:</span>
-                      <strong style={{ color: "#0f172a" }}>{selectedLog.printed_by_name}</strong>
+                      <strong style={{ color: "#0f172a" }}>
+                        {selectedLog.PrintedBy?.first_name
+                          ? `${selectedLog.PrintedBy.first_name} ${selectedLog.PrintedBy.last_name || ""}`.trim() +
+                            (selectedLog.PrintedBy.username ? ` (@${selectedLog.PrintedBy.username})` : "")
+                          : selectedLog.printed_by_name}
+                      </strong>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <span style={{ color: "#64748b" }}>Role:</span>
@@ -722,12 +730,7 @@ export function InvoicePrintLogsView() {
                 >
                   <InvoiceReceipt
                     id="snapshot-reprint-dom"
-                    invoice={selectedLog.bill_snapshot?.invoice_id ? selectedLog.bill_snapshot : undefined}
-                    isDraft={selectedLog.doc_type === "DRAFT"}
-                    draftData={selectedLog.doc_type === "DRAFT" ? selectedLog.bill_snapshot : undefined}
-                    paperWidth={(selectedLog.paper_width as any) || "80mm"}
-                    language={(selectedLog.language as any) || "en"}
-                    customNotes={selectedLog.custom_notes || undefined}
+                    {...buildSnapshotReceiptProps(selectedLog)}
                     isPreview={true}
                   />
                 </Box>

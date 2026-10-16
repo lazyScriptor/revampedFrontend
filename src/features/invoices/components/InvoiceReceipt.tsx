@@ -285,6 +285,105 @@ export interface InvoiceReceiptProps {
   isPreview?: boolean; // Render visibly on screen inside a dialog preview
 }
 
+export function buildSnapshotReceiptProps(log: any) {
+  const snap = log?.bill_snapshot || {};
+  const isDraft = log?.doc_type === "DRAFT";
+  const cust =
+    snap.Customer ||
+    snap.customer ||
+    (log?.customer_name
+      ? {
+          first_name: log.customer_name,
+          last_name: "",
+          phone_number: log.customer_phone || "N/A",
+        }
+      : {});
+  const lines = snap.InvoiceLines || snap.items || [];
+  const subtotal = Number(snap.sub_total ?? snap.fees?.subtotal ?? log?.subtotal ?? 0);
+  const transport = Number(
+    snap.transport_fee ?? snap.fees?.transportFee ?? snap.fees?.transport ?? log?.transport_fee ?? 0
+  );
+  const discount = Number(
+    snap.discount_amount ?? snap.fees?.discountAmount ?? snap.fees?.discount ?? log?.discount_amount ?? 0
+  );
+  const grandTotal = Number(
+    snap.total_amount ?? snap.fees?.grandTotal ?? log?.grand_total ?? Math.max(0, subtotal + transport - discount)
+  );
+  const totalPaid = Number(
+    snap.fees?.totalPaid ?? snap.fees?.advance ?? log?.total_paid ?? 0
+  );
+  const balanceDue = Number(
+    snap.fees?.balanceDue ?? log?.balance_due ?? Math.max(0, grandTotal - totalPaid)
+  );
+
+  const printedByDisplay = log?.PrintedBy?.first_name
+    ? `${log.PrintedBy.first_name} ${log.PrintedBy.last_name || ""}`.trim()
+    : log?.printed_by_name || undefined;
+
+  if (isDraft) {
+    return {
+      isDraft: true,
+      invoice: undefined,
+      draftData: {
+        ...snap,
+        draftId: snap.draftId || snap.doc_number || log?.doc_number,
+        customer: cust,
+        onBehalfOfCustomer: snap.onBehalfOfCustomer || snap.OnBehalfOfCustomer,
+        items: lines,
+        fees: {
+          transport,
+          discount,
+          advance: totalPaid,
+        },
+      },
+      paperWidth: (log?.paper_width === "58mm" ? "58mm" : "80mm") as "80mm" | "58mm",
+      language: (log?.language === "si" ? "si" : "en") as ReceiptLanguage,
+      customNotes: log?.custom_notes || snap.customNotes || undefined,
+      cashierName: printedByDisplay,
+    };
+  }
+
+  return {
+    isDraft: false,
+    draftData: undefined,
+    invoice: {
+      ...snap,
+      invoice_id: snap.invoice_id || log?.invoice_id || log?.doc_number?.replace(/^INV-/i, "") || "POS",
+      doc_number: snap.doc_number || log?.doc_number,
+      status:
+        snap.status ||
+        (log?.doc_type === "COMPLETED" ? "Completed" : "Active"),
+      issued_date: snap.issued_date || log?.printed_at,
+      Customer: cust,
+      customer: cust,
+      OnBehalfOfCustomer: snap.OnBehalfOfCustomer || snap.onBehalfOfCustomer,
+      InvoiceLines: lines,
+      items: lines,
+      Payments: snap.Payments || [],
+      sub_total: subtotal,
+      transport_fee: transport,
+      discount_amount: discount,
+      total_amount: grandTotal,
+      total_paid: totalPaid,
+      fees: {
+        subtotal,
+        transportFee: transport,
+        discountAmount: discount,
+        grandTotal,
+        totalPaid,
+        balanceDue,
+      },
+      id_card_status: Boolean(
+        snap.id_card_status ?? cust?.is_id_retained_currently ?? false
+      ),
+    },
+    paperWidth: (log?.paper_width === "58mm" ? "58mm" : "80mm") as "80mm" | "58mm",
+    language: (log?.language === "si" ? "si" : "en") as ReceiptLanguage,
+    customNotes: log?.custom_notes || snap.customNotes || undefined,
+    cashierName: printedByDisplay,
+  };
+}
+
 export const InvoiceReceipt = ({
   id,
   invoice,
@@ -334,58 +433,68 @@ export const InvoiceReceipt = ({
       ? `${user.first_name} ${user.last_name || ""}`.trim()
       : user?.username || (activeLang === "si" ? "බලයලත් නිලධාරී" : "Authorized Operator"));
 
-  // Normalization logic: handles BOTH active/completed invoices AND mid-way draft quotes
+  // Normalization logic: handles BOTH active/completed invoices, point-in-time snapshots, AND mid-way draft quotes
   const normalized = useMemo(() => {
     if (isDraft || !invoice) {
       const cust = draftData?.customer || {};
       const benef = draftData?.onBehalfOfCustomer;
       const items = draftData?.items || [];
-      const fees = draftData?.fees || { transport: 0, discount: 0, advance: 0 };
+      const fees: any = draftData?.fees || { transport: 0, discount: 0, advance: 0 };
 
-      const lines = items.map((item, idx) => {
+      const lines = items.map((item: any, idx: number) => {
         const math = calculateLineMath(item);
         let pricingText = math.calculationText;
         if (activeLang === "si") {
           const isDailyDraft =
-            Number(item.minimum_rental_period || 1) <= 1 &&
-            Number(item.base_price || 0) === Number(item.extra_daily_rate || item.base_price || 0);
+            Number(item.minimum_rental_period || item.locked_minimum_days || 1) <= 1 &&
+            Number(item.base_price || item.locked_base_price || 0) ===
+              Number(item.extra_daily_rate || item.locked_extra_daily_rate || item.base_price || 0);
           pricingText = isDailyDraft
-            ? `දින ${math.totalDays}ක් (දිනකට ${fmtMoney(item.daily_rate || item.base_price, currencyCode)})`
-            : `මූලික: ${fmtMoney(item.base_price, currencyCode)} (දින ${item.minimum_rental_period || 1}) + අමතර: ${fmtMoney(item.extra_daily_rate, currencyCode)}/දිනකට`;
+            ? `දින ${math.totalDays}ක් (දිනකට ${fmtMoney(item.daily_rate || item.base_price || item.locked_base_price, currencyCode)})`
+            : `මූලික: ${fmtMoney(item.base_price || item.locked_base_price, currencyCode)} (දින ${item.minimum_rental_period || item.locked_minimum_days || 1}) + අමතර: ${fmtMoney(item.extra_daily_rate || item.locked_extra_daily_rate, currencyCode)}/දිනකට`;
         }
 
         return {
-          id: item.cart_id || `draft-line-${idx}`,
-          name: item.equipment_name || (activeLang === "si" ? "උපකරණය" : "Equipment Item"),
-          qty: item.borrow_quantity || 1,
+          id: item.cart_id || item.line_id || `draft-line-${idx}`,
+          name:
+            item.equipment_name ||
+            item.Equipment?.equipment_name ||
+            (activeLang === "si" ? "උපකරණය" : "Equipment Item"),
+          qty: Number(item.borrow_quantity || 1),
           start: item.borrow_date,
           end: item.expected_return_date,
           days: math.totalDays,
-          lineTotal: math.lineCost,
+          lineTotal: Number(item.line_total_amount || math.lineCost || 0),
           pricingText,
           status: "Draft",
           returnedDate: null,
         };
       });
 
-      const subtotal = lines.reduce((acc, l) => acc + l.lineTotal, 0);
-      const transport = Number(fees.transport || 0);
-      const discount = Number(fees.discount || 0);
-      const advance = Number(fees.advance || 0);
-      const grandTotal = Math.max(0, subtotal + transport - discount);
-      const balanceDue = Math.max(0, grandTotal - advance);
+      const subtotal =
+        Number(fees.subtotal || 0) || lines.reduce((acc, l) => acc + l.lineTotal, 0);
+      const transport = Number(fees.transport ?? fees.transportFee ?? 0);
+      const discount = Number(fees.discount ?? fees.discountAmount ?? 0);
+      const advance = Number(fees.advance ?? fees.totalPaid ?? 0);
+      const grandTotal = Number(fees.grandTotal ?? Math.max(0, subtotal + transport - discount));
+      const balanceDue = Number(fees.balanceDue ?? Math.max(0, grandTotal - advance));
 
       return {
         docType: "ESTIMATE" as const,
         docTitle: t.estimateTitle,
         docSubtitle: t.estimateSubtitle,
-        docNumber: draftData?.draftId || `EST-${Math.floor(100000 + Math.random() * 900000)}`,
+        docNumber:
+          draftData?.draftId ||
+          (draftData as any)?.doc_number ||
+          `EST-${Math.floor(100000 + Math.random() * 900000)}`,
         issuedDate: new Date().toISOString(),
         customer: {
           name:
             cust.customer_type === "Business" && cust.company_name
               ? cust.company_name
-              : `${cust.first_name || ""} ${cust.last_name || ""}`.trim() || t.walkInCustomer,
+              : cust.company_name ||
+                `${cust.first_name || ""} ${cust.last_name || ""}`.trim() ||
+                t.walkInCustomer,
           nic: cust.nic_number || t.notOnFile,
           phone: cust.phone_number || "N/A",
           address: cust.address_line1 || cust.city || "",
@@ -424,71 +533,119 @@ export const InvoiceReceipt = ({
       };
     }
 
-    // Official backend invoice
-    const cust = invoice.Customer || {};
-    const benef = invoice.OnBehalfOfCustomer;
-    const invLines = invoice.InvoiceLines || [];
-    const payments = invoice.Payments || [];
-    const isCompleted = invoice.status === "Completed";
+    // Official backend invoice OR point-in-time bill_snapshot
+    const cust = invoice.Customer || invoice.customer || {};
+    const benef = invoice.OnBehalfOfCustomer || invoice.onBehalfOfCustomer;
+    const invLines = invoice.InvoiceLines || invoice.items || [];
+    const rawPayments = invoice.Payments || invoice.payments || [];
+    const isCompleted =
+      (invoice.status || "").toLowerCase() === "completed" ||
+      invoice.status === "Returned";
 
     const lines = invLines.map((line: any, idx: number) => {
       const days = calculateDays(line.borrow_date, line.expected_return_date);
-      const isDaily =
-        Number(line.locked_minimum_days) <= 1 &&
-        Number(line.locked_base_price) === Number(line.locked_extra_daily_rate);
+      const basePrice = Number(line.locked_base_price ?? line.base_price ?? 0);
+      const extraRate = Number(line.locked_extra_daily_rate ?? line.extra_daily_rate ?? basePrice);
+      const minDays = Number(line.locked_minimum_days ?? line.minimum_rental_period ?? 1);
+      const isDaily = minDays <= 1 && basePrice === extraRate;
 
       const pricingText = isDaily
-        ? (activeLang === "si"
-            ? `දින ${days}ක් (දිනකට ${fmtMoney(line.locked_base_price, currencyCode)})`
-            : `${days} day${days !== 1 ? "s" : ""} @ ${fmtMoney(line.locked_base_price, currencyCode)}/d`)
-        : (activeLang === "si"
-            ? `මූලික: ${fmtMoney(line.locked_base_price, currencyCode)} (දින ${line.locked_minimum_days}) + අමතර: ${fmtMoney(line.locked_extra_daily_rate, currencyCode)}/දිනකට`
-            : `Base: ${fmtMoney(line.locked_base_price, currencyCode)} (${line.locked_minimum_days}d) + Extra: ${fmtMoney(line.locked_extra_daily_rate, currencyCode)}/d`);
+        ? activeLang === "si"
+          ? `දින ${days}ක් (දිනකට ${fmtMoney(basePrice, currencyCode)})`
+          : `${days} day${days !== 1 ? "s" : ""} @ ${fmtMoney(basePrice, currencyCode)}/d`
+        : activeLang === "si"
+        ? `මූලික: ${fmtMoney(basePrice, currencyCode)} (දින ${minDays}) + අමතර: ${fmtMoney(extraRate, currencyCode)}/දිනකට`
+        : `Base: ${fmtMoney(basePrice, currencyCode)} (${minDays}d) + Extra: ${fmtMoney(extraRate, currencyCode)}/d`;
 
       return {
         id: line.line_id || `line-${idx}`,
-        name: line.Equipment?.equipment_name || (activeLang === "si" ? `උපකරණ අංක #${line.equipment_id}` : `Equipment #${line.equipment_id}`),
-        qty: Number(line.borrow_quantity) || 1,
+        name:
+          line.Equipment?.equipment_name ||
+          line.equipment_name ||
+          (activeLang === "si" ? `උපකරණ අංක #${line.equipment_id}` : `Equipment #${line.equipment_id}`),
+        qty: Number(line.borrow_quantity ?? line.quantity ?? 1),
         start: line.borrow_date,
         end: line.expected_return_date,
         days,
-        lineTotal: Number(line.line_total_amount || 0),
+        lineTotal: Number(line.line_total_amount ?? line.line_total ?? 0),
         pricingText,
         status: line.line_status || "Active",
-        returnedDate: line.returned_date || null,
+        returnedDate: line.returned_date || line.actual_return_date || null,
       };
     });
 
-    const subtotal = Number(invoice.sub_total || 0);
-    const transport = Number(invoice.transport_fee || 0);
-    const discount = Number(invoice.discount_amount || 0);
-    const grandTotal = Number(invoice.total_amount || 0);
+    const computedLinesSubtotal = lines.reduce((acc: number, l: any) => acc + l.lineTotal, 0);
+    const subtotal =
+      Number(invoice.sub_total ?? invoice.fees?.subtotal ?? 0) || computedLinesSubtotal;
+    const transport = Number(
+      invoice.transport_fee ?? invoice.fees?.transportFee ?? invoice.fees?.transport ?? 0
+    );
+    const discount = Number(
+      invoice.discount_amount ?? invoice.fees?.discountAmount ?? invoice.fees?.discount ?? 0
+    );
+    const grandTotal =
+      Number(invoice.total_amount ?? invoice.fees?.grandTotal ?? 0) ||
+      Math.max(0, subtotal + transport - discount);
     const lateFees = Math.max(0, grandTotal - (subtotal + transport - discount));
-    const totalPaid = payments.reduce(
-      (sum: number, p: any) => sum + Number(p.payment_amount || 0),
+
+    const paidFromPayments = rawPayments.reduce(
+      (sum: number, p: any) => sum + Number(p.payment_amount ?? p.amount ?? 0),
       0
     );
-    const balanceDue = Math.max(0, grandTotal - totalPaid);
+    const totalPaid =
+      rawPayments.length > 0
+        ? paidFromPayments
+        : Number(invoice.fees?.totalPaid ?? invoice.total_paid ?? 0);
+    const balanceDue =
+      invoice.fees?.balanceDue !== undefined
+        ? Number(invoice.fees.balanceDue)
+        : Math.max(0, grandTotal - totalPaid);
 
     const formatPaymentMethod = (m: string) => {
-      if (!m) return activeLang === "si" ? "මුදලින්" : "Cash";
+      if (!m) return activeLang === "si" ? "මුදලින් (Cash)" : "Cash";
       if (m.toLowerCase().includes("cash")) return activeLang === "si" ? "මුදලින් (Cash)" : "Cash";
-      if (m.toLowerCase().includes("bank")) return activeLang === "si" ? "බැංකු (Bank)" : "Bank Transfer";
+      if (m.toLowerCase().includes("bank") || m.toLowerCase().includes("transfer"))
+        return activeLang === "si" ? "බැංකු (Bank)" : "Bank Transfer";
       if (m.toLowerCase().includes("card")) return activeLang === "si" ? "කාඩ්පත් (Card)" : "Card";
       return m;
     };
+
+    const paymentItems =
+      rawPayments.length > 0
+        ? rawPayments.map((p: any, idx: number) => ({
+            label: idx === 0 ? t.initialAdvance : `${t.payment} ${idx + 1}`,
+            amount: Math.abs(Number(p.payment_amount ?? p.amount ?? 0)),
+            method: formatPaymentMethod(p.method),
+            date: p.payment_date || p.createdAt,
+          }))
+        : totalPaid > 0
+        ? [
+            {
+              label: t.initialAdvance,
+              amount: totalPaid,
+              method: formatPaymentMethod("Cash"),
+              date: invoice.issued_date || invoice.createdAt || new Date().toISOString(),
+            },
+          ]
+        : [];
+
+    const docNumber =
+      invoice.doc_number ||
+      (invoice.invoice_id ? `INV-${invoice.invoice_id}` : "POS Receipt");
 
     return {
       docType: isCompleted ? ("COMPLETED" as const) : ("DISPATCH" as const),
       docTitle: isCompleted ? t.completedTitle : t.dispatchTitle,
       docSubtitle: isCompleted ? t.completedSubtitle : t.dispatchSubtitle,
-      docNumber: `INV-${invoice.invoice_id}`,
+      docNumber,
       issuedDate: invoice.issued_date || invoice.createdAt || new Date().toISOString(),
       customer: {
         name:
           cust.customer_type === "Business" && cust.company_name
             ? cust.company_name
-            : `${cust.first_name || ""} ${cust.last_name || ""}`.trim() || t.walkInCustomer,
+            : cust.company_name ||
+              `${cust.first_name || ""} ${cust.last_name || ""}`.trim() ||
+              t.walkInCustomer,
         nic: cust.nic_number || t.notOnFile,
         phone: cust.phone_number || "N/A",
         address: cust.address_line1 || cust.city || "",
@@ -503,21 +660,19 @@ export const InvoiceReceipt = ({
           }
         : null,
       lines,
-      totalUnits: lines.reduce((acc, l) => acc + l.qty, 0),
+      totalUnits: lines.reduce((acc: number, l: any) => acc + l.qty, 0),
       subtotal,
       transport,
       discount,
       lateFees,
       grandTotal,
-      payments: payments.map((p: any, idx: number) => ({
-        label: idx === 0 ? t.initialAdvance : `${t.payment} ${idx + 1}`,
-        amount: Math.abs(Number(p.payment_amount || 0)),
-        method: formatPaymentMethod(p.method),
-        date: p.payment_date || p.createdAt,
-      })),
+      payments: paymentItems,
       totalPaid,
       balanceDue,
-      vaultStatus: invoice.id_card_status ? t.vaultHeld : t.vaultReleased,
+      vaultStatus:
+        invoice.id_card_status || cust.is_id_retained_currently
+          ? t.vaultHeld
+          : t.vaultReleased,
       statusDisplay: isCompleted ? t.statusCompleted : t.statusActive,
     };
   }, [invoice, isDraft, draftData, currencyCode, activeLang, t]);

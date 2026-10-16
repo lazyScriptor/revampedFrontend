@@ -232,8 +232,8 @@ export const handlePrintInvoice = async (
     const data = await res.json().catch(() => ({}));
     if (res.ok && data?.ok) {
       const result: PrintResult = { method: "direct", jobId: data.jobId ?? null, printer: data.printer, heightMm };
-      // Asynchronously record print audit log to backend
-      logPrintEventToServer(resolvedOptions, result, heightMm);
+      // Record print audit log to backend and refresh audit views
+      await logPrintEventToServer(resolvedOptions, result, heightMm);
       return result;
     }
     fallbackReason = data?.error || `Agent responded ${res.status}`;
@@ -257,17 +257,20 @@ export const handlePrintInvoice = async (
   if (tag) {
     tag.textContent = `@page { size: ${rollWidth} ${heightMm + 5}mm; margin: 0mm !important; }`;
   }
+
+  const fallbackResult: PrintResult = { method: "dialog", reason: fallbackReason };
+  // Record audit log BEFORE opening window.print() (which blocks the JS thread while the dialog is open)
+  await logPrintEventToServer(resolvedOptions, fallbackResult, heightMm);
+
   iframe.contentWindow?.focus();
   iframe.contentWindow?.print();
   removeLater(iframe);
 
-  const fallbackResult: PrintResult = { method: "dialog", reason: fallbackReason };
-  logPrintEventToServer(resolvedOptions, fallbackResult, heightMm);
   return fallbackResult;
 };
 
 /**
- * Asynchronously posts print audit log to backend and refreshes audit views.
+ * Posts print audit log to backend and refreshes audit & invoice views.
  * Never throws, ensuring UI execution is never disrupted.
  */
 const logPrintEventToServer = async (
@@ -276,9 +279,14 @@ const logPrintEventToServer = async (
   heightMm: number
 ) => {
   try {
+    const resolvedInvoiceId =
+      options?.invoiceId || options?.billSnapshot?.invoice_id || null;
+
     const payload = {
-      invoice_id: options?.invoiceId || null,
-      doc_number: options?.docNumber || options?.title || "POS Receipt",
+      invoice_id: resolvedInvoiceId,
+      doc_number:
+        options?.docNumber ||
+        (resolvedInvoiceId ? `INV-${resolvedInvoiceId}` : options?.title || "POS Receipt"),
       doc_type: options?.docType || "DISPATCH",
       customer_name: options?.customerName || null,
       customer_phone: options?.customerPhone || null,
@@ -301,7 +309,13 @@ const logPrintEventToServer = async (
     };
     const res = await api.post("/invoices/print-logs", payload);
     console.info("POS Bill print log successfully recorded to audit trail:", res.data);
-    queryClient.invalidateQueries({ queryKey: ["invoice-print-logs"] });
+    await Promise.allSettled([
+      queryClient.invalidateQueries({ queryKey: ["invoice-print-logs"] }),
+      queryClient.invalidateQueries({ queryKey: ["invoices"] }),
+      ...(resolvedInvoiceId
+        ? [queryClient.invalidateQueries({ queryKey: ["invoice", Number(resolvedInvoiceId)] })]
+        : []),
+    ]);
   } catch (err: any) {
     console.error("Notice: Print audit log could not be saved to backend:", err?.response?.data || err.message);
   }
