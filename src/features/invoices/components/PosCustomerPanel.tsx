@@ -225,9 +225,10 @@ export function PosCustomerPanel({
             border: "1px solid",
             borderColor: isBlacklisted ? "#fca5a5" : "#e2e8f0",
             borderRadius: 2.5,
-            overflow: "hidden",
+            overflowY: "auto",
             display: "flex",
             flexDirection: "column",
+            minHeight: 0,
           }}
         >
           {/* Card header with accent bar */}
@@ -354,6 +355,124 @@ export function PosCustomerPanel({
             </Box>
           </Box>
 
+          {/* Customer Invoices KPI Strip */}
+          <Box
+            sx={{
+              mx: 2,
+              mb: 2,
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 1,
+            }}
+          >
+            <Box
+              sx={{
+                p: 1.25,
+                bgcolor: "#f8fafc",
+                borderRadius: 2,
+                border: "1px solid #e2e8f0",
+                textAlign: "center",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "#64748b",
+                  fontWeight: 700,
+                  fontSize: "0.65rem",
+                  display: "block",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.3,
+                }}
+              >
+                Invoices
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  fontVariantNumeric: "tabular-nums",
+                  mt: 0.25,
+                }}
+              >
+                {loadingInvoices ? "…" : invoiceStats.total}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                p: 1.25,
+                bgcolor: invoiceStats.active > 0 ? "#fffbeb" : "#f8fafc",
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: invoiceStats.active > 0 ? "#fde68a" : "#e2e8f0",
+                textAlign: "center",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: invoiceStats.active > 0 ? "#b45309" : "#64748b",
+                  fontWeight: 700,
+                  fontSize: "0.65rem",
+                  display: "block",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.3,
+                }}
+              >
+                Pending
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 800,
+                  color: invoiceStats.active > 0 ? "#d97706" : "#64748b",
+                  fontVariantNumeric: "tabular-nums",
+                  mt: 0.25,
+                }}
+              >
+                {loadingInvoices ? "…" : invoiceStats.active}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                p: 1.25,
+                bgcolor: invoiceStats.completed > 0 ? "#f0fdf4" : "#f8fafc",
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: invoiceStats.completed > 0 ? "#bbf7d0" : "#e2e8f0",
+                textAlign: "center",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: invoiceStats.completed > 0 ? "#15803d" : "#64748b",
+                  fontWeight: 700,
+                  fontSize: "0.65rem",
+                  display: "block",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.3,
+                }}
+              >
+                Completed
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 800,
+                  color: invoiceStats.completed > 0 ? "#16a34a" : "#64748b",
+                  fontVariantNumeric: "tabular-nums",
+                  mt: 0.25,
+                }}
+              >
+                {loadingInvoices ? "…" : invoiceStats.completed}
+              </Typography>
+            </Box>
+          </Box>
+
           {/* Warnings */}
           {isBlacklisted && (
             <Box
@@ -473,6 +592,136 @@ export function PosCustomerPanel({
               )}
             </Box>
           )}
+
+          {/* Customer Invoices History List */}
+          <Box
+            sx={{
+              mx: 2,
+              mb: 2,
+              border: "1px solid #e2e8f0",
+              borderRadius: 2,
+              overflow: "hidden",
+              bgcolor: "#ffffff",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box
+              sx={{
+                px: 1.5,
+                py: 1,
+                bgcolor: "#f8fafc",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <ReceiptLongIcon sx={{ fontSize: 15, color: "#475569" }} />
+                <Typography variant="caption" sx={{ fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.68rem" }}>
+                  Invoice History
+                </Typography>
+                <Chip
+                  size="small"
+                  label={pastInvoices.length}
+                  sx={{ height: 18, fontSize: "0.65rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+                Click for details
+              </Typography>
+            </Box>
+
+            <Box sx={{ maxHeight: 220, overflowY: "auto", p: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+              {loadingInvoices && (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                  <CircularProgress size={18} />
+                </Box>
+              )}
+
+              {!loadingInvoices && pastInvoices.length === 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ p: 2, textAlign: "center", display: "block" }}>
+                  No previous invoices for this customer.
+                </Typography>
+              )}
+
+              {!loadingInvoices &&
+                pastInvoices.map((inv: any) => {
+                  const isActive = inv.status === "Active";
+                  const invLines = inv.InvoiceLines || inv.lines || [];
+                  const invPayments = inv.Payments || inv.payments || [];
+                  const paid = invPayments.reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0);
+                  const bal = Math.max(0, Number(inv.total_amount || 0) - paid);
+                  const equipSummary = invLines
+                    .map((l: any) => l.Equipment?.equipment_name || "Asset")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join(", ");
+                  const moreEquipCount = Math.max(0, invLines.length - 2);
+
+                  return (
+                    <Box
+                      key={inv.invoice_id}
+                      onClick={() => setSelectedPreviewInvoice(inv)}
+                      sx={{
+                        p: 1.25,
+                        borderRadius: 1.5,
+                        border: "1px solid",
+                        borderColor: isActive ? "#fed7aa" : "#e2e8f0",
+                        bgcolor: isActive ? "#fffaf5" : "#ffffff",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease-in-out",
+                        "&:hover": {
+                          bgcolor: "#f1f5f9",
+                          borderColor: "#94a3b8",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "#0f172a", fontVariantNumeric: "tabular-nums" }}>
+                            INV-{inv.invoice_id}
+                          </Typography>
+                          <Chip
+                            size="small"
+                            label={inv.status}
+                            color={isActive ? "warning" : "success"}
+                            sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
+                          />
+                        </Box>
+                        <Typography variant="caption" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 800, color: "#0f172a" }}>
+                          Rs. {Number(inv.total_amount || 0).toLocaleString()}
+                        </Typography>
+                      </Box>
+
+                      {equipSummary && (
+                        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: "0.7rem", mb: 0.5 }}>
+                          {equipSummary}
+                          {moreEquipCount > 0 ? ` +${moreEquipCount} more` : ""}
+                        </Typography>
+                      )}
+
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Typography variant="caption" color="text.disabled" sx={{ fontSize: "0.65rem" }}>
+                          {relDate(inv.issued_date)}
+                        </Typography>
+                        {bal > 0 ? (
+                          <Typography variant="caption" sx={{ color: "#dc2626", fontWeight: 700, fontSize: "0.68rem", fontVariantNumeric: "tabular-nums" }}>
+                            Due: Rs. {bal.toLocaleString()}
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption" sx={{ color: "#16a34a", fontWeight: 600, fontSize: "0.65rem" }}>
+                            Settled
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  );
+                })}
+            </Box>
+          </Box>
         </Box>
       ) : (
         /* Empty state */
@@ -500,6 +749,13 @@ export function PosCustomerPanel({
           </Typography>
         </Box>
       )}
+
+      {/* Read-only mobile-friendly invoice details preview modal */}
+      <ReadOnlyInvoiceModal
+        open={Boolean(selectedPreviewInvoice)}
+        onClose={() => setSelectedPreviewInvoice(null)}
+        invoice={selectedPreviewInvoice}
+      />
     </Box>
   );
 }
