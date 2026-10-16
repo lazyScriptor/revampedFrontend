@@ -173,7 +173,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       isPanelOpen: !state.isEditMode, // entering edit → open panel; exiting → close panel
     })),
 
-  closePanel: () => set({ isPanelOpen: false }),
+  closePanel: () => set({ isPanelOpen: false, isEditMode: false }),
 
   _debouncedSync: () => {
     if (syncTimer) clearTimeout(syncTimer);

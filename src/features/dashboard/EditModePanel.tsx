@@ -1,6 +1,6 @@
 import React from "react";
-import { Box, Typography, Switch, Divider, IconButton, Drawer } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import { Box, Typography, Switch, Divider, IconButton, Drawer, Button, Tooltip } from "@mui/material";
+import { Close, Check } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useDashboardStore } from "@/stores/useDashboardStore";
 
@@ -22,54 +22,76 @@ const EditModePanel: React.FC = () => {
       disableScrollLock
       slotProps={{
         root: {
-          // The Modal root spans the full screen — make it non-interactive so
-          // pointer events reach the grid for drag/resize while the panel is open.
           style: { pointerEvents: "none" },
         },
         paper: {
           sx: {
-            pointerEvents: "auto", // the drawer panel itself must stay interactive
-            width: { xs: "85vw", sm: 320, md: 300 },
-            maxWidth: 360,
+            pointerEvents: "auto",
+            width: { xs: "90vw", sm: 340, md: 320 },
+            maxWidth: 380,
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
             borderLeft: "1px solid",
             borderColor: "border.subtle",
             bgcolor: "background.paper",
-            px: 2.5,
-            py: 3,
-            boxShadow: "-8px 0 24px rgba(0,0,0,0.10)",
+            p: { xs: 2, sm: 2.5 },
+            boxShadow: "-8px 0 24px rgba(0,0,0,0.12)",
           },
         },
       }}
     >
-      {/* Header */}
+      {/* Header with clear Title and Close Icon */}
       <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", lineHeight: 1.3 }}>
-            {t("dashboard.customizeDashboard")}
+        <Box sx={{ pr: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1.3 }}>
+            {t("dashboard.customizeDashboard", "Customize Dashboard")}
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            {t("dashboard.toggleModules")}
+            {t("dashboard.toggleModules", "Toggle and arrange modules")}
           </Typography>
         </Box>
-        <IconButton
-          size="small"
-          onClick={closePanel}
-          sx={{ color: "text.disabled", mt: -0.5, "&:hover": { color: "text.primary" } }}
-        >
-          <Close fontSize="small" />
-        </IconButton>
+        <Tooltip title={t("common.close", "Close")}>
+          <IconButton
+            size="small"
+            onClick={closePanel}
+            aria-label="Close customizer"
+            sx={{
+              color: "text.secondary",
+              bgcolor: "action.hover",
+              borderRadius: 1.5,
+              mt: -0.5,
+              "&:hover": { color: "text.primary", bgcolor: "action.selected" },
+            }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Divider sx={{ mb: 2 }} />
 
       <Typography
         variant="overline"
-        sx={{ color: "text.disabled", letterSpacing: 1.2, fontSize: "0.65rem", fontWeight: 600 }}
+        sx={{ color: "text.secondary", letterSpacing: 1.2, fontSize: "0.68rem", fontWeight: 700 }}
       >
-        {t("dashboard.availableModules")}
+        {t("dashboard.availableModules", "AVAILABLE MODULES")}
       </Typography>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1.5 }}>
+      {/* Scrollable list of modules */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.25,
+          mt: 1.5,
+          flexGrow: 1,
+          overflowY: "auto",
+          pr: 0.5,
+          "&::-webkit-scrollbar": { width: 5 },
+          "&::-webkit-scrollbar-thumb": { bgcolor: "#cbd5e1", borderRadius: 4 },
+        }}
+      >
         {widgetCatalog.map((widget) => {
           const isEnabled = layout.some((item) => item.i === widget.widget_key);
 
@@ -81,32 +103,32 @@ const EditModePanel: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                px: 1.5,
-                py: 1,
-                borderRadius: 1.5,
+                px: 1.75,
+                py: 1.25,
+                borderRadius: 2,
                 border: "1px solid",
-                borderColor: isEnabled ? "primary.light" : "border.subtle",
-                bgcolor: isEnabled ? "primary.50" : "transparent",
+                borderColor: isEnabled ? "primary.main" : "border.subtle",
+                bgcolor: isEnabled ? "rgba(37, 99, 235, 0.05)" : "transparent",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
                 "&:hover": {
                   borderColor: "primary.main",
-                  bgcolor: isEnabled ? "primary.100" : "surface.muted",
+                  bgcolor: isEnabled ? "rgba(37, 99, 235, 0.09)" : "action.hover",
                 },
               }}
             >
-              <Box>
+              <Box sx={{ minWidth: 0, pr: 1 }}>
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 600, color: isEnabled ? "primary.dark" : "text.primary", fontSize: "0.8rem" }}
+                  sx={{ fontWeight: 700, color: isEnabled ? "primary.dark" : "text.primary", fontSize: "0.82rem" }}
                 >
                   {widget.display_name}
                 </Typography>
                 <Typography
                   variant="caption"
-                  sx={{ color: isEnabled ? "primary.main" : "text.disabled", display: "block", fontSize: "0.7rem" }}
+                  sx={{ color: isEnabled ? "primary.main" : "text.secondary", display: "block", fontSize: "0.7rem", fontWeight: 500 }}
                 >
-                  {widget.default_w >= 2 ? t("dashboard.halfWidth") : t("dashboard.quarterWidth")}
+                  {widget.default_w >= 2 ? t("dashboard.halfWidth", "Half Width") : t("dashboard.quarterWidth", "Quarter Width")}
                 </Typography>
               </Box>
               <Switch
@@ -119,6 +141,41 @@ const EditModePanel: React.FC = () => {
             </Box>
           );
         })}
+      </Box>
+
+      {/* Sticky Bottom Done / Close Button */}
+      <Box
+        sx={{
+          mt: "auto",
+          pt: 2,
+          pb: 0.5,
+          borderTop: "1px solid",
+          borderColor: "border.subtle",
+          bgcolor: "background.paper",
+          flexShrink: 0,
+        }}
+      >
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          startIcon={<Check />}
+          onClick={closePanel}
+          disableElevation
+          sx={{
+            fontWeight: 800,
+            borderRadius: 2,
+            py: 1.25,
+            textTransform: "none",
+            fontSize: "0.88rem",
+            boxShadow: "0 2px 8px rgba(37, 99, 235, 0.25)",
+            "&:hover": {
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.35)",
+            },
+          }}
+        >
+          {t("dashboard.doneEditing", "Done Customizing")}
+        </Button>
       </Box>
     </Drawer>
   );

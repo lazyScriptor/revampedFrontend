@@ -182,9 +182,9 @@ export default function EquipmentRoute() {
 
       {/* KPI Cards */}
       <Box sx={{ flexShrink: 0 }}>
-        <Grid container spacing={{ xs: 1.5, md: 2 }}>
+        <Grid container spacing={{ xs: 1.25, sm: 1.5, md: 2 }}>
           {/* Card 1: Total Assets */}
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid size={{ xs: 12, sm: 4, md: 4 }}>
             <Card
               elevation={0}
               onClick={() => clearFilters()}
@@ -199,23 +199,23 @@ export default function EquipmentRoute() {
                 "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)", boxShadow: 1 },
               }}
             >
-              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
-                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-                  <InventoryIcon fontSize="medium" />
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0">
+                  <InventoryIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
                     {t("equipment.totalAssets")}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                    <Typography variant="h5" fontWeight="bold">
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}>
+                    <Typography variant="h5" fontWeight="bold" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
                       {totalAssetsOwned} {t("equipment.units")}
                     </Typography>
                     {(activeFilterCount > 0 || debouncedSearch) && (
                       <Chip label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`} size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
                     )}
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
                     {totalModelsCount} equipment models · {rentedUnits} on active hire
                   </Typography>
                 </div>
@@ -224,7 +224,7 @@ export default function EquipmentRoute() {
           </Grid>
 
           {/* Card 2: Available for Rent */}
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
             <Card
               elevation={0}
               onClick={() => setAvailability(availability === "in_stock" ? "all" : "in_stock")}
@@ -239,28 +239,28 @@ export default function EquipmentRoute() {
                 "&:hover": { borderColor: "success.main", transform: "translateY(-1px)", boxShadow: 1 },
               }}
             >
-              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
-                <div className="p-2.5 bg-green-100 text-green-600 rounded-lg">
-                  <CheckCircleIcon fontSize="medium" />
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 bg-green-100 text-green-600 rounded-lg flex-shrink-0">
+                  <CheckCircleIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="success.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <Typography variant="caption" color="success.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
                     {t("equipment.availableForRent")}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                    <Typography variant="h5" fontWeight="bold" color="success.dark">
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
+                    <Typography variant="h5" fontWeight="bold" color="success.dark" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
                       {availableUnits} {t("equipment.units")}
                     </Typography>
                     {availability === "in_stock" ? (
-                      <Chip label="Filtered View" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "success.main", color: "white" }} />
+                      <Chip label="Filtered" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "success.main", color: "white" }} />
                     ) : (
                       <Typography variant="caption" color="text.secondary">
                         in stock
                       </Typography>
                     )}
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-                    {availability === "in_stock" ? "Showing in-stock items" : "Click to view ready assets"}
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
+                    {availability === "in_stock" ? "Showing ready" : "Click to view ready"}
                   </Typography>
                 </div>
               </CardContent>
@@ -268,7 +268,7 @@ export default function EquipmentRoute() {
           </Grid>
 
           {/* Card 3: In Maintenance */}
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid size={{ xs: 6, sm: 4, md: 4 }}>
             <Card
               elevation={0}
               onClick={() => setAvailability(availability === "in_repair" ? "all" : "in_repair")}
@@ -283,28 +283,28 @@ export default function EquipmentRoute() {
                 "&:hover": { borderColor: "warning.main", transform: "translateY(-1px)", boxShadow: 1 },
               }}
             >
-              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
-                <div className="p-2.5 bg-orange-100 text-orange-600 rounded-lg">
-                  <BuildCircleIcon fontSize="medium" />
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 bg-orange-100 text-orange-600 rounded-lg flex-shrink-0">
+                  <BuildCircleIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="warning.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <Typography variant="caption" color="warning.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
                     {t("equipment.inMaintenance")}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                    <Typography variant="h5" fontWeight="bold" color="warning.dark">
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
+                    <Typography variant="h5" fontWeight="bold" color="warning.dark" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
                       {maintenanceUnits} {t("equipment.units")}
                     </Typography>
                     {availability === "in_repair" ? (
-                      <Chip label="Filtered View" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "warning.main", color: "white" }} />
+                      <Chip label="Filtered" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "warning.main", color: "white" }} />
                     ) : (
                       <Typography variant="caption" color="text.secondary">
-                        under inspection
+                        repair
                       </Typography>
                     )}
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-                    {availability === "in_repair" ? "Showing items in repair" : "Click to view repair queue"}
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
+                    {availability === "in_repair" ? "Showing in repair" : "Click to view queue"}
                   </Typography>
                 </div>
               </CardContent>
@@ -332,7 +332,7 @@ export default function EquipmentRoute() {
           placeholder={t("equipment.searchPlaceholder")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ minWidth: { xs: "100%", sm: 300 } }}
+          sx={{ minWidth: { xs: "100%", sm: 280 }, flex: { xs: "1 1 100%", sm: "initial" } }}
           slotProps={{
             input: {
               startAdornment: (
@@ -362,7 +362,7 @@ export default function EquipmentRoute() {
           onChange={(e) =>
             setCategoryId(e.target.value === "" ? "" : Number(e.target.value))
           }
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: { xs: "100%", sm: 200 }, flex: { xs: "1 1 100%", sm: "initial" } }}
           slotProps={{
             input: {
               startAdornment: (
@@ -382,7 +382,7 @@ export default function EquipmentRoute() {
         </TextField>
 
         {/* Availability chips */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
           <Typography
             variant="caption"
             sx={{

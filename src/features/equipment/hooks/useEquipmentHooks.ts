@@ -80,13 +80,14 @@ export const useEquipmentStats = () => {
   return useQuery<EquipmentStats>({
     queryKey: ['equipment-stats'],
     queryFn: async () => {
-      const res = await api.get('/equipment/stats');
-      return res.data?.data || {
-        totalModels: 0,
-        totalUnitsOwned: 0,
-        availableUnits: 0,
-        rentedUnits: 0,
-        maintenanceUnits: 0,
+      const res: any = await api.get('/equipment/stats');
+      const payload = res?.data?.data ?? res?.data ?? res;
+      return {
+        totalModels: Number(payload?.totalModels || 0),
+        totalUnitsOwned: Number(payload?.totalUnitsOwned || 0),
+        availableUnits: Number(payload?.availableUnits || 0),
+        rentedUnits: Number(payload?.rentedUnits || 0),
+        maintenanceUnits: Number(payload?.maintenanceUnits || 0),
       };
     },
     staleTime: 1000 * 30,

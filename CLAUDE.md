@@ -130,7 +130,14 @@ src/
 
 - **100% Viewport Lock**: The outer page container uses `height: { xs: "auto", md: "calc(100vh - 88px)" }, overflow: { xs: "visible", md: "hidden" }, display: "flex", flexDirection: "column"`.
 - **Fixed Upper Cards + Internal Table Scroll**: Header, KPI statistic cards, and search/filter bars have `flexShrink: 0`. The table card uses `flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden"`, and `<TableContainer sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}><Table stickyHeader>` scrolls only the `<tbody>` while `<thead>` stays sticky.
-- **Decoupled Global KPIs**: Upper KPI cards fetch true database-wide totals via `useCustomerStats()` (`/api/customers/stats`) and `useEquipmentStats()` (`/api/equipment/stats`) so filtering or paginating the table never distorts vault/fleet totals. When filters narrow the table view, a secondary badge (`Showing X in table`) indicates the filtered count.
+- **Decoupled Global KPIs & Safe Unwrapping**: Upper KPI cards fetch true database-wide totals via `useCustomerStats()` (`/api/customers/stats`) and `useEquipmentStats()` (`/api/equipment/stats`) so filtering or paginating the table never distorts vault/fleet totals. Because `api` interceptor unwraps `response.data`, hooks must always safely extract `res?.data?.data ?? res?.data ?? res` to prevent fallback to zero values.
+- **Mobile Responsive 2x2 Grid**: KPI grids use `size={{ xs: 6, sm: 6, md: 3 }}` on Customers and `size={{ xs: 12, sm: 4, md: 4 }}` (with 2x `xs: 6` cards) on Equipment, avoiding tall single-column card stacking on mobile phones and keeping data tables above the fold. Filter search bars and dropdowns wrap with `flex: { xs: "1 1 100%", sm: "initial" }`.
+
+## Responsive Dashboard Engine & Customizer (`DashboardEngine.tsx` & `EditModePanel.tsx`)
+
+- **100% Full-Width Screen Occupancy**: In view mode (`!isEditMode`), the dashboard uses native fluid CSS Grid (`gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }`), guaranteeing edge-to-edge coverage across all monitor resolutions without dead white space or RGL column mismatch issues.
+- **Unified 4-Column Breakpoints in Edit Mode**: When edit mode is active, `ResponsiveGridLayout` uses `breakpoints={{ lg: 1200, md: 900, sm: 600, xs: 0 }}` and `cols={{ lg: 4, md: 4, sm: 4, xs: 4 }}` with measured `gridWidth`, ensuring cards never drop to 6 default columns on sub-900px widths.
+- **Dual Drawer Dismissal**: `EditModePanel` features both a header close icon and a sticky bottom full-width `Done Customizing` button. Dismissing the drawer automatically resets `isEditMode: false` to seamlessly return the user to live view mode.
 
 ## Conventions
 

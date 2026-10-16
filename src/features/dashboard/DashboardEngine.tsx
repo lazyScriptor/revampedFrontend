@@ -133,22 +133,46 @@ const DashboardEngine: React.FC = () => {
   });
 
   // Desktop RGL Layout
-  const desktopLayouts = {
-    lg: visibleLayout.map((item) => ({
-      i: item.i,
-      x: item.x,
-      y: item.y,
-      w: item.w,
-      h: item.h,
-    })),
-    md: visibleLayout.map((item) => ({
-      i: item.i,
-      x: item.x,
-      y: item.y,
-      w: item.w,
-      h: item.h,
-    })),
-  };
+  const desktopLayouts = useMemo(
+    () => ({
+      lg: visibleLayout.map((item) => ({
+        i: item.i,
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+      })),
+      md: visibleLayout.map((item) => ({
+        i: item.i,
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+      })),
+      sm: visibleLayout.map((item) => ({
+        i: item.i,
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+      })),
+      xs: visibleLayout.map((item) => ({
+        i: item.i,
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+      })),
+    }),
+    [visibleLayout],
+  );
+
+  const sortedVisibleLayout = useMemo(() => {
+    return [...visibleLayout].sort((a, b) => {
+      if (a.y !== b.y) return a.y - b.y;
+      return a.x - b.x;
+    });
+  }, [visibleLayout]);
 
   const renderCardContent = (item: StoreLayoutItem) => {
     const WidgetComponent = WIDGET_COMPONENTS[item.i];
@@ -450,8 +474,50 @@ const DashboardEngine: React.FC = () => {
       >
         {/* Inner container for width measurement without padding inflation */}
         <Box ref={containerRef} sx={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
-          {isMobile ? (
-            /* Mobile / Tablet Fluid Native CSS Grid (zero drag jitter, no text overflow) */
+          {!isEditMode ? (
+            /* Fluid Native CSS Grid: Fills 100% of the screen width with zero dead space */
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, 1fr)",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(4, 1fr)",
+                },
+                gap: { xs: 1.5, sm: 2 },
+                width: "100%",
+                maxWidth: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              {sortedVisibleLayout.map((item) => {
+                const isKpi = item.h <= 1 && item.w <= 1;
+                const desktopSpan = Math.min(4, Math.max(1, item.w));
+                const mobileSpan = isKpi ? (item.w > 1 ? 2 : 1) : 2;
+                const desktopHeight = item.h <= 1 ? 140 : item.h === 2 ? 296 : 452;
+                const mobileHeight = isKpi ? 130 : item.h >= 3 ? 360 : 290;
+
+                return (
+                  <Box
+                    key={item.i}
+                    sx={{
+                      gridColumn: {
+                        xs: `span ${mobileSpan}`,
+                        sm: `span ${mobileSpan}`,
+                        md: `span ${desktopSpan}`,
+                      },
+                      height: { xs: mobileHeight, md: desktopHeight },
+                      width: "100%",
+                      minWidth: 0,
+                    }}
+                  >
+                    {renderCardContent(item)}
+                  </Box>
+                );
+              })}
+            </Box>
+          ) : isMobile ? (
+            /* Mobile / Tablet Fluid Native CSS Grid in Edit Mode */
             <Box
               sx={{
                 display: "grid",
@@ -483,16 +549,16 @@ const DashboardEngine: React.FC = () => {
               })}
             </Box>
           ) : (
-            /* Desktop Responsive Grid Layout (preserves saved coordinates & drag reordering) */
+            /* Desktop Responsive Grid Layout (Drag-and-Drop active during Edit Mode) */
             <ResponsiveGridLayout
               key={visibleLayout
                 .map((i) => i.i)
                 .sort()
                 .join(",")}
-              width={gridWidth}
+              width={gridWidth || containerRef.current?.offsetWidth || 1200}
               layouts={desktopLayouts}
-              breakpoints={{ lg: 1200, md: 900 }}
-              cols={{ lg: 4, md: 4 }}
+              breakpoints={{ lg: 1200, md: 900, sm: 600, xs: 0 }}
+              cols={{ lg: 4, md: 4, sm: 4, xs: 4 }}
               rowHeight={140}
               margin={[16, 16]}
               containerPadding={[0, 0]}

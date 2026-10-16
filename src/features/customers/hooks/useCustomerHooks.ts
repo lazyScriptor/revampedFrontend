@@ -139,14 +139,15 @@ export const useCustomerStats = () => {
     return useQuery<CustomerStats>({
         queryKey: ['customer-stats'],
         queryFn: async () => {
-            const res = await api.get('/customers/stats');
-            return res.data?.data || {
-                totalClients: 0,
-                businessCount: 0,
-                individualCount: 0,
-                idsInVault: 0,
-                totalAdvance: 0,
-                linkedToParent: 0,
+            const res: any = await api.get('/customers/stats');
+            const payload = res?.data?.data ?? res?.data ?? res;
+            return {
+                totalClients: Number(payload?.totalClients || 0),
+                businessCount: Number(payload?.businessCount || 0),
+                individualCount: Number(payload?.individualCount || 0),
+                idsInVault: Number(payload?.idsInVault || 0),
+                totalAdvance: Number(payload?.totalAdvance || 0),
+                linkedToParent: Number(payload?.linkedToParent || 0),
             };
         },
         staleTime: 1000 * 30,

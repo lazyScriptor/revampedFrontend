@@ -173,9 +173,9 @@ export default function CustomersRoute() {
 
       {/* KPI Dashboard */}
       <Box sx={{ flexShrink: 0 }}>
-        <Grid container spacing={{ xs: 1.5, md: 2 }}>
+        <Grid container spacing={{ xs: 1.25, sm: 1.5, md: 2 }}>
           {/* Card 1: Total Clients */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <Card
               elevation={0}
               onClick={() => clearFilters()}
@@ -190,23 +190,23 @@ export default function CustomersRoute() {
                 "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)", boxShadow: 1 },
               }}
             >
-              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
-                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-                  <PeopleAltIcon fontSize="medium" />
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0">
+                  <PeopleAltIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
                     {t("customers.totalClients")}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                    <Typography variant="h5" fontWeight="bold" color="text.primary">
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
+                    <Typography variant="h5" fontWeight="bold" color="text.primary" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
                       {totalClients}
                     </Typography>
                     {(activeFilterCount > 0 || debouncedSearch) && (
                       <Chip label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`} size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
                     )}
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
                     {businessCount} {t("customers.business")} · {individualCount} {t("customers.individual")}
                   </Typography>
                 </div>
@@ -215,7 +215,7 @@ export default function CustomersRoute() {
           </Grid>
 
           {/* Card 2: Linked to Parent */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <Card
               elevation={0}
               onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
@@ -230,24 +230,24 @@ export default function CustomersRoute() {
                 "&:hover": { borderColor: "indigo.main", transform: "translateY(-1px)", boxShadow: 1 },
               }}
             >
-              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
-                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <AccountTreeIcon fontSize="medium" />
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 bg-indigo-50 text-indigo-600 rounded-lg flex-shrink-0">
+                  <AccountTreeIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
                     {t("customers.linkedToParent")}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                    <Typography variant="h5" fontWeight="bold" color="indigo.dark">
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
+                    <Typography variant="h5" fontWeight="bold" color="indigo.dark" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
                       {delegatedCount}
                     </Typography>
                     {hasParent === "true" && (
                       <Chip label="Filtered" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, bgcolor: "#e0e7ff", color: "#3730a3" }} />
                     )}
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-                    Corporate & delegated staff
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
+                    Corporate & staff
                   </Typography>
                 </div>
               </CardContent>
@@ -255,7 +255,7 @@ export default function CustomersRoute() {
           </Grid>
 
           {/* Card 3: IDs in Vault (Always shows true vault total) */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <Card
               elevation={0}
               onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
@@ -270,28 +270,28 @@ export default function CustomersRoute() {
                 "&:hover": { borderColor: "error.main", transform: "translateY(-1px)", boxShadow: 1 },
               }}
             >
-              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
-                <div className="p-2.5 bg-red-100 text-red-600 rounded-lg">
-                  <VerifiedUserIcon fontSize="medium" />
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 bg-red-100 text-red-600 rounded-lg flex-shrink-0">
+                  <VerifiedUserIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="error.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <Typography variant="caption" color="error.dark" fontWeight="700" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
                     {t("customers.idsInVault")}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                    <Typography variant="h5" fontWeight="bold" color="error.main">
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
+                    <Typography variant="h5" fontWeight="bold" color="error.main" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
                       {idsInVault}
                     </Typography>
                     {idRetained === "true" ? (
-                      <Chip label="Active View" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "error.main", color: "white" }} />
+                      <Chip label="Active" size="small" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "error.main", color: "white" }} />
                     ) : (
                       <Typography variant="caption" color="text.secondary">
                         in safe vault
                       </Typography>
                     )}
                   </Box>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-                    {idRetained === "true" ? "Showing all vault clients" : "Click to view vault clients"}
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
+                    {idRetained === "true" ? "Showing vault clients" : "Click to view vault"}
                   </Typography>
                 </div>
               </CardContent>
@@ -299,20 +299,20 @@ export default function CustomersRoute() {
           </Grid>
 
           {/* Card 4: Total Advance Held */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white", height: "100%" }}>
-              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }} className="flex items-center gap-3.5">
-                <div className="p-2.5 bg-green-50 text-green-600 rounded-lg">
-                  <AccountBalanceWalletIcon fontSize="medium" />
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }} className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 bg-green-50 text-green-600 rounded-lg flex-shrink-0">
+                  <AccountBalanceWalletIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ textTransform: "uppercase", letterSpacing: "0.03em", fontSize: { xs: "0.62rem", sm: "0.75rem" } }}>
                     {t("customers.totalAdvanceHeld")}
                   </Typography>
-                  <Typography variant="h5" fontWeight="bold" color="success.main">
+                  <Typography variant="h5" fontWeight="bold" color="success.main" sx={{ fontSize: { xs: "1.15rem", sm: "1.35rem", md: "1.5rem" } }}>
                     Rs. {totalAdvance.toLocaleString()}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: { xs: "0.68rem", sm: "0.75rem" } }}>
                     Total active customer deposits
                   </Typography>
                 </div>
@@ -341,7 +341,7 @@ export default function CustomersRoute() {
           placeholder={t("customers.searchPlaceholder")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ minWidth: { xs: "100%", sm: 320 } }}
+          sx={{ minWidth: { xs: "100%", sm: 300 }, flex: { xs: "1 1 100%", sm: "initial" } }}
           slotProps={{
             input: {
               startAdornment: (
