@@ -121,8 +121,9 @@ src/
   - Features high-performance sticky headers (`stickyHeader`) and max-height internal table scroll.
 - **Streamlined Manage Orders & Financial Panel Layout (`ManageInvoiceViews.tsx`)**:
   - **Reclaimed Vertical Real Estate**: The bulky bottom ID Vault box was eliminated. ID Vault operations are now exposed via a compact button in the terminal header (`Release ID` / `Retain ID`), and status is rendered inline within the Balance Due card (`ID Currently Held in Vault`).
-  - **Maximized Scrollable Accordions**: Vertical space reclaimed from the vault box expands `Receipt Breakdown` (`maxHeight: 280, overflowY: "auto"`) and `Transaction Ledger` (`maxHeight: 320, overflowY: "auto"`), both styled with slim, non-intrusive scrollbars.
-  - **Removed Redundant Controls**: Payment method selector buttons (`Cash`, `Card`, `Transfer`, `Cheque`) were removed to declutter the financial action area (payments default cleanly to cash or recorded method).
+  - **Clean Scrollable Accordions**: Vertical space reclaimed from the vault box expands `Receipt Breakdown` (`maxHeight: 280, overflowY: "auto"`) and `Transaction Ledger` (`maxHeight: 320, overflowY: "auto"`), both styled with slim, non-intrusive scrollbars. Receipt Breakdown retains pure financial ledger math (Base Subtotal, Transport, Discount, Late Fees, Grand Total, Total Paid) without redundant equipment duplicate tables.
+  - **Collapsed Reviews Accordion**: Secondary review threads (`InvoiceReviewsSection`) at the bottom of the asset tracking board are wrapped in an accordion that is collapsed by default (`expanded={false}`), preventing feedback composer forms from consuming >50% of the middle viewport.
+  - **Removed Redundant Controls**: Payment method selector buttons (`Cash`, `Card`, `Transfer`, `Cheque`) were removed to declutter the financial action area.
   - **Asset Board Focus**: Removed bill printing trace cards from the main board (`ManageLedgerPanel`) to keep line items and returns uncluttered. Bill printing is triggered via the single primary blue `Print POS Bill (INV-XX)` button in the Balance Due card, with full per-invoice history in `InvoicePrintHistoryDialog`.
 
 ## Viewport-Locked Tables & Global KPI Stats (`Customers.tsx` & `Equipment.tsx`)
