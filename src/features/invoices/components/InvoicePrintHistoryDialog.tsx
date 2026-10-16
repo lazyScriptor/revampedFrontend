@@ -74,6 +74,7 @@ interface InvoicePrintHistoryDialogProps {
   onClose: () => void;
   invoiceId: number;
   invoiceNumber?: string;
+  docNumber?: string;
 }
 
 export function InvoicePrintHistoryDialog({
@@ -81,7 +82,9 @@ export function InvoicePrintHistoryDialog({
   onClose,
   invoiceId,
   invoiceNumber,
+  docNumber,
 }: InvoicePrintHistoryDialogProps) {
+  const effectiveInvoiceNumber = invoiceNumber || docNumber || `INV-${invoiceId}`;
   const [selectedSnapshot, setSelectedSnapshot] = useState<PrintLogItem | null>(null);
   const [reprinting, setReprinting] = useState(false);
 
@@ -95,8 +98,12 @@ export function InvoicePrintHistoryDialog({
   } = useQuery<PrintLogItem[]>({
     queryKey: ["invoice-print-logs", invoiceId],
     queryFn: async () => {
-      const res = await api.get(`/invoices/${invoiceId}/print-logs`);
-      return res.data?.data || [];
+      const res: any = await api.get(`/invoices/${invoiceId}/print-logs`);
+      if (Array.isArray(res?.data)) return res.data;
+      if (Array.isArray(res?.data?.data)) return res.data.data;
+      if (Array.isArray(res?.data?.logs)) return res.data.logs;
+      if (Array.isArray(res)) return res;
+      return [];
     },
     enabled: open && !!invoiceId,
     staleTime: 0,
@@ -165,7 +172,7 @@ export function InvoicePrintHistoryDialog({
             </Box>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.1rem", color: "#0f172a" }}>
-                Print Audit Trail · {invoiceNumber || `INV-${invoiceId}`}
+                Print Audit Trail · {effectiveInvoiceNumber}
               </Typography>
               <Typography variant="caption" sx={{ color: "#64748b" }}>
                 Complete log of physical bills printed for this invoice

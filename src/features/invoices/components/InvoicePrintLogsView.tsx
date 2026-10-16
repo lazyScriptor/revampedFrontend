@@ -111,10 +111,19 @@ export function InvoicePrintLogsView() {
       if (docTypeFilter !== "ALL") params.docType = docTypeFilter;
       if (printMethodFilter !== "ALL") params.printMethod = printMethodFilter;
 
-      const res = await api.get("/invoices/print-logs", { params });
-      return res.data?.data || { logs: [], totalItems: 0, stats: {} };
+      const res: any = await api.get("/invoices/print-logs", { params });
+      const payload =
+        res?.data?.logs !== undefined
+          ? res.data
+          : res?.data?.data?.logs !== undefined
+          ? res.data.data
+          : res?.logs !== undefined
+          ? res
+          : { logs: [], totalItems: 0, stats: {} };
+      return payload;
     },
-    staleTime: 5000,
+    staleTime: 0,
+    refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
 
