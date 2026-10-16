@@ -4,6 +4,7 @@ import {
   Typography,
   Paper,
   Button,
+  Chip,
   Snackbar,
   Alert,
   Dialog,
@@ -47,8 +48,6 @@ import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
 import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintDialog";
 import { api } from "@/lib/api";
 import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
-import { Can } from "@/components/auth/Can";
-import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function InvoicesRoute() {
   const theme = useTheme();

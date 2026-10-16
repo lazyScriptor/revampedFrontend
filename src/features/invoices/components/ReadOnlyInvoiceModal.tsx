@@ -30,7 +30,6 @@ import BadgeIcon from "@mui/icons-material/Badge";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import PaymentIcon from "@mui/icons-material/Payment";
 import HistoryIcon from "@mui/icons-material/History";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
 
