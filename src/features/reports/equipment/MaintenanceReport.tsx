@@ -18,7 +18,7 @@ const formatCurrency = (n: number) =>
 
 export default function MaintenanceReport() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const [range, setRange] = useState({
     from: addDaysLocal(todayLocalStr(), -30),
@@ -97,7 +97,7 @@ export default function MaintenanceReport() {
       headerName: "Category",
       width: 140,
       renderCell: (p) => (
-        <span className="text-xs font-medium text-slate-300">{p.value || "—"}</span>
+        <span className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>{p.value || "—"}</span>
       ),
     },
     {
@@ -105,7 +105,7 @@ export default function MaintenanceReport() {
       headerName: "Warehouse",
       width: 130,
       renderCell: (p) => (
-        <span className="text-xs text-slate-400">{p.value || "Main"}</span>
+        <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{p.value || "Main"}</span>
       ),
     },
     {
@@ -116,12 +116,18 @@ export default function MaintenanceReport() {
       renderCell: (p) => {
         const v = Number(p.value) || 0;
         return v > 0 ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums bg-rose-500/10 text-rose-400 border border-rose-500/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums border ${
+              isDark
+                ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                : "bg-rose-50 text-rose-700 border-rose-200"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-rose-400" : "bg-rose-600"}`} />
             {v} logs
           </span>
         ) : (
-          <span className="tabular-nums font-mono text-xs text-slate-500">0</span>
+          <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>0</span>
         );
       },
     },
@@ -135,7 +141,7 @@ export default function MaintenanceReport() {
         return (
           <span
             className={`tabular-nums font-mono font-semibold text-xs ${
-              v > 0 ? "text-amber-400" : "text-slate-500"
+              v > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-500"
             }`}
           >
             {v}
@@ -149,7 +155,7 @@ export default function MaintenanceReport() {
       width: 110,
       type: "number",
       renderCell: (p) => (
-        <span className="tabular-nums font-mono font-medium text-xs text-emerald-400">
+        <span className="tabular-nums font-mono font-medium text-xs text-emerald-600 dark:text-emerald-400">
           {p.value}
         </span>
       ),
@@ -159,7 +165,7 @@ export default function MaintenanceReport() {
       headerName: "Avg Turnaround",
       width: 140,
       renderCell: (p) => (
-        <span className="tabular-nums font-mono text-xs text-slate-300">
+        <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
           {Number(p.value || 0).toFixed(1)} days
         </span>
       ),

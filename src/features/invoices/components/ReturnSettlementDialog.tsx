@@ -14,6 +14,7 @@ import {
   Rating,
   Alert,
   Divider,
+  TextField,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -57,6 +58,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
   const returnMutation = useProcessReturn();
   const [releaseId, setReleaseId] = useState(true);
   const [customerRating, setCustomerRating] = useState<number | null>(5);
+  const [finalPaymentAmount, setFinalPaymentAmount] = useState<number | string>("");
   const [returnLines, setReturnLines] = useState<any[]>([]);
 
   useMemo(() => {
@@ -116,7 +118,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
   const handleSubmit = () => {
     const payload = {
       invoice_id: invoice.invoice_id,
-      final_payment_amount: 0,
+      final_payment_amount: Number(finalPaymentAmount) || 0,
       release_id_card: releaseId,
       lines_returned: returnLines,
       customer_rating: customerRating,
@@ -337,6 +339,35 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           })}
 
           <Divider />
+
+          {/* Final Settlement Collection */}
+          <Box
+            sx={{
+              bgcolor: "white",
+              border: "1px solid #e2e8f0",
+              borderRadius: 2.5,
+              p: 2.5,
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
+              Collect Final Settlement Payment
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
+              Collect outstanding rental dues or late fees immediately at counter.
+            </Typography>
+            <TextField
+              label="Payment Amount (Rs.)"
+              type="number"
+              size="small"
+              fullWidth
+              value={finalPaymentAmount}
+              onChange={(e) => setFinalPaymentAmount(e.target.value)}
+              placeholder="0"
+              slotProps={{
+                input: { inputProps: { min: 0 } },
+              }}
+            />
+          </Box>
 
           {/* Customer rating */}
           <Box

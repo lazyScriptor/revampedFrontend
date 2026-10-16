@@ -17,7 +17,7 @@ const formatCurrency = (n: number) =>
 
 export default function AgingReport() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const { data, isLoading, isFetching } = useInvoiceAging();
 
@@ -59,7 +59,13 @@ export default function AgingReport() {
       headerName: "Invoice #",
       width: 125,
       renderCell: (p) => (
-        <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+        <span
+          className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
+            isDark
+              ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+              : "text-amber-800 bg-amber-50 border-amber-200"
+          }`}
+        >
           INV-{p.value}
         </span>
       ),
@@ -77,25 +83,27 @@ export default function AgingReport() {
             ? r.company_name
             : `${r.first_name || ""} ${r.last_name || ""}`.trim();
         return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, py: 0.5 }}>
             <Avatar
               sx={{
-                width: 30,
-                height: 30,
-                bgcolor: isBusiness ? "#f59e0b" : "#334155",
-                color: isBusiness ? "#0f172a" : "#f8fafc",
-                fontSize: "0.8rem",
+                width: 34,
+                height: 34,
+                bgcolor: isBusiness ? "#f59e0b" : isDark ? "#334155" : "#e2e8f0",
+                color: isBusiness ? "#0f172a" : isDark ? "#f8fafc" : "#334155",
+                fontSize: "0.82rem",
                 fontWeight: 700,
+                border: "1px solid",
+                borderColor: isBusiness ? "#d97706" : isDark ? "#475569" : "#cbd5e1",
               }}
             >
               {isBusiness ? <BusinessIcon fontSize="small" /> : (r.first_name?.[0] || "?")}
             </Avatar>
-            <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 0.25 }}>
               <Typography
                 variant="body2"
                 sx={{
                   fontWeight: 700,
-                  lineHeight: 1.25,
+                  lineHeight: 1.3,
                   color: isDark ? "#f8fafc" : "#0f172a",
                 }}
                 noWrap
@@ -105,7 +113,7 @@ export default function AgingReport() {
               <Typography
                 variant="caption"
                 sx={{
-                  color: isDark ? "#94a3b8" : "text.secondary",
+                  color: isDark ? "#94a3b8" : "#64748b",
                   fontFamily: "'JetBrains Mono', monospace",
                   fontVariantNumeric: "tabular-nums",
                   fontSize: "0.72rem",
@@ -123,7 +131,7 @@ export default function AgingReport() {
       headerName: "Issued",
       width: 130,
       renderCell: (p) => (
-        <span className="tabular-nums font-mono text-xs text-slate-400">
+        <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
           {formatDisplayDate(p.value)}
         </span>
       ),
@@ -198,13 +206,19 @@ export default function AgingReport() {
           <span
             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold tabular-nums border ${
               isCritical
-                ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                ? isDark
+                  ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                  : "bg-rose-50 text-rose-700 border-rose-200"
                 : isWarning
-                ? "bg-amber-500/10 text-amber-400 border-amber-500/25"
-                : "bg-slate-500/10 text-slate-300 border-slate-500/25"
+                ? isDark
+                  ? "bg-amber-500/10 text-amber-400 border-amber-500/25"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+                : isDark
+                ? "bg-slate-500/10 text-slate-300 border-slate-500/25"
+                : "bg-slate-100 text-slate-700 border-slate-200"
             }`}
           >
-            <AccessTimeIcon sx={{ fontSize: 13 }} />
+            <WarningAmberIcon sx={{ fontSize: 13 }} />
             {v} days
           </span>
         );

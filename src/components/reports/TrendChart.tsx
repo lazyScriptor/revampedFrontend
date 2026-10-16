@@ -31,7 +31,7 @@ export function TrendChart({
   emptyLabel = "No data for this period",
 }: TrendChartProps) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   if (loading) {
     return (

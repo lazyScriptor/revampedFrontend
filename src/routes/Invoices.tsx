@@ -173,7 +173,7 @@ export default function InvoicesRoute() {
             ? [
                 {
                   payment_amount: fees.advance,
-                  method: "Cash",
+                  method: (fees as any).advance_payment_method || "Cash",
                   payment_date: new Date().toISOString(),
                 },
               ]

@@ -21,7 +21,7 @@ interface ExportMenuProps {
 
 export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
   const hasPermission = useAuthStore((s) => s.hasPermission);
   const canExport = hasPermission?.("reports:export") ?? true;
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);

@@ -47,7 +47,7 @@ export function StatTable({
   onRowSelectionModelChange,
 }: StatTableProps) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   // Enhance columns with default tabular numerics and crisp headers
   const enhancedCols = useMemo(() => {
@@ -99,7 +99,7 @@ export function StatTable({
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        boxShadow: isDark ? "0 4px 20px -2px rgba(0,0,0,0.3)" : "none",
+        boxShadow: isDark ? "0 4px 20px -2px rgba(0,0,0,0.3)" : "0 1px 3px rgba(15,23,42,0.06)",
       }}
     >
       <DataGrid
@@ -121,7 +121,8 @@ export function StatTable({
         rowSelectionModel={rowSelectionModel}
         onRowSelectionModelChange={onRowSelectionModelChange}
         disableRowSelectionOnClick
-        density="compact"
+        getRowHeight={() => "auto"}
+        getEstimatedRowHeight={() => 62}
         sx={{
           flex: 1,
           minHeight: 0,
@@ -136,18 +137,38 @@ export function StatTable({
             letterSpacing: "0.05em",
             color: isDark ? "#94a3b8" : "#475569",
             borderBottom: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
+            minHeight: "44px !important",
+          },
+          "& .MuiDataGrid-row": {
+            borderBottom: isDark ? "1px solid rgba(51, 65, 85, 0.4)" : "1px solid #f1f5f9",
+            bgcolor: isDark ? "#0f172a" : "#ffffff",
+            minHeight: "56px !important",
+            transition: "background-color 120ms ease",
+            "&:nth-of-type(even)": {
+              bgcolor: isDark ? "rgba(30, 41, 59, 0.3)" : "#fafbfc",
+            },
+            "&:hover": {
+              bgcolor: isDark ? "rgba(30, 41, 59, 0.7)" : "#f1f5f9",
+            },
+            "&.Mui-selected": {
+              bgcolor: isDark ? "rgba(56, 189, 248, 0.15)" : "#eff6ff",
+              "&:hover": {
+                bgcolor: isDark ? "rgba(56, 189, 248, 0.25)" : "#dbeafe",
+              },
+            },
           },
           "& .MuiDataGrid-cell": {
             borderColor: isDark ? "rgba(51, 65, 85, 0.4)" : "#f1f5f9",
-            py: 1.25,
+            py: { xs: 1, sm: 1.25 },
+            px: { xs: 1, sm: 1.5 },
+            display: "flex",
+            alignItems: "center",
             fontSize: "0.85rem",
+            color: isDark ? "#f8fafc" : "#0f172a",
             "&.tabular-nums": {
               fontVariantNumeric: "tabular-nums",
               fontFamily: "'JetBrains Mono', monospace",
             },
-          },
-          "& .MuiDataGrid-row:hover": {
-            bgcolor: isDark ? "rgba(30, 41, 59, 0.7)" : "#f8fafc",
           },
           "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within": {
             outline: "none",

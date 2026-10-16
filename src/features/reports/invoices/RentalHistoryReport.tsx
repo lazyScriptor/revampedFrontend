@@ -31,7 +31,7 @@ const isOverdue = (inv: any) =>
 
 export default function RentalHistoryReport() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const [range, setRange] = useState({
     from: addDaysLocal(todayLocalStr(), -90),
@@ -85,7 +85,13 @@ export default function RentalHistoryReport() {
       headerName: "Invoice #",
       width: 125,
       renderCell: (p) => (
-        <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+        <span
+          className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
+            isDark
+              ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+              : "text-amber-800 bg-amber-50 border-amber-200"
+          }`}
+        >
           INV-{p.value}
         </span>
       ),
@@ -103,25 +109,27 @@ export default function RentalHistoryReport() {
             ? c.company_name
             : `${c.first_name || ""} ${c.last_name || ""}`.trim();
         return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, py: 0.5 }}>
             <Avatar
               sx={{
-                width: 32,
-                height: 32,
-                bgcolor: isBusiness ? "#f59e0b" : "#334155",
-                color: isBusiness ? "#0f172a" : "#f8fafc",
-                fontSize: "0.8rem",
+                width: 34,
+                height: 34,
+                bgcolor: isBusiness ? "#f59e0b" : isDark ? "#334155" : "#e2e8f0",
+                color: isBusiness ? "#0f172a" : isDark ? "#f8fafc" : "#334155",
+                fontSize: "0.82rem",
                 fontWeight: 700,
+                border: "1px solid",
+                borderColor: isBusiness ? "#d97706" : isDark ? "#475569" : "#cbd5e1",
               }}
             >
               {isBusiness ? <BusinessIcon fontSize="small" /> : (c.first_name?.[0] || "?")}
             </Avatar>
-            <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 0.25 }}>
               <Typography
                 variant="body2"
                 sx={{
                   fontWeight: 700,
-                  lineHeight: 1.25,
+                  lineHeight: 1.3,
                   color: isDark ? "#f8fafc" : "#0f172a",
                 }}
                 noWrap
@@ -131,7 +139,7 @@ export default function RentalHistoryReport() {
               <Typography
                 variant="caption"
                 sx={{
-                  color: isDark ? "#94a3b8" : "text.secondary",
+                  color: isDark ? "#94a3b8" : "#64748b",
                   fontFamily: "'JetBrains Mono', monospace",
                   fontVariantNumeric: "tabular-nums",
                   fontSize: "0.72rem",
@@ -149,7 +157,7 @@ export default function RentalHistoryReport() {
       headerName: "Issued Date",
       width: 135,
       renderCell: (p) => (
-        <span className="tabular-nums font-mono text-xs text-slate-400">
+        <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
           {formatDisplayDate(p.value)}
         </span>
       ),
@@ -186,19 +194,25 @@ export default function RentalHistoryReport() {
           <span
             className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
               overdue
-                ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                ? isDark
+                  ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                  : "bg-rose-50 text-rose-700 border-rose-200"
                 : isCompleted
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
-                : "bg-sky-500/10 text-sky-400 border-sky-500/25"
+                ? isDark
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : isDark
+                ? "bg-sky-500/10 text-sky-400 border-sky-500/25"
+                : "bg-sky-50 text-sky-700 border-sky-200"
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
                 overdue
-                  ? "bg-rose-400"
+                  ? isDark ? "bg-rose-400" : "bg-rose-600"
                   : isCompleted
-                  ? "bg-emerald-400"
-                  : "bg-sky-400"
+                  ? isDark ? "bg-emerald-400" : "bg-emerald-600"
+                  : isDark ? "bg-sky-400" : "bg-sky-600"
               }`}
             />
             {label}

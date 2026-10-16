@@ -142,12 +142,14 @@ export default function InvoicesTab() {
           pageSizeOptions={[10, 25, 50, 100]}
           disableRowSelectionOnClick
           autoHeight
-          density="compact"
+          getRowHeight={() => "auto"}
+          getEstimatedRowHeight={() => 56}
           sx={{
             border: 0,
             "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
-            "& .MuiDataGrid-cell": { fontSize: "0.78rem" },
-            "& .MuiDataGrid-columnHeaderTitle": { fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase" },
+            "& .MuiDataGrid-row": { minHeight: "56px !important" },
+            "& .MuiDataGrid-cell": { fontSize: "0.84rem", py: 1 },
+            "& .MuiDataGrid-columnHeaderTitle": { fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase" },
           }}
         />
       </Box>

@@ -64,7 +64,7 @@ export function DateRangeFilter({
   showLabel = true,
 }: DateRangeFilterProps) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const activePreset = PRESETS.find((p) => {
     const r = presetRange(p.key);
@@ -80,7 +80,7 @@ export function DateRangeFilter({
             variant="caption"
             sx={{
               fontWeight: 800,
-              color: isDark ? "#94a3b8" : "text.secondary",
+              color: isDark ? "#94a3b8" : "#475569",
               letterSpacing: "0.06em",
               textTransform: "uppercase",
               fontSize: "0.7rem",
@@ -121,7 +121,7 @@ export function DateRangeFilter({
                   ? "#f59e0b"
                   : isDark
                   ? "rgba(255, 255, 255, 0.05)"
-                  : "rgba(0, 0, 0, 0.04)",
+                  : "#f1f5f9",
                 color: selected ? "#0f172a" : isDark ? "#94a3b8" : "#475569",
                 border: "1px solid",
                 borderColor: selected
@@ -134,7 +134,7 @@ export function DateRangeFilter({
                     ? "#d97706"
                     : isDark
                     ? "rgba(255, 255, 255, 0.1)"
-                    : "rgba(0, 0, 0, 0.08)",
+                    : "#e2e8f0",
                   color: selected ? "#0f172a" : isDark ? "#f8fafc" : "#0f172a",
                 },
               }}
@@ -162,7 +162,7 @@ export function DateRangeFilter({
             inputLabel: {
               shrink: true,
               sx: {
-                color: isDark ? "#94a3b8" : undefined,
+                color: isDark ? "#94a3b8" : "#475569",
                 fontWeight: 600,
                 fontSize: "0.85rem",
               },
@@ -173,7 +173,7 @@ export function DateRangeFilter({
           }}
           sx={{
             width: { xs: "100%", sm: 180 },
-            bgcolor: isDark ? "#0f172a" : "#f8fafc",
+            bgcolor: isDark ? "#0f172a" : "#ffffff",
             borderRadius: 2,
             "& .MuiOutlinedInput-notchedOutline": {
               borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
@@ -182,7 +182,7 @@ export function DateRangeFilter({
               borderColor: "#f59e0b",
             },
             "& .MuiInputBase-input": {
-              color: isDark ? "#f8fafc !important" : undefined,
+              color: isDark ? "#f8fafc" : "#0f172a",
               fontSize: "0.85rem",
               fontWeight: 500,
               fontFamily: "'JetBrains Mono', monospace",
@@ -194,7 +194,7 @@ export function DateRangeFilter({
           variant="caption"
           sx={{
             display: { xs: "none", sm: "block" },
-            color: isDark ? "#64748b" : "text.secondary",
+            color: isDark ? "#94a3b8" : "#64748b",
             fontWeight: 700,
           }}
         >
@@ -211,7 +211,7 @@ export function DateRangeFilter({
             inputLabel: {
               shrink: true,
               sx: {
-                color: isDark ? "#94a3b8" : undefined,
+                color: isDark ? "#94a3b8" : "#475569",
                 fontWeight: 600,
                 fontSize: "0.85rem",
               },
@@ -222,7 +222,7 @@ export function DateRangeFilter({
           }}
           sx={{
             width: { xs: "100%", sm: 180 },
-            bgcolor: isDark ? "#0f172a" : "#f8fafc",
+            bgcolor: isDark ? "#0f172a" : "#ffffff",
             borderRadius: 2,
             "& .MuiOutlinedInput-notchedOutline": {
               borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
@@ -231,7 +231,7 @@ export function DateRangeFilter({
               borderColor: "#f59e0b",
             },
             "& .MuiInputBase-input": {
-              color: isDark ? "#f8fafc !important" : undefined,
+              color: isDark ? "#f8fafc" : "#0f172a",
               fontSize: "0.85rem",
               fontWeight: 500,
               fontFamily: "'JetBrains Mono', monospace",

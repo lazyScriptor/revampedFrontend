@@ -216,12 +216,14 @@ export function JobHistoryTable() {
         }}
         rowCount={data?.total || 0}
         paginationMode="server"
-        disableRowSelectionOnClick
         getRowId={(r) => r.job_id}
+        getRowHeight={() => "auto"}
+        getEstimatedRowHeight={() => 56}
         sx={{
           border: 0,
           "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" },
-          "& .MuiDataGrid-cell": { borderColor: "#f1f5f9" },
+          "& .MuiDataGrid-row": { minHeight: "56px !important" },
+          "& .MuiDataGrid-cell": { borderColor: "#f1f5f9", py: 1 },
         }}
       />
     </Paper>

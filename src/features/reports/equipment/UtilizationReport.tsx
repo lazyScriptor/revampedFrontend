@@ -17,7 +17,7 @@ const formatCurrency = (n: number) =>
 
 export default function UtilizationReport() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const [range, setRange] = useState({
     from: addDaysLocal(todayLocalStr(), -30),
@@ -97,7 +97,7 @@ export default function UtilizationReport() {
             variant="body2"
             sx={{
               fontWeight: 700,
-              lineHeight: 1.25,
+              lineHeight: 1.3,
               color: isDark ? "#f8fafc" : "#0f172a",
             }}
             noWrap
@@ -109,7 +109,7 @@ export default function UtilizationReport() {
               variant="caption"
               sx={{
                 fontFamily: "'JetBrains Mono', monospace",
-                color: "#f59e0b",
+                color: "#d97706",
                 fontSize: "0.72rem",
                 display: "block",
               }}
@@ -126,7 +126,7 @@ export default function UtilizationReport() {
       headerName: "Category",
       width: 140,
       renderCell: (p) => (
-        <span className="text-xs font-medium text-slate-300">{p.value || "—"}</span>
+        <span className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>{p.value || "—"}</span>
       ),
     },
     {
@@ -134,7 +134,7 @@ export default function UtilizationReport() {
       headerName: "Warehouse",
       width: 130,
       renderCell: (p) => (
-        <span className="text-xs text-slate-400">{p.value || "Main"}</span>
+        <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{p.value || "Main"}</span>
       ),
     },
     {
@@ -143,7 +143,7 @@ export default function UtilizationReport() {
       width: 85,
       type: "number",
       renderCell: (p) => (
-        <span className="tabular-nums font-mono font-medium text-xs text-slate-200">
+        <span className={`tabular-nums font-mono font-medium text-xs ${isDark ? "text-slate-200" : "text-slate-700"}`}>
           {p.value}
         </span>
       ),
@@ -154,7 +154,7 @@ export default function UtilizationReport() {
       width: 85,
       type: "number",
       renderCell: (p) => (
-        <span className="tabular-nums font-mono font-semibold text-xs text-amber-400">
+        <span className="tabular-nums font-mono font-semibold text-xs text-amber-600 dark:text-amber-400">
           {p.value}
         </span>
       ),
@@ -165,7 +165,7 @@ export default function UtilizationReport() {
       width: 85,
       type: "number",
       renderCell: (p) => (
-        <span className="tabular-nums font-mono font-medium text-xs text-emerald-400">
+        <span className="tabular-nums font-mono font-medium text-xs text-emerald-600 dark:text-emerald-400">
           {p.value}
         </span>
       ),

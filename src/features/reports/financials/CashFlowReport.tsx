@@ -16,7 +16,7 @@ const formatCurrency = (n: number) =>
 
 export default function CashFlowReport() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const [date, setDate] = useState(todayLocalStr());
   const { data, isLoading, isFetching } = useCashFlowReport(date);
@@ -28,7 +28,7 @@ export default function CashFlowReport() {
       flex: 1.2,
       minWidth: 150,
       renderCell: (p) => (
-        <span className="font-semibold text-sm text-slate-100">{p.value}</span>
+        <span className={`font-semibold text-sm ${isDark ? "text-slate-100" : "text-slate-900"}`}>{p.value}</span>
       ),
     },
     {
@@ -86,7 +86,7 @@ export default function CashFlowReport() {
               fontWeight: 800,
               fontFamily: "'JetBrains Mono', monospace",
               fontVariantNumeric: "tabular-nums",
-              color: val >= 0 ? "#f8fafc" : "#ef4444",
+              color: val >= 0 ? (isDark ? "#f8fafc" : "#0f172a") : "#ef4444",
             }}
           >
             {formatCurrency(val)}
@@ -100,7 +100,7 @@ export default function CashFlowReport() {
       width: 130,
       type: "number",
       renderCell: (p) => (
-        <span className="tabular-nums font-mono font-medium text-xs text-slate-300">
+        <span className={`tabular-nums font-mono font-medium text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
           {p.value} txns
         </span>
       ),
@@ -131,7 +131,7 @@ export default function CashFlowReport() {
               inputLabel: {
                 shrink: true,
                 sx: {
-                  color: isDark ? "#94a3b8" : undefined,
+                  color: isDark ? "#94a3b8" : "#475569",
                   fontWeight: 600,
                   fontSize: "0.85rem",
                 },
@@ -142,7 +142,7 @@ export default function CashFlowReport() {
             }}
             sx={{
               width: { xs: "100%", sm: 200 },
-              bgcolor: isDark ? "#0f172a" : "#f8fafc",
+              bgcolor: isDark ? "#0f172a" : "#ffffff",
               borderRadius: 2,
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
@@ -151,7 +151,7 @@ export default function CashFlowReport() {
                 borderColor: "#f59e0b",
               },
               "& .MuiInputBase-input": {
-                color: isDark ? "#f8fafc !important" : undefined,
+                color: isDark ? "#f8fafc" : "#0f172a",
                 fontFamily: "'JetBrains Mono', monospace",
               },
             }}

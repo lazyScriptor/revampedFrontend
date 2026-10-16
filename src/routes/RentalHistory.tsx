@@ -420,10 +420,18 @@ export default function RentalHistoryRoute() {
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
             disableRowSelectionOnClick
+            getRowHeight={() => "auto"}
+            getEstimatedRowHeight={() => 62}
             sx={{
               border: "none",
               minWidth: 720,
               "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
+              "& .MuiDataGrid-row": {
+                minHeight: "56px !important",
+              },
+              "& .MuiDataGrid-cell": {
+                py: 1.25,
+              },
             }}
           />
         </Box>

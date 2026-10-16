@@ -191,7 +191,7 @@ function AuthenticatedLayout() {
       text: "Inventory",
       label: t("nav.inventory"),
       icon: <InventoryIcon />,
-      requiredPermission: "inventory_permission",
+      requiredPermission: "equipment:view",
       children: [
         { text: "All Equipment", label: t("nav.allEquipment"), path: "/equipment", icon: <ConstructionIcon fontSize="small" /> },
         { text: "Categories", label: t("nav.categories"), path: "/equipment-category", icon: <CategoryIcon fontSize="small" /> },
@@ -203,7 +203,7 @@ function AuthenticatedLayout() {
       label: t("nav.customers"),
       icon: <PeopleIcon />,
       path: "/customers",
-      requiredPermission: "inventory_permission",
+      requiredPermission: "customer:view",
     },
     {
       text: "Invoices",
@@ -211,13 +211,13 @@ function AuthenticatedLayout() {
       icon: <ReceiptIcon />,
       path: "/invoices",
       search: { mode: "manage" },
-      requiredPermission: "inventory_permission",
+      requiredPermission: "invoice:view",
     },
     {
       text: "Data Arena",
       label: t("nav.dataArena"),
       icon: <StorageIcon />,
-      requiredPermission: "inventory_permission",
+      requiredPermission: "data_arena:view",
       children: [
         { text: "Imports", label: t("nav.imports"), path: "/data-arena", search: { section: "imports" }, icon: <UploadFileIcon fontSize="small" /> },
         { text: "Exports", label: t("nav.exports"), path: "/data-arena", search: { section: "exports" }, icon: <FileDownloadIcon fontSize="small" /> },
@@ -237,7 +237,7 @@ function AuthenticatedLayout() {
       text: "Accounting",
       label: t("nav.accounting"),
       icon: <AccountBalanceIcon />,
-      requiredPermission: "inventory_permission",
+      requiredPermission: "accounting:view",
       children: [
         { text: "Overview", label: t("nav.overview"), path: "/accounting", search: { tab: "overview" }, icon: <DashboardCustomizeIcon fontSize="small" /> },
         { text: "Invoices", label: t("nav.invoices"), path: "/accounting", search: { tab: "invoices" }, icon: <ReceiptIcon fontSize="small" /> },
@@ -251,7 +251,7 @@ function AuthenticatedLayout() {
       text: "Reports",
       label: t("nav.reports"),
       icon: <AssessmentIcon />,
-      requiredPermission: "inventory_permission",
+      requiredPermission: "accounting:view",
       children: [
         { text: "Customers", label: t("nav.customers"), path: "/reports", search: { category: "customers" }, icon: <PeopleIcon fontSize="small" /> },
         { text: "Equipment", label: t("nav.equipment"), path: "/reports", search: { category: "equipment" }, icon: <ConstructionIcon fontSize="small" /> },
@@ -272,10 +272,10 @@ function AuthenticatedLayout() {
     },
   ];
 
-  // 2. Filter the items based on permissions
+  // 2. Filter the items based on permissions (supports both granular and legacy fallback)
   const visibleNavItems = allNavItems.filter((item) => {
     if (!item.requiredPermission) return true;
-    return hasPermission(item.requiredPermission);
+    return hasPermission(item.requiredPermission) || hasPermission("inventory_permission");
   });
 
   const handleDrawerToggle = () => {

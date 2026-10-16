@@ -87,7 +87,7 @@ interface PrintLogItem {
 
 export function InvoicePrintLogsView() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [search, setSearch] = useState("");
@@ -317,7 +317,7 @@ export function InvoicePrintLogsView() {
           }}
           sx={{
             flex: { xs: "1 1 100%", sm: "1 1 260px" },
-            bgcolor: isDark ? "#0f172a" : "#f8fafc",
+            bgcolor: isDark ? "#0f172a" : "#ffffff",
             borderRadius: 2,
             "& .MuiOutlinedInput-notchedOutline": {
               borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
@@ -326,7 +326,7 @@ export function InvoicePrintLogsView() {
               borderColor: "#f59e0b",
             },
             "& .MuiInputBase-input": {
-              color: isDark ? "#f8fafc !important" : undefined,
+              color: isDark ? "#f8fafc" : "#0f172a",
               fontSize: "0.85rem",
             },
           }}
@@ -342,7 +342,7 @@ export function InvoicePrintLogsView() {
         />
 
         <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel sx={{ color: isDark ? "#94a3b8" : undefined }}>Document Type</InputLabel>
+          <InputLabel sx={{ color: isDark ? "#94a3b8" : "#475569" }}>Document Type</InputLabel>
           <Select
             value={docTypeFilter}
             label="Document Type"
@@ -351,8 +351,8 @@ export function InvoicePrintLogsView() {
               setPage(0);
             }}
             sx={{
-              bgcolor: isDark ? "#0f172a" : "#f8fafc",
-              color: isDark ? "#f8fafc" : undefined,
+              bgcolor: isDark ? "#0f172a" : "#ffffff",
+              color: isDark ? "#f8fafc" : "#0f172a",
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
               },
@@ -367,7 +367,7 @@ export function InvoicePrintLogsView() {
         </FormControl>
 
         <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel sx={{ color: isDark ? "#94a3b8" : undefined }}>Print Method</InputLabel>
+          <InputLabel sx={{ color: isDark ? "#94a3b8" : "#475569" }}>Print Method</InputLabel>
           <Select
             value={printMethodFilter}
             label="Print Method"
@@ -376,8 +376,8 @@ export function InvoicePrintLogsView() {
               setPage(0);
             }}
             sx={{
-              bgcolor: isDark ? "#0f172a" : "#f8fafc",
-              color: isDark ? "#f8fafc" : undefined,
+              bgcolor: isDark ? "#0f172a" : "#ffffff",
+              color: isDark ? "#f8fafc" : "#0f172a",
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1",
               },
@@ -455,8 +455,11 @@ export function InvoicePrintLogsView() {
                     key={log.log_id}
                     hover
                     sx={{
-                      "&:hover": { bgcolor: isDark ? "rgba(30, 41, 59, 0.7) !important" : undefined },
-                      "& td": { borderBottom: isDark ? "1px solid rgba(51, 65, 85, 0.4)" : undefined },
+                      "&:hover": { bgcolor: isDark ? "rgba(30, 41, 59, 0.7) !important" : "#f8fafc !important" },
+                      "& td": {
+                        borderBottom: isDark ? "1px solid rgba(51, 65, 85, 0.4)" : "1px solid #f1f5f9",
+                        py: { xs: 1.25, sm: 1.75 },
+                      },
                       cursor: "pointer",
                     }}
                     onClick={() => setSelectedLog(log)}
@@ -467,7 +470,7 @@ export function InvoicePrintLogsView() {
                         {formatDateTime(log.printed_at)}
                       </Typography>
                       {log.ip_address && (
-                        <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#94a3b8", display: "block", fontSize: "0.68rem" }}>
+                        <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", display: "block", fontSize: "0.68rem" }}>
                           IP: {log.ip_address}
                         </Typography>
                       )}
@@ -476,7 +479,13 @@ export function InvoicePrintLogsView() {
                     {/* Doc Number & Type */}
                     <TableCell>
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
-                        <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                        <span
+                          className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
+                            isDark
+                              ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                              : "text-amber-800 bg-amber-50 border-amber-200"
+                          }`}
+                        >
                           {log.doc_number}
                         </span>
                         {getDocTypeBadge(log.doc_type)}

@@ -22,8 +22,8 @@ import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 interface PosCheckoutPanelProps {
   cartItems: CartItem[];
   selectedCustomer: any | null;
-  fees: { transport: number; discount: number; advance: number };
-  setFees: React.Dispatch<React.SetStateAction<{ transport: number; discount: number; advance: number }>>;
+  fees: { transport: number; discount: number; advance: number; advance_payment_method?: string };
+  setFees: React.Dispatch<React.SetStateAction<any>>;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onConfirmDispatch: () => void;
@@ -49,15 +49,23 @@ export function PosCheckoutPanel({
   const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
 
-  const handleFeeChange = (field: keyof typeof fees, value: string) => {
+  const handleFeeChange = (field: string, value: string) => {
     const num = parseFloat(value);
-    setFees((prev) => ({ ...prev, [field]: isNaN(num) ? 0 : num }));
+    setFees((prev: any) => ({
+      ...prev,
+      [field]: isNaN(num) ? 0 : num,
+      ...(field === "advance" ? { advance_payment_method: "Cash" } : {}),
+    }));
   };
 
   const handleApplyWallet = () => {
     if (selectedCustomer?.deposit_balance) {
       const maxApplicable = Math.min(Number(selectedCustomer.deposit_balance), grandTotal);
-      setFees((prev) => ({ ...prev, advance: maxApplicable }));
+      setFees((prev: any) => ({
+        ...prev,
+        advance: maxApplicable,
+        advance_payment_method: "WalletDeposit",
+      }));
     }
   };
 

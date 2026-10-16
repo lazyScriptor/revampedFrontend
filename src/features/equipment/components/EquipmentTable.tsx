@@ -289,6 +289,8 @@ export function EquipmentTable({
             }
           }}
           disableRowSelectionOnClick
+          getRowHeight={() => "auto"}
+          getEstimatedRowHeight={() => 56}
           // 🚀 HIDE NON-ESSENTIAL COLUMNS BY DEFAULT
           initialState={{
             columns: {
@@ -322,10 +324,13 @@ export function EquipmentTable({
               bgcolor: "#f8fafc",
               borderBottom: "1px solid #e2e8f0",
             },
+            "& .MuiDataGrid-row": {
+              minHeight: "56px !important",
+            },
             "& .MuiDataGrid-virtualScroller": {
               overflowY: "auto !important",
             },
-            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9" },
+            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9", py: 1 },
             "& .MuiDataGrid-toolbarContainer": {
               p: 1.5,
               borderBottom: "1px solid #f1f5f9",

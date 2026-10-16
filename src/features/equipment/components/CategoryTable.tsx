@@ -160,9 +160,14 @@ export function CategoryTable({
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
           disableRowSelectionOnClick
+          getRowHeight={() => "auto"}
+          getEstimatedRowHeight={() => 56}
           sx={{
             border: "none",
-            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9" },
+            "& .MuiDataGrid-row": {
+              minHeight: "56px !important",
+            },
+            "& .MuiDataGrid-cell": { borderColor: "#f1f5f9", py: 1 },
             "& .MuiDataGrid-columnHeaders": {
               bgcolor: "#f8fafc",
               borderBottom: "1px solid #e2e8f0",

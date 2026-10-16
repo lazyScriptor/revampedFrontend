@@ -1,4 +1,5 @@
 import { createTheme, alpha } from "@mui/material/styles";
+import type {} from "@mui/x-data-grid/themeAugmentation";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GearGrid theme — built from the landing page's warm-amber brand identity
@@ -370,11 +371,32 @@ export const createAppTheme = (
       },
 
       // ── Inputs ─────────────────────────────────────────────────────────
+      MuiInputBase: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            color: theme.palette.text.primary,
+          }),
+          input: ({ theme }) => ({
+            color: theme.palette.text.primary,
+            "&::placeholder": {
+              color: theme.palette.text.secondary,
+              opacity: 0.7,
+            },
+            "&::-webkit-calendar-picker-indicator": {
+              cursor: "pointer",
+              opacity: 0.7,
+              filter: theme.palette.mode === "dark" ? "invert(1)" : "none",
+              "&:hover": { opacity: 1 },
+            },
+          }),
+        },
+      },
       MuiOutlinedInput: {
         styleOverrides: {
           root: ({ theme }) => ({
             borderRadius: 10,
             backgroundColor: theme.palette.surface.base,
+            color: theme.palette.text.primary,
             transition: "border-color 150ms, box-shadow 150ms",
             "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.border.subtle },
             "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.border.strong },
@@ -386,11 +408,66 @@ export const createAppTheme = (
               boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.16)}`,
             },
           }),
-          input: { paddingTop: 10, paddingBottom: 10 },
+          input: ({ theme }) => ({
+            paddingTop: 10,
+            paddingBottom: 10,
+            color: theme.palette.text.primary,
+            fontSize: "0.875rem",
+            "&::placeholder": {
+              color: theme.palette.text.secondary,
+              opacity: 0.7,
+            },
+            "&::-webkit-calendar-picker-indicator": {
+              cursor: "pointer",
+              opacity: 0.7,
+              filter: theme.palette.mode === "dark" ? "invert(1)" : "none",
+              "&:hover": { opacity: 1 },
+            },
+          }),
+        },
+      },
+      MuiFilledInput: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            borderRadius: 10,
+            backgroundColor: theme.palette.surface.muted,
+            color: theme.palette.text.primary,
+            "&:hover": { backgroundColor: theme.palette.surface.sunken },
+            "&.Mui-focused": { backgroundColor: theme.palette.surface.base },
+          }),
+          input: ({ theme }) => ({
+            color: theme.palette.text.primary,
+          }),
+        },
+      },
+      MuiInput: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            color: theme.palette.text.primary,
+          }),
+          input: ({ theme }) => ({
+            color: theme.palette.text.primary,
+          }),
+        },
+      },
+      MuiSelect: {
+        styleOverrides: {
+          icon: ({ theme }) => ({
+            color: theme.palette.text.secondary,
+          }),
         },
       },
       MuiInputLabel: {
-        styleOverrides: { root: { fontSize: "0.875rem", fontWeight: 500 } },
+        styleOverrides: {
+          root: ({ theme }) => ({
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            color: theme.palette.text.secondary,
+            "&.Mui-focused": {
+              color: theme.palette.primary.main,
+            },
+          }),
+        },
       },
       MuiFormHelperText: {
         styleOverrides: { root: { fontSize: "0.72rem", marginLeft: 4 } },
@@ -591,6 +668,75 @@ export const createAppTheme = (
       MuiBadge: {
         styleOverrides: {
           badge: { fontWeight: 800, fontSize: "0.65rem" },
+        },
+      },
+
+      // ── DataGrid (Tables) ───────────────────────────────────────────────
+      MuiDataGrid: {
+        defaultProps: {
+          density: "standard",
+          disableRowSelectionOnClick: true,
+        },
+        styleOverrides: {
+          root: ({ theme }) => ({
+            border: `1px solid ${theme.palette.border.subtle}`,
+            borderRadius: 12,
+            fontFamily: theme.typography.fontFamily,
+            color: theme.palette.text.primary,
+            backgroundColor: theme.palette.background.paper,
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: theme.palette.surface.muted,
+              color: theme.palette.text.secondary,
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              borderBottom: `1px solid ${theme.palette.border.subtle}`,
+            },
+            "& .MuiDataGrid-row": {
+              borderBottom: `1px solid ${theme.palette.border.subtle}`,
+              minHeight: "56px !important",
+              transition: "background-color 120ms ease",
+              "&:hover": {
+                backgroundColor: alpha(theme.palette.primary.main, 0.04),
+              },
+              "&.Mui-selected": {
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                "&:hover": {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                },
+              },
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: `1px solid ${theme.palette.border.subtle}`,
+              color: theme.palette.text.primary,
+              display: "flex",
+              alignItems: "center",
+              fontSize: "0.85rem",
+              paddingTop: "10px",
+              paddingBottom: "10px",
+              paddingLeft: "14px",
+              paddingRight: "14px",
+              whiteSpace: "normal",
+              wordBreak: "break-word",
+              lineHeight: 1.4,
+              "&.tabular-nums": {
+                fontVariantNumeric: "tabular-nums",
+                fontFamily: "'JetBrains Mono', monospace",
+              },
+            },
+            "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within": {
+              outline: "none",
+            },
+            "& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within": {
+              outline: "none",
+            },
+            "& .MuiDataGrid-footerContainer": {
+              borderTop: `1px solid ${theme.palette.border.subtle}`,
+              backgroundColor: theme.palette.surface.base,
+              color: theme.palette.text.secondary,
+            },
+          }),
         },
       },
     },

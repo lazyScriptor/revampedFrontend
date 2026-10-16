@@ -18,7 +18,7 @@ const formatCurrency = (n: number) =>
 
 export default function OutstandingBalancesReport() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const [range, setRange] = useState({
     from: addDaysLocal(todayLocalStr(), -90),
@@ -82,25 +82,27 @@ export default function OutstandingBalancesReport() {
             ? r.company_name
             : `${r.first_name || ""} ${r.last_name || ""}`.trim();
         return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, py: 0.5 }}>
             <Avatar
               sx={{
-                width: 32,
-                height: 32,
-                bgcolor: isBusiness ? "#f59e0b" : "#334155",
-                color: isBusiness ? "#0f172a" : "#f8fafc",
-                fontSize: "0.8rem",
+                width: 34,
+                height: 34,
+                bgcolor: isBusiness ? "#f59e0b" : isDark ? "#334155" : "#e2e8f0",
+                color: isBusiness ? "#0f172a" : isDark ? "#f8fafc" : "#334155",
+                fontSize: "0.82rem",
                 fontWeight: 700,
+                border: "1px solid",
+                borderColor: isBusiness ? "#d97706" : isDark ? "#475569" : "#cbd5e1",
               }}
             >
               {isBusiness ? <BusinessIcon fontSize="small" /> : (r.first_name?.[0] || "?")}
             </Avatar>
-            <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 0.25 }}>
               <Typography
                 variant="body2"
                 sx={{
                   fontWeight: 700,
-                  lineHeight: 1.25,
+                  lineHeight: 1.3,
                   color: isDark ? "#f8fafc" : "#0f172a",
                 }}
                 noWrap
@@ -110,7 +112,7 @@ export default function OutstandingBalancesReport() {
               <Typography
                 variant="caption"
                 sx={{
-                  color: isDark ? "#94a3b8" : "text.secondary",
+                  color: isDark ? "#94a3b8" : "#64748b",
                   fontFamily: "'JetBrains Mono', monospace",
                   fontVariantNumeric: "tabular-nums",
                   fontSize: "0.72rem",
@@ -156,10 +158,16 @@ export default function OutstandingBalancesReport() {
           <span
             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold tabular-nums border ${
               isOver90
-                ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                ? isDark
+                  ? "bg-rose-500/10 text-rose-400 border-rose-500/25"
+                  : "bg-rose-50 text-rose-700 border-rose-200"
                 : isOver60
-                ? "bg-amber-500/10 text-amber-400 border-amber-500/25"
-                : "bg-sky-500/10 text-sky-400 border-sky-500/25"
+                ? isDark
+                  ? "bg-amber-500/10 text-amber-400 border-amber-500/25"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+                : isDark
+                ? "bg-sky-500/10 text-sky-400 border-sky-500/25"
+                : "bg-sky-50 text-sky-700 border-sky-200"
             }`}
           >
             <AccessTimeIcon sx={{ fontSize: 13 }} />
@@ -173,7 +181,7 @@ export default function OutstandingBalancesReport() {
       headerName: "Last Rental",
       width: 140,
       renderCell: (p) => (
-        <span className="tabular-nums text-xs font-mono text-slate-400">
+        <span className={`tabular-nums text-xs font-mono ${isDark ? "text-slate-400" : "text-slate-600"}`}>
           {formatDisplayDate(p.value)}
         </span>
       ),
@@ -190,7 +198,7 @@ export default function OutstandingBalancesReport() {
             fontFamily: "'JetBrains Mono', monospace",
             fontVariantNumeric: "tabular-nums",
             fontWeight: 600,
-            color: isDark ? "#f8fafc" : "inherit",
+            color: isDark ? "#f8fafc" : "#0f172a",
           }}
         >
           {p.value}

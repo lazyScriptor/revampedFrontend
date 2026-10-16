@@ -86,8 +86,15 @@ export const responsiveDataGrid = (): CSSObject => ({
     '& .MuiDataGrid-root': {
         fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
     },
+    '& .MuiDataGrid-row': {
+        minHeight: '56px !important',
+    },
     '& .MuiDataGrid-cell': {
-        padding: { xs: '4px 8px', md: '8px 16px' },
+        padding: { xs: '8px 10px', md: '10px 16px' },
+        display: 'flex',
+        alignItems: 'center',
+        whiteSpace: 'normal',
+        wordBreak: 'break-word',
     },
 });
 

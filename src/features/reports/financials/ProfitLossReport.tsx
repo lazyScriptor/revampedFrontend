@@ -17,7 +17,7 @@ const formatCurrency = (n: number) =>
 
 export default function ProfitLossReport() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   const [range, setRange] = useState({
     from: addDaysLocal(todayLocalStr(), -30),

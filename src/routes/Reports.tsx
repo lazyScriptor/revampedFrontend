@@ -98,7 +98,7 @@ const CATEGORY_KEYS = CATEGORIES.map((c) => c.key);
 
 export default function ReportsRoute() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
   const { t } = useTranslation();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();

@@ -258,6 +258,8 @@ export function CustomerTable({
             }
           }}
           disableRowSelectionOnClick
+          getRowHeight={() => "auto"}
+          getEstimatedRowHeight={() => 62}
           sx={{
             flex: 1,
             minHeight: 0,
@@ -273,11 +275,15 @@ export function CustomerTable({
               bgcolor: "#f8fafc",
               borderBottom: "1px solid #e2e8f0",
             },
+            "& .MuiDataGrid-row": {
+              minHeight: "56px !important",
+            },
             "& .MuiDataGrid-virtualScroller": {
               overflowY: "auto !important",
             },
             "& .MuiDataGrid-cell": {
               borderColor: "#f1f5f9",
+              py: 1.25,
             },
             "& .MuiDataGrid-toolbarContainer": {
               p: 1.5,

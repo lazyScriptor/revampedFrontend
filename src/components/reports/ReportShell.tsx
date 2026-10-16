@@ -19,7 +19,7 @@ export function ReportShell({
   fillViewport = false,
 }: ReportShellProps) {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark" || true;
+  const isDark = theme.palette.mode === "dark";
 
   return (
     <motion.div
