@@ -26,6 +26,7 @@ import {
   useSetOperatorSignature,
   useDeleteOperatorSignature,
 } from '@/features/signatures/hooks/useSignatures';
+import { PairedPhonesSection } from '@/features/signatures/components/PairedPhonesSection';
 
 const resolveImageUrl = (url?: string | null) => {
   if (!url) return null;
@@ -40,6 +41,19 @@ interface SignatureSectionProps {
 }
 
 export function SignatureSection({ profile }: SignatureSectionProps) {
+  return (
+    <>
+      <OperatorSavedSignatureCard profile={profile} />
+      <PairedPhonesSection />
+    </>
+  );
+}
+
+interface OperatorSavedSignatureCardProps {
+  profile: any;
+}
+
+function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps) {
   const canvasRef = useRef<SignatureCanvasHandle | null>(null);
   const [dirty, setDirty] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);

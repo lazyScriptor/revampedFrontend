@@ -22,6 +22,10 @@ import SuperAdminLogin from "@/routes/SuperAdminLogin";
 import SuperAdminDashboard from "@/routes/SuperAdmin";
 import { useSuperAdminStore } from "@/stores/useSuperAdminStore";
 import { MobileSignPage } from "@/features/signatures/components/MobileSignPage";
+import { PairDevicePage } from "@/features/signatures/components/PairDevicePage";
+import { DeviceHomePage } from "@/features/signatures/components/DeviceHomePage";
+import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedSignPage";
+import { getDeviceId } from "@/features/signatures/lib/deviceId";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -41,9 +45,20 @@ const indexRoute = createRoute({
     const user = useAuthStore.getState().user;
     if (user) {
       throw redirect({ to: "/dashboard" });
-    } else {
-      throw redirect({ to: "/login" });
     }
+    // Paired-PWA fast path: if this is a phone that already has a device_id
+    // in localStorage (installed PWA, previously paired), skip the login
+    // page and go straight to its signature-ready home. Un-paired devices
+    // on /device get re-routed to /pair by DeviceHomePage itself.
+    try {
+      if (getDeviceId()) {
+        throw redirect({ to: "/device" });
+      }
+    } catch (err: any) {
+      // Rethrow TanStack Router redirects; swallow any localStorage errors.
+      if (err && typeof err === "object" && "to" in err) throw err;
+    }
+    throw redirect({ to: "/login" });
   },
 });
 
@@ -62,6 +77,34 @@ const signRoute = createRoute({
   component: function SignRouteComponent() {
     const { token } = signRoute.useParams();
     return <MobileSignPage token={token} />;
+  },
+});
+
+// Paired-PWA pairing input page. Public, no-auth. Phone types the 6-char
+// code the operator generates on their POS.
+const pairRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/pair",
+  component: PairDevicePage,
+});
+
+// Paired-PWA home. Public, no-auth. Polls for pending signature requests
+// addressed to the device's paired operator and auto-navigates to the
+// simplified sign page the moment one appears.
+const deviceHomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device",
+  component: DeviceHomePage,
+});
+
+// Simplified sign page used by paired phones. Same backend endpoint as
+// /sign/$token but a minimal UI — no name field, no agree checkbox.
+const signPairedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign-paired/$token",
+  component: function SignPairedComponent() {
+    const { token } = signPairedRoute.useParams();
+    return <SimplifiedSignPage token={token} />;
   },
 });
 
@@ -223,6 +266,9 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   signRoute,
+  pairRoute,
+  deviceHomeRoute,
+  signPairedRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,
     equipmentRoute,

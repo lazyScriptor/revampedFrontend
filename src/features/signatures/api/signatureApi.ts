@@ -13,6 +13,12 @@ import {
   DeleteOperatorSignatureContract,
   GetRentalTermsContract,
   UpdateRentalTermsContract,
+  MintPairingCodeContract,
+  ClaimPairingCodeContract,
+  GetDeviceStatusContract,
+  GetDevicePendingSignaturesContract,
+  ListMyDevicesContract,
+  UnpairDeviceContract,
   type SignatureCheckpoint,
   type SignatureRole,
 } from '@geargrid/contracts';
@@ -61,3 +67,21 @@ export const getRentalTerms = () => callContract(GetRentalTermsContract, {});
 
 export const updateRentalTerms = (markdown: string) =>
   callContract(UpdateRentalTermsContract, { body: { markdown } });
+
+// ── Device pairing ──────────────────────────────────────────────────────
+
+export const mintPairingCode = () => callContract(MintPairingCodeContract, {});
+
+export const claimPairingCode = (body: { code: string; device_id: string; device_label?: string }) =>
+  callContract(ClaimPairingCodeContract, { body });
+
+export const getDeviceStatus = (device_id: string) =>
+  callContract(GetDeviceStatusContract, { params: { device_id } });
+
+export const getDevicePendingSignatures = (device_id: string) =>
+  callContract(GetDevicePendingSignaturesContract, { params: { device_id } });
+
+export const listMyDevices = () => callContract(ListMyDevicesContract, {});
+
+export const unpairDevice = (operator_device_id: number) =>
+  callContract(UnpairDeviceContract, { params: { operator_device_id } });

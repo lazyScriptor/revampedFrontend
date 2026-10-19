@@ -17,6 +17,12 @@ import {
   deleteOperatorSignature,
   getRentalTerms,
   updateRentalTerms,
+  mintPairingCode,
+  claimPairingCode,
+  getDeviceStatus,
+  getDevicePendingSignatures,
+  listMyDevices,
+  unpairDevice,
 } from '../api/signatureApi';
 import type { SignatureCheckpoint, SignatureRole } from '@geargrid/contracts';
 
@@ -92,6 +98,56 @@ export const useUpdateRentalTerms = () => {
   return useMutation({
     mutationFn: (markdown: string) => updateRentalTerms(markdown),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['config', 'rental-terms'] }),
+  });
+};
+
+// ── Device pairing ──────────────────────────────────────────────────────
+
+export const useMintPairingCode = () =>
+  useMutation({ mutationFn: () => mintPairingCode() });
+
+export const useClaimPairingCode = () =>
+  useMutation({
+    mutationFn: (body: { code: string; device_id: string; device_label?: string }) =>
+      claimPairingCode(body),
+  });
+
+// Public: phone calls on launch to decide "show pairing input" vs "redirect
+// to device home". Polls every 15s as a backstop while sitting on the
+// pairing screen.
+export const useDeviceStatus = (device_id: string | null, options?: { refetchInterval?: number }) =>
+  useQuery({
+    queryKey: ['devices', 'status', device_id],
+    queryFn: () => getDeviceStatus(device_id!),
+    enabled: !!device_id,
+    refetchInterval: options?.refetchInterval,
+    retry: 1,
+  });
+
+// Public: phone polls while on device home. 3-second interval is cheap on
+// bandwidth and gives perceived-instant UX for the operator who taps
+// "Request signatures" on the POS.
+export const useDevicePendingSignatures = (device_id: string | null) =>
+  useQuery({
+    queryKey: ['devices', 'pending', device_id],
+    queryFn: () => getDevicePendingSignatures(device_id!),
+    enabled: !!device_id,
+    refetchInterval: 3_000,
+    retry: 1,
+  });
+
+export const useMyDevices = () =>
+  useQuery({
+    queryKey: ['me', 'devices'],
+    queryFn: () => listMyDevices(),
+    staleTime: 60_000,
+  });
+
+export const useUnpairDevice = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (operator_device_id: number) => unpairDevice(operator_device_id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['me', 'devices'] }),
   });
 };
 
