@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { callContract } from '@/lib/callContract';
+import { VaultToggleContract } from '@geargrid/contracts';
 import { useDebounce } from './usePosSearch';
 
 // features/invoices/hooks/useInvoiceHooks.ts
@@ -83,13 +85,16 @@ export const useAddPayment = () => {
 };
 
 // 6. NEW: Vault Toggle with Instant Optimistic Cache Updates
+// Governed by @geargrid/contracts: VaultToggleContract (vendored copy under
+// revampedFrontend/vendor/@geargrid/contracts/). `data` is typed as
+// { is_id_retained_currently: boolean, id_card_status: 0|1 } and
+// runtime-validated — a backend shape drift here throws loudly instead of
+// silently falling through to zeros (killing the Trap 15 class).
 export const useToggleVault = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (id: number) => {
-            const response: any = await api.patch(`/invoices/${id}/vault`);
-            return response?.data || response;
-        },
+        mutationFn: (id: number) =>
+            callContract(VaultToggleContract, { params: { id } }),
         onMutate: async (id: number) => {
             // Cancel outgoing refetches so they don't overwrite our optimistic update
             await queryClient.cancelQueries({ queryKey: ['invoice', id] });
