@@ -170,7 +170,7 @@ const reportsRoute = createRoute({
 });
 
 // Personal profile (no permission gate — every authenticated user has one)
-const PROFILE_TABS = ["profile", "security", "preferences", "notifications", "activity", "access"] as const;
+const PROFILE_TABS = ["profile", "security", "signature", "preferences", "notifications", "activity", "access"] as const;
 const profileRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/profile",
