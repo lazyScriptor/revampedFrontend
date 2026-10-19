@@ -43,12 +43,19 @@ export function DeviceHomePage() {
 
   // If the backend says the device isn't paired any more (operator unpaired
   // it from POS), clear local state and bounce back to pairing.
+  // Debounce 1s so a stale cached "not paired" response from immediately
+  // after pairing has time to be superseded by the fresh query result
+  // (useClaimPairingCode seeds the cache; this is defense in depth).
   useEffect(() => {
-    if (status.isSuccess && status.data?.paired === false) {
-      clearDeviceId();
-      navigate({ to: '/pair', replace: true });
-    }
-  }, [status.isSuccess, status.data?.paired, navigate]);
+    if (!status.isSuccess || status.data?.paired !== false) return;
+    const t = setTimeout(() => {
+      if (status.data?.paired === false) {
+        clearDeviceId();
+        navigate({ to: '/pair', replace: true });
+      }
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [status.isSuccess, status.data?.paired, status.data, navigate]);
 
   // Auto-redirect to the simplified sign page the moment a pending request
   // appears for this device's paired operator.

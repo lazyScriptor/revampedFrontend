@@ -106,11 +106,27 @@ export const useUpdateRentalTerms = () => {
 export const useMintPairingCode = () =>
   useMutation({ mutationFn: () => mintPairingCode() });
 
-export const useClaimPairingCode = () =>
-  useMutation({
+export const useClaimPairingCode = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: (body: { code: string; device_id: string; device_label?: string }) =>
       claimPairingCode(body),
+    onSuccess: (data, vars) => {
+      // Seed the status cache the moment claim succeeds. Without this,
+      // DeviceHomePage reads the stale `paired: false` cached by
+      // PairDevicePage's own earlier useDeviceStatus call and bounces the
+      // phone right back to /pair before the next 30s refetch can run.
+      qc.setQueryData(['devices', 'status', vars.device_id], {
+        paired: true,
+        operator: data.operator,
+        tenant: data.tenant,
+      });
+      // Also prime the pending list to empty so DeviceHomePage doesn't flash
+      // the pending-request auto-navigate from a leftover cache entry.
+      qc.setQueryData(['devices', 'pending', vars.device_id], { pending: [] });
+    },
   });
+};
 
 // Public: phone calls on launch to decide "show pairing input" vs "redirect
 // to device home". Polls every 15s as a backstop while sitting on the
