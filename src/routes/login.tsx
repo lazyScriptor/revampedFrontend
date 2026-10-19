@@ -932,6 +932,42 @@ export default function LoginRoute() {
               </Typography>
             </Link>
           </Box>
+
+          {/* Phone-first entry: operators who installed the app as a PWA on
+              their phone land here from app.geargrid.live/. This visible
+              link lets them discover the pairing page without typing a URL. */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              p: 1.5,
+              mt: 1.25,
+              borderRadius: 2,
+              backgroundColor: "rgba(29, 78, 216, 0.08)",
+              border: "1px solid rgba(29, 78, 216, 0.25)",
+            }}
+          >
+            <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 500, fontSize: "0.76rem" }}>
+              Signing bills from a phone?
+            </Typography>
+            <Link to="/pair" style={{ textDecoration: "none" }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "#60A5FA",
+                  fontWeight: 700,
+                  fontSize: "0.76rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Pair this phone →
+              </Typography>
+            </Link>
+          </Box>
         </Paper>
 
         {/* Security & Multi-Tenant Assurance Footer */}
