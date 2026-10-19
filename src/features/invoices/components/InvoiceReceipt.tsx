@@ -3,6 +3,20 @@ import React, { useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
+import { useInvoiceSignatures } from "@/features/signatures/hooks/useSignatures";
+
+// Signature URLs come from the backend as paths like /uploads/signatures/...
+// For the receipt (rendered in a print iframe or printed to a thermal
+// printer), we need absolute URLs the browser can resolve against the API
+// origin, not the frontend origin.
+const resolveImageUrl = (url?: string | null) => {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  const apiBase = (import.meta.env.VITE_API_URL as string | undefined) || "";
+  const origin = apiBase.replace(/\/api\/?$/, "");
+  if (!origin) return url;
+  return `${origin}${url.startsWith("/") ? "" : "/"}${url}`;
+};
 
 // ─── Code 39 Barcode SVG Generator ───────────────────────────────────────────
 // High-contrast, zero-dependency 1D barcode that prints razor-sharp on 203/300 DPI thermal heads.
@@ -408,6 +422,23 @@ export const InvoiceReceipt = ({
       : "en");
 
   const t = RECEIPT_LABELS[activeLang] || RECEIPT_LABELS.en;
+
+  // Captured signatures for this invoice. Hook returns null when invoice has
+  // no id (draft / snapshot preview). We pick the most recent CUSTOMER +
+  // OPERATOR signature across all checkpoints; receipt shows one of each.
+  const signaturesQuery = useInvoiceSignatures(
+    !isDraft && invoice?.invoice_id ? Number(invoice.invoice_id) : null,
+  );
+  const capturedCustomer = useMemo(() => {
+    const list = signaturesQuery.data?.signatures || [];
+    const customers = list.filter((s) => s.role === "CUSTOMER");
+    return customers[customers.length - 1] || null;
+  }, [signaturesQuery.data]);
+  const capturedOperator = useMemo(() => {
+    const list = signaturesQuery.data?.signatures || [];
+    const operators = list.filter((s) => s.role === "OPERATOR");
+    return operators[operators.length - 1] || null;
+  }, [signaturesQuery.data]);
 
   // Company Branding from Tenant Config with fallbacks
   const companyName =
@@ -1138,14 +1169,47 @@ export const InvoiceReceipt = ({
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
           <div style={{ flex: 1, textAlign: "left" }}>
-            <div style={{ borderBottom: "1px solid #000000", height: "18px", marginBottom: "2px" }} />
+            {capturedCustomer ? (
+              <img
+                src={resolveImageUrl(capturedCustomer.image_url) || ""}
+                alt="Customer signature"
+                style={{
+                  display: "block",
+                  maxHeight: 42,
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                  marginBottom: 2,
+                }}
+              />
+            ) : (
+              <div style={{ borderBottom: "1px solid #000000", height: "18px", marginBottom: "2px" }} />
+            )}
             <div style={{ fontWeight: 700 }}>{t.custSign}</div>
-            <div style={{ fontSize: "8px", fontWeight: 500 }}>{normalized.customer.name}</div>
+            <div style={{ fontSize: "8px", fontWeight: 500 }}>
+              {capturedCustomer?.signatory_name || normalized.customer.name}
+            </div>
           </div>
           <div style={{ flex: 1, textAlign: "right" }}>
-            <div style={{ borderBottom: "1px solid #000000", height: "18px", marginBottom: "2px" }} />
+            {capturedOperator ? (
+              <img
+                src={resolveImageUrl(capturedOperator.image_url) || ""}
+                alt="Operator signature"
+                style={{
+                  display: "block",
+                  maxHeight: 42,
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                  marginBottom: 2,
+                  marginLeft: "auto",
+                }}
+              />
+            ) : (
+              <div style={{ borderBottom: "1px solid #000000", height: "18px", marginBottom: "2px" }} />
+            )}
             <div style={{ fontWeight: 700 }}>{t.authSign}</div>
-            <div style={{ fontSize: "8px", fontWeight: 500 }}>{operatorName}</div>
+            <div style={{ fontSize: "8px", fontWeight: 500 }}>
+              {capturedOperator?.signatory_name || operatorName}
+            </div>
           </div>
         </div>
       </div>

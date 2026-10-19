@@ -21,6 +21,7 @@ import PermissionsPage from "@/routes/Permissions";
 import SuperAdminLogin from "@/routes/SuperAdminLogin";
 import SuperAdminDashboard from "@/routes/SuperAdmin";
 import { useSuperAdminStore } from "@/stores/useSuperAdminStore";
+import { MobileSignPage } from "@/features/signatures/components/MobileSignPage";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -50,6 +51,18 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login", // <--- Updated to match your landing page redirect
   component: LoginRoute,
+});
+
+// Public, no-auth signature capture page scanned from a phone's camera.
+// Token in the URL is the authorization — see @geargrid/contracts
+// GetSignatureSession / SubmitSignature. Lives OUTSIDE authenticatedRoute.
+const signRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign/$token",
+  component: function SignRouteComponent() {
+    const { token } = signRoute.useParams();
+    return <MobileSignPage token={token} />;
+  },
 });
 
 const dashboardRoute = createRoute({
@@ -209,6 +222,7 @@ const superAdminDashboardRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  signRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,
     equipmentRoute,

@@ -15,6 +15,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import DrawIcon from "@mui/icons-material/Draw";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useMyProfile } from "@/features/profile/hooks/useMe";
 import { AvatarBlock } from "@/features/profile/components/AvatarBlock";
@@ -24,18 +25,20 @@ import { PreferencesSection } from "@/features/profile/components/PreferencesSec
 import { NotificationsSection } from "@/features/profile/components/NotificationsSection";
 import { ActivitySection } from "@/features/profile/components/ActivitySection";
 import { AccessSection } from "@/features/profile/components/AccessSection";
+import { SignatureSection } from "@/features/profile/components/SignatureSection";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
 const buildTabs = (t: (k: string) => string) => [
   { key: "profile",       label: t("profile.tabs.profile"),       icon: <PersonIcon fontSize="small" /> },
   { key: "security",      label: t("profile.tabs.security"),      icon: <LockResetIcon fontSize="small" /> },
+  { key: "signature",     label: "Signature",                     icon: <DrawIcon fontSize="small" /> },
   { key: "preferences",   label: t("profile.tabs.preferences"),   icon: <TuneIcon fontSize="small" /> },
   { key: "notifications", label: t("profile.tabs.notifications"), icon: <NotificationsActiveIcon fontSize="small" /> },
   { key: "activity",      label: t("profile.tabs.activity"),      icon: <TimelineIcon fontSize="small" /> },
   { key: "access",        label: t("profile.tabs.access"),        icon: <VerifiedUserIcon fontSize="small" /> },
 ] as const;
 
-type TabKey = "profile" | "security" | "preferences" | "notifications" | "activity" | "access";
+type TabKey = "profile" | "security" | "signature" | "preferences" | "notifications" | "activity" | "access";
 
 export default function ProfileRoute() {
   const { t } = useTranslation();
@@ -139,6 +142,7 @@ export default function ProfileRoute() {
         </Paper>
       )}
       {activeKey === "security"      && <SecuritySection      profile={profile} />}
+      {activeKey === "signature"     && <SignatureSection     profile={profile} />}
       {activeKey === "preferences"   && <PreferencesSection   profile={profile} />}
       {activeKey === "notifications" && <NotificationsSection profile={profile} />}
       {activeKey === "activity"      && <ActivitySection />}

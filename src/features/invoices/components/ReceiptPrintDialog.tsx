@@ -22,10 +22,14 @@ import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TuneIcon from "@mui/icons-material/Tune";
+import DrawIcon from "@mui/icons-material/Draw";
 import { InvoiceReceipt, InvoiceReceiptProps, ReceiptLanguage } from "./InvoiceReceipt";
 import { calculateLineMath } from "./PosLedgerPanel";
 import { handlePrintInvoice, checkPrintAgent } from "../hooks/useInvoiceHooks";
 import type { PrintAgentHealth } from "../utils/thermalPrint";
+import { SignatureCaptureDialog } from "@/features/signatures/components/SignatureCaptureDialog";
+import { useInvoiceSignatures } from "@/features/signatures/hooks/useSignatures";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface ReceiptPrintDialogProps {
   open: boolean;
@@ -64,6 +68,14 @@ export function ReceiptPrintDialog({
   const [agent, setAgent] = useState<PrintAgentHealth | null>(null);
   const [printing, setPrinting] = useState(false);
   const [printStatus, setPrintStatus] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // ── Signature capture integration (phone QR → sign → appears on receipt) ──
+  const [sigDialogOpen, setSigDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const invoiceIdForSigs = !isDraft && invoice?.invoice_id ? Number(invoice.invoice_id) : null;
+  const sigsQuery = useInvoiceSignatures(invoiceIdForSigs);
+  const hasCustomerSig = (sigsQuery.data?.signatures || []).some((s) => s.role === "CUSTOMER");
+  const hasOperatorSig = (sigsQuery.data?.signatures || []).some((s) => s.role === "OPERATOR");
 
   useEffect(() => {
     if (!open) return;
@@ -531,6 +543,26 @@ export function ReceiptPrintDialog({
             {language === "si" ? "අවලංගු කරන්න" : "Cancel"}
           </Button>
 
+          {/* Capture signatures via phone before printing (hidden for drafts). */}
+          {!isDraft && invoiceIdForSigs && (
+            <Button
+              variant="outlined"
+              startIcon={<DrawIcon />}
+              onClick={() => setSigDialogOpen(true)}
+              sx={{
+                fontWeight: 700,
+                borderColor: hasCustomerSig && hasOperatorSig ? "#16a34a" : "#1d4ed8",
+                color: hasCustomerSig && hasOperatorSig ? "#16a34a" : "#1d4ed8",
+                textTransform: "none",
+                ml: 1,
+              }}
+            >
+              {hasCustomerSig && hasOperatorSig
+                ? (language === "si" ? "අත්සන් කර ඇත ✓" : "Signatures captured ✓")
+                : (language === "si" ? "ජංගම දුරකථනයෙන් අත්සන් කරන්න" : "Capture signatures (phone)")}
+            </Button>
+          )}
+
           {printStatus && (
             <Typography
               variant="caption"
@@ -561,6 +593,24 @@ export function ReceiptPrintDialog({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Signature capture — only mounts when the operator triggers it. */}
+      {invoiceIdForSigs && (
+        <SignatureCaptureDialog
+          open={sigDialogOpen}
+          onClose={() => {
+            setSigDialogOpen(false);
+            // Refresh signatures so the receipt preview below re-renders with them.
+            queryClient.invalidateQueries({ queryKey: ["signatures", "byInvoice", invoiceIdForSigs] });
+          }}
+          invoiceId={invoiceIdForSigs}
+          checkpoint="EQUIPMENT_DISPATCHED"
+          required_roles={["CUSTOMER", "OPERATOR"]}
+          onCompleted={() => {
+            queryClient.invalidateQueries({ queryKey: ["signatures", "byInvoice", invoiceIdForSigs] });
+          }}
+        />
+      )}
     </>
   );
 }
