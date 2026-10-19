@@ -10,6 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Vendored shared package artifacts MUST be committed so Vercel can install
+# @geargrid/contracts via its "file:" dep. Re-include everything under
+# vendor/ even though "dist" above would otherwise glob it out.
+!vendor/
+!vendor/**
 *.local
 
 # Editor directories and files
