@@ -61,6 +61,9 @@ interface SimplifiedSignPageProps {
 }
 
 export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
+  // ── ALL hooks declared at the top, before any early return.
+  //    (Trap 17 — React error #310: calling a hook below an early-return
+  //    branch means the first render has fewer hooks than the second.)
   const navigate = useNavigate();
   const session = useSignatureSession(token);
   const submit = useSubmitSignature(token);
@@ -70,6 +73,22 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
   const [showTerms, setShowTerms] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const data = session.data; // may be undefined on first renders
+
+  const activeRole: SignatureRole | null = useMemo(() => {
+    if (!data?.pending_roles) return null;
+    if (selectedRole && data.pending_roles.includes(selectedRole)) return selectedRole;
+    return data.pending_roles[0] || null;
+  }, [selectedRole, data?.pending_roles]);
+
+  const signatoryName = useMemo(() => {
+    if (!data) return 'Signatory';
+    if (activeRole === 'OPERATOR') return data.operator_saved_signature?.operator_name || 'Operator';
+    if (activeRole === 'CUSTOMER') return data.invoice.customer_name || 'Walk-in customer';
+    return 'Signatory';
+  }, [activeRole, data]);
+
+  // ── Early returns from here down — hook count is now stable.
   if (session.isLoading) {
     return (
       <FullBleedCentered>
@@ -78,7 +97,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
     );
   }
 
-  if (session.error || !session.data) {
+  if (session.error || !data) {
     return (
       <FullBleedCentered>
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -88,8 +107,6 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
       </FullBleedCentered>
     );
   }
-
-  const data = session.data;
 
   // Terminal states — the request is done or dead. Bounce back to device home.
   if (['COMPLETED', 'EXPIRED', 'CANCELLED'].includes(data.status)) {
@@ -119,23 +136,8 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
     );
   }
 
-  // When the operator just signed, bump to the customer role automatically.
-  const activeRole: SignatureRole | null = useMemo(() => {
-    if (selectedRole && data.pending_roles.includes(selectedRole)) return selectedRole;
-    return data.pending_roles[0] || null;
-  }, [selectedRole, data.pending_roles]);
-
   const canUseStoredOperatorSig =
     activeRole === 'OPERATOR' && !!data.operator_saved_signature?.has_saved_signature;
-
-  // Derive the signatory_name without asking:
-  //   OPERATOR → paired operator's full name
-  //   CUSTOMER → invoice.customer_name (walk-in fallback)
-  const signatoryName = useMemo(() => {
-    if (activeRole === 'OPERATOR') return data.operator_saved_signature?.operator_name || 'Operator';
-    if (activeRole === 'CUSTOMER') return data.invoice.customer_name || 'Walk-in customer';
-    return 'Signatory';
-  }, [activeRole, data]);
 
   const handleSubmit = async (useStored = false) => {
     setSubmitError(null);
