@@ -30,6 +30,7 @@ import {
   useCreateSignatureRequest,
   useCancelSignatureRequest,
   useSignatureSocketEvents,
+  useSignatureSession,
 } from '../hooks/useSignatures';
 
 interface SignatureCaptureDialogProps {
@@ -132,8 +133,8 @@ export function SignatureCaptureDialog({
     return () => clearInterval(interval);
   }, [session]);
 
-  // ── Socket subscription (resolves against the first inbound event's
-  //    request_id so we don't need the id up front). ────────────────────
+  // ── Socket subscription (instant feedback path). Resolves against the
+  //    first inbound event's request_id so we don't need the id up front.
   useSignatureSocketEvents({
     activeRequestId: requestId,
     onCaptured: (payload) => {
@@ -148,6 +149,25 @@ export function SignatureCaptureDialog({
       setError('This session was cancelled.');
     },
   });
+
+  // ── Polling fallback. Sockets can race, drop messages, or (on strict
+  //    networks like corporate wifi + Brave Shields) never connect at all.
+  //    Polling the session every 2s while the dialog is open guarantees
+  //    the POS notices completion within 2s regardless of the socket layer.
+  const sessionPoll = useSignatureSession(session?.token || null);
+  useEffect(() => {
+    if (!sessionPoll.data || allDone) return;
+    const liveCaptured = sessionPoll.data.captured_roles.map((r) => r.role);
+    const livePending = sessionPoll.data.pending_roles;
+    // Merge whatever the poll says is captured with whatever sockets have
+    // already shown us (keeps the roles chip from flickering).
+    setCapturedRoles((prev) => Array.from(new Set([...prev, ...liveCaptured])));
+    setPendingRoles(livePending);
+    if (sessionPoll.data.status === 'COMPLETED') {
+      setAllDone(true);
+      onCompleted?.();
+    }
+  }, [sessionPoll.data, allDone, onCompleted]);
 
   // Attach the request_id from any first incoming event. Our socket channel
   // is keyed by request_id (not invoice_id) because an invoice can have
@@ -198,6 +218,15 @@ export function SignatureCaptureDialog({
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
+
+  // ── Auto-dismiss after success. Show the "All signatures captured ✓"
+  //    confirmation for 1.5s so the operator SEES it, then close the
+  //    dialog and let the parent refresh the receipt preview.
+  useEffect(() => {
+    if (!allDone) return;
+    const t = setTimeout(() => onClose(), 1500);
+    return () => clearTimeout(t);
+  }, [allDone, onClose]);
 
   return (
     <Dialog
@@ -335,7 +364,7 @@ export function SignatureCaptureDialog({
               All signatures captured
             </Typography>
             <Typography sx={{ color: '#64748b', fontSize: 13 }}>
-              You can now print the bill.
+              Closing automatically…
             </Typography>
           </Box>
         )}
@@ -352,7 +381,7 @@ export function SignatureCaptureDialog({
             onClick={onClose}
             sx={{ textTransform: 'none', fontWeight: 700 }}
           >
-            Done
+            Close now
           </Button>
         )}
       </DialogActions>
