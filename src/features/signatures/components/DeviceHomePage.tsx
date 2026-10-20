@@ -168,7 +168,9 @@ export function DeviceHomePage() {
 
         {pending.isError && (
           <Alert severity="warning">
-            Couldn't fetch pending requests. Retrying automatically.
+            <strong>Couldn't fetch pending requests.</strong>
+            {' '}
+            {(pending.error as Error)?.message || 'Retrying automatically.'}
           </Alert>
         )}
       </Box>
