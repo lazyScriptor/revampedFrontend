@@ -29,8 +29,10 @@ import {
   setDeviceLabel as persistDeviceLabel,
 } from '../lib/deviceId';
 import { useClaimPairingCode, useDeviceStatus } from '../hooks/useSignatures';
+import { Trans, useTranslation } from "react-i18next";
 
 export function PairDevicePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [deviceId] = useState<string>(() => getOrCreateDeviceId());
   const [code, setCode] = useState('');
@@ -74,7 +76,7 @@ export function PairDevicePage() {
       if (label) persistDeviceLabel(label);
       navigate({ to: '/device', replace: true });
     } catch (err: any) {
-      setSubmitError(err?.message || 'Could not pair this phone. Ask the POS for a new code.');
+      setSubmitError(err?.message || t("signatures.PairDevicePage.couldNotPairThisPhone"));
     }
   };
 
@@ -103,10 +105,10 @@ export function PairDevicePage() {
         </Avatar>
         <Box>
           <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
-            Pair this phone
+            {t("signatures.PairDevicePage.pairThisPhone")}
           </Typography>
           <Typography sx={{ fontSize: 12, color: '#64748b' }}>
-            One-time setup to sign bills from this device
+            {t("signatures.PairDevicePage.oneTimeSetupToSign")}
           </Typography>
         </Box>
       </Stack>
@@ -121,16 +123,15 @@ export function PairDevicePage() {
         }}
       >
         <Typography sx={{ fontSize: 13, color: '#334155', mb: 2 }}>
-          On your POS, open <strong>Profile → Signature → Pair a phone</strong>.
-          A short code will appear. Type it below.
+          <Trans i18nKey="signatures.PairDevicePage.openPosInstruction" values={{ path: t("signatures.PairDevicePage.profileSignaturePairAPhone") }} components={{ strong: <strong /> }} />
         </Typography>
 
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
             autoFocus
-            label="Pairing code"
-            placeholder="ABC-XYZ"
+            label={t("signatures.PairDevicePage.pairingCode")}
+            placeholder={t("signatures.PairDevicePage.abcXyz")}
             value={code}
             onChange={(e) => setCode(e.target.value)}
             inputMode="text"
@@ -152,12 +153,12 @@ export function PairDevicePage() {
             }}
             // Show the normalized code as helper text so the user sees the
             // dashed form the backend expects.
-            helperText={normalizedCode ? `Interpreted as: ${normalizedCode}` : ' '}
+            helperText={normalizedCode ? t("signatures.PairDevicePage.interpretedAs", { normalizedCode }) : ' '}
           />
 
           <TextField
             fullWidth
-            label="Label (optional)"
+            label={t("signatures.PairDevicePage.labelOptional")}
             placeholder={suggestDeviceLabel()}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
@@ -185,7 +186,7 @@ export function PairDevicePage() {
               fontSize: 16,
             }}
           >
-            {claim.isPending ? 'Pairing…' : 'Pair this phone'}
+            {claim.isPending ? t("signatures.PairDevicePage.pairing") : t("signatures.PairDevicePage.pairThisPhone")}
           </Button>
         </form>
       </Paper>
@@ -204,12 +205,10 @@ export function PairDevicePage() {
           <SmartphoneIcon sx={{ color: '#4338ca', fontSize: 20, mt: 0.2 }} />
           <Box>
             <Typography sx={{ fontSize: 13, color: '#1e293b', fontWeight: 600, mb: 0.5 }}>
-              Keep this app on your home screen
+              {t("signatures.PairDevicePage.keepThisAppOnYour")}
             </Typography>
             <Typography sx={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
-              Once paired, you'll tap the app icon from your phone's home
-              screen every time a bill needs signatures — no QR scanning,
-              no login.
+              {t("signatures.PairDevicePage.oncePairedYouLlTap")}
             </Typography>
           </Box>
         </Stack>
@@ -218,7 +217,7 @@ export function PairDevicePage() {
       {statusQuery.data?.paired === false && (
         <Chip
           icon={<CheckCircleOutlinedIcon />}
-          label="Phone ready to pair"
+          label={t("signatures.PairDevicePage.phoneReadyToPair")}
           size="small"
           sx={{ alignSelf: 'center', mt: 2, bgcolor: '#f1f5f9', color: '#334155' }}
         />

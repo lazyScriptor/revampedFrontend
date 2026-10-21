@@ -21,6 +21,8 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 
 import { usePosEquipmentSearch } from "../hooks/usePosEquipmentSearch";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 // ─── CartItem and calculateLineMath ───────────────────────────────────────────
 // `track_overdue` controls whether late-fee tracking applies to this line.
@@ -79,7 +81,7 @@ export const compareDateStr = (a: string, b: string) => {
   return new Date(ay, am - 1, ad).getTime() - new Date(by, bm - 1, bd).getTime();
 };
 
-export const calculateLineMath = (item: CartItem) => {
+export const calculateLineMath = (item: CartItem, lng?: string) => {
   // Both dates parsed identically (UTC midnight via the "YYYY-MM-DD" form), so
   // subtraction yields a clean integer day count regardless of viewer's TZ.
   const start = new Date(item.borrow_date).getTime();
@@ -94,13 +96,13 @@ export const calculateLineMath = (item: CartItem) => {
     lineCost = item.locked_base_price * item.borrow_quantity;
     calculationText =
       item.pricing_mode === "daily"
-        ? `${totalDays} day${totalDays !== 1 ? "s" : ""}`
-        : `${item.locked_minimum_days}d base cover`;
+        ? i18n.t("invoices.PosLedgerPanel.calcDays", { count: totalDays, lng })
+        : i18n.t("invoices.PosLedgerPanel.calcBaseCover", { days: item.locked_minimum_days, lng });
   } else {
     const extraDays = totalDays - item.locked_minimum_days;
     const extraCost = extraDays * item.locked_extra_daily_rate;
     lineCost = (item.locked_base_price + extraCost) * item.borrow_quantity;
-    calculationText = `Base + ${extraDays} extra day${extraDays !== 1 ? "s" : ""}`;
+    calculationText = i18n.t("invoices.PosLedgerPanel.calcBasePlusExtra", { count: extraDays, lng });
   }
 
   return { totalDays, lineCost, calculationText };
@@ -115,6 +117,7 @@ interface PosLedgerPanelProps {
 }
 
 export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedgerPanelProps) {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
   const { data: searchResults = [], isLoading } = usePosEquipmentSearch(inputValue);
 
@@ -123,7 +126,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
   const handleAddEquipment = (equipment: any) => {
     if (!equipment) return;
     if (equipment.available_qty <= 0) {
-      showToast("This item is currently out of stock!", "error");
+      showToast(t("invoices.PosLedgerPanel.thisItemIsCurrentlyOut"), "error");
       return;
     }
     const existingIndex = cartItems.findIndex((i) => i.equipment_id === equipment.equipment_id);
@@ -135,11 +138,11 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
           setInputValue("");
           return;
         } else {
-          showToast(`Max stock: ${equipment.available_qty} units.`, "warning");
+          showToast(t("invoices.PosLedgerPanel.maxStockUnits", { available_qty: equipment.available_qty }), "warning");
           return;
         }
       } else {
-        showToast("Serialized item already in order.", "error");
+        showToast(t("invoices.PosLedgerPanel.serializedItemAlreadyInOrder"), "error");
         setInputValue("");
         return;
       }
@@ -235,7 +238,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
           renderInput={(params) => (
             <TextField
               {...(params as any)}
-              placeholder="Add equipment by name or SKU…"
+              placeholder={t("invoices.PosLedgerPanel.addEquipmentByNameOr")}
               size="small"
               fullWidth
               slotProps={{
@@ -321,14 +324,14 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                           Rs. {Number(option.base_rental_price).toLocaleString()}
                         </span>
-                        {" base · "}{option.minimum_rental_days}d cover
+                        {t("invoices.PosLedgerPanel.baseDCover", { minimum_rental_days: option.minimum_rental_days })}
                       </>
                     )}
                   </Typography>
                 </Box>
                 <Chip
                   size="small"
-                  label={inStock ? `${option.available_qty} avail.` : "Out of Stock"}
+                  label={inStock ? `${option.available_qty} avail.` : t("equipment.outOfStock")}
                   color={inStock ? "success" : "error"}
                   variant={inStock ? "outlined" : "filled"}
                   sx={{ fontWeight: 700, fontSize: "0.7rem", height: 22, fontVariantNumeric: "tabular-nums" }}
@@ -356,8 +359,8 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
             flexShrink: 0,
           }}
         >
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "flex", alignItems: "center", gap: 0.75 }}>
-            <span style={{ fontVariantNumeric: "tabular-nums" }}>{cartItems.length}</span> item{cartItems.length !== 1 ? "s" : ""} in order
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "flex", alignItems: "center", gap: 0.75, fontVariantNumeric: "tabular-nums" }}>
+            {t("invoices.PosLedgerPanel.itemsInOrder", { count: cartItems.length })}
           </Typography>
           <Typography
             variant="body2"
@@ -420,10 +423,10 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
               <ShoppingCartCheckoutIcon sx={{ fontSize: 28 }} />
             </Box>
             <Typography variant="body1" sx={{ fontWeight: 800, color: "#1e293b" }}>
-              Order manifest is empty
+              {t("invoices.PosLedgerPanel.orderManifestIsEmpty")}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 240, lineHeight: 1.4 }}>
-              Search and add equipment items above to build the rental manifest.
+              {t("invoices.PosLedgerPanel.searchAndAddEquipmentItems")}
             </Typography>
           </Box>
         ) : (
@@ -470,7 +473,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   </Typography>
                   <Chip
                     size="small"
-                    label={isDailyMode ? "Daily Mode" : "Tiered Mode"}
+                    label={isDailyMode ? t("invoices.PosLedgerPanel.dailyMode") : t("invoices.PosLedgerPanel.tieredMode")}
                     sx={{
                       height: 20,
                       fontSize: "0.65rem",
@@ -494,7 +497,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                 <Box sx={{ px: 2, pt: 1.5, pb: 1, display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
                   <TextField
                     type="number"
-                    label="Qty"
+                    label={t("common.qty")}
                     size="small"
                     value={item.borrow_quantity}
                     onChange={(e) => {
@@ -518,7 +521,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   />
                   <TextField
                     type="date"
-                    label="Dispatch"
+                    label={t("invoices.dispatch")}
                     size="small"
                     slotProps={{ inputLabel: { shrink: true } }}
                     value={item.borrow_date}
@@ -557,7 +560,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, flex: 1, minWidth: 160 }}>
                       <TextField
                         type="date"
-                        label="Due Back"
+                        label={t("invoices.PosLedgerPanel.dueBack")}
                         size="small"
                         slotProps={{
                           inputLabel: { shrink: true },
@@ -566,7 +569,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                         value={item.expected_return_date}
                         onChange={(e) => updateItem(item.cart_id, "expected_return_date", e.target.value)}
                         error={returnBeforeBorrow}
-                        helperText={returnBeforeBorrow ? "Must be on or after dispatch" : undefined}
+                        helperText={returnBeforeBorrow ? t("invoices.PosLedgerPanel.mustBeOnOrAfter") : undefined}
                         sx={{
                           flex: 1,
                           "& .MuiInputBase-input": {
@@ -579,7 +582,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                       <IconButton
                         size="small"
                         onClick={() => toggleOverdueTracking(item)}
-                        title="Remove overdue tracking for this item"
+                        title={t("invoices.PosLedgerPanel.removeOverdueTrackingForThis")}
                         sx={{ mt: 0.5, color: "text.disabled", "&:hover": { color: "error.main" } }}
                       >
                         <CloseIcon sx={{ fontSize: 16 }} />
@@ -589,7 +592,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     <Chip
                       size="small"
                       icon={<AddIcon sx={{ fontSize: 14 }} />}
-                      label="Track overdue"
+                      label={t("invoices.PosLedgerPanel.trackOverdue")}
                       variant="outlined"
                       clickable
                       onClick={() => toggleOverdueTracking(item)}
@@ -625,7 +628,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   {isDailyMode ? (
                     <TextField
                       type="number"
-                      label="Rate / Day"
+                      label={t("invoices.PosLedgerPanel.rateDay")}
                       size="small"
                       value={item.locked_base_price}
                       onChange={(e) => {
@@ -662,7 +665,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     <>
                       <TextField
                         type="number"
-                        label="Base Fee"
+                        label={t("invoices.PosLedgerPanel.baseFee")}
                         size="small"
                         value={item.locked_base_price}
                         onChange={(e) =>
@@ -690,7 +693,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                       />
                       <TextField
                         type="number"
-                        label="Covers (days)"
+                        label={t("invoices.PosLedgerPanel.coversDays")}
                         size="small"
                         value={item.locked_minimum_days}
                         onChange={(e) =>
@@ -709,7 +712,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                       />
                       <TextField
                         type="number"
-                        label="Extra / day"
+                        label={t("invoices.PosLedgerPanel.extraDay")}
                         size="small"
                         value={item.locked_extra_daily_rate}
                         onChange={(e) =>
@@ -752,7 +755,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                       minWidth: 0,
                     }}
                   >
-                    Switch to {isDailyMode ? "Tiered" : "Daily"}
+                    {isDailyMode ? t("invoices.PosLedgerPanel.switchToTiered") : t("invoices.PosLedgerPanel.switchToDaily")}
                   </Button>
                 </Box>
 
@@ -768,8 +771,8 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     borderTop: "1px solid #bfdbfe",
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <span style={{ fontVariantNumeric: "tabular-nums" }}>{totalDays}d</span> · <span style={{ fontVariantNumeric: "tabular-nums" }}>{item.borrow_quantity}</span> unit{item.borrow_quantity !== 1 ? "s" : ""} · {calculationText}
+                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5, fontVariantNumeric: "tabular-nums" }}>
+                    {totalDays}d · {t("invoices.PosLedgerPanel.unitsCount", { count: item.borrow_quantity })} · {calculationText}
                   </Typography>
                   <Typography
                     variant="subtitle2"

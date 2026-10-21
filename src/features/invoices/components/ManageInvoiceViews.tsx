@@ -46,6 +46,7 @@ import { useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
 import { ReviewThread } from "@/features/reviews/components/ReviewThread";
 import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
 import { useTranslation } from "react-i18next";
+import { relativeDay } from "@/lib/relativeTime";
 
 const scroll = {
   "&::-webkit-scrollbar": { width: "5px" },
@@ -66,13 +67,7 @@ const StatusDot = ({ color }: { color: string }) => (
   />
 );
 
-const relDate = (dateStr: string) => {
-  const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
-  if (d === 0) return "Today";
-  if (d === 1) return "Yesterday";
-  if (d < 7) return `${d} days ago`;
-  return formatDisplayDate(dateStr);
-};
+const relDate = (dateStr: string) => relativeDay(dateStr, formatDisplayDate);
 
 // ============================================================================
 // PANE 1: INVOICE ROSTER (search + status filter + live list)
@@ -193,7 +188,7 @@ export function ManageSearchPanel({
               whiteSpace: "nowrap",
             }}
           >
-            {displayInvoices.length} of {currentFilterTotal}
+            {t("invoices.ManageInvoiceViews.of", { displayInvoicesCount: displayInvoices.length, currentFilterTotal })}
           </Typography>
         )}
       </Box>
@@ -212,7 +207,7 @@ export function ManageSearchPanel({
           <Box sx={{ p: 4, textAlign: "center" }}>
             <DescriptionIcon sx={{ fontSize: 36, color: "#cbd5e1", mb: 1 }} />
             <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-              {isSearchMode ? "No invoices match your search." : "No invoices found."}
+              {isSearchMode ? t("invoices.ManageInvoiceViews.noInvoicesMatchYourSearch") : t("invoices.ManageInvoiceViews.noInvoicesFound")}
             </Typography>
           </Box>
         )}
@@ -223,7 +218,7 @@ export function ManageSearchPanel({
             const customerName =
               inv.Customer?.company_name ||
               `${inv.Customer?.first_name || ""} ${inv.Customer?.last_name || ""}`.trim() ||
-              "Unknown";
+              t("invoices.ManageInvoiceViews.unknown");
             const isSelected = inv.invoice_id === selectedInvoiceId;
             const payments = inv.Payments || [];
             const totalPaid = payments.reduce((s: number, p: any) => s + Number(p.payment_amount), 0);
@@ -302,7 +297,7 @@ export function ManageSearchPanel({
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    Balance due: Rs. {balance.toLocaleString()}
+                    {t("invoices.ManageInvoiceViews.balanceDueRs", { balance: balance.toLocaleString() })}
                   </Typography>
                 )}
               </Box>
@@ -329,7 +324,7 @@ export function ManageSearchPanel({
               }}
             >
               {isFetching ? <CircularProgress size={14} sx={{ mr: 1 }} /> : null}
-              Load More Invoices ({currentFilterTotal - displayInvoices.length} remaining)
+              {t("invoices.ManageInvoiceViews.loadMoreInvoicesRemaining", { value: currentFilterTotal - displayInvoices.length })}
             </Button>
           </Box>
         )}
@@ -364,7 +359,7 @@ export function ManageLedgerPanel({
       >
         <DescriptionIcon sx={{ fontSize: 48, opacity: 0.3 }} />
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          Select an invoice from the list to view its asset board.
+          {t("invoices.ManageInvoiceViews.selectAnInvoiceFromThe")}
         </Typography>
       </Box>
     );
@@ -411,7 +406,7 @@ export function ManageLedgerPanel({
             onClick={onOpenReturn}
             sx={{ fontWeight: 700, borderRadius: 2 }}
           >
-            Process Handover
+            {t("invoices.ManageInvoiceViews.processHandover")}
           </Button>
         )}
       </Box>
@@ -420,7 +415,7 @@ export function ManageLedgerPanel({
       <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2.5, display: "flex", flexDirection: "column", gap: 2, ...scroll }}>
         {rawLines.map((line: any) => {
           const isActive = line.line_status === "Active" || line.status === "Active";
-          const equipName = line.Equipment?.equipment_name || "Unknown Asset";
+          const equipName = line.Equipment?.equipment_name || t("invoices.ManageInvoiceViews.unknownAsset");
           const alreadyReturned = (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
           const pending = line.borrow_quantity - alreadyReturned;
 
@@ -449,15 +444,15 @@ export function ManageLedgerPanel({
           let breakdownBadge = "";
           let breakdownFormula = "";
           if (!isActive) {
-            breakdownBadge = "Settled";
-            breakdownFormula = "Final cost locked at return.";
+            breakdownBadge = t("invoices.ManageInvoiceViews.settled");
+            breakdownFormula = t("invoices.ManageInvoiceViews.finalCostLocked");
           } else if (isDailyMode) {
-            breakdownBadge = "Flat Daily";
-            breakdownFormula = `Rs.${lockedBase.toLocaleString()} × ${daysOut}d × ${borrowQty} unit${borrowQty > 1 ? "s" : ""}`;
+            breakdownBadge = t("invoices.ManageInvoiceViews.flatDaily");
+              breakdownFormula = t("invoices.ManageInvoiceViews.flatDailyFormula", { base: lockedBase.toLocaleString(), days: daysOut, count: borrowQty });
           } else {
-            breakdownBadge = `Tiered (${lockedMinDays}d base)`;
+            breakdownBadge = t("invoices.ManageInvoiceViews.tieredBadge", { days: lockedMinDays });
             if (daysOut <= lockedMinDays) {
-              breakdownFormula = `Base Rs.${lockedBase.toLocaleString()} × ${borrowQty} unit${borrowQty > 1 ? "s" : ""} (covers ${lockedMinDays}d)`;
+              breakdownFormula = t("invoices.ManageInvoiceViews.tieredBaseFormula", { base: lockedBase.toLocaleString(), days: lockedMinDays, count: borrowQty });
             } else {
               const extraDays = daysOut - lockedMinDays;
               breakdownFormula = `[Rs.${lockedBase.toLocaleString()} + ${extraDays}d × Rs.${lockedExtra.toLocaleString()}] × ${borrowQty}`;
@@ -522,7 +517,7 @@ export function ManageLedgerPanel({
                 </Box>
                 <Chip
                   size="small"
-                  label={isActive ? (isOverdue ? "Overdue" : "Out on Rent") : "Returned"}
+                  label={isActive ? (isOverdue ? t("invoices.overdue") : t("equipment.EquipmentFormDrawer.outOnRent")) : t("invoices.returned")}
                   color={isActive ? (isOverdue ? "error" : "warning") : "success"}
                   variant={isActive ? "filled" : "outlined"}
                   sx={{ fontWeight: 800, fontSize: "0.7rem", height: 22 }}
@@ -659,10 +654,10 @@ export function ManageLedgerPanel({
                           {new Date(iter.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                         </Typography>
                         {iter.good > 0 && (
-                          <Chip size="small" label={`${iter.good} Good`} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
+                          <Chip size="small" label={t("invoices.ManageInvoiceViews.good", { good: iter.good })} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
                         )}
                         {iter.defective > 0 && (
-                          <Chip size="small" label={`${iter.defective} Broken`} color="error" variant="filled" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
+                          <Chip size="small" label={t("invoices.ManageInvoiceViews.broken", { defective: iter.defective })} color="error" variant="filled" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
                         )}
                       </Box>
                     ))}
@@ -787,7 +782,7 @@ export function ManageFinancialPanel({
           <Box sx={{ textAlign: "center", p: 3 }}>
             <AccountBalanceWalletIcon sx={{ fontSize: 40, opacity: 0.3, mb: 1 }} />
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              Select an invoice to open the Financial Terminal.
+              {t("invoices.ManageInvoiceViews.selectAnInvoiceToOpen")}
             </Typography>
           </Box>
         )}
@@ -827,7 +822,7 @@ export function ManageFinancialPanel({
           "&:hover": { bgcolor: "#1e293b" },
         }}
       >
-        <Tooltip title="Expand Terminal" placement="left">
+        <Tooltip title={t("invoices.ManageInvoiceViews.expandTerminal")} placement="left">
           <IconButton color="inherit" size="small" sx={{ mb: 4 }}>
             <ChevronLeftIcon />
           </IconButton>
@@ -843,7 +838,7 @@ export function ManageFinancialPanel({
             color: balance > 0 ? "#f87171" : "#4ade80",
           }}
         >
-          BALANCE · Rs. {balance.toLocaleString()}
+          {t("invoices.ManageInvoiceViews.balanceRs", { balance: balance.toLocaleString() })}
         </Typography>
       </Box>
     );
@@ -866,9 +861,9 @@ export function ManageFinancialPanel({
     const isRefund = Number(p.payment_amount) < 0;
     let label: string;
     if (isRefund) {
-      label = "Refund";
+      label = t("invoices.ManageInvoiceViews.refundLabel");
     } else if (collectionCounter === 0) {
-      label = "Advance";
+      label = t("invoices.ManageInvoiceViews.advanceLabel");
       collectionCounter += 1;
     } else {
       label = `Payment ${collectionCounter}`;
@@ -916,20 +911,20 @@ export function ManageFinancialPanel({
     updateFeesMutation.mutate(
       { id: invoice.invoice_id, data: { transport_fee: fees.transport, discount_amount: fees.discount } },
       {
-        onSuccess: () => { showToast("Fees updated.", "success"); setIsEditingFees(false); },
+        onSuccess: () => { showToast(t("invoices.ManageInvoiceViews.feesUpdated"), "success"); setIsEditingFees(false); },
       }
     );
   };
 
   const handlePayment = (isRefund: boolean) => {
     const amt = Number(paymentAmount);
-    if (amt <= 0) return showToast("Enter a valid amount.", "error");
-    if (isRefund && amt > totalPaid) return showToast("Cannot refund more than paid.", "error");
+    if (amt <= 0) return showToast(t("invoices.ManageInvoiceViews.enterAValidAmount"), "error");
+    if (isRefund && amt > totalPaid) return showToast(t("invoices.ManageInvoiceViews.cannotRefundMoreThanPaid"), "error");
     paymentMutation.mutate(
       { id: invoice.invoice_id, data: { amount: amt, method: paymentMethod, is_refund: isRefund } },
       {
         onSuccess: () => {
-          showToast(isRefund ? "Refund issued." : "Payment recorded.", "success");
+          showToast(isRefund ? t("invoices.ManageInvoiceViews.refundIssued") : t("invoices.ManageInvoiceViews.paymentRecorded"), "success");
           setPaymentAmount("");
         },
       }
@@ -977,7 +972,7 @@ export function ManageFinancialPanel({
                 : { borderColor: "#334155", color: "#94a3b8", "&:hover": { borderColor: "#475569", color: "#f8fafc" } }),
             }}
           >
-            {invoice.id_card_status ? "Release ID" : "Retain ID"}
+            {invoice.id_card_status ? t("orders.releaseId") : t("invoices.ManageInvoiceViews.retainId")}
           </Button>
           <IconButton onClick={onToggleCollapse} size="small" sx={{ color: "#475569" }}>
             <ChevronRightIcon fontSize="small" />
@@ -1031,12 +1026,12 @@ export function ManageFinancialPanel({
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, my: 0.5 }}>
             <SecurityIcon sx={{ fontSize: 14, color: invoice.id_card_status ? "#fde047" : "#64748b" }} />
             <Typography variant="caption" sx={{ color: invoice.id_card_status ? "#fde047" : "#94a3b8", fontWeight: 700 }}>
-              {invoice.id_card_status ? "ID Currently Held in Vault" : "ID Released to Client"}
+              {invoice.id_card_status ? t("invoices.ManageInvoiceViews.idCurrentlyHeldInVault") : t("invoices.ManageInvoiceViews.idReleasedToClient")}
             </Typography>
           </Box>
           {isCompleted && balance === 0 && (
             <Typography variant="caption" sx={{ color: "#4ade80", fontWeight: 700, display: "block" }}>
-              ✓ Fully Settled
+              {t("invoices.ManageInvoiceViews.fullySettled")}
             </Typography>
           )}
 
@@ -1056,7 +1051,7 @@ export function ManageFinancialPanel({
               textTransform: "none",
             }}
           >
-            Print POS Bill (INV-{invoice.invoice_id})
+            {t("invoices.ManageInvoiceViews.printPosBillInv", { invoice_id: invoice.invoice_id })}
           </Button>
 
           <Can perform="invoice:print_log:view">
@@ -1078,7 +1073,7 @@ export function ManageFinancialPanel({
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              View Bill Print History{printCount > 0 ? ` (${printCount})` : ""}
+              {t("invoices.ManageInvoiceViews.viewBillPrintHistory")}{printCount > 0 ? ` (${printCount})` : ""}
             </Button>
           </Can>
         </Box>
@@ -1138,7 +1133,7 @@ export function ManageFinancialPanel({
             disabled={paymentMutation.isPending || totalPaid === 0}
             sx={{ fontWeight: 700, px: 1.5, borderRadius: 1.5, borderColor: "#334155" }}
           >
-            Refund
+            {t("invoices.ManageInvoiceViews.refund")}
           </Button>
         </Box>
 
@@ -1187,12 +1182,12 @@ export function ManageFinancialPanel({
                   startIcon={<EditIcon sx={{ fontSize: 14 }} />}
                   sx={{ fontSize: "0.75rem", fontWeight: 700 }}
                 >
-                  Edit Fees
+                  {t("invoices.ManageInvoiceViews.editFees")}
                 </Button>
               </Box>
             )}
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">Base Subtotal</Typography>
+              <Typography variant="body2" color="text.secondary">{t("orders.baseSubtotal")}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                 Rs. {subTotal.toLocaleString()}
               </Typography>
@@ -1201,7 +1196,7 @@ export function ManageFinancialPanel({
             {isEditingFees ? (
               <Box sx={{ bgcolor: "#fffbeb", border: "1px dashed #fde047", borderRadius: 2, p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <TextField
-                  label="Transport Fee"
+                  label={t("invoices.ManageInvoiceViews.transportFee")}
                   size="small"
                   type="number"
                   value={fees.transport}
@@ -1218,7 +1213,7 @@ export function ManageFinancialPanel({
                   slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> } }}
                 />
                 <TextField
-                  label="Discount"
+                  label={t("common.discount")}
                   size="small"
                   type="number"
                   value={fees.discount}
@@ -1240,7 +1235,7 @@ export function ManageFinancialPanel({
                     color="inherit"
                     onClick={() => { setFees({ transport: initialTransport, discount: initialDiscount }); setIsEditingFees(false); }}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     size="small"
@@ -1250,7 +1245,7 @@ export function ManageFinancialPanel({
                     onClick={handleUpdateFees}
                     disabled={updateFeesMutation.isPending}
                   >
-                    Save
+                    {t("common.save")}
                   </Button>
                 </Box>
               </Box>
@@ -1258,14 +1253,14 @@ export function ManageFinancialPanel({
               <>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <LocalShippingIcon sx={{ fontSize: 14 }} /> Transport
+                    <LocalShippingIcon sx={{ fontSize: 14 }} /> {t("invoices.transport")}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                     + Rs. {initialTransport.toLocaleString()}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="body2" color="text.secondary">Discount</Typography>
+                  <Typography variant="body2" color="text.secondary">{t("common.discount")}</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: "error.main", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                     − Rs. {initialDiscount.toLocaleString()}
                   </Typography>
@@ -1275,7 +1270,7 @@ export function ManageFinancialPanel({
 
             {lateFees > 0 && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" sx={{ color: "error.main", fontWeight: 700 }}>Late Fees</Typography>
+                <Typography variant="body2" sx={{ color: "error.main", fontWeight: 700 }}>{t("invoices.ManageInvoiceViews.lateFees")}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "error.main", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                   + Rs. {lateFees.toLocaleString()}
                 </Typography>
@@ -1284,13 +1279,13 @@ export function ManageFinancialPanel({
 
             <Divider sx={{ borderStyle: "dashed" }} />
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Grand Total</Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{t("invoices.grandTotal")}</Typography>
               <Typography variant="subtitle1" sx={{ fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                 Rs. {grandTotal.toLocaleString()}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700 }}>Total Paid</Typography>
+              <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700 }}>{t("orders.totalPaid")}</Typography>
               <Typography variant="body2" sx={{ color: "success.main", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
                 − Rs. {totalPaid.toLocaleString()}
               </Typography>
@@ -1366,9 +1361,9 @@ export function ManageFinancialPanel({
                   <Box sx={{ flexGrow: 1 }}>
                     {item.type === "FEE_ADJUSTMENT" ? (
                       <>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>Fees Adjusted</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark" }}>{t("invoices.ManageInvoiceViews.feesAdjusted")}</Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
-                          Transport: Rs.{(item as any).transport} · Discount: Rs.{(item as any).discount}
+                          {t("invoices.ManageInvoiceViews.transportRsDiscountRs", { transport: (item as any).transport, discount: (item as any).discount })}
                         </Typography>
                       </>
                     ) : (
@@ -1383,7 +1378,7 @@ export function ManageFinancialPanel({
                               fontVariantNumeric: "tabular-nums",
                             }}
                           >
-                            {(item as any).label || (item.type === "REFUND" ? "Refund" : "Payment")} · Rs.{(item as any).amount.toLocaleString()}
+                            {(item as any).label || (item.type === "REFUND" ? t("invoices.ManageInvoiceViews.refund") : t("invoices.ManageInvoiceViews.payment"))} · Rs.{(item as any).amount.toLocaleString()}
                           </Typography>
                           <Chip size="small" label={(item as any).method} sx={{ height: 16, fontSize: "0.6rem", fontWeight: 700 }} />
                         </Box>

@@ -14,6 +14,7 @@ import {
   FormSection,
 } from "@/components/forms/FormDialogShell";
 import { roleApi } from "../api/admin.api";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -30,6 +31,7 @@ export default function RoleFormDialog({
   onSuccess,
   roleToEdit = null,
 }: Props) {
+  const { t } = useTranslation();
   const isEditMode = Boolean(roleToEdit);
 
   const [formData, setFormData] = useState(blankForm);
@@ -80,7 +82,7 @@ export default function RoleFormDialog({
       }
       onSuccess();
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      setError(err.message || t("admin.RoleFormDrawer.somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -93,18 +95,18 @@ export default function RoleFormDialog({
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      eyebrow={isEditMode ? "Edit Role" : "New Role"}
-      title={isEditMode ? roleToEdit?.role_name || "Role" : "Create a role"}
-      subtitle="Define a privilege level. Assign permissions afterwards from the role detail page."
+      eyebrow={isEditMode ? t("pages.Permissions.editRole") : t("admin.RoleFormDrawer.newRole")}
+      title={isEditMode ? roleToEdit?.role_name || t("superAdmin.TenantUserDialog.role") : t("admin.RoleFormDrawer.createARole")}
+      subtitle={t("admin.RoleFormDrawer.defineAPrivilegeLevelAssign")}
       avatarText={(formData.roleName || "R")[0].toUpperCase()}
       footer={
         <>
           <Box sx={{ minWidth: 0, color: "text.secondary", fontSize: "0.78rem" }}>
-            {dirty && !loading && !error ? "Unsaved changes" : ""}
+            {dirty && !loading && !error ? t("common.unsavedChanges") : ""}
           </Box>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={onClose} disabled={loading} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -113,7 +115,7 @@ export default function RoleFormDialog({
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
             >
-              {loading ? "Saving…" : isEditMode ? "Save changes" : "Create role"}
+              {loading ? t("common.saving") : isEditMode ? t("common.saveChanges") : t("admin.roles.createRole")}
             </Button>
           </Box>
         </>
@@ -133,11 +135,11 @@ export default function RoleFormDialog({
 
         <FormSection
           icon={<SecurityOutlinedIcon />}
-          title="Identity"
-          hint="The name shown in pickers and audit logs."
+          title={t("admin.RoleFormDrawer.identity")}
+          hint={t("admin.RoleFormDrawer.theNameShownInPickers")}
         >
           <TextField
-            label="Role name"
+            label={t("admin.RoleFormDrawer.roleName")}
             required
             value={formData.roleName}
             onChange={handleChange("roleName")}
@@ -145,18 +147,18 @@ export default function RoleFormDialog({
             fullWidth
             disabled={lockedSystemName}
             helperText={
-              lockedSystemName ? "System default role names cannot be changed." : " "
+              lockedSystemName ? t("admin.RoleFormDrawer.systemDefaultRoleNamesCannot") : " "
             }
           />
         </FormSection>
 
         <FormSection
           icon={<TextSnippetOutlinedIcon />}
-          title="Description & privilege level"
-          hint="Higher numbers represent more privileged roles."
+          title={t("admin.RoleFormDrawer.descriptionPrivilegeLevel")}
+          hint={t("admin.RoleFormDrawer.higherNumbersRepresentMorePrivileged")}
         >
           <TextField
-            label="Description"
+            label={t("common.description")}
             fullWidth
             multiline
             rows={3}
@@ -165,14 +167,14 @@ export default function RoleFormDialog({
             size="small"
           />
           <TextField
-            label="Hierarchy level"
+            label={t("admin.RoleFormDrawer.hierarchyLevel")}
             type="number"
             required
             value={formData.hierarchyLevel}
             onChange={handleChange("hierarchyLevel")}
             size="small"
             fullWidth
-            helperText="100 = highest. Users can only manage roles below their own level."
+            helperText={t("admin.RoleFormDrawer.100HighestUsersCanOnly")}
           />
         </FormSection>
       </Box>

@@ -1,6 +1,7 @@
 import { Box, Typography, Skeleton } from '@mui/material';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { formatDisplayDate } from '@/lib/dates';
+import { useTranslation } from "react-i18next";
 
 interface TrendPoint {
     date: string;
@@ -16,6 +17,7 @@ interface Props {
 const fmt = (v: number) => `Rs. ${Number(v).toLocaleString()}`;
 
 export default function RevenueTrendChart({ data, isLoading, currency = 'Rs.' }: Props) {
+    const { t } = useTranslation();
     const chartData = (data || []).map((d) => ({
         date: formatDisplayDate(d.date, undefined, { month: 'short', day: 'numeric' }),
         revenue: parseFloat(String(d.revenue)) || 0,
@@ -36,15 +38,15 @@ export default function RevenueTrendChart({ data, isLoading, currency = 'Rs.' }:
             '&:hover': { borderColor: '#cbd5e1' }, transition: 'border-color 0.2s',
         }}>
             <Typography variant="subtitle2" fontWeight={700} color="text.primary" sx={{ mb: 0.5 }}>
-                Revenue Trend
+                {t("dashboard.widgets.revenueTrend")}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                Last 30 days — daily collection
+                {t("accounting.RevenueTrendChart.last30DaysDailyCollection")}
             </Typography>
 
             {chartData.length === 0 ? (
                 <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography color="text.secondary" variant="body2">No revenue data for this period</Typography>
+                    <Typography color="text.secondary" variant="body2">{t("accounting.RevenueTrendChart.noRevenueDataForThis")}</Typography>
                 </Box>
             ) : (
                 <ResponsiveContainer width="100%" height={220}>

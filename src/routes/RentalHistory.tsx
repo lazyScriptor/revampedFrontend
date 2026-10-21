@@ -41,8 +41,10 @@ import { formatDisplayDate } from "@/lib/dates";
 import { useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
 import { ReviewThread } from "@/features/reviews/components/ReviewThread";
 import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
+import { useTranslation } from "react-i18next";
 
 export default function RentalHistoryRoute() {
+  const { t } = useTranslation();
   // --- 1. STATE MANAGEMENT ---
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -111,10 +113,10 @@ export default function RentalHistoryRoute() {
 
   // --- 5. DATAGRID COLUMN DEFINITIONS ---
   const columns: GridColDef[] = [
-    { field: "invoice_id", headerName: "INV #", width: 90 },
+    { field: "invoice_id", headerName: t("pages.RentalHistory.inv"), width: 90 },
     {
       field: "customer",
-      headerName: "Client",
+      headerName: t("pages.Invoices.client"),
       flex: 1,
       minWidth: 220,
       renderCell: (params: GridRenderCellParams) => {
@@ -149,13 +151,13 @@ export default function RentalHistoryRoute() {
     },
     {
       field: "issued_date",
-      headerName: "Date Issued",
+      headerName: t("pages.RentalHistory.dateIssued"),
       width: 150,
       valueFormatter: (value) => formatDisplayDate(value),
     },
     {
       field: "total_amount",
-      headerName: "Grand Total",
+      headerName: t("invoices.grandTotal"),
       width: 130,
       renderCell: (params) => (
         <Typography fontWeight="700" color="primary.dark">
@@ -165,7 +167,7 @@ export default function RentalHistoryRoute() {
     },
     {
       field: "status",
-      headerName: "Status",
+      headerName: t("common.status"),
       width: 140,
       renderCell: (params) => {
         const today = new Date().getTime();
@@ -181,7 +183,7 @@ export default function RentalHistoryRoute() {
           return (
             <Chip
               icon={<WarningAmberIcon fontSize="small" />}
-              label="Overdue"
+              label={t("invoices.overdue")}
               size="small"
               color="error"
               sx={{ fontWeight: "bold" }}
@@ -191,7 +193,7 @@ export default function RentalHistoryRoute() {
           return (
             <Chip
               icon={<CheckCircleOutlineIcon fontSize="small" />}
-              label="Completed"
+              label={t("invoices.completed")}
               size="small"
               color="success"
               variant="outlined"
@@ -200,7 +202,7 @@ export default function RentalHistoryRoute() {
         return (
           <Chip
             icon={<AccessTimeIcon fontSize="small" />}
-            label="Active"
+            label={t("common.active")}
             size="small"
             color="warning"
           />
@@ -209,12 +211,12 @@ export default function RentalHistoryRoute() {
     },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: t("common.actions"),
       width: 200,
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: "flex", gap: 0.75, pt: 0.5 }}>
-          <Tooltip title="Inspect Details">
+          <Tooltip title={t("pages.RentalHistory.inspectDetails")}>
             <IconButton
               size="small"
               color="primary"
@@ -224,7 +226,7 @@ export default function RentalHistoryRoute() {
               <VisibilityIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Print POS Bill">
+          <Tooltip title={t("pages.RentalHistory.printPosBill")}>
             <IconButton
               size="small"
               onClick={() => setInvoiceToPrint(params.row)}
@@ -234,7 +236,7 @@ export default function RentalHistoryRoute() {
             </IconButton>
           </Tooltip>
           <Can perform="invoice:print_log:view">
-            <Tooltip title="Bill Print History">
+            <Tooltip title={t("pages.RentalHistory.billPrintHistory")}>
               <IconButton
                 size="small"
                 onClick={() => setInvoiceForPrintHistory(params.row)}
@@ -245,7 +247,7 @@ export default function RentalHistoryRoute() {
             </Tooltip>
           </Can>
           {params.row.status === "Active" && (
-            <Tooltip title="Process Handover">
+            <Tooltip title={t("invoices.ManageInvoiceViews.processHandover")}>
               <Button
                 size="small"
                 variant="contained"
@@ -285,10 +287,10 @@ export default function RentalHistoryRoute() {
       >
         <Box>
           <Typography variant="h4" fontWeight="800" color="text.primary">
-            Rental History
+            {t("reports.rentalHistory")}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Monitor fleet status and manage physical returns.
+            {t("pages.RentalHistory.monitorFleetStatusAndManage")}
           </Typography>
         </Box>
         <Button
@@ -296,7 +298,7 @@ export default function RentalHistoryRoute() {
           startIcon={<PrintIcon />}
           sx={{ bgcolor: "white", borderRadius: 2 }}
         >
-          Export CSV
+          {t("reports.exportCsv")}
         </Button>
       </Box>
 
@@ -304,21 +306,21 @@ export default function RentalHistoryRoute() {
       <Grid container spacing={{ xs: 1.5, md: 3 }}>
         {[
           {
-            label: "Active Orders",
+            label: t("pages.RentalHistory.activeOrders"),
             val: kpis.active,
             icon: <AccessTimeIcon />,
             color: "#d97706",
             bg: "#fffbeb",
           },
           {
-            label: "Overdue Items",
+            label: t("pages.RentalHistory.overdueItems"),
             val: kpis.overdue,
             icon: <WarningAmberIcon />,
             color: "#dc2626",
             bg: "#fef2f2",
           },
           {
-            label: "Completed",
+            label: t("invoices.completed"),
             val: kpis.completed,
             icon: <CheckCircleOutlineIcon />,
             color: "#16a34a",
@@ -398,13 +400,13 @@ export default function RentalHistoryRoute() {
             sx={{ bgcolor: "white", flexShrink: 0 }}
           >
             <ToggleButton value="All" sx={{ px: 3 }}>
-              All Orders
+              {t("pages.RentalHistory.allOrders")}
             </ToggleButton>
             <ToggleButton value="Active" sx={{ px: 3 }}>
-              Active Only
+              {t("pages.RentalHistory.activeOnly")}
             </ToggleButton>
             <ToggleButton value="Completed" sx={{ px: 3 }}>
-              Completed
+              {t("invoices.completed")}
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>
@@ -464,10 +466,10 @@ export default function RentalHistoryRoute() {
           >
             <Box>
               <Typography variant="h6" fontWeight="bold">
-                Invoice #{viewInvoiceDetails?.invoice_id}
+                {t("profile.ActivitySection.invoice", { invoice_id: viewInvoiceDetails?.invoice_id })}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Issued:{" "}
+                {t("invoices.ReadOnlyInvoiceModal.issued")}{" "}
                 {viewInvoiceDetails?.issued_date
                   ? new Date(viewInvoiceDetails.issued_date).toLocaleString()
                   : "—"}
@@ -482,7 +484,7 @@ export default function RentalHistoryRoute() {
                   onClick={() => setInvoiceForPrintHistory(viewInvoiceDetails)}
                   sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
                 >
-                  Print History
+                  {t("pages.RentalHistory.printHistory")}
                 </Button>
               </Can>
               <Button
@@ -492,7 +494,7 @@ export default function RentalHistoryRoute() {
                 onClick={() => setInvoiceToPrint(viewInvoiceDetails)}
                 sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
               >
-                Print Bill
+                {t("pages.RentalHistory.printBill")}
               </Button>
               <IconButton onClick={() => setViewInvoiceDetails(null)}>
                 <CloseIcon />
@@ -506,8 +508,8 @@ export default function RentalHistoryRoute() {
             variant="fullWidth"
             sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}
           >
-            <Tab value="details" label="Receipt Preview" />
-            <Tab value="reviews" label={`Reviews${drawerReviews.length ? ` (${drawerReviews.length})` : ""}`} />
+            <Tab value="details" label={t("pages.RentalHistory.receiptPreview")} />
+            <Tab value="reviews" label={`${t("pages.RentalHistory.reviews")}${drawerReviews.length ? ` (${drawerReviews.length})` : ""}`} />
           </Tabs>
 
           <Box

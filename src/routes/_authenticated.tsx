@@ -257,7 +257,7 @@ function AuthenticatedLayout() {
         { text: "Equipment", label: t("nav.equipment"), path: "/reports", search: { category: "equipment" }, icon: <ConstructionIcon fontSize="small" /> },
         { text: "Invoices", label: t("nav.invoices"), path: "/reports", search: { category: "invoices" }, icon: <ReceiptIcon fontSize="small" /> },
         { text: "Financials", label: t("nav.financials"), path: "/reports", search: { category: "financials" }, icon: <PieChartIcon fontSize="small" /> },
-        { text: "Print Audit", label: "Print Audit", path: "/reports", search: { category: "audit" }, icon: <PrintIcon fontSize="small" />, requiredPermission: "invoice:print_log:view" },
+        { text: "Print Audit", label: t("pages._authenticated.printAudit"), path: "/reports", search: { category: "audit" }, icon: <PrintIcon fontSize="small" />, requiredPermission: "invoice:print_log:view" },
       ],
     },
     {
@@ -333,7 +333,7 @@ function AuthenticatedLayout() {
             {item.children ? (
               <>
                 <Tooltip
-                  title={!isSidebarOpen ? item.text : ""}
+                  title={!isSidebarOpen ? (item.label || item.text) : ""}
                   placement="right"
                 >
                   <ListItem disablePadding sx={{ display: "block", mb: 0.5 }}>
@@ -451,7 +451,7 @@ function AuthenticatedLayout() {
             ) : (
               /* Normal standalone items (Dashboard, Customers, etc) */
               <Tooltip
-                title={!isSidebarOpen ? item.text : ""}
+                title={!isSidebarOpen ? (item.label || item.text) : ""}
                 placement="right"
               >
                 <ListItem disablePadding sx={{ display: "block", mb: 0.5 }}>
@@ -493,7 +493,7 @@ function AuthenticatedLayout() {
                       {item.icon}
                     </ListItemIcon>
                     <ListItemText
-                      primary={item.text}
+                      primary={item.label || item.text}
                       sx={{ opacity: isSidebarOpen ? 1 : 0 }}
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
@@ -529,7 +529,7 @@ function AuthenticatedLayout() {
               <LogoutIcon />
             </ListItemIcon>
             <ListItemText
-              primary="Log Out"
+              primary={t("pages._authenticated.logOut")}
               sx={{ opacity: isSidebarOpen ? 1 : 0 }}
             />
           </ListItemButton>
@@ -566,7 +566,7 @@ function AuthenticatedLayout() {
         <Toolbar>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
+            aria-label={t("pages._authenticated.openDrawer")}
             onClick={handleDrawerToggle}
             edge="start"
             sx={{

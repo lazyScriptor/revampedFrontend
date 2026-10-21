@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 
 interface TrendChartProps {
   data: Array<Record<string, any>>;
@@ -28,8 +29,9 @@ export function TrendChart({
   height = 240,
   color = "#f59e0b",
   yFormatter,
-  emptyLabel = "No data for this period",
+  emptyLabel,
 }: TrendChartProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -62,7 +64,7 @@ export function TrendChart({
         }}
       >
         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          {emptyLabel}
+          {emptyLabel ?? t("shared.TrendChart.noDataForThisPeriod")}
         </Typography>
       </Box>
     );

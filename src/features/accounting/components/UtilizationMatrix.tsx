@@ -1,4 +1,5 @@
 import { Box, Paper, Typography, Skeleton, Chip, LinearProgress } from '@mui/material';
+import { useTranslation } from "react-i18next";
 
 interface UtilizationRow {
     equipment_id: number;
@@ -38,6 +39,7 @@ const getRoiColor = (roi: number | null) => {
 };
 
 export default function UtilizationMatrix({ data, isLoading, currency = 'Rs.' }: Props) {
+    const { t } = useTranslation();
     if (isLoading) {
         return (
             <Paper elevation={0} sx={{ p: 3, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
@@ -49,7 +51,7 @@ export default function UtilizationMatrix({ data, isLoading, currency = 'Rs.' }:
     if (!data || data.length === 0) {
         return (
             <Paper elevation={0} sx={{ p: 4, border: '1px solid #e2e8f0', borderRadius: 2.5, textAlign: 'center' }}>
-                <Typography color="text.secondary">No equipment data for the selected range.</Typography>
+                <Typography color="text.secondary">{t("accounting.UtilizationMatrix.noEquipmentDataForThe")}</Typography>
             </Paper>
         );
     }
@@ -92,7 +94,7 @@ export default function UtilizationMatrix({ data, isLoading, currency = 'Rs.' }:
                                 </Typography>
                                 {row.serial_number && (
                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                                        SN: {row.serial_number}
+                                        {t("accounting.UtilizationMatrix.sn")} {row.serial_number}
                                     </Typography>
                                 )}
                             </Box>
@@ -136,7 +138,7 @@ export default function UtilizationMatrix({ data, isLoading, currency = 'Rs.' }:
                             </Box>
 
                             <Chip
-                                label={isIdle ? 'Idle' : 'In Use'}
+                                label={isIdle ? t("accounting.UtilizationMatrix.idle") : t("accounting.UtilizationMatrix.inUse")}
                                 size="small"
                                 sx={{
                                     fontSize: '0.6rem', fontWeight: 700, height: 20,

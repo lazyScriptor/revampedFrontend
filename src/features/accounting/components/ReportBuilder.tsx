@@ -4,6 +4,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import { useReportStore } from '@/stores/useReportStore';
 import { downloadReport } from '../hooks/useReportHooks';
 import { useState } from 'react';
+import { useTranslation } from "react-i18next";
 
 interface ReportBuilderProps {
     showDateRange?: boolean;
@@ -20,6 +21,7 @@ export default function ReportBuilder({
     excelEndpoint,
     reportName = 'report',
 }: ReportBuilderProps) {
+    const { t } = useTranslation();
     const { startDate, endDate, cashFlowDate, setDateRange, setCashFlowDate } = useReportStore();
     const [downloading, setDownloading] = useState<string | null>(null);
 
@@ -54,14 +56,14 @@ export default function ReportBuilder({
             {showDateRange && (
                 <>
                     <TextField
-                        type="date" size="small" label="From"
+                        type="date" size="small" label={t("common.dateFrom")}
                         value={startDate}
                         onChange={(e) => setDateRange(e.target.value, endDate)}
                         InputLabelProps={{ shrink: true }}
                         sx={{ width: 160, '& .MuiInputBase-input': { fontSize: '0.8rem', py: 1 } }}
                     />
                     <TextField
-                        type="date" size="small" label="To"
+                        type="date" size="small" label={t("common.dateTo")}
                         value={endDate}
                         onChange={(e) => setDateRange(startDate, e.target.value)}
                         InputLabelProps={{ shrink: true }}
@@ -72,7 +74,7 @@ export default function ReportBuilder({
 
             {showCashFlowDate && (
                 <TextField
-                    type="date" size="small" label="Date"
+                    type="date" size="small" label={t("common.date")}
                     value={cashFlowDate}
                     onChange={(e) => setCashFlowDate(e.target.value)}
                     InputLabelProps={{ shrink: true }}
@@ -94,7 +96,7 @@ export default function ReportBuilder({
                         '&:hover': { borderColor: '#dc2626', color: '#dc2626', bgcolor: '#fef2f2' },
                     }}
                 >
-                    {downloading === 'pdf' ? 'Generating...' : 'PDF'}
+                    {downloading === 'pdf' ? t("accounting.ReportBuilder.generating") : 'PDF'}
                 </Button>
             )}
 
@@ -110,7 +112,7 @@ export default function ReportBuilder({
                         '&:hover': { borderColor: '#16a34a', color: '#16a34a', bgcolor: '#f0fdf4' },
                     }}
                 >
-                    {downloading === 'excel' ? 'Generating...' : 'Excel'}
+                    {downloading === 'excel' ? t("accounting.ReportBuilder.generating") : t("shared.ExportMenu.excel")}
                 </Button>
             )}
         </Box>

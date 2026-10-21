@@ -29,6 +29,7 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { usePosCustomerSearch } from "../hooks/usePosSearch";
 import { useCustomerDetails, useCustomerInvoices } from "@/features/customers/hooks/useCustomerHooks";
 import { ReadOnlyInvoiceModal } from "./ReadOnlyInvoiceModal";
+import { useTranslation } from "react-i18next";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
@@ -43,6 +44,7 @@ export function PosCustomerPanel({
   onBehalfOfCustomer,
   onChangeOnBehalfOfCustomer,
 }: PosCustomerPanelProps) {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
   const [selectedPreviewInvoice, setSelectedPreviewInvoice] = useState<any | null>(null);
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
@@ -64,9 +66,9 @@ export function PosCustomerPanel({
   const relDate = (dateStr: string) => {
     if (!dateStr) return "—";
     const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
-    if (d === 0) return "Today";
-    if (d === 1) return "Yesterday";
-    if (d < 7) return `${d}d ago`;
+    if (d === 0) return t("time.today");
+    if (d === 1) return t("time.yesterday");
+    if (d < 7) return t("time.daysAgo", { count: d });
     return new Date(dateStr).toLocaleDateString();
   };
 
@@ -80,7 +82,7 @@ export function PosCustomerPanel({
       list.push({
         id: p.customer_id,
         label: name,
-        subtitle: "Linked parent",
+        subtitle: t("invoices.PosCustomerPanel.linkedParent"),
         data: p,
         relation: "parent",
       });
@@ -91,14 +93,14 @@ export function PosCustomerPanel({
         list.push({
           id: w.customer_id,
           label: `${w.first_name} ${w.last_name}`,
-          subtitle: "Linked child / worker",
+          subtitle: t("invoices.PosCustomerPanel.linkedChildWorker"),
           data: w,
           relation: "worker",
         });
       });
     }
     return list;
-  }, [selectedCustomerDetails, selectedCustomer]);
+  }, [selectedCustomerDetails, selectedCustomer, t]);
 
   // Reset the on-behalf selection whenever the actor customer changes —
   // a beneficiary from a previous customer never applies to a new one.
@@ -132,13 +134,13 @@ export function PosCustomerPanel({
           includeInputInList
           filterSelectedOptions
           value={selectedCustomer}
-          noOptionsText={inputValue.length < 2 ? "Type to search…" : "No clients found."}
+          noOptionsText={inputValue.length < 2 ? t("invoices.PosCustomerPanel.typeToSearch") : t("invoices.PosCustomerPanel.noClientsFound")}
           onChange={(_, newValue) => onSelectCustomer(newValue)}
           onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
           renderInput={(params) => (
             <TextField
               {...(params as any)}
-              placeholder="Scan NIC, phone, or name…"
+              placeholder={t("invoices.PosCustomerPanel.scanNicPhoneOrName")}
               size="small"
               fullWidth
               slotProps={{
@@ -215,7 +217,7 @@ export function PosCustomerPanel({
                     sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.25 }}
                   >
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
-                      {option.nic_number || "No NIC"}
+                      {option.nic_number || t("invoices.PosCustomerPanel.noNic")}
                     </span>
                     {option.phone_number && (
                       <>
@@ -228,7 +230,7 @@ export function PosCustomerPanel({
                 {option.status === "Blacklisted" && (
                   <Chip
                     size="small"
-                    label="Blocked"
+                    label={t("invoices.PosCustomerPanel.blocked")}
                     color="error"
                     sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
                   />
@@ -350,7 +352,7 @@ export function PosCustomerPanel({
                 )}
               </Box>
             </Box>
-            <Tooltip title="Remove selection">
+            <Tooltip title={t("invoices.PosCustomerPanel.removeSelection")}>
               <IconButton
                 size="small"
                 onClick={() => onSelectCustomer(null)}
@@ -397,7 +399,7 @@ export function PosCustomerPanel({
                   fontSize: "0.68rem",
                 }}
               >
-                <StarIcon sx={{ fontSize: 13, color: "#eab308" }} /> Trust Score
+                <StarIcon sx={{ fontSize: 13, color: "#eab308" }} /> {t("invoices.PosCustomerPanel.trustScore")}
               </Typography>
               <Typography
                 variant="body2"
@@ -435,7 +437,7 @@ export function PosCustomerPanel({
                   fontSize: "0.68rem",
                 }}
               >
-                <AccountBalanceWalletIcon sx={{ fontSize: 13 }} /> Client Wallet
+                <AccountBalanceWalletIcon sx={{ fontSize: 13 }} /> {t("invoices.PosCheckoutPanel.clientWallet")}
               </Typography>
               <Typography
                 variant="body2"
@@ -482,7 +484,7 @@ export function PosCustomerPanel({
                   letterSpacing: 0.3,
                 }}
               >
-                Invoices
+                {t("nav.invoices")}
               </Typography>
               <Typography
                 variant="body2"
@@ -518,7 +520,7 @@ export function PosCustomerPanel({
                   letterSpacing: 0.3,
                 }}
               >
-                Pending
+                {t("common.pending")}
               </Typography>
               <Typography
                 variant="body2"
@@ -554,7 +556,7 @@ export function PosCustomerPanel({
                   letterSpacing: 0.3,
                 }}
               >
-                Completed
+                {t("invoices.completed")}
               </Typography>
               <Typography
                 variant="body2"
@@ -588,7 +590,7 @@ export function PosCustomerPanel({
             >
               <WarningAmberIcon sx={{ fontSize: 16, color: "error.main", flexShrink: 0 }} />
               <Typography variant="caption" sx={{ color: "error.main", fontWeight: 700 }}>
-                BLACKLISTED — Do not process this order.
+                {t("invoices.PosCustomerPanel.blacklistedDoNotProcessThis")}
               </Typography>
             </Box>
           )}
@@ -610,7 +612,7 @@ export function PosCustomerPanel({
             >
               <LockIcon sx={{ fontSize: 14, color: "#b45309", flexShrink: 0 }} />
               <Typography variant="caption" sx={{ color: "#b45309", fontWeight: 600 }}>
-                Physical ID currently in the security vault.
+                {t("invoices.PosCustomerPanel.physicalIdCurrentlyInThe")}
               </Typography>
             </Box>
           )}
@@ -632,13 +634,17 @@ export function PosCustomerPanel({
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                 <AccountTreeIcon sx={{ fontSize: 16, color: "#4f46e5" }} />
                 <Typography variant="caption" sx={{ fontWeight: 800, color: "#0f172a", letterSpacing: 0.5, textTransform: "uppercase", fontSize: "0.65rem" }}>
-                  Rental Attribution
+                  {t("invoices.PosCustomerPanel.rentalAttribution")}
                 </Typography>
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                This customer is linked to a {relationshipOptions.some((o) => o.relation === "parent") ? "parent" : ""}
-                {relationshipOptions.some((o) => o.relation === "parent") && relationshipOptions.some((o) => o.relation === "worker") ? " and " : ""}
-                {relationshipOptions.some((o) => o.relation === "worker") ? "child / worker" : ""}. Choose who this rental is for.
+                {t(
+                  relationshipOptions.some((o) => o.relation === "parent") && relationshipOptions.some((o) => o.relation === "worker")
+                    ? "invoices.PosCustomerPanel.linkedBoth"
+                    : relationshipOptions.some((o) => o.relation === "parent")
+                      ? "invoices.PosCustomerPanel.linkedParent"
+                      : "invoices.PosCustomerPanel.linkedWorker",
+                )}
               </Typography>
               <TextField
                 select
@@ -662,7 +668,7 @@ export function PosCustomerPanel({
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      Rent for self
+                      {t("invoices.PosCustomerPanel.rentForSelf")}
                     </Typography>
                   </Box>
                 </MenuItem>
@@ -672,7 +678,7 @@ export function PosCustomerPanel({
                       <AccountTreeIcon sx={{ fontSize: 16, color: opt.relation === "parent" ? "#7c3aed" : "#0ea5e9" }} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-                          On behalf of {opt.label}
+                          {t("invoices.PosCustomerPanel.onBehalfOf", { label: opt.label })}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
                           {opt.subtitle}
@@ -684,7 +690,7 @@ export function PosCustomerPanel({
               </TextField>
               {onBehalfOfCustomer && (
                 <Typography variant="caption" sx={{ display: "block", mt: 1, color: "#4f46e5", fontWeight: 700 }}>
-                  Invoice will be attributed to both customers' history.
+                  {t("invoices.PosCustomerPanel.invoiceWillBeAttributedTo")}
                 </Typography>
               )}
             </Box>
@@ -717,7 +723,7 @@ export function PosCustomerPanel({
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <ReceiptLongIcon sx={{ fontSize: 15, color: "#475569" }} />
                 <Typography variant="caption" sx={{ fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.68rem" }}>
-                  Invoice History
+                  {t("invoices.PosCustomerPanel.invoiceHistory")}
                 </Typography>
                 <Chip
                   size="small"
@@ -726,7 +732,7 @@ export function PosCustomerPanel({
                 />
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-                Click for details
+                {t("invoices.PosCustomerPanel.clickForDetails")}
               </Typography>
             </Box>
 
@@ -739,7 +745,7 @@ export function PosCustomerPanel({
 
               {!loadingInvoices && pastInvoices.length === 0 && (
                 <Typography variant="caption" color="text.secondary" sx={{ p: 2, textAlign: "center", display: "block" }}>
-                  No previous invoices for this customer.
+                  {t("invoices.PosCustomerPanel.noPreviousInvoicesForThis")}
                 </Typography>
               )}
 
@@ -751,7 +757,7 @@ export function PosCustomerPanel({
                   const paid = invPayments.reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0);
                   const bal = Math.max(0, Number(inv.total_amount || 0) - paid);
                   const equipSummary = invLines
-                    .map((l: any) => l.Equipment?.equipment_name || "Asset")
+                    .map((l: any) => l.Equipment?.equipment_name || t("invoices.PosCustomerPanel.asset"))
                     .filter(Boolean)
                     .slice(0, 2)
                     .join(", ");
@@ -796,7 +802,7 @@ export function PosCustomerPanel({
                       {equipSummary && (
                         <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block", fontSize: "0.7rem", mb: 0.5 }}>
                           {equipSummary}
-                          {moreEquipCount > 0 ? ` +${moreEquipCount} more` : ""}
+                          {moreEquipCount > 0 ? t("invoices.PosCustomerPanel.more", { moreEquipCount }) : ""}
                         </Typography>
                       )}
 
@@ -806,11 +812,11 @@ export function PosCustomerPanel({
                         </Typography>
                         {bal > 0 ? (
                           <Typography variant="caption" sx={{ color: "#dc2626", fontWeight: 700, fontSize: "0.68rem", fontVariantNumeric: "tabular-nums" }}>
-                            Due: Rs. {bal.toLocaleString()}
+                            {t("invoices.PosCustomerPanel.dueRs", { bal: bal.toLocaleString() })}
                           </Typography>
                         ) : (
                           <Typography variant="caption" sx={{ color: "#16a34a", fontWeight: 600, fontSize: "0.65rem" }}>
-                            Settled
+                            {t("orders.settled")}
                           </Typography>
                         )}
                       </Box>
@@ -853,10 +859,10 @@ export function PosCustomerPanel({
             <PersonIcon sx={{ fontSize: 28 }} />
           </Box>
           <Typography variant="body2" sx={{ fontWeight: 800, color: "#1e293b" }}>
-            No Client Selected
+            {t("invoices.PosCustomerPanel.noClientSelected")}
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 220, lineHeight: 1.4 }}>
-            Scan NIC, phone, or search by client name above to link to this order.
+            {t("invoices.PosCustomerPanel.scanNicPhoneOrSearch")}
           </Typography>
         </Box>
       )}

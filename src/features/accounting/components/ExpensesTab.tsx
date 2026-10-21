@@ -16,12 +16,14 @@ import { useAccountingExpenses } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
 import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const EXPENSE_CATEGORIES = [
-  { value: "Operational", label: "Operational" },
-  { value: "Repair", label: "Repair" },
-  { value: "Asset Purchase", label: "Asset Purchase" },
-  { value: "Other", label: "Other" },
+  { value: "Operational", label: tk("accounting.ExpensesTab.operational") },
+  { value: "Repair", label: tk("accounting.ExpensesTab.repair") },
+  { value: "Asset Purchase", label: tk("accounting.ExpensesTab.assetPurchase") },
+  { value: "Other", label: tk("common.other") },
 ];
 
 const CATEGORY_COLORS: Record<string, "primary" | "secondary" | "warning" | "default"> = {
@@ -39,6 +41,7 @@ const EMPTY_FORM = {
 };
 
 export default function ExpensesTab() {
+  const { t } = useTranslation();
   const { filters, updateFilter, updateMultiple, resetFilters, setPage, setPageSize, toQueryParams } =
     useAccountingFilters({ sortField: "date" });
   const { format } = useCurrencyFormatter();
@@ -92,25 +95,25 @@ export default function ExpensesTab() {
     onSuccess: () => {
       invalidate();
       setFormOpen(false);
-      showSuccess(editingId ? "Expense updated." : "Expense recorded.");
+      showSuccess(editingId ? t("accounting.ExpensesTab.expenseUpdated") : t("accounting.ExpensesTab.expenseRecorded"));
     },
-    onError: (err: any) => showError(err.message || "Failed to save expense."),
+    onError: (err: any) => showError(err.message || t("accounting.ExpensesTab.failedToSaveExpense")),
   });
 
   const handleDelete = async (id: number, desc: string) => {
     const confirmed = await confirm({
-      title: "Delete Expense",
-      message: `Are you sure you want to delete "${desc || `EXP-${id}`}"? This action cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("accounting.ExpensesTab.deleteExpense"),
+      message: t("accounting.ExpensesTab.confirmDelete", { name: desc || `EXP-${id}` }),
+      confirmLabel: t("common.delete"),
       severity: "error",
     });
     if (!confirmed) return;
     try {
       await api.delete(`/expenses/${id}`);
       invalidate();
-      showSuccess("Expense deleted.");
+      showSuccess(t("accounting.ExpensesTab.expenseDeleted"));
     } catch (err: any) {
-      showError(err.message || "Failed to delete expense.");
+      showError(err.message || t("accounting.ExpensesTab.failedToDeleteExpense"));
     }
   };
 
@@ -125,13 +128,13 @@ export default function ExpensesTab() {
     },
     {
       field: "date",
-      headerName: "Date",
+      headerName: t("common.date"),
       width: 120,
       valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "category",
-      headerName: "Category",
+      headerName: t("common.category"),
       width: 140,
       renderCell: (p) => (
         <Chip
@@ -144,13 +147,13 @@ export default function ExpensesTab() {
     },
     {
       field: "description",
-      headerName: "Description",
+      headerName: t("common.description"),
       flex: 1,
       minWidth: 200,
     },
     {
       field: "amount",
-      headerName: "Amount",
+      headerName: t("common.amount"),
       width: 140,
       align: "right",
       headerAlign: "right",
@@ -162,14 +165,14 @@ export default function ExpensesTab() {
     },
     {
       field: "Warehouse",
-      headerName: "Warehouse",
+      headerName: t("equipment.warehouse"),
       width: 140,
       sortable: false,
       valueGetter: (_value: any, row: any) => row.Warehouse?.location_name || "—",
     },
     {
       field: "User",
-      headerName: "Recorded By",
+      headerName: t("accounting.ExpensesTab.recordedBy"),
       width: 130,
       sortable: false,
       valueGetter: (_value: any, row: any) => row.User?.username || "—",
@@ -182,12 +185,12 @@ export default function ExpensesTab() {
       filterable: false,
       renderCell: (p) => (
         <Box>
-          <Tooltip title="Edit">
+          <Tooltip title={t("common.edit")}>
             <IconButton size="small" onClick={() => openEdit(p.row)} sx={{ color: "#2563eb" }}>
               <EditOutlinedIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete">
+          <Tooltip title={t("common.delete")}>
             <IconButton
               size="small"
               onClick={() => handleDelete(p.row.expense_id, p.row.description)}
@@ -222,7 +225,7 @@ export default function ExpensesTab() {
           onClick={openCreate}
           sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.78rem", whiteSpace: "nowrap", mt: 0.5, px: 2.5 }}
         >
-          Add Expense
+          {t("accounting.addExpense")}
         </Button>
       </Box>
 
@@ -255,11 +258,11 @@ export default function ExpensesTab() {
 
       {/* Create / Edit Expense Dialog */}
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle fontWeight="bold">{editingId ? "Edit Expense" : "Record New Expense"}</DialogTitle>
+        <DialogTitle fontWeight="bold">{editingId ? t("accounting.ExpensesTab.editExpense") : t("accounting.ExpensesTab.recordNewExpense")}</DialogTitle>
         <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "16px !important" }}>
           <TextField
             select
-            label="Category"
+            label={t("common.category")}
             size="small"
             fullWidth
             value={form.category}
@@ -267,12 +270,12 @@ export default function ExpensesTab() {
           >
             {EXPENSE_CATEGORIES.map((c) => (
               <MenuItem key={c.value} value={c.value}>
-                {c.label}
+                {t(c.label)}
               </MenuItem>
             ))}
           </TextField>
           <TextField
-            label="Amount"
+            label={t("common.amount")}
             size="small"
             fullWidth
             type="number"
@@ -280,7 +283,7 @@ export default function ExpensesTab() {
             onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
           />
           <TextField
-            label="Date"
+            label={t("common.date")}
             size="small"
             fullWidth
             type="date"
@@ -289,7 +292,7 @@ export default function ExpensesTab() {
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Description"
+            label={t("common.description")}
             size="small"
             fullWidth
             multiline
@@ -300,7 +303,7 @@ export default function ExpensesTab() {
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setFormOpen(false)} color="inherit">
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             variant="contained"
@@ -308,7 +311,7 @@ export default function ExpensesTab() {
             disabled={!form.amount || saveMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
-            {saveMutation.isPending ? "Saving..." : editingId ? "Update" : "Save"}
+            {saveMutation.isPending ? t("accounting.ExpensesTab.saving") : editingId ? t("common.update") : t("common.save")}
           </Button>
         </DialogActions>
       </Dialog>

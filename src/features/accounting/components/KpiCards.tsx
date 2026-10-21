@@ -5,6 +5,8 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import SavingsIcon from '@mui/icons-material/Savings';
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 interface KpiData {
     totalRevenue: number;
@@ -25,21 +27,21 @@ const fmt = (v: number, currency = 'Rs.') =>
 const cards = [
     {
         key: 'totalRevenue' as keyof KpiData,
-        label: 'Total Revenue',
+        label: tk("dashboard.widgets.totalRevenue"),
         icon: <AccountBalanceWalletIcon sx={{ fontSize: 18 }} />,
         color: '#16a34a',
         bgColor: '#f0fdf4',
     },
     {
         key: 'totalExpenses' as keyof KpiData,
-        label: 'Total Expenses',
+        label: tk("accounting.KpiCards.totalExpenses"),
         icon: <ReceiptLongIcon sx={{ fontSize: 18 }} />,
         color: '#dc2626',
         bgColor: '#fef2f2',
     },
     {
         key: 'netProfit' as keyof KpiData,
-        label: 'Net Profit',
+        label: tk("dashboard.widgets.netProfit"),
         icon: <SavingsIcon sx={{ fontSize: 18 }} />,
         color: '#7c3aed',
         bgColor: '#faf5ff',
@@ -47,7 +49,7 @@ const cards = [
     },
     {
         key: 'outstandingDebt' as keyof KpiData,
-        label: 'Outstanding Debt',
+        label: tk("dashboard.widgets.outstandingDebt"),
         icon: <WarningAmberIcon sx={{ fontSize: 18 }} />,
         color: '#ea580c',
         bgColor: '#fff7ed',
@@ -55,6 +57,7 @@ const cards = [
 ];
 
 export default function KpiCards({ data, isLoading, currency = 'Rs.' }: KpiCardsProps) {
+    const { t } = useTranslation();
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', lg: 'repeat(4, 1fr)' }, gap: 2 }}>
             {cards.map((card) => {
@@ -79,7 +82,7 @@ export default function KpiCards({ data, isLoading, currency = 'Rs.' }: KpiCards
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}>
-                                {card.label}
+                                {t(card.label)}
                             </Typography>
                             <Box sx={{
                                 width: 32, height: 32, borderRadius: 1.5,

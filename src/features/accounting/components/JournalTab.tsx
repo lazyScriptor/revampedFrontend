@@ -7,8 +7,10 @@ import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useTransactionJournal } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 export default function JournalTab() {
+  const { t } = useTranslation();
   const { filters, updateFilter, updateMultiple, resetFilters, setPage, setPageSize, toQueryParams } =
     useAccountingFilters({ sortField: "date" });
   const { format } = useCurrencyFormatter();
@@ -17,13 +19,13 @@ export default function JournalTab() {
   const columns: GridColDef[] = [
     {
       field: "date",
-      headerName: "Date",
+      headerName: t("common.date"),
       width: 120,
       valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "type",
-      headerName: "Type",
+      headerName: t("common.type"),
       width: 120,
       renderCell: (p) => {
         const isIncome = p.value === "income";
@@ -40,13 +42,13 @@ export default function JournalTab() {
     },
     {
       field: "description",
-      headerName: "Description",
+      headerName: t("common.description"),
       flex: 1,
       minWidth: 200,
     },
     {
       field: "reference",
-      headerName: "Ref",
+      headerName: t("accounting.JournalTab.ref"),
       width: 110,
       renderCell: (p) => (
         <Chip label={p.value} size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: "0.65rem", height: 22 }} />
@@ -54,7 +56,7 @@ export default function JournalTab() {
     },
     {
       field: "category",
-      headerName: "Category/Method",
+      headerName: t("accounting.JournalTab.categoryMethod"),
       width: 150,
       renderCell: (p) => (
         <Chip label={p.value || "—"} size="small" sx={{ fontSize: "0.7rem", height: 22, bgcolor: "#f1f5f9" }} />
@@ -62,7 +64,7 @@ export default function JournalTab() {
     },
     {
       field: "amount",
-      headerName: "Amount",
+      headerName: t("common.amount"),
       width: 140,
       align: "right",
       headerAlign: "right",

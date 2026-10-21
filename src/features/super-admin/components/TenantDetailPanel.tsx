@@ -21,6 +21,8 @@ import {
 import RecordPaymentDialog from './RecordPaymentDialog';
 import TenantUserDialog from './TenantUserDialog';
 import { formatDisplayDate } from '@/lib/dates';
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const STATUS_META: Record<string, { color: string; bg: string }> = {
     Active: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
@@ -40,10 +42,10 @@ const DARK_INPUT = {
 };
 
 const FEATURE_LABELS: Record<string, { label: string; desc: string }> = {
-    continuous_return: { label: 'Continuous Return', desc: 'Allow partial equipment returns on active invoices' },
-    accounting_module: { label: 'Accounting Module', desc: 'Enable journal entries and financial reporting' },
-    bulk_import: { label: 'Bulk Import', desc: 'Allow CSV import for equipment, customers, and invoices' },
-    maintenance_module: { label: 'Maintenance Module', desc: 'Enable equipment defect tracking and repair management' },
+    continuous_return: { label: tk("superAdmin.TenantDetailPanel.continuousReturn"), desc: tk("superAdmin.TenantDetailPanel.featureContinuousReturnDesc") },
+    accounting_module: { label: tk("superAdmin.TenantDetailPanel.accountingModule"), desc: tk("superAdmin.TenantDetailPanel.featureAccountingModuleDesc") },
+    bulk_import: { label: tk("dataArena.EquipmentDataPanel.bulkImport"), desc: tk("superAdmin.TenantDetailPanel.featureBulkImportDesc") },
+    maintenance_module: { label: tk("superAdmin.TenantDetailPanel.maintenanceModule"), desc: tk("superAdmin.TenantDetailPanel.featureMaintenanceModuleDesc") },
 };
 
 interface Props {
@@ -51,6 +53,7 @@ interface Props {
 }
 
 export default function TenantDetailPanel({ tenantId }: Props) {
+    const { t } = useTranslation();
     const { data, isLoading } = useTenantDetails(tenantId);
     const { data: payments = [] } = usePaymentHistory(tenantId);
     const { data: users = [], isLoading: usersLoading } = useTenantUsers(tenantId);
@@ -167,7 +170,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                 </Box>
                 {/* Quick actions */}
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Tooltip title="Activate tenant">
+                    <Tooltip title={t("superAdmin.TenantDetailPanel.activateTenant")}>
                         <span>
                             <Button
                                 size="small"
@@ -182,18 +185,18 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                     fontSize: '0.72rem', fontWeight: 700, height: 28,
                                 }}
                             >
-                                Activate
+                                {t("superAdmin.TenantDetailPanel.activate")}
                             </Button>
                         </span>
                     </Tooltip>
-                    <Tooltip title="Suspend tenant — blocks all logins">
+                    <Tooltip title={t("superAdmin.TenantDetailPanel.suspendTenantBlocksAllLogins")}>
                         <span>
                             <Button
                                 size="small"
                                 variant={tenant.subscription_status === 'Suspended' ? 'contained' : 'outlined'}
                                 startIcon={<PauseOutlinedIcon />}
                                 disabled={tenant.subscription_status === 'Suspended' || suspendMutation.isPending}
-                                onClick={() => { if (confirm(`Suspend "${tenantName}"?`)) suspendMutation.mutate(tenantId); }}
+                                onClick={() => { if (confirm(t("superAdmin.TenantDetailPanel.suspend2", { tenantName }))) suspendMutation.mutate(tenantId); }}
                                 sx={{
                                     borderColor: '#ef4444', color: tenant.subscription_status === 'Suspended' ? '#fff' : '#ef4444',
                                     bgcolor: tenant.subscription_status === 'Suspended' ? '#ef4444' : 'transparent',
@@ -201,11 +204,11 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                     fontSize: '0.72rem', fontWeight: 700, height: 28,
                                 }}
                             >
-                                Suspend
+                                {t("superAdmin.TenantDetailPanel.suspend")}
                             </Button>
                         </span>
                     </Tooltip>
-                    <Tooltip title="Mark as overdue — blocks logins until payment">
+                    <Tooltip title={t("superAdmin.TenantDetailPanel.markAsOverdueBlocksLogins")}>
                         <span>
                             <Button
                                 size="small"
@@ -220,7 +223,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                     fontSize: '0.72rem', fontWeight: 700, height: 28,
                                 }}
                             >
-                                Mark Overdue
+                                {t("superAdmin.TenantDetailPanel.markOverdue")}
                             </Button>
                         </span>
                     </Tooltip>
@@ -240,11 +243,11 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                     '& .MuiTabs-indicator': { bgcolor: '#ef4444', height: 2 },
                 }}
             >
-                <Tab label="Info" />
-                <Tab label="Configuration" />
-                <Tab label="Billing" />
+                <Tab label={t("common.info")} />
+                <Tab label={t("superAdmin.TenantDetailPanel.configuration")} />
+                <Tab label={t("superAdmin.TenantDetailPanel.billing")} />
                 <Tab label="CORS" />
-                <Tab label="Users" />
+                <Tab label={t("nav.users")} />
             </Tabs>
 
             {/* Tab Content */}
@@ -253,17 +256,17 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                 {/* ── TAB 0: INFO ─────────────────────────────────── */}
                 {tab === 0 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                        {saveOk === 'info' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>Saved successfully.</Alert>}
-                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Identity & Contact</Typography>
-                        <TextField size="small" label="Display Name" value={infoForm.display_name} onChange={(e) => setInfoForm(f => ({ ...f, display_name: e.target.value }))} sx={DARK_INPUT} />
+                        {saveOk === 'info' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>{t("superAdmin.TenantDetailPanel.savedSuccessfully")}</Alert>}
+                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.identityContact")}</Typography>
+                        <TextField size="small" label={t("superAdmin.TenantDetailPanel.displayName")} value={infoForm.display_name} onChange={(e) => setInfoForm(f => ({ ...f, display_name: e.target.value }))} sx={DARK_INPUT} />
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                            <TextField size="small" label="Contact Email" value={infoForm.contact_email} onChange={(e) => setInfoForm(f => ({ ...f, contact_email: e.target.value }))} sx={DARK_INPUT} />
-                            <TextField size="small" label="Contact Phone" value={infoForm.contact_phone} onChange={(e) => setInfoForm(f => ({ ...f, contact_phone: e.target.value }))} sx={DARK_INPUT} />
+                            <TextField size="small" label={t("superAdmin.TenantDetailPanel.contactEmail")} value={infoForm.contact_email} onChange={(e) => setInfoForm(f => ({ ...f, contact_email: e.target.value }))} sx={DARK_INPUT} />
+                            <TextField size="small" label={t("superAdmin.TenantDetailPanel.contactPhone")} value={infoForm.contact_phone} onChange={(e) => setInfoForm(f => ({ ...f, contact_phone: e.target.value }))} sx={DARK_INPUT} />
                         </Box>
                         <Divider sx={{ borderColor: '#1e293b' }} />
-                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Internal Notes</Typography>
+                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.internalNotes")}</Typography>
                         <TextField
-                            multiline rows={4} label="Notes (internal only)" value={infoForm.internal_notes}
+                            multiline rows={4} label={t("superAdmin.TenantDetailPanel.notesInternalOnly")} value={infoForm.internal_notes}
                             onChange={(e) => setInfoForm(f => ({ ...f, internal_notes: e.target.value }))}
                             sx={DARK_INPUT}
                         />
@@ -272,7 +275,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                 onClick={() => handleSave(infoForm, 'info')}
                                 disabled={updateMutation.isPending}
                                 sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700 }}>
-                                Save Info
+                                {t("superAdmin.TenantDetailPanel.saveInfo")}
                             </Button>
                         </Box>
                     </Box>
@@ -281,11 +284,11 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                 {/* ── TAB 1: CONFIGURATION ─────────────────────────── */}
                 {tab === 1 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                        {saveOk === 'config' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>Saved successfully.</Alert>}
+                        {saveOk === 'config' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>{t("superAdmin.TenantDetailPanel.savedSuccessfully")}</Alert>}
 
-                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Subscription Tier</Typography>
+                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.subscriptionTier")}</Typography>
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                            <TextField size="small" select label="Tier" value={configForm.tier}
+                            <TextField size="small" select label={t("superAdmin.CreateTenantDialog.tier")} value={configForm.tier}
                                 onChange={(e) => setConfigForm(f => ({ ...f, tier: e.target.value }))} sx={DARK_INPUT}>
                                 {[
                                     { value: 'Basic', color: '#64748b' },
@@ -300,17 +303,17 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                     </MenuItem>
                                 ))}
                             </TextField>
-                            <TextField size="small" type="number" label="Max Users" value={configForm.max_users}
+                            <TextField size="small" type="number" label={t("superAdmin.TenantDetailPanel.maxUsers")} value={configForm.max_users}
                                 onChange={(e) => setConfigForm(f => ({ ...f, max_users: parseInt(e.target.value) || 1 }))} sx={DARK_INPUT} />
                         </Box>
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
-                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Default Language</Typography>
+                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.defaultLanguage")}</Typography>
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 2, alignItems: 'center' }}>
                             <TextField
                                 size="small"
                                 select
-                                label="Language"
+                                label={t("language.title")}
                                 value={configForm.default_language}
                                 onChange={(e) =>
                                     setConfigForm((f) => ({ ...f, default_language: e.target.value }))
@@ -321,29 +324,29 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Box component="span" sx={{ fontSize: '0.95rem' }}>සිංහල</Box>
                                         <Typography component="span" variant="caption" sx={{ color: '#64748b' }}>
-                                            · Sinhala
+                                            {t("superAdmin.TenantDetailPanel.sinhala")}
                                         </Typography>
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="en">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box component="span">English</Box>
+                                        <Box component="span">{t("invoices.ReceiptPrintDialog.english")}</Box>
                                     </Box>
                                 </MenuItem>
                             </TextField>
                             <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.72rem', lineHeight: 1.5 }}>
-                                Default UI language for every user of this tenant. Individual users can still override this on their profile. Sinhala is the platform default.
+                                {t("superAdmin.TenantDetailPanel.defaultUiLanguageForEvery")}
                             </Typography>
                         </Box>
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
-                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Feature Flags</Typography>
+                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.featureFlags")}</Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             {Object.entries(FEATURE_LABELS).map(([key, { label, desc }]) => (
                                 <Box key={key} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5, bgcolor: '#0f172a', borderRadius: 1.5, border: '1px solid #1e293b' }}>
                                     <Box>
-                                        <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }}>{label}</Typography>
-                                        <Typography variant="caption" sx={{ color: '#475569' }}>{desc}</Typography>
+                                        <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }}>{t(label)}</Typography>
+                                        <Typography variant="caption" sx={{ color: '#475569' }}>{t(desc)}</Typography>
                                     </Box>
                                     <Switch
                                         checked={!!(configForm.feature_flags as any)[key]}
@@ -356,8 +359,8 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                         </Box>
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
-                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>Branding</Typography>
-                        <TextField size="small" label="Business Name" value={(configForm.branding as any).businessName || ''}
+                        <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.branding")}</Typography>
+                        <TextField size="small" label={t("superAdmin.TenantDetailPanel.businessName")} value={(configForm.branding as any).businessName || ''}
                             onChange={(e) => setConfigForm(f => ({ ...f, branding: { ...f.branding, businessName: e.target.value } }))} sx={DARK_INPUT} />
 
                         {/* Logo upload */}
@@ -376,17 +379,17 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                         src={(configForm.branding as any).logoUrl.startsWith('http') || (configForm.branding as any).logoUrl.startsWith('data:')
                                             ? (configForm.branding as any).logoUrl
                                             : `${import.meta.env.VITE_API_URL?.replace(/\/api$/, '')}${(configForm.branding as any).logoUrl}`}
-                                        alt="Logo"
+                                        alt={t("superAdmin.TenantDetailPanel.logo")}
                                         sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                     />
                                 ) : (
-                                    <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.65rem' }}>No logo</Typography>
+                                    <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.65rem' }}>{t("superAdmin.TenantDetailPanel.noLogo")}</Typography>
                                 )}
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }}>Tenant Logo</Typography>
+                                <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }}>{t("superAdmin.TenantDetailPanel.tenantLogo")}</Typography>
                                 <Typography variant="caption" sx={{ color: '#64748b', fontFamily: 'monospace', wordBreak: 'break-all', display: 'block', mt: 0.25 }}>
-                                    {(configForm.branding as any).logoUrl || 'PNG, JPG, SVG · max 5MB'}
+                                    {(configForm.branding as any).logoUrl || t("superAdmin.TenantDetailPanel.pngJpgSvgMax5mb")}
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
@@ -397,7 +400,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                     disabled={uploadLogo.isPending}
                                     sx={{ borderColor: '#3b82f6', color: '#3b82f6', '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' }, fontSize: '0.72rem', fontWeight: 700 }}
                                 >
-                                    {uploadLogo.isPending ? <CircularProgress size={14} color="inherit" /> : 'Upload'}
+                                    {uploadLogo.isPending ? <CircularProgress size={14} color="inherit" /> : t("common.upload")}
                                     <input
                                         type="file"
                                         hidden
@@ -422,14 +425,14 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                         onClick={() => setConfigForm(f => ({ ...f, branding: { ...f.branding, logoUrl: '' } }))}
                                         sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' }, fontSize: '0.72rem', fontWeight: 700, minWidth: 'auto', px: 1 }}
                                     >
-                                        Clear
+                                        {t("common.clear")}
                                     </Button>
                                 )}
                             </Box>
                         </Box>
                         {uploadLogo.isError && (
                             <Alert severity="error" sx={{ fontSize: '0.78rem' }}>
-                                {uploadLogo.error instanceof Error ? uploadLogo.error.message : 'Logo upload failed'}
+                                {uploadLogo.error instanceof Error ? uploadLogo.error.message : t("superAdmin.TenantDetailPanel.logoUploadFailed")}
                             </Alert>
                         )}
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
@@ -461,7 +464,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                 onClick={() => handleSave({ tier: configForm.tier, max_users: configForm.max_users, default_language: configForm.default_language, feature_flags: configForm.feature_flags, branding: configForm.branding }, 'config')}
                                 disabled={updateMutation.isPending}
                                 sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700 }}>
-                                Save Configuration
+                                {t("superAdmin.TenantDetailPanel.saveConfiguration")}
                             </Button>
                         </Box>
                     </Box>
@@ -470,12 +473,12 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                 {/* ── TAB 2: BILLING ─────────────────────────────── */}
                 {tab === 2 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                        {saveOk === 'billing' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>Saved successfully.</Alert>}
+                        {saveOk === 'billing' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>{t("superAdmin.TenantDetailPanel.savedSuccessfully")}</Alert>}
 
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                            <TextField size="small" type="number" label="Monthly Rate (LKR)" value={billingForm.monthly_rate}
+                            <TextField size="small" type="number" label={t("superAdmin.TenantDetailPanel.monthlyRateLkr")} value={billingForm.monthly_rate}
                                 onChange={(e) => setBillingForm(f => ({ ...f, monthly_rate: e.target.value }))} sx={DARK_INPUT} />
-                            <TextField size="small" type="date" label="Next Billing Date" value={billingForm.next_billing_date}
+                            <TextField size="small" type="date" label={t("superAdmin.TenantDetailPanel.nextBillingDate")} value={billingForm.next_billing_date}
                                 onChange={(e) => setBillingForm(f => ({ ...f, next_billing_date: e.target.value }))}
                                 slotProps={{ inputLabel: { shrink: true } }} sx={DARK_INPUT} />
                         </Box>
@@ -483,23 +486,23 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                             <Button variant="outlined" startIcon={<PaymentsOutlinedIcon />}
                                 onClick={() => setPaymentDialogOpen(true)}
                                 sx={{ borderColor: '#10b981', color: '#10b981', '&:hover': { bgcolor: 'rgba(16,185,129,0.1)' }, fontWeight: 700 }}>
-                                Record Payment
+                                {t("accounting.addPayment")}
                             </Button>
                             <Button variant="contained" startIcon={<SaveOutlinedIcon />}
                                 onClick={() => handleSave({ monthly_rate: parseFloat(billingForm.monthly_rate) || 0, next_billing_date: billingForm.next_billing_date || null }, 'billing')}
                                 disabled={updateMutation.isPending}
                                 sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700 }}>
-                                Save Billing
+                                {t("superAdmin.TenantDetailPanel.saveBilling")}
                             </Button>
                         </Box>
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
                         <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
-                            Payment History ({(payments as any[]).length})
+                            {t("superAdmin.TenantDetailPanel.paymentHistory", { paymentsCount: (payments as any[]).length })}
                         </Typography>
 
                         {(payments as any[]).length === 0 ? (
-                            <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 3 }}>No payment records.</Typography>
+                            <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 3 }}>{t("superAdmin.TenantDetailPanel.noPaymentRecords")}</Typography>
                         ) : (
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                 {(payments as any[]).map((p: any) => {
@@ -526,13 +529,13 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                 {/* ── TAB 3: CORS ──────────────────────────────────── */}
                 {tab === 3 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {saveOk === 'cors' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>Saved successfully.</Alert>}
+                        {saveOk === 'cors' && <Alert severity="success" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 2 }}>{t("superAdmin.TenantDetailPanel.savedSuccessfully")}</Alert>}
                         <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.8rem' }}>
-                            Tenant-specific CORS origins stored in the tenant record. For the active server whitelist, use the global CORS manager.
+                            {t("superAdmin.TenantDetailPanel.tenantSpecificCorsOriginsStored")}
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             {corsOrigins.length === 0 ? (
-                                <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 2 }}>No origins added.</Typography>
+                                <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 2 }}>{t("superAdmin.TenantDetailPanel.noOriginsAdded")}</Typography>
                             ) : (
                                 corsOrigins.map((o) => (
                                     <Box key={o} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.25, bgcolor: '#0f172a', borderRadius: 1.5, border: '1px solid #1e293b' }}>
@@ -554,7 +557,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                 disabled={!newCorsOrigin.trim()}
                                 onClick={() => { if (newCorsOrigin.trim()) { setCorsOrigins(p => [...p, newCorsOrigin.trim()]); setNewCorsOrigin(''); } }}
                                 sx={{ borderColor: '#334155', color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                                Add
+                                {t("common.add")}
                             </Button>
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -562,7 +565,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                 onClick={() => handleSave({ cors_whitelist: corsOrigins }, 'cors')}
                                 disabled={updateMutation.isPending}
                                 sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700 }}>
-                                Save
+                                {t("common.save")}
                             </Button>
                         </Box>
                     </Box>
@@ -574,7 +577,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                         {/* Header row */}
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                             <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
-                                Tenant Users ({(users as any[]).length})
+                                {t("superAdmin.TenantDetailPanel.tenantUsers", { usersCount: (users as any[]).length })}
                             </Typography>
                             <Button
                                 size="small"
@@ -583,14 +586,14 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                 onClick={() => { setEditingUser(null); setUserDialogOpen(true); }}
                                 sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700, fontSize: '0.72rem', height: 28 }}
                             >
-                                New User
+                                {t("superAdmin.TenantDetailPanel.newUser")}
                             </Button>
                         </Box>
 
                         {usersLoading ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={20} sx={{ color: '#3b82f6' }} /></Box>
                         ) : (users as any[]).length === 0 ? (
-                            <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 4 }}>No users in this tenant database.</Typography>
+                            <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 4 }}>{t("superAdmin.TenantDetailPanel.noUsersInThisTenant")}</Typography>
                         ) : (
                             (users as any[]).map((u) => (
                                 <Box key={u.user_id} sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 1.5, bgcolor: '#0f172a', borderRadius: 1.5, border: '1px solid #1e293b' }}>
@@ -615,17 +618,17 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                         size="small"
                                         sx={{ height: 20, fontSize: '0.62rem', bgcolor: u.status === 'Active' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: u.status === 'Active' ? '#10b981' : '#ef4444', fontWeight: 600 }}
                                     />
-                                    <Tooltip title={`Impersonate ${u.username} (15 min session)`}>
+                                    <Tooltip title={t("superAdmin.TenantDetailPanel.impersonate15MinSession", { username: u.username })}>
                                         <IconButton
                                             size="small"
-                                            onClick={() => { if (confirm(`Impersonate "${u.username}"? This grants a 15-minute session.`)) handleImpersonate(u.user_id); }}
+                                            onClick={() => { if (confirm(t("superAdmin.TenantDetailPanel.impersonateThisGrantsA15", { username: u.username }))) handleImpersonate(u.user_id); }}
                                             disabled={impersonateMutation.isPending}
                                             sx={{ color: '#3b82f6', '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' }, width: 28, height: 28 }}
                                         >
                                             <PersonSearchOutlinedIcon sx={{ fontSize: 16 }} />
                                         </IconButton>
                                     </Tooltip>
-                                    <Tooltip title="Edit user">
+                                    <Tooltip title={t("admin.users.editUser")}>
                                         <IconButton
                                             size="small"
                                             onClick={() => { setEditingUser(u); setUserDialogOpen(true); }}
@@ -634,12 +637,12 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                             <EditOutlinedIcon sx={{ fontSize: 16 }} />
                                         </IconButton>
                                     </Tooltip>
-                                    <Tooltip title="Delete user">
+                                    <Tooltip title={t("superAdmin.TenantDetailPanel.deleteUser")}>
                                         <IconButton
                                             size="small"
                                             disabled={deleteTenantUser.isPending}
                                             onClick={() => {
-                                                if (confirm(`Delete user "${u.username}"? This also removes their global login.`)) {
+                                                if (confirm(t("superAdmin.TenantDetailPanel.deleteUserThisAlsoRemoves", { username: u.username }))) {
                                                     deleteTenantUser.mutate({ tenantId, userId: u.user_id });
                                                 }
                                             }}

@@ -1,20 +1,23 @@
 import { Chip } from "@mui/material";
 import { BulkJobStatus } from "../api/bulkJobs.api";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const MAP: Record<BulkJobStatus, { label: string; color: string; bg: string }> = {
-  queued:            { label: "Queued",       color: "#475569", bg: "#e2e8f0" },
-  processing:        { label: "Processing",   color: "#1d4ed8", bg: "#dbeafe" },
-  completed:         { label: "Completed",    color: "#15803d", bg: "#dcfce7" },
-  failed:            { label: "Failed",       color: "#b91c1c", bg: "#fee2e2" },
-  cancelled:         { label: "Cancelled",    color: "#7c2d12", bg: "#fed7aa" },
-  awaiting_confirmation: { label: "Preview",  color: "#a16207", bg: "#fef3c7" },
+  queued:            { label: tk("dataArena.JobHistoryTable.queued"),       color: "#475569", bg: "#e2e8f0" },
+  processing:        { label: tk("dataArena.JobHistoryTable.processing"),   color: "#1d4ed8", bg: "#dbeafe" },
+  completed:         { label: tk("invoices.completed"),    color: "#15803d", bg: "#dcfce7" },
+  failed:            { label: tk("common.failed"),       color: "#b91c1c", bg: "#fee2e2" },
+  cancelled:         { label: tk("invoices.cancelled"),    color: "#7c2d12", bg: "#fed7aa" },
+  awaiting_confirmation: { label: tk("dataArena.JobStatusChip.preview"),  color: "#a16207", bg: "#fef3c7" },
 };
 
 export function JobStatusChip({ status }: { status: BulkJobStatus }) {
+  const { t } = useTranslation();
   const s = MAP[status] || MAP.queued;
   return (
     <Chip
-      label={s.label}
+      label={t(s.label)}
       size="small"
       sx={{
         bgcolor: s.bg,

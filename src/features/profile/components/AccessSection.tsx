@@ -2,8 +2,10 @@ import { Box, Paper, Typography, Chip, Divider } from "@mui/material";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import KeyIcon from "@mui/icons-material/Key";
 import { MyProfile } from "../api/me.api";
+import { useTranslation } from "react-i18next";
 
 export function AccessSection({ profile }: { profile: MyProfile }) {
+  const { t } = useTranslation();
   const roles = profile.Roles || [];
   const permissions = profile.permissions || [];
 
@@ -26,16 +28,16 @@ export function AccessSection({ profile }: { profile: MyProfile }) {
           <VerifiedUserIcon color="primary" />
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#0f172a" }}>
-              Your roles
+              {t("profile.AccessSection.yourRoles")}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Assigned by an administrator. Contact admin to change.
+              {t("profile.AccessSection.assignedByAnAdministratorContact")}
             </Typography>
           </Box>
         </Box>
         {roles.length === 0 ? (
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            No roles assigned.
+            {t("profile.AccessSection.noRolesAssigned")}
           </Typography>
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
@@ -60,16 +62,16 @@ export function AccessSection({ profile }: { profile: MyProfile }) {
           <KeyIcon color="primary" />
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#0f172a" }}>
-              Effective permissions ({permissions.length})
+              {t("profile.AccessSection.effectivePermissions", { permissionsCount: permissions.length })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Computed from your roles + per-user overrides.
+              {t("profile.AccessSection.computedFromYourRolesPer")}
             </Typography>
           </Box>
         </Box>
         {permissions.length === 0 ? (
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            No permissions assigned.
+            {t("profile.AccessSection.noPermissionsAssigned")}
           </Typography>
         ) : (
           <Box>

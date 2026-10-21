@@ -134,7 +134,7 @@ export default function MaintenanceRoute() {
     const qty = parseInt(assignQty);
     if (!selectedTechId || !assignModal.defect) return;
     if (!qty || qty <= 0 || qty > assignModal.defect.pending_quantity) {
-      return showToast("Please enter a valid assignment quantity.", "error");
+      return showToast(t("pages.Maintenance.pleaseEnterAValidAssignment"), "error");
     }
 
     assignMutation.mutate(
@@ -146,7 +146,7 @@ export default function MaintenanceRoute() {
       {
         onSuccess: () => {
           showToast(
-            `Successfully assigned ${qty} items to technician.`,
+            t("pages.Maintenance.successfullyAssignedItemsToTechnician", { qty }),
             "success",
           );
           setAssignModal({ open: false, defect: null });
@@ -155,7 +155,7 @@ export default function MaintenanceRoute() {
         },
         onError: (err: any) =>
           showToast(
-            err.response?.data?.message || "Assignment failed",
+            err.response?.data?.message || t("pages.Maintenance.assignmentFailed"),
             "error",
           ),
       },
@@ -170,19 +170,19 @@ export default function MaintenanceRoute() {
       qty <= 0 ||
       qty > resolveModal.defect.pending_quantity
     ) {
-      return showToast("Please enter a valid quantity.", "error");
+      return showToast(t("pages.Maintenance.pleaseEnterAValidQuantity"), "error");
     }
     resolveMutation.mutate(
       { defectId: resolveModal.defect.log_id, quantity: qty },
       {
         onSuccess: () => {
-          showToast(`Successfully repaired ${qty} items!`, "success");
+          showToast(t("pages.Maintenance.successfullyRepairedItems", { qty }), "success");
           setResolveModal({ open: false, defect: null });
           setResolveQty("");
         },
         onError: (err: any) =>
           showToast(
-            err.response?.data?.message || "Resolution failed",
+            err.response?.data?.message || t("pages.Maintenance.resolutionFailed"),
             "error",
           ),
       },
@@ -238,7 +238,7 @@ export default function MaintenanceRoute() {
 
   if (defectsLoading)
     return (
-      <GearGridLoader centered size="lg" label="Loading Fleet Diagnostics..." sublabel="Fetching active maintenance tickets and repair schedules" sx={{ py: 10 }} />
+      <GearGridLoader centered size="lg" label={t("pages.Maintenance.loadingFleetDiagnostics")} sublabel={t("pages.Maintenance.fetchingActiveMaintenanceTicketsAnd")} sx={{ py: 10 }} />
     );
 
   return (
@@ -287,19 +287,19 @@ export default function MaintenanceRoute() {
 
       <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
         <KpiCard
-          title="Awaiting Assignment"
+          title={t("pages.Maintenance.awaitingAssignment")}
           value={queueDefects.length}
           icon={<HandymanIcon fontSize="large" />}
           color="#f43f5e"
         />
         <KpiCard
-          title="Active in Workshop"
+          title={t("pages.Maintenance.activeInWorkshop")}
           value={workshopDefects.length}
           icon={<EngineeringIcon fontSize="large" />}
           color="#f59e0b"
         />
         <KpiCard
-          title="Fully Restored"
+          title={t("pages.Maintenance.fullyRestored")}
           value={historyDefects.length}
           icon={<CheckCircleIcon fontSize="large" />}
           color="#10b981"
@@ -344,15 +344,15 @@ export default function MaintenanceRoute() {
               },
             }}
           >
-            <Tab label={`Queue (${queueDefects.length})`} />
-            <Tab label={`Workshop (${workshopDefects.length})`} />
-            <Tab label={`History (${historyDefects.length})`} />
+            <Tab label={t("pages.Maintenance.queue", { queueDefectsCount: queueDefects.length })} />
+            <Tab label={t("pages.Maintenance.workshop", { workshopDefectsCount: workshopDefects.length })} />
+            <Tab label={t("pages.Maintenance.history", { historyDefectsCount: historyDefects.length })} />
           </Tabs>
           <Box sx={{ pb: 1.5, width: { xs: "100%", md: 300 } }}>
             <TextField
               fullWidth
               size="small"
-              placeholder="Search item or invoice..."
+              placeholder={t("pages.Maintenance.searchItemOrInvoice")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -374,28 +374,28 @@ export default function MaintenanceRoute() {
                 <TableCell
                   sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "25%" }}
                 >
-                  Equipment & Defect
+                  {t("pages.Maintenance.equipmentDefect")}
                 </TableCell>
                 <TableCell
                   sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "25%" }}
                 >
-                  Repair Progress
+                  {t("pages.Maintenance.repairProgress")}
                 </TableCell>
                 <TableCell
                   sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "20%" }}
                 >
-                  Technician
+                  {t("maintenance.technician")}
                 </TableCell>
                 <TableCell
                   sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "15%" }}
                 >
-                  Status
+                  {t("common.status")}
                 </TableCell>
                 <TableCell
                   align="right"
                   sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "15%" }}
                 >
-                  Action
+                  {t("invoices.InvoicePrintHistoryDialog.action")}
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -404,7 +404,7 @@ export default function MaintenanceRoute() {
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
                     <Typography color="text.secondary">
-                      No records found in this view.
+                      {t("pages.Maintenance.noRecordsFoundInThis")}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -422,7 +422,7 @@ export default function MaintenanceRoute() {
                     <TableCell>
                       <Typography fontWeight="700" color="primary.main">
                         {row.Equipment?.equipment_name ||
-                          `Item #${row.equipment_id}`}
+                          t("pages.Maintenance.item2", { equipment_id: row.equipment_id })}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -432,8 +432,7 @@ export default function MaintenanceRoute() {
                         "{row.defect_description}"
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Ticket #{row.log_id} • Reported on{" "}
-                        {formatDisplayDate(row.reported_date)}
+                        {t("pages.Maintenance.ticketReportedOn", { log_id: row.log_id, value: formatDisplayDate(row.reported_date) })}
                       </Typography>
                     </TableCell>
 
@@ -451,14 +450,14 @@ export default function MaintenanceRoute() {
                           fontWeight="bold"
                           color="text.secondary"
                         >
-                          Total Broken: {row.defective_quantity}
+                          {t("pages.Maintenance.totalBroken")} {row.defective_quantity}
                         </Typography>
                         <Typography
                           variant="caption"
                           fontWeight="bold"
                           color="success.main"
                         >
-                          {row.repaired_quantity} Fixed
+                          {t("pages.Maintenance.fixed", { repaired_quantity: row.repaired_quantity })}
                         </Typography>
                       </Box>
                       <LinearProgress
@@ -473,7 +472,7 @@ export default function MaintenanceRoute() {
                           color="warning.dark"
                           sx={{ mt: 0.5, display: "block" }}
                         >
-                          {row.pending_quantity} items remaining in shop
+                          {t("pages.Maintenance.itemsRemainingInShop", { pending_quantity: row.pending_quantity })}
                         </Typography>
                       )}
                     </TableCell>
@@ -505,7 +504,7 @@ export default function MaintenanceRoute() {
                           color="text.disabled"
                           fontStyle="italic"
                         >
-                          Unassigned
+                          {t("pages.Maintenance.unassigned")}
                         </Typography>
                       )}
                     </TableCell>
@@ -540,7 +539,7 @@ export default function MaintenanceRoute() {
                             setAssignModal({ open: true, defect: row })
                           }
                         >
-                          Assign Tech
+                          {t("pages.Maintenance.assignTech")}
                         </Button>
                       )}
 
@@ -556,7 +555,7 @@ export default function MaintenanceRoute() {
                             setResolveModal({ open: true, defect: row })
                           }
                         >
-                          Log Repair
+                          {t("pages.Maintenance.logRepair")}
                         </Button>
                       )}
                     </TableCell>
@@ -575,7 +574,7 @@ export default function MaintenanceRoute() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle fontWeight="bold">Assign Repair Task</DialogTitle>
+        <DialogTitle fontWeight="bold">{t("pages.Maintenance.assignRepairTask")}</DialogTitle>
         <DialogContent>
           {/* Detailed Context Box */}
           <Box
@@ -595,7 +594,7 @@ export default function MaintenanceRoute() {
               fontWeight="bold"
               mb={1}
             >
-              Equipment to Repair
+              {t("pages.Maintenance.equipmentToRepair")}
             </Typography>
             <Typography variant="h6" fontWeight="bold" color="primary.main">
               {assignModal.defect?.Equipment?.equipment_name}
@@ -619,37 +618,37 @@ export default function MaintenanceRoute() {
             >
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Total In Queue
+                  {t("pages.Maintenance.totalInQueue")}
                 </Typography>
                 <Typography fontWeight="bold">
-                  {assignModal.defect?.pending_quantity} Units
+                  {t("pages.Maintenance.units", { pending_quantity: assignModal.defect?.pending_quantity })}
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Source
+                  {t("pages.Maintenance.source")}
                 </Typography>
                 <Typography fontWeight="bold">
                   {assignModal.defect?.reported_on_invoice_id
                     ? `INV-${assignModal.defect.reported_on_invoice_id}`
-                    : "Manual Entry"}
+                    : t("pages.Maintenance.manualEntry")}
                 </Typography>
               </Box>
             </Box>
           </Box>
 
           <Typography variant="body2" fontWeight="bold" mb={1.5}>
-            1. Select Technician
+            {t("pages.Maintenance.1SelectTechnician")}
           </Typography>
           <FormControl fullWidth size="small" sx={{ mb: 3 }}>
-            <InputLabel>Select Technician</InputLabel>
+            <InputLabel>{t("pages.Maintenance.selectTechnician")}</InputLabel>
             <Select
               value={selectedTechId}
-              label="Select Technician"
+              label={t("pages.Maintenance.selectTechnician")}
               onChange={(e) => setSelectedTechId(e.target.value)}
             >
               {technicians.length === 0 ? (
-                <MenuItem disabled>No technicians available</MenuItem>
+                <MenuItem disabled>{t("pages.Maintenance.noTechniciansAvailable")}</MenuItem>
               ) : null}
               {technicians.map((tech: any) => (
                 <MenuItem
@@ -667,7 +666,7 @@ export default function MaintenanceRoute() {
                       {tech.first_name} {tech.last_name}
                     </span>
                     <span style={{ color: "#64748b", fontSize: "0.85rem" }}>
-                      {tech.active_tickets} active tickets
+                      {t("pages.Maintenance.activeTickets", { active_tickets: tech.active_tickets })}
                     </span>
                   </Box>
                 </MenuItem>
@@ -676,16 +675,16 @@ export default function MaintenanceRoute() {
           </FormControl>
 
           <Typography variant="body2" fontWeight="bold" mb={1.5}>
-            2. Assignment Quantity
+            {t("pages.Maintenance.2AssignmentQuantity")}
           </Typography>
           <TextField
             fullWidth
             size="small"
             type="number"
-            label="Quantity to Assign"
+            label={t("pages.Maintenance.quantityToAssign")}
             value={assignQty}
             onChange={(e) => setAssignQty(e.target.value)}
-            helperText={`You can assign between 1 and ${assignModal.defect?.pending_quantity} units. Any unassigned units will remain in the Queue as a new ticket.`}
+            helperText={t("pages.Maintenance.youCanAssignBetween1", { pending_quantity: assignModal.defect?.pending_quantity })}
             InputProps={{
               inputProps: { min: 1, max: assignModal.defect?.pending_quantity },
             }}
@@ -696,7 +695,7 @@ export default function MaintenanceRoute() {
             onClick={() => setAssignModal({ open: false, defect: null })}
             color="inherit"
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleAssignSubmit}
@@ -704,7 +703,7 @@ export default function MaintenanceRoute() {
             disableElevation
             disabled={!selectedTechId || !assignQty || assignMutation.isPending}
           >
-            Confirm Assignment
+            {t("pages.Maintenance.confirmAssignment")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -716,27 +715,27 @@ export default function MaintenanceRoute() {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle fontWeight="bold">Log Repair Progress</DialogTitle>
+        <DialogTitle fontWeight="bold">{t("pages.Maintenance.logRepairProgress")}</DialogTitle>
         <DialogContent>
           <Box sx={{ p: 2, bgcolor: "#f8fafc", borderRadius: 2, mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              Item:
+              {t("pages.Maintenance.item")}
             </Typography>
             <Typography fontWeight="bold" mb={1}>
               {resolveModal.defect?.Equipment?.equipment_name}
             </Typography>
             <Typography variant="body2" color="warning.dark" fontWeight="bold">
-              Still Pending Fix: {resolveModal.defect?.pending_quantity}
+              {t("pages.Maintenance.stillPendingFix")} {resolveModal.defect?.pending_quantity}
             </Typography>
           </Box>
           <TextField
             autoFocus
             fullWidth
             type="number"
-            label="Quantity Fixed Today"
+            label={t("pages.Maintenance.quantityFixedToday")}
             value={resolveQty}
             onChange={(e) => setResolveQty(e.target.value)}
-            helperText={`Enter a number between 1 and ${resolveModal.defect?.pending_quantity}. These items will be returned to the shelf immediately.`}
+            helperText={t("pages.Maintenance.enterANumberBetween1", { pending_quantity: resolveModal.defect?.pending_quantity })}
             InputProps={{
               inputProps: {
                 min: 1,
@@ -750,7 +749,7 @@ export default function MaintenanceRoute() {
             onClick={() => setResolveModal({ open: false, defect: null })}
             color="inherit"
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleResolveSubmit}
@@ -759,7 +758,7 @@ export default function MaintenanceRoute() {
             disableElevation
             disabled={!resolveQty || resolveMutation.isPending}
           >
-            Commit to Inventory
+            {t("pages.Maintenance.commitToInventory")}
           </Button>
         </DialogActions>
       </Dialog>

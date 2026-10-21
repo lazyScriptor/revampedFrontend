@@ -5,13 +5,15 @@ import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useAccountingPayments } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const METHOD_OPTIONS = [
-  { value: "Cash", label: "Cash" },
-  { value: "Card", label: "Card" },
-  { value: "Bank Transfer", label: "Bank Transfer" },
-  { value: "Cheque", label: "Cheque" },
-  { value: "Online", label: "Online" },
+  { value: "Cash", label: tk("orders.methodCash") },
+  { value: "Card", label: tk("orders.methodCard") },
+  { value: "Bank Transfer", label: tk("orders.methodBankTransfer") },
+  { value: "Cheque", label: tk("orders.methodCheque") },
+  { value: "Online", label: tk("orders.methodOnline") },
 ];
 
 const METHOD_COLORS: Record<string, "success" | "primary" | "secondary" | "warning" | "info"> = {
@@ -23,6 +25,7 @@ const METHOD_COLORS: Record<string, "success" | "primary" | "secondary" | "warni
 };
 
 export default function PaymentsTab() {
+  const { t } = useTranslation();
   const { filters, updateFilter, updateMultiple, resetFilters, setPage, setPageSize, toQueryParams } =
     useAccountingFilters({ sortField: "payment_date" });
   const { format } = useCurrencyFormatter();
@@ -31,7 +34,7 @@ export default function PaymentsTab() {
   const columns: GridColDef[] = [
     {
       field: "payment_id",
-      headerName: "Payment #",
+      headerName: t("accounting.PaymentsTab.payment"),
       width: 100,
       renderCell: (p) => (
         <Chip label={`PAY-${p.value}`} size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: "0.72rem" }} />
@@ -39,13 +42,13 @@ export default function PaymentsTab() {
     },
     {
       field: "payment_date",
-      headerName: "Date",
+      headerName: t("common.date"),
       width: 120,
       valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "invoice_id",
-      headerName: "Invoice Ref",
+      headerName: t("accounting.PaymentsTab.invoiceRef"),
       width: 110,
       renderCell: (p) => (
         <Chip
@@ -58,7 +61,7 @@ export default function PaymentsTab() {
     },
     {
       field: "customer",
-      headerName: "Customer",
+      headerName: t("invoices.customer"),
       width: 200,
       sortable: false,
       valueGetter: (_value: any, row: any) => {
@@ -69,7 +72,7 @@ export default function PaymentsTab() {
     },
     {
       field: "payment_amount",
-      headerName: "Amount",
+      headerName: t("common.amount"),
       width: 150,
       align: "right",
       headerAlign: "right",
@@ -81,7 +84,7 @@ export default function PaymentsTab() {
     },
     {
       field: "method",
-      headerName: "Method",
+      headerName: t("accounting.method"),
       width: 140,
       renderCell: (p) => (
         <Chip

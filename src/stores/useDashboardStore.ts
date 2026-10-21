@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { api } from '@/lib/api';
 import { todayLocalStr, addDaysLocal } from '@/lib/dates';
 import type { LayoutItem, GlobalFilters, WidgetDefinition } from '@/features/dashboard/types';
+import { tk } from '@/i18n/marker';
 
 // Defaults are viewer-local — when the dashboard config request lands it
 // overrides them with tenant-tz-aware bounds from the server.
@@ -15,14 +16,14 @@ const buildDefaultFilters = (): GlobalFilters => ({
 // FRONTEND SOURCE OF TRUTH & CANONICAL LAYOUT
 // ============================================================================
 const FRONTEND_WIDGET_CATALOG: WidgetDefinition[] = [
-  { widget_key: 'revenue_kpi', display_name: 'Revenue', description: 'Total Revenue', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
-  { widget_key: 'net_profit_kpi', display_name: 'Net Profit', description: 'Net Profit', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
-  { widget_key: 'outstanding_debt_kpi', display_name: 'Outstanding Debt', description: 'Debt', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
-  { widget_key: 'active_rentals_kpi', display_name: 'Active Rentals', description: 'Rentals', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
-  { widget_key: 'revenue_trend_chart', display_name: 'Revenue Trend', description: 'Chart', required_permission: null, default_w: 2, default_h: 2, min_w: 2, min_h: 2 },
-  { widget_key: 'utilization_sparkline', display_name: 'Utilization Trend', description: 'Chart', required_permission: null, default_w: 2, default_h: 2, min_w: 2, min_h: 2 },
-  { widget_key: 'returns_today', display_name: 'Returns Today', description: 'Table', required_permission: null, default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
-  { widget_key: 'maintenance_queue', display_name: 'Maintenance Queue', description: 'Table', required_permission: null, default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
+  { widget_key: 'revenue_kpi', display_name: tk('dashboard.widgetCatalog.revenue'), description: 'Total Revenue', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
+  { widget_key: 'net_profit_kpi', display_name: tk('dashboard.widgetCatalog.netProfit'), description: 'Net Profit', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
+  { widget_key: 'outstanding_debt_kpi', display_name: tk('dashboard.widgetCatalog.outstandingDebt'), description: 'Debt', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
+  { widget_key: 'active_rentals_kpi', display_name: tk('dashboard.widgetCatalog.activeRentals'), description: 'Rentals', required_permission: null, default_w: 1, default_h: 1, min_w: 1, min_h: 1 },
+  { widget_key: 'revenue_trend_chart', display_name: tk('dashboard.widgetCatalog.revenueTrend'), description: 'Chart', required_permission: null, default_w: 2, default_h: 2, min_w: 2, min_h: 2 },
+  { widget_key: 'utilization_sparkline', display_name: tk('dashboard.widgetCatalog.utilizationTrend'), description: 'Chart', required_permission: null, default_w: 2, default_h: 2, min_w: 2, min_h: 2 },
+  { widget_key: 'returns_today', display_name: tk('dashboard.widgetCatalog.returnsToday'), description: 'Table', required_permission: null, default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
+  { widget_key: 'maintenance_queue', display_name: tk('dashboard.widgetCatalog.maintenanceQueue'), description: 'Table', required_permission: null, default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
 ];
 
 const FRONTEND_DEFAULT_LAYOUT: LayoutItem[] = [

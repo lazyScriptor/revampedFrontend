@@ -55,7 +55,7 @@ const EditModePanel: React.FC = () => {
           <IconButton
             size="small"
             onClick={closePanel}
-            aria-label="Close customizer"
+            aria-label={t("dashboard.EditModePanel.closeCustomizer")}
             sx={{
               color: "text.secondary",
               bgcolor: "action.hover",
@@ -122,7 +122,7 @@ const EditModePanel: React.FC = () => {
                   variant="body2"
                   sx={{ fontWeight: 700, color: isEnabled ? "primary.dark" : "text.primary", fontSize: "0.82rem" }}
                 >
-                  {widget.display_name}
+                  {t(widget.display_name)}
                 </Typography>
                 <Typography
                   variant="caption"

@@ -26,6 +26,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import BusinessIcon from "@mui/icons-material/Business";
 
 import { useDeleteCustomer } from "../hooks/useCustomerHooks";
+import { useTranslation } from "react-i18next";
 
 interface CustomerTableProps {
   data: any[];
@@ -48,6 +49,7 @@ export function CustomerTable({
   selectedIds = [],
   onSelectionChange,
 }: CustomerTableProps) {
+  const { t } = useTranslation();
   const deleteMutation = useDeleteCustomer();
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -61,7 +63,7 @@ export function CustomerTable({
   const columns: GridColDef[] = [
     {
       field: "client_details",
-      headerName: "Client Name",
+      headerName: t("customers.CustomerTable.clientName"),
       flex: 1,
       minWidth: 250,
       renderCell: (params: GridRenderCellParams) => {
@@ -103,7 +105,7 @@ export function CustomerTable({
     },
     {
       field: "nic_number",
-      headerName: "NIC / Passport",
+      headerName: t("customers.CustomerFormDialog.nicPassport"),
       flex: 0.7,
       minWidth: 140,
       renderCell: (params: GridRenderCellParams) => (
@@ -122,7 +124,7 @@ export function CustomerTable({
     },
     {
       field: "phone_number",
-      headerName: "Phone",
+      headerName: t("common.phone"),
       flex: 0.6,
       minWidth: 130,
       renderCell: (params: GridRenderCellParams) => (
@@ -143,7 +145,7 @@ export function CustomerTable({
     // --- COLLATERAL & FINANCE COLUMNS ---
     {
       field: "collateral",
-      headerName: "Collateral",
+      headerName: t("customers.CustomerTable.collateral"),
       flex: 0.6,
       minWidth: 140,
       renderCell: (params: GridRenderCellParams) => {
@@ -151,7 +153,7 @@ export function CustomerTable({
           return (
             <Chip
               icon={<VerifiedUserIcon sx={{ fontSize: "14px !important" }} />}
-              label="ID in Vault"
+              label={t("customers.CustomerFormDialog.idInVault")}
               color="error"
               size="small"
               variant="outlined"
@@ -173,7 +175,7 @@ export function CustomerTable({
     },
     {
       field: "deposit_balance",
-      headerName: "Advance Held",
+      headerName: t("customers.CustomerTable.advanceHeld"),
       flex: 0.6,
       minWidth: 130,
       renderCell: (params: GridRenderCellParams) => (
@@ -194,7 +196,7 @@ export function CustomerTable({
     // --- STATUS ---
     {
       field: "status",
-      headerName: "Status",
+      headerName: t("common.status"),
       flex: 0.5,
       minWidth: 120,
       renderCell: (params: GridRenderCellParams) => {
@@ -216,13 +218,13 @@ export function CustomerTable({
     },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: t("common.actions"),
       width: 100,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ display: "flex", gap: 0.75, alignItems: "center", height: "100%" }}>
-          <Tooltip title="Edit Profile">
+          <Tooltip title={t("customers.CustomerTable.editProfile")}>
             <IconButton
               size="small"
               color="primary"
@@ -237,7 +239,7 @@ export function CustomerTable({
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete">
+          <Tooltip title={t("common.delete")}>
             <IconButton
               size="small"
               color="error"
@@ -373,15 +375,14 @@ export function CustomerTable({
 
       <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
         <DialogTitle className="font-bold text-slate-800">
-          Delete Customer
+          {t("customers.CustomerTable.deleteCustomer")}
         </DialogTitle>
         <DialogContent>
-          Are you sure you want to delete this customer? This may affect
-          historical invoices.
+          {t("customers.CustomerTable.areYouSureYouWant")}
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button onClick={() => setDeleteId(null)} color="inherit">
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleDeleteConfirm}
@@ -390,7 +391,7 @@ export function CustomerTable({
             disabled={deleteMutation.isPending}
             disableElevation
           >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            {deleteMutation.isPending ? t("customers.CustomerTable.deleting") : t("common.delete")}
           </Button>
         </DialogActions>
       </Dialog>

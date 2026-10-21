@@ -21,8 +21,10 @@ import {
   useImportEquipment,
   triggerFileDownload,
 } from "../hooks/useBulkEquipment";
+import { useTranslation } from "react-i18next";
 
 export function EquipmentDataPanel() {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [toast, setToast] = useState({
@@ -41,7 +43,7 @@ export function EquipmentDataPanel() {
       if (selectedFile.type !== "text/csv") {
         setToast({
           open: true,
-          message: "Please upload a valid CSV file.",
+          message: t("dataArena.EquipmentDataPanel.pleaseUploadAValidCsv"),
           severity: "error",
         });
         return;
@@ -60,20 +62,20 @@ export function EquipmentDataPanel() {
         if (count === 0 && errList.length > 0) {
           setToast({
             open: true,
-            message: `Import failed: ${errList[0]?.message || "Invalid CSV data"}. Check console for details.`,
+            message: t("dataArena.BulkManager.importFailed", { reason: errList[0]?.message || t("dataArena.EquipmentDataPanel.invalidCsvData") }),
             severity: "error",
           });
           console.error("⚠️ CSV IMPORT ERRORS:", errList);
         } else if (count === 0) {
           setToast({
             open: true,
-            message: "No equipment records were imported. Please check your CSV format and columns.",
+            message: t("dataArena.EquipmentDataPanel.noEquipmentRecordsWereImported"),
             severity: "error",
           });
         } else if (errList.length > 0) {
           setToast({
             open: true,
-            message: `Imported ${count} items. ${errList.length} rows had errors.`,
+            message: t("dataArena.EquipmentDataPanel.importedItemsRowsHadErrors", { count, errListCount: errList.length }),
             severity: "error",
           });
           console.error("⚠️ CSV IMPORT ERRORS:", errList);
@@ -81,7 +83,7 @@ export function EquipmentDataPanel() {
         } else {
           setToast({
             open: true,
-            message: `Successfully imported ${count} items!`,
+            message: t("dataArena.EquipmentDataPanel.successfullyImportedItems", { count }),
             severity: "success",
           });
           setFile(null);
@@ -89,7 +91,7 @@ export function EquipmentDataPanel() {
       },
       onError: (error: any) => {
         const msg =
-          error.response?.data?.message || "Failed to import equipment data.";
+          error.response?.data?.message || t("dataArena.EquipmentDataPanel.failedToImportEquipmentData");
         setToast({ open: true, message: msg, severity: "error" });
       },
     });
@@ -109,13 +111,13 @@ export function EquipmentDataPanel() {
       triggerFileDownload(blob, filename);
       setToast({
         open: true,
-        message: "Download started successfully.",
+        message: t("dataArena.BulkManager.downloadStartedSuccessfully"),
         severity: "success",
       });
     } catch (error) {
       setToast({
         open: true,
-        message: "Failed to download file.",
+        message: t("dataArena.BulkManager.failedToDownloadFile"),
         severity: "error",
       });
     } finally {
@@ -131,11 +133,10 @@ export function EquipmentDataPanel() {
         sx={{ p: 3, border: "1px solid #e2e8f0", borderRadius: 2 }}
       >
         <Typography variant="h6" fontWeight="600" mb={1}>
-          Export & Templates
+          {t("dataArena.EquipmentDataPanel.exportTemplates")}
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={3}>
-          Download a blank template to ensure your columns are formatted
-          perfectly, or export your entire existing inventory.
+          {t("dataArena.EquipmentDataPanel.downloadABlankTemplateTo")}
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -146,7 +147,7 @@ export function EquipmentDataPanel() {
             disabled={isExporting}
             sx={{ borderRadius: 2, textTransform: "none", px: 3, py: 1 }}
           >
-            Download CSV Template
+            {t("dataArena.BulkManager.downloadCsvTemplate")}
           </Button>
           <Button
             variant="contained"
@@ -170,7 +171,7 @@ export function EquipmentDataPanel() {
               "&:hover": { bgcolor: "slate.900" },
             }}
           >
-            Export All Equipment
+            {t("dataArena.EquipmentDataPanel.exportAllEquipment")}
           </Button>
         </Box>
       </Paper>
@@ -181,11 +182,10 @@ export function EquipmentDataPanel() {
         sx={{ p: 3, border: "1px solid #e2e8f0", borderRadius: 2 }}
       >
         <Typography variant="h6" fontWeight="600" mb={1}>
-          Bulk Import
+          {t("dataArena.EquipmentDataPanel.bulkImport")}
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={3}>
-          Upload a properly formatted CSV to add or update multiple equipment
-          records at once.
+          {t("dataArena.EquipmentDataPanel.uploadAProperlyFormattedCsv")}
         </Typography>
 
         {/* Hidden File Input */}
@@ -227,7 +227,7 @@ export function EquipmentDataPanel() {
                 {file.name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {(file.size / 1024).toFixed(2)} KB
+                {t("dataArena.BulkManager.kb", { value: (file.size / 1024).toFixed(2) })}
               </Typography>
 
               <Box
@@ -247,7 +247,7 @@ export function EquipmentDataPanel() {
                   }}
                   disabled={importMutation.isPending}
                 >
-                  Remove File
+                  {t("dataArena.BulkManager.removeFile")}
                 </Button>
                 <Button
                   variant="contained"
@@ -265,8 +265,8 @@ export function EquipmentDataPanel() {
                   }
                 >
                   {importMutation.isPending
-                    ? "Syncing Data..."
-                    : "Upload & Sync"}
+                    ? t("dataArena.EquipmentDataPanel.syncingData")
+                    : t("dataArena.EquipmentDataPanel.uploadSync")}
                 </Button>
               </Box>
             </Box>
@@ -280,10 +280,10 @@ export function EquipmentDataPanel() {
                 fontWeight="600"
                 color="text.primary"
               >
-                Click to upload or drag and drop
+                {t("dataArena.EquipmentDataPanel.clickToUploadOrDrag")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                CSV files only (Max 5MB)
+                {t("dataArena.EquipmentDataPanel.csvFilesOnlyMax5mb")}
               </Typography>
             </Box>
           )}

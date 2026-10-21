@@ -136,10 +136,10 @@ function AccountingWorkstation({
     <Box ref={containerRef} sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 4, height: "100%" }}>
       <Box>
         <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a" }}>
-          Accounting Workstation
+          {t("pages.Accounting.accountingWorkstation")}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Professional transactional financial management & real-time analytics.
+          {t("pages.Accounting.professionalTransactionalFinancialManage")}
         </Typography>
       </Box>
 

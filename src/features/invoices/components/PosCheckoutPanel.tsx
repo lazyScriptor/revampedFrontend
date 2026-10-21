@@ -18,6 +18,7 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
+import { useTranslation } from "react-i18next";
 
 interface PosCheckoutPanelProps {
   cartItems: CartItem[];
@@ -42,6 +43,7 @@ export function PosCheckoutPanel({
   onPrintEstimate,
   isSubmitting,
 }: PosCheckoutPanelProps) {
+  const { t } = useTranslation();
   const subTotal = useMemo(
     () => cartItems.reduce((total, item) => total + calculateLineMath(item).lineCost, 0),
     [cartItems]
@@ -89,7 +91,7 @@ export function PosCheckoutPanel({
           transition: "background-color 0.2s",
         }}
       >
-        <Tooltip title="Expand Checkout" placement="left">
+        <Tooltip title={t("invoices.PosCheckoutPanel.expandCheckout")} placement="left">
           <IconButton color="inherit" size="small" sx={{ mb: 4 }}>
             <ChevronLeftIcon />
           </IconButton>
@@ -105,7 +107,7 @@ export function PosCheckoutPanel({
             color: balanceDue > 0 ? "#4ade80" : "#94a3b8",
           }}
         >
-          TOTAL · Rs. {grandTotal.toLocaleString()}
+          {t("invoices.PosCheckoutPanel.totalRs", { grandTotal: grandTotal.toLocaleString() })}
         </Typography>
       </Box>
     );
@@ -173,11 +175,11 @@ export function PosCheckoutPanel({
         {/* Fees */}
         <Box>
           <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, mb: 1.5, display: "block" }}>
-            ORDER ADJUSTMENTS
+            {t("invoices.PosCheckoutPanel.orderAdjustments")}
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             <TextField
-              label="Transport / Delivery"
+              label={t("invoices.PosCheckoutPanel.transportDelivery")}
               type="number"
               size="small"
               fullWidth
@@ -212,7 +214,7 @@ export function PosCheckoutPanel({
               }}
             />
             <TextField
-              label="Discount"
+              label={t("common.discount")}
               type="number"
               size="small"
               fullWidth
@@ -253,7 +255,7 @@ export function PosCheckoutPanel({
         <Box sx={{ bgcolor: "#1e293b", borderRadius: 2, p: 2, border: "1px solid #334155", display: "flex", flexDirection: "column", gap: 1 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-              Subtotal ({cartItems.length} items)
+              {t("invoices.PosCheckoutPanel.subtotalItems", { cartItemsCount: cartItems.length })}
             </Typography>
             <Typography
               variant="body2"
@@ -269,7 +271,7 @@ export function PosCheckoutPanel({
           </Box>
           {fees.transport > 0 && (
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>Transport</Typography>
+              <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("invoices.transport")}</Typography>
               <Typography
                 variant="body2"
                 sx={{
@@ -285,7 +287,7 @@ export function PosCheckoutPanel({
           )}
           {fees.discount > 0 && (
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>Discount</Typography>
+              <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("common.discount")}</Typography>
               <Typography
                 variant="body2"
                 sx={{
@@ -301,7 +303,7 @@ export function PosCheckoutPanel({
           )}
           <Divider sx={{ borderColor: "#334155", my: 0.5 }} />
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 800 }}>Grand Total</Typography>
+            <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 800 }}>{t("invoices.grandTotal")}</Typography>
             <Typography
               variant="h6"
               sx={{
@@ -322,7 +324,7 @@ export function PosCheckoutPanel({
         {/* Advance */}
         <Box>
           <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, mb: 1.5, display: "block" }}>
-            ADVANCE PAYMENT
+            {t("invoices.PosCheckoutPanel.advancePayment")}
           </Typography>
 
           {selectedCustomer && Number(selectedCustomer.deposit_balance) > 0 && (
@@ -342,7 +344,7 @@ export function PosCheckoutPanel({
                 <AccountBalanceWalletIcon sx={{ fontSize: 16, color: "#4ade80" }} />
                 <Box>
                   <Typography variant="caption" sx={{ color: "#4ade80", fontWeight: 700, display: "block" }}>
-                    Client Wallet
+                    {t("invoices.PosCheckoutPanel.clientWallet")}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -370,13 +372,13 @@ export function PosCheckoutPanel({
                   "&:hover": { bgcolor: "#14532d", borderColor: "#166534" },
                 }}
               >
-                Apply
+                {t("common.apply")}
               </Button>
             </Box>
           )}
 
           <TextField
-            label="Collected Now"
+            label={t("invoices.PosCheckoutPanel.collectedNow")}
             type="number"
             size="small"
             fullWidth
@@ -412,7 +414,7 @@ export function PosCheckoutPanel({
           />
 
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", mt: 1.5 }}>
-            <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 700 }}>Remaining balance</Typography>
+            <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 700 }}>{t("invoices.PosCheckoutPanel.remainingBalance")}</Typography>
             <Typography
               variant="body1"
               sx={{
@@ -432,12 +434,12 @@ export function PosCheckoutPanel({
       <Box sx={{ flexShrink: 0, p: 3, borderTop: "1px solid #1e293b" }}>
         {!selectedCustomer && (
           <Typography variant="caption" sx={{ color: "#64748b", display: "block", textAlign: "center", mb: 1 }}>
-            Select a client to enable dispatch
+            {t("invoices.PosCheckoutPanel.selectAClientToEnable")}
           </Typography>
         )}
         {selectedCustomer && cartItems.length === 0 && (
           <Typography variant="caption" sx={{ color: "#64748b", display: "block", textAlign: "center", mb: 1 }}>
-            Add equipment to the order first
+            {t("invoices.PosCheckoutPanel.addEquipmentToTheOrder")}
           </Typography>
         )}
         {cartItems.length > 0 && onPrintEstimate && (
@@ -463,7 +465,7 @@ export function PosCheckoutPanel({
               },
             }}
           >
-            Print Quotation / Estimate Slip
+            {t("invoices.PosCheckoutPanel.printQuotationEstimateSlip")}
           </Button>
         )}
         <Button
@@ -486,7 +488,7 @@ export function PosCheckoutPanel({
             "&.Mui-disabled": { bgcolor: "#1e293b", color: "#475569" },
           }}
         >
-          {isSubmitting ? "Processing…" : "Place Dispatch Order"}
+          {isSubmitting ? t("invoices.PosCheckoutPanel.processing") : t("invoices.PosCheckoutPanel.placeDispatchOrder")}
         </Button>
       </Box>
     </Box>

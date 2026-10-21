@@ -29,15 +29,17 @@ import AssignUsersModal from "./AssignUsersModal";
 import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ListPageShell } from "@/components/layout/ListPageShell";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 type StatusFilter = "all" | "active" | "inactive";
 
 const HIERARCHY_TIERS: { min: number; label: string; color: string }[] = [
-  { min: 80, label: "Executive", color: "#7c3aed" },
-  { min: 50, label: "Manager", color: "#2563eb" },
-  { min: 30, label: "Lead", color: "#0891b2" },
-  { min: 10, label: "Staff", color: "#059669" },
-  { min: 0, label: "Limited", color: "#64748b" },
+  { min: 80, label: tk("admin.roles.tiers.executive"), color: "#7c3aed" },
+  { min: 50, label: tk("admin.roles.tiers.manager"), color: "#2563eb" },
+  { min: 30, label: tk("admin.roles.tiers.lead"), color: "#0891b2" },
+  { min: 10, label: tk("admin.roles.tiers.staff"), color: "#059669" },
+  { min: 0, label: tk("admin.roles.tiers.limited"), color: "#64748b" },
 ];
 
 const tierFor = (level: number) =>
@@ -125,6 +127,7 @@ interface RoleCardProps {
   onDelete: (role: any) => void;
 }
 function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const tier = tierFor(role.hierarchy_level);
   const isInactive = !role.is_active;
@@ -184,7 +187,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5, flexWrap: "wrap" }}>
               <Chip
-                label={tier.label}
+                label={t(tier.label)}
                 size="small"
                 sx={{
                   height: 17,
@@ -210,7 +213,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
               />
               {isSystem && (
                 <Chip
-                  label="System"
+                  label={t("admin.roles.system")}
                   size="small"
                   sx={{
                     height: 17,
@@ -224,7 +227,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
               )}
               {isInactive && (
                 <Chip
-                  label="Inactive"
+                  label={t("common.inactive")}
                   size="small"
                   sx={{
                     height: 17,
@@ -239,7 +242,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
         </Box>
 
         <Box sx={{ display: "flex", gap: 0.25, flexShrink: 0 }}>
-          <Tooltip title="Assign users">
+          <Tooltip title={t("admin.roles.assignUsers")}>
             <IconButton
               size="small"
               onClick={() => onAssignUsers(role)}
@@ -256,7 +259,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
           </Tooltip>
           {!isSystem && !isInactive && (
             <>
-              <Tooltip title="Edit role">
+              <Tooltip title={t("admin.roles.editRole")}>
                 <IconButton
                   size="small"
                   onClick={() => onEdit(role)}
@@ -271,7 +274,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
                   <EditOutlinedIcon sx={{ fontSize: 17 }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Deactivate role">
+              <Tooltip title={t("admin.roles.deactivateRole")}>
                 <IconButton
                   size="small"
                   onClick={() => onDelete(role)}
@@ -315,7 +318,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
             mb: 1.5,
           }}
         >
-          No description set.
+          {t("admin.roles.noDescription")}
         </Typography>
       )}
 
@@ -336,7 +339,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
           variant="caption"
           sx={{ color: theme.palette.text.secondary, fontSize: "0.7rem" }}
         >
-          {permCount} {permCount === 1 ? "permission" : "permissions"} attached
+          {t("admin.RoleManagement.permissionsAttached", { count: permCount })}
         </Typography>
       </Box>
     </Box>
@@ -344,6 +347,7 @@ function RoleCard({ role, onAssignUsers, onEdit, onDelete }: RoleCardProps) {
 }
 
 export default function RoleManagement() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -365,7 +369,7 @@ export default function RoleManagement() {
       const response = await roleApi.getRoles(showInactive);
       setRoles(response.data.roles || []);
     } catch (error: any) {
-      showError(error.message || "Failed to fetch roles.");
+      showError(error.message || t("admin.RoleManagement.failedToFetchRoles"));
     }
     setLoading(false);
   };
@@ -388,18 +392,18 @@ export default function RoleManagement() {
 
   const handleDelete = async (role: any) => {
     const confirmed = await confirm({
-      title: "Deactivate Role",
-      message: `Are you sure you want to deactivate "${role.role_name}"? Users assigned to this role will lose its permissions.`,
-      confirmLabel: "Deactivate",
+      title: t("admin.RoleManagement.deactivateRole"),
+      message: t("admin.RoleManagement.areYouSureYouWant", { role_name: role.role_name }),
+      confirmLabel: t("common.deactivate"),
       severity: "error",
     });
     if (!confirmed) return;
     try {
       await roleApi.deleteRole(role.role_id);
-      showSuccess(`Role "${role.role_name}" has been deactivated.`);
+      showSuccess(t("admin.RoleManagement.roleHasBeenDeactivated", { role_name: role.role_name }));
       fetchRoles();
     } catch (error: any) {
-      showError(error.message || "Failed to deactivate role.");
+      showError(error.message || t("admin.RoleManagement.failedToDeactivateRole"));
     }
   };
 
@@ -430,8 +434,8 @@ export default function RoleManagement() {
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <ListPageShell
         icon={<AdminPanelSettingsOutlinedIcon sx={{ fontSize: 22 }} />}
-        title="Role Management"
-        subtitle="Define access tiers, lock system defaults, and clone permission sets across roles."
+        title={t("admin.roles.title")}
+        subtitle={t("admin.roles.subtitle")}
         actions={
           <Button
             variant="contained"
@@ -441,32 +445,32 @@ export default function RoleManagement() {
               setDrawerOpen(true);
             }}
           >
-            Create role
+            {t("admin.roles.createRole")}
           </Button>
         }
         kpis={
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <KpiTile
               icon={<ShieldOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="Total Roles"
+              label={t("admin.roles.totalRoles")}
               value={kpis.total}
               tone="primary"
             />
             <KpiTile
               icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="Active"
+              label={t("common.active")}
               value={kpis.active}
               tone="success"
             />
             <KpiTile
               icon={<LockOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="System"
+              label={t("admin.roles.system")}
               value={kpis.system}
               tone="accent"
             />
             <KpiTile
               icon={<LayersOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="Custom"
+              label={t("accounting.custom")}
               value={kpis.custom}
               tone="primary"
             />
@@ -476,7 +480,7 @@ export default function RoleManagement() {
           <>
             <TextField
               size="small"
-              placeholder="Search roles…"
+              placeholder={t("admin.roles.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               sx={{ minWidth: { xs: "100%", sm: 280 } }}
@@ -496,7 +500,7 @@ export default function RoleManagement() {
                 return (
                   <Chip
                     key={s}
-                    label={s === "all" ? "All" : s === "active" ? "Active" : "Inactive"}
+                    label={s === "all" ? t("common.all") : s === "active" ? t("common.active") : t("common.inactive")}
                     onClick={() => setStatusFilter(s)}
                     size="small"
                     sx={{
@@ -520,7 +524,7 @@ export default function RoleManagement() {
             </Box>
             <Box sx={{ flex: 1 }} />
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              {filteredRoles.length} of {roles.length}
+              {t("admin.RoleManagement.of", { filteredRolesCount: filteredRoles.length, rolesCount: roles.length })}
             </Typography>
           </>
         }
@@ -554,10 +558,10 @@ export default function RoleManagement() {
             >
               <ShieldOutlinedIcon sx={{ fontSize: 40 }} />
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                No roles match your filters
+                {t("admin.RoleManagement.noRolesMatchYourFilters")}
               </Typography>
               <Typography variant="caption">
-                Try clearing the search or switching to "All".
+                {t("admin.RoleManagement.tryClearingTheSearchOr")}
               </Typography>
             </Box>
           ) : (

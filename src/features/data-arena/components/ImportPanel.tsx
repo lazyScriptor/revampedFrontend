@@ -13,21 +13,24 @@ import {
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { useStartImport } from "../hooks/useBulkJobs";
+import { Trans, useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const ENTITIES: { key: string; label: string; description: string }[] = [
   {
     key: "equipment",
-    label: "Equipment",
-    description: "Upload a CSV of inventory items. Required: equipment_name. Optional: category_id, warehouse_id, rental_price_per_day, available_quantity, total_quantity, status.",
+    label: tk("nav.equipment"),
+    description: tk("dataArena.ImportPanel.uploadACsvOfInventory"),
   },
   {
     key: "customers",
-    label: "Customers",
-    description: "Upload a CSV of customers. Required: nic_number, phone_number. Optional: customer_type, company_name, first_name, last_name, address_line1, rating, status.",
+    label: tk("nav.customers"),
+    description: tk("dataArena.ImportPanel.uploadACsvOfCustomers"),
   },
 ];
 
 export function ImportPanel() {
+  const { t } = useTranslation();
   const [entity, setEntity] = useState<string>("equipment");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +43,7 @@ export function ImportPanel() {
 
   const handleSubmit = async () => {
     if (!file) {
-      setError("Choose a CSV file first.");
+      setError(t("dataArena.ImportPanel.chooseACsvFileFirst"));
       return;
     }
     setError(null);
@@ -51,7 +54,7 @@ export function ImportPanel() {
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Import failed to start.");
+      setError(e?.response?.data?.message || e?.message || t("dataArena.ImportPanel.importFailedToStart"));
     }
   };
 
@@ -70,17 +73,17 @@ export function ImportPanel() {
     >
       <Box>
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          UPLOAD CSV
+          {t("dataArena.ImportPanel.uploadCsv")}
         </Typography>
         <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a" }}>
-          Bulk import to {current.label}
+          {t("dataArena.ImportPanel.bulkImportTo", { label: current.label })}
         </Typography>
       </Box>
 
       {/* Entity picker */}
       <Box>
         <Typography variant="caption" sx={{ display: "block", mb: 0.5, color: "#475569" }}>
-          Entity
+          {t("dataArena.ExportPanel.entity")}
         </Typography>
         <ToggleButtonGroup
           exclusive
@@ -101,14 +104,14 @@ export function ImportPanel() {
         >
           {ENTITIES.map((e) => (
             <ToggleButton key={e.key} value={e.key}>
-              {e.label}
+              {t(e.label)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
       </Box>
 
       <Alert severity="info" variant="outlined" sx={{ alignItems: "flex-start" }}>
-        {current.description}
+        {t(current.description)}
       </Alert>
 
       {/* File dropzone */}
@@ -129,7 +132,7 @@ export function ImportPanel() {
       >
         <CloudUploadIcon sx={{ fontSize: 36, color: "#94a3b8" }} />
         <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }}>
-          {file ? file.name : "Click to choose a CSV file"}
+          {file ? file.name : t("dataArena.ImportPanel.clickToChooseACsv")}
         </Typography>
         <Typography variant="caption" sx={{ color: "#64748b" }}>
           .csv up to 50 MB
@@ -150,8 +153,7 @@ export function ImportPanel() {
       {error && <Alert severity="error">{error}</Alert>}
       {successJobId && (
         <Alert severity="success">
-          Import job <strong>#{successJobId}</strong> queued. You'll get a notification when it
-          completes.
+          <Trans i18nKey="dataArena.ImportPanel.jobQueued" values={{ id: successJobId }} components={{ strong: <strong /> }} />
         </Alert>
       )}
 
@@ -166,7 +168,7 @@ export function ImportPanel() {
           color="inherit"
           disabled={startImport.isPending}
         >
-          Reset
+          {t("common.reset")}
         </Button>
         <Button
           variant="contained"
@@ -182,7 +184,7 @@ export function ImportPanel() {
           }
           sx={{ fontWeight: 800 }}
         >
-          {startImport.isPending ? "Queueing…" : "Queue import"}
+          {startImport.isPending ? t("dataArena.ExportPanel.queueing") : t("dataArena.ImportPanel.queueImport")}
         </Button>
       </Stack>
     </Paper>

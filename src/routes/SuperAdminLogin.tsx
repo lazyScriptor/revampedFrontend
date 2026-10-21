@@ -11,6 +11,7 @@ import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import { GearGridLoader } from '@/components/ui/GearGridLoader';
 import { api } from '@/lib/api';
 import { useSuperAdminStore } from '@/stores/useSuperAdminStore';
+import { useTranslation } from "react-i18next";
 
 interface LoginForm {
     email: string;
@@ -18,6 +19,7 @@ interface LoginForm {
 }
 
 export default function SuperAdminLogin() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const setAuth = useSuperAdminStore((s) => s.setAuth);
     const [showPassword, setShowPassword] = useState(false);
@@ -88,7 +90,7 @@ export default function SuperAdminLogin() {
                             <Box component="span" sx={{ color: '#ef4444' }}>.</Box>
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
-                            SUPER ADMIN CONSOLE
+                            {t("pages.SuperAdminLogin.superAdminConsole")}
                         </Typography>
                     </Box>
 
@@ -96,10 +98,10 @@ export default function SuperAdminLogin() {
                         <TextField
                             fullWidth
                             size="small"
-                            label="Admin Email"
+                            label={t("pages.SuperAdminLogin.adminEmail")}
                             autoComplete="email"
                             autoFocus
-                            {...register('email', { required: 'Email required' })}
+                            {...register('email', { required: t('superAdmin.SuperAdminLogin.emailRequired') })}
                             error={!!errors.email}
                             helperText={errors.email?.message}
                             sx={{
@@ -113,9 +115,9 @@ export default function SuperAdminLogin() {
                         <TextField
                             fullWidth
                             size="small"
-                            label="Password"
+                            label={t("common.password")}
                             type={showPassword ? 'text' : 'password'}
-                            {...register('password', { required: 'Password required' })}
+                            {...register('password', { required: t('superAdmin.SuperAdminLogin.passwordRequired') })}
                             error={!!errors.password}
                             helperText={errors.password?.message}
                             sx={{
@@ -141,7 +143,7 @@ export default function SuperAdminLogin() {
                             <Alert severity="error" sx={{ mb: 2, fontSize: '0.75rem' }}>
                                 {loginMutation.error instanceof Error
                                     ? loginMutation.error.message
-                                    : 'Invalid credentials'}
+                                    : t("errors.invalidCredentials")}
                             </Alert>
                         )}
 
@@ -166,7 +168,7 @@ export default function SuperAdminLogin() {
                             {loginMutation.isPending ? (
                                 <GearGridLoader size="xs" color="white" />
                             ) : (
-                                'Access Console'
+                                t("pages.SuperAdminLogin.accessConsole")
                             )}
                         </Button>
                     </Box>

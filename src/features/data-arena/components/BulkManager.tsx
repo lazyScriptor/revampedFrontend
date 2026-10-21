@@ -15,6 +15,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import SecurityIcon from "@mui/icons-material/Security";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useTranslation } from "react-i18next";
 
 interface BulkManagerProps {
   entityTitle: string;
@@ -35,6 +36,7 @@ export function BulkManager({
   onImportSubmit,
   allowImport = true,
 }: BulkManagerProps) {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -53,13 +55,13 @@ export function BulkManager({
       if (type === "full") await onExportAll();
       setToast({
         open: true,
-        message: "Download started successfully.",
+        message: t("dataArena.BulkManager.downloadStartedSuccessfully"),
         severity: "success",
       });
     } catch (error) {
       setToast({
         open: true,
-        message: "Failed to download file.",
+        message: t("dataArena.BulkManager.failedToDownloadFile"),
         severity: "error",
       });
     } finally {
@@ -79,20 +81,20 @@ export function BulkManager({
       if (count === 0 && errList.length > 0) {
         setToast({
           open: true,
-          message: `Import failed: ${errList[0]?.message || "All rows contained invalid data"}. Check console for details.`,
+          message: t("dataArena.BulkManager.importFailed", { reason: errList[0]?.message || t("dataArena.BulkManager.invalidData") }),
           severity: "error",
         });
         console.error("⚠️ CSV IMPORT ERRORS:", errList);
       } else if (count === 0) {
         setToast({
           open: true,
-          message: "No records were imported. Please check your CSV format and column headers.",
+          message: t("dataArena.BulkManager.noRecordsWereImportedPlease"),
           severity: "error",
         });
       } else if (errList.length > 0) {
         setToast({
           open: true,
-          message: `Imported ${count} rows. ${errList.length} failed. Check console for details.`,
+          message: t("dataArena.BulkManager.importedRowsFailedCheckConsole", { count, errListCount: errList.length }),
           severity: "warning",
         });
         console.error("⚠️ CSV IMPORT ERRORS:", errList);
@@ -100,7 +102,7 @@ export function BulkManager({
       } else {
         setToast({
           open: true,
-          message: `Successfully imported ${count} records!`,
+          message: t("dataArena.BulkManager.successfullyImportedRecords", { count }),
           severity: "success",
         });
         setFile(null);
@@ -109,7 +111,7 @@ export function BulkManager({
       const msg =
         error.response?.data?.message ||
         error.message ||
-        `Failed to import data.`;
+        t("dataArena.BulkManager.failedToImportData");
       setToast({ open: true, message: msg, severity: "error" });
     } finally {
       setIsImporting(false);
@@ -131,7 +133,7 @@ export function BulkManager({
           sx={{ p: 3, bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}
         >
           <Typography variant="h6" fontWeight="bold" color="text.primary">
-            Export Data & Templates
+            {t("dataArena.BulkManager.exportDataTemplates")}
           </Typography>
           <Typography variant="body2" color="text.secondary" mt={0.5}>
             {exportDesc}
@@ -160,7 +162,7 @@ export function BulkManager({
                 fontWeight: "bold",
               }}
             >
-              Download CSV Template
+              {t("dataArena.BulkManager.downloadCsvTemplate")}
             </Button>
           )}
           <Button
@@ -186,7 +188,7 @@ export function BulkManager({
               "&:hover": { bgcolor: "slate.900" },
             }}
           >
-            Export All Records
+            {t("dataArena.BulkManager.exportAllRecords")}
           </Button>
         </Box>
       </Paper>
@@ -204,7 +206,7 @@ export function BulkManager({
           sx={{ p: 3, bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}
         >
           <Typography variant="h6" fontWeight="bold" color="text.primary">
-            Mass Import Records
+            {t("dataArena.BulkManager.massImportRecords")}
           </Typography>
           <Typography variant="body2" color="text.secondary" mt={0.5}>
             {importDesc}
@@ -229,37 +231,34 @@ export function BulkManager({
                 color="text.primary"
                 mb={1}
               >
-                Import Restricted
+                {t("dataArena.BulkManager.importRestricted")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                To preserve financial and auditing integrity, bulk uploading to
-                this specific table has been disabled by the system
-                administrator.
+                {t("dataArena.BulkManager.toPreserveFinancialAndAuditing")}
               </Typography>
             </Box>
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Chip
-                  label="Step 1"
+                  label={t("dataArena.BulkManager.step1")}
                   size="small"
                   color="primary"
                   sx={{ fontWeight: "bold", borderRadius: 1 }}
                 />
                 <Typography variant="body2" fontWeight="500">
-                  Ensure your CSV matches the exact formatting of the downloaded
-                  template.
+                  {t("dataArena.BulkManager.ensureYourCsvMatchesThe")}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Chip
-                  label="Step 2"
+                  label={t("dataArena.BulkManager.step2")}
                   size="small"
                   color="primary"
                   sx={{ fontWeight: "bold", borderRadius: 1 }}
                 />
                 <Typography variant="body2" fontWeight="500">
-                  Upload the CSV file below to synchronize the database.
+                  {t("dataArena.BulkManager.uploadTheCsvFileBelow")}
                 </Typography>
               </Box>
 
@@ -275,7 +274,7 @@ export function BulkManager({
                     if (e.target.files[0].type !== "text/csv")
                       return setToast({
                         open: true,
-                        message: "Only CSV files are allowed.",
+                        message: t("dataArena.BulkManager.onlyCsvFilesAreAllowed"),
                         severity: "error",
                       });
                     setFile(e.target.files[0]);
@@ -312,7 +311,7 @@ export function BulkManager({
                       {file.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" mb={4}>
-                      File Size: {(file.size / 1024).toFixed(2)} KB
+                      {t("dataArena.BulkManager.fileSize")} {t("dataArena.BulkManager.kb", { value: (file.size / 1024).toFixed(2) })}
                     </Typography>
                     <Box
                       sx={{ display: "flex", justifyContent: "center", gap: 2 }}
@@ -327,7 +326,7 @@ export function BulkManager({
                         disabled={isImporting}
                         sx={{ borderRadius: 2, fontWeight: "bold" }}
                       >
-                        Remove File
+                        {t("dataArena.BulkManager.removeFile")}
                       </Button>
                       <Button
                         variant="contained"
@@ -346,8 +345,8 @@ export function BulkManager({
                         sx={{ borderRadius: 2, px: 4, fontWeight: "bold" }}
                       >
                         {isImporting
-                          ? "Processing Sync..."
-                          : "Confirm & Import Data"}
+                          ? t("dataArena.BulkManager.processingSync")
+                          : t("dataArena.BulkManager.confirmImportData")}
                       </Button>
                     </Box>
                   </Box>
@@ -362,10 +361,10 @@ export function BulkManager({
                       color="text.primary"
                       mb={1}
                     >
-                      Click to select file or drag and drop
+                      {t("dataArena.BulkManager.clickToSelectFileOr")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Accepted format: .csv only (Maximum 5MB)
+                      {t("dataArena.BulkManager.acceptedFormatCsvOnlyMaximum")}
                     </Typography>
                   </Box>
                 )}

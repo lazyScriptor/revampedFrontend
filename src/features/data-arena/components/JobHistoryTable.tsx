@@ -18,26 +18,29 @@ import { JobStatusChip } from "./JobStatusChip";
 import { JobProgressBar } from "./JobProgressBar";
 import { downloadJobUrl, BulkJobStatus, BulkJobMode } from "../api/bulkJobs.api";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const STATUS_OPTIONS: { value: BulkJobStatus | ""; label: string }[] = [
-  { value: "", label: "All statuses" },
-  { value: "queued", label: "Queued" },
-  { value: "processing", label: "Processing" },
-  { value: "completed", label: "Completed" },
-  { value: "failed", label: "Failed" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "awaiting_confirmation", label: "Awaiting confirmation" },
+  { value: "", label: tk("superAdmin.InquiryListPanel.allStatuses") },
+  { value: "queued", label: tk("dataArena.JobHistoryTable.queued") },
+  { value: "processing", label: tk("dataArena.JobHistoryTable.processing") },
+  { value: "completed", label: tk("invoices.completed") },
+  { value: "failed", label: tk("common.failed") },
+  { value: "cancelled", label: tk("invoices.cancelled") },
+  { value: "awaiting_confirmation", label: tk("dataArena.JobHistoryTable.awaitingConfirmation") },
 ];
 
 const MODE_OPTIONS: { value: BulkJobMode | ""; label: string }[] = [
-  { value: "", label: "All modes" },
-  { value: "import", label: "Imports" },
-  { value: "export", label: "Exports" },
-  { value: "bulk_action", label: "Bulk actions" },
-  { value: "preview", label: "Previews" },
+  { value: "", label: tk("dataArena.JobHistoryTable.allModes") },
+  { value: "import", label: tk("nav.imports") },
+  { value: "export", label: tk("nav.exports") },
+  { value: "bulk_action", label: tk("dataArena.JobHistoryTable.bulkActions") },
+  { value: "preview", label: tk("dataArena.JobHistoryTable.previews") },
 ];
 
 export function JobHistoryTable() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<BulkJobStatus | "">("");
   const [mode, setMode] = useState<BulkJobMode | "">("");
   const [page, setPage] = useState(0);
@@ -53,10 +56,10 @@ export function JobHistoryTable() {
   const cancelJob = useCancelJob();
 
   const columns: GridColDef[] = [
-    { field: "job_id", headerName: "Job #", width: 80 },
+    { field: "job_id", headerName: t("dataArena.JobHistoryTable.job"), width: 80 },
     {
       field: "operation",
-      headerName: "Operation",
+      headerName: t("dataArena.JobHistoryTable.operation"),
       flex: 1.4,
       minWidth: 220,
       renderCell: (p) => (
@@ -72,13 +75,13 @@ export function JobHistoryTable() {
     },
     {
       field: "status",
-      headerName: "Status",
+      headerName: t("common.status"),
       width: 140,
       renderCell: (p) => <JobStatusChip status={p.value as BulkJobStatus} />,
     },
     {
       field: "progress",
-      headerName: "Progress",
+      headerName: t("dataArena.JobHistoryTable.progress"),
       flex: 1,
       minWidth: 180,
       renderCell: (p) => (
@@ -93,7 +96,7 @@ export function JobHistoryTable() {
     },
     {
       field: "createdAt",
-      headerName: "Queued",
+      headerName: t("dataArena.JobHistoryTable.queued"),
       width: 130,
       renderCell: (p) => (
         <Typography variant="caption" sx={{ color: "#475569" }}>
@@ -116,7 +119,7 @@ export function JobHistoryTable() {
         return (
           <Stack direction="row" spacing={0.25}>
             {canDownload && (
-              <Tooltip title="Download output">
+              <Tooltip title={t("dataArena.JobHistoryTable.downloadOutput")}>
                 <IconButton
                   size="small"
                   component="a"
@@ -129,7 +132,7 @@ export function JobHistoryTable() {
               </Tooltip>
             )}
             {canCancel && (
-              <Tooltip title="Cancel">
+              <Tooltip title={t("common.cancel")}>
                 <IconButton
                   size="small"
                   onClick={() => cancelJob.mutate(row.job_id)}
@@ -139,7 +142,7 @@ export function JobHistoryTable() {
                 </IconButton>
               </Tooltip>
             )}
-            <Tooltip title="Details">
+            <Tooltip title={t("dataArena.JobHistoryTable.details")}>
               <IconButton size="small" disabled>
                 <VisibilityIcon sx={{ fontSize: 18 }} />
               </IconButton>
@@ -176,28 +179,28 @@ export function JobHistoryTable() {
         <TextField
           select
           size="small"
-          label="Status"
+          label={t("common.status")}
           value={status}
           onChange={(e) => setStatus(e.target.value as any)}
           sx={{ minWidth: 180 }}
         >
           {STATUS_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
-              {o.label}
+              {t(o.label)}
             </MenuItem>
           ))}
         </TextField>
         <TextField
           select
           size="small"
-          label="Mode"
+          label={t("dataArena.JobHistoryTable.mode")}
           value={mode}
           onChange={(e) => setMode(e.target.value as any)}
           sx={{ minWidth: 180 }}
         >
           {MODE_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
-              {o.label}
+              {t(o.label)}
             </MenuItem>
           ))}
         </TextField>

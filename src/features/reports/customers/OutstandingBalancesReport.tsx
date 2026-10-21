@@ -12,11 +12,13 @@ import { StatTable } from "@/components/reports/StatTable";
 import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useOutstandingBalancesReport } from "../hooks/useReportsHooks";
 import { todayLocalStr, addDaysLocal, formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function OutstandingBalancesReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -71,7 +73,7 @@ export default function OutstandingBalancesReport() {
   const columns: GridColDef[] = [
     {
       field: "name",
-      headerName: "Customer",
+      headerName: t("invoices.customer"),
       flex: 1.4,
       minWidth: 240,
       renderCell: (p: GridRenderCellParams) => {
@@ -119,7 +121,7 @@ export default function OutstandingBalancesReport() {
                 }}
                 noWrap
               >
-                {r.phone_number || "No contact"}
+                {r.phone_number || t("customers.CustomerBulkEditDialog.noContact")}
               </Typography>
             </Box>
           </Box>
@@ -128,7 +130,7 @@ export default function OutstandingBalancesReport() {
     },
     {
       field: "balance_due",
-      headerName: "Balance",
+      headerName: t("reports.AllCustomersReport.balance"),
       width: 160,
       type: "number",
       renderCell: (p) => (
@@ -147,7 +149,7 @@ export default function OutstandingBalancesReport() {
     },
     {
       field: "days_since_last",
-      headerName: "Aging Duration",
+      headerName: t("reports.OutstandingBalancesReport.agingDuration"),
       width: 160,
       type: "number",
       renderCell: (p) => {
@@ -171,14 +173,14 @@ export default function OutstandingBalancesReport() {
             }`}
           >
             <AccessTimeIcon sx={{ fontSize: 13 }} />
-            {days} days
+            {t("reports.OutstandingBalancesReport.days", { days })}
           </span>
         );
       },
     },
     {
       field: "last_rental_date",
-      headerName: "Last Rental",
+      headerName: t("reports.AllCustomersReport.lastRental"),
       width: 140,
       renderCell: (p) => (
         <span className={`tabular-nums text-xs font-mono ${isDark ? "text-slate-400" : "text-slate-600"}`}>
@@ -188,7 +190,7 @@ export default function OutstandingBalancesReport() {
     },
     {
       field: "invoice_count",
-      headerName: "Invoices",
+      headerName: t("nav.invoices"),
       width: 100,
       type: "number",
       renderCell: (p) => (
@@ -209,8 +211,8 @@ export default function OutstandingBalancesReport() {
 
   return (
     <ReportShell
-      title="Outstanding Balances"
-      subtitle="Customers with unpaid balances categorized into aging time buckets"
+      title={t("reports.outstandingBalances")}
+      subtitle={t("reports.OutstandingBalancesReport.customersWithUnpaidBalancesCategorized")}
       actionsSlot={
         <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
       }
@@ -228,21 +230,21 @@ export default function OutstandingBalancesReport() {
         }}
       >
         <KpiTile
-          label="0-30 Days"
+          label={t("reports.OutstandingBalancesReport.030Days")}
           value={formatCurrency(buckets?.current?.total || 0)}
           hint={`${buckets?.current?.rows?.length || 0} customers`}
           tone="info"
           loading={isLoading}
         />
         <KpiTile
-          label="31-60 Days"
+          label={t("reports.OutstandingBalancesReport.3160Days")}
           value={formatCurrency(buckets?.thirtyToSixty?.total || 0)}
           hint={`${buckets?.thirtyToSixty?.rows?.length || 0} customers`}
           tone="warning"
           loading={isLoading}
         />
         <KpiTile
-          label="61-90 Days"
+          label={t("reports.OutstandingBalancesReport.6190Days")}
           value={formatCurrency(buckets?.sixtyToNinety?.total || 0)}
           hint={`${buckets?.sixtyToNinety?.rows?.length || 0} customers`}
           icon={<WarningAmberIcon />}
@@ -250,7 +252,7 @@ export default function OutstandingBalancesReport() {
           loading={isLoading}
         />
         <KpiTile
-          label="90+ Days (Critical)"
+          label={t("reports.OutstandingBalancesReport.90DaysCritical")}
           value={formatCurrency(buckets?.overNinety?.total || 0)}
           hint={`${buckets?.overNinety?.rows?.length || 0} customers`}
           icon={<AccountBalanceWalletIcon />}

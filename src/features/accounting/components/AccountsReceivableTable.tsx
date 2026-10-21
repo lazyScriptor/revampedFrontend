@@ -1,5 +1,6 @@
 import { Box, Paper, Typography, Chip, Skeleton, IconButton, Tooltip } from '@mui/material';
 import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined';
+import { useTranslation } from "react-i18next";
 
 interface ARRow {
     invoice_id: number;
@@ -46,6 +47,7 @@ const getBadgeColor = (days: number): 'success' | 'warning' | 'error' | 'default
 };
 
 export default function AccountsReceivableTable({ data, isLoading, currency = 'Rs.', onSendReminder }: Props) {
+    const { t } = useTranslation();
     if (isLoading) {
         return (
             <Paper elevation={0} sx={{ p: 3, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
@@ -57,7 +59,7 @@ export default function AccountsReceivableTable({ data, isLoading, currency = 'R
     if (!data || data.totalInvoices === 0) {
         return (
             <Paper elevation={0} sx={{ p: 4, border: '1px solid #e2e8f0', borderRadius: 2.5, textAlign: 'center' }}>
-                <Typography color="text.secondary">No outstanding receivables 🎉</Typography>
+                <Typography color="text.secondary">{t("accounting.AccountsReceivableTable.noOutstandingReceivables")}</Typography>
             </Paper>
         );
     }
@@ -76,7 +78,7 @@ export default function AccountsReceivableTable({ data, isLoading, currency = 'R
                         <Typography variant="subtitle2" fontWeight={800} color={bucket.rows.length > 0 ? '#dc2626' : 'text.secondary'}>
                             {fmt(bucket.total, currency)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">{bucket.rows.length} invoices</Typography>
+                        <Typography variant="caption" color="text.secondary">{t("accounting.AccountsReceivableTable.invoices", { rowsCount: bucket.rows.length })}</Typography>
                     </Paper>
                 ))}
             </Box>
@@ -131,7 +133,7 @@ export default function AccountsReceivableTable({ data, isLoading, currency = 'R
                             size="small"
                             sx={{ fontSize: '0.65rem', fontWeight: 700, height: 22 }}
                         />
-                        <Tooltip title="Send Reminder" arrow>
+                        <Tooltip title={t("accounting.AccountsReceivableTable.sendReminder")} arrow>
                             <IconButton size="small" onClick={() => onSendReminder?.(row.invoice_id)}
                                 sx={{ color: '#64748b', '&:hover': { color: '#2563eb' } }}>
                                 <NotificationsActiveOutlinedIcon sx={{ fontSize: 16 }} />
@@ -142,7 +144,7 @@ export default function AccountsReceivableTable({ data, isLoading, currency = 'R
 
                 {/* Grand Total */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, py: 1.5, bgcolor: '#fef2f2', borderTop: '2px solid #dc2626' }}>
-                    <Typography variant="subtitle2" fontWeight={800}>Grand Total Outstanding</Typography>
+                    <Typography variant="subtitle2" fontWeight={800}>{t("accounting.AccountsReceivableTable.grandTotalOutstanding")}</Typography>
                     <Typography variant="subtitle2" fontWeight={800} color="#dc2626">{fmt(data.grandTotal, currency)}</Typography>
                 </Box>
             </Paper>

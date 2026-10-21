@@ -22,6 +22,7 @@ import {
   FormSection,
 } from "@/components/forms/FormDialogShell";
 import { useCreateTenant } from "@/features/super-admin/hooks/useSuperAdminHooks";
+import { useTranslation } from "react-i18next";
 
 interface FormValues {
   display_name: string;
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export default function CreateTenantDialog({ open, onClose, onCreated }: Props) {
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -97,31 +99,31 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
     createMutation.isError &&
     (createMutation.error instanceof Error
       ? createMutation.error.message
-      : "Failed to create tenant.");
+      : t("superAdmin.CreateTenantDialog.failedToCreateTenant"));
 
   return (
     <FormDialogShell
       open={open}
       onClose={handleClose}
       maxWidth="md"
-      eyebrow="New Tenant"
-      title="Provision a tenant"
-      subtitle="Spins up a new database, admin user, roles, and permissions automatically."
+      eyebrow={t("superAdmin.CreateTenantDialog.newTenant")}
+      title={t("superAdmin.CreateTenantDialog.provisionATenant")}
+      subtitle={t("superAdmin.CreateTenantDialog.spinsUpANewDatabase")}
       avatarIcon={<BusinessOutlinedIcon sx={{ fontSize: 22 }} />}
       footer={
         <>
           <FormFooterMeta>
             {errorCount > 0
-              ? `Fix ${errorCount} issue${errorCount > 1 ? "s" : ""} before saving`
+              ? t("forms.fixIssuesBeforeSaving", { count: errorCount })
               : mutationError
                 ? mutationError
                 : isDirty && !createMutation.isPending
-                  ? "Unsaved changes"
+                  ? t("common.unsavedChanges")
                   : ""}
           </FormFooterMeta>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={handleClose} disabled={createMutation.isPending} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -132,7 +134,7 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
                 createMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined
               }
             >
-              {createMutation.isPending ? "Creating…" : "Create tenant"}
+              {createMutation.isPending ? t("superAdmin.CreateTenantDialog.creating") : t("superAdmin.CreateTenantDialog.createTenant")}
             </Button>
           </Box>
         </>
@@ -152,28 +154,28 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
 
         <FormSection
           icon={<BusinessOutlinedIcon />}
-          title="Business identity"
-          hint="How this tenant appears across the platform."
+          title={t("superAdmin.CreateTenantDialog.businessIdentity")}
+          hint={t("superAdmin.CreateTenantDialog.howThisTenantAppearsAcross")}
         >
           <FieldGrid>
             <TextField
-              label="Display name"
+              label={t("superAdmin.CreateTenantDialog.displayName")}
               size="small"
               fullWidth
               required
-              {...register("display_name", { required: "Required" })}
+              {...register("display_name", { required: t("validation.required") })}
               error={!!errors.display_name}
               helperText={errors.display_name?.message}
             />
             <TextField
-              label="Contact email"
+              label={t("superAdmin.CreateTenantDialog.contactEmail")}
               size="small"
               fullWidth
               required
               type="email"
               {...register("contact_email", {
-                required: "Required",
-                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid email" },
+                required: t("validation.required"),
+                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: t("superAdmin.CreateTenantDialog.invalidEmail") },
               })}
               error={!!errors.contact_email}
               helperText={errors.contact_email?.message}
@@ -183,28 +185,28 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
 
         <FormSection
           icon={<LockOutlinedIcon />}
-          title="Admin account"
-          hint="Credentials for the tenant's first admin user."
+          title={t("superAdmin.CreateTenantDialog.adminAccount")}
+          hint={t("superAdmin.CreateTenantDialog.credentialsForTheTenantS")}
         >
           <FieldGrid>
             <TextField
-              label="Admin username"
+              label={t("superAdmin.CreateTenantDialog.adminUsername")}
               size="small"
               fullWidth
               required
-              {...register("admin_username", { required: "Required" })}
+              {...register("admin_username", { required: t("validation.required") })}
               error={!!errors.admin_username}
               helperText={errors.admin_username?.message}
             />
             <TextField
-              label="Admin password"
+              label={t("superAdmin.CreateTenantDialog.adminPassword")}
               size="small"
               fullWidth
               required
               type="password"
               {...register("admin_password", {
-                required: "Required",
-                minLength: { value: 8, message: "Min 8 characters" },
+                required: t("validation.required"),
+                minLength: { value: 8, message: t("superAdmin.CreateTenantDialog.min8Characters") },
               })}
               error={!!errors.admin_password}
               helperText={errors.admin_password?.message}
@@ -215,24 +217,24 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
 
         <FormSection
           icon={<StorageOutlinedIcon />}
-          title="Database & tier"
-          hint="The slug determines the final database name. Tier governs feature access."
+          title={t("superAdmin.CreateTenantDialog.databaseTier")}
+          hint={t("superAdmin.CreateTenantDialog.theSlugDeterminesTheFinal")}
         >
           <TextField
-            label="Database slug"
+            label={t("superAdmin.CreateTenantDialog.databaseSlug")}
             size="small"
             fullWidth
             required
             {...register("db_name_slug", {
-              required: "Required",
+              required: t("validation.required"),
               pattern: {
                 value: /^[a-z0-9_]+$/,
-                message: "Only lowercase letters, numbers, underscores",
+                message: t("superAdmin.CreateTenantDialog.onlyLowercaseLettersNumbersUnderscores"),
               },
             })}
             error={!!errors.db_name_slug}
             helperText={
-              errors.db_name_slug?.message ?? "Final DB name: geargrid_{slug}_{timestamp}"
+              errors.db_name_slug?.message ?? t("superAdmin.CreateTenantDialog.finalDbNameGeargridSlug")
             }
             slotProps={{
               input: {
@@ -242,7 +244,7 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
                       variant="caption"
                       sx={{ color: "text.disabled", fontFamily: "monospace" }}
                     >
-                      geargrid_
+                      {t("superAdmin.CreateTenantDialog.geargrid")}
                     </Typography>
                   </InputAdornment>
                 ),
@@ -254,7 +256,7 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
               name="tier"
               control={control}
               render={({ field }) => (
-                <TextField {...field} select label="Tier" size="small" fullWidth>
+                <TextField {...field} select label={t("superAdmin.CreateTenantDialog.tier")} size="small" fullWidth>
                   {["Basic", "Pro", "Enterprise"].map((t) => (
                     <MenuItem key={t} value={t}>
                       {t}
@@ -264,7 +266,7 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
               )}
             />
             <TextField
-              label="Monthly rate"
+              label={t("superAdmin.CreateTenantDialog.monthlyRate")}
               size="small"
               fullWidth
               type="number"
@@ -279,7 +281,7 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
                   endAdornment: (
                     <InputAdornment position="end">
                       <Typography variant="caption" sx={{ color: "text.disabled" }}>
-                        LKR / mo
+                        {t("superAdmin.CreateTenantDialog.lkrMo")}
                       </Typography>
                     </InputAdornment>
                   ),

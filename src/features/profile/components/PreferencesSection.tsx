@@ -14,6 +14,7 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import { MyProfile } from "../api/me.api";
 import { useUpdatePreferences } from "../hooks/useMe";
+import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -49,6 +50,7 @@ const COMMON_TIMEZONES = [
 ];
 
 export function PreferencesSection({ profile }: { profile: MyProfile }) {
+  const { t } = useTranslation();
   const update = useUpdatePreferences();
   const [form, setForm] = useState({
     language: profile.language || "en",
@@ -75,7 +77,7 @@ export function PreferencesSection({ profile }: { profile: MyProfile }) {
       await update.mutateAsync(form);
       setSaved(true);
     } catch (err: any) {
-      setError(err?.message || "Save failed.");
+      setError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
     }
   };
 
@@ -85,17 +87,17 @@ export function PreferencesSection({ profile }: { profile: MyProfile }) {
       sx={{ p: 3, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white" }}
     >
       <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-        DISPLAY PREFERENCES
+        {t("profile.PreferencesSection.displayPreferences")}
       </Typography>
       <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", mb: 2 }}>
-        Localisation & format
+        {t("profile.PreferencesSection.localisationFormat")}
       </Typography>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
         <TextField
           select
           size="small"
-          label="Language"
+          label={t("language.title")}
           value={form.language}
           onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
           fullWidth
@@ -114,14 +116,14 @@ export function PreferencesSection({ profile }: { profile: MyProfile }) {
           onChange={(_, v) => setForm((f) => ({ ...f, timezone: v || "" }))}
           onInputChange={(_, v) => setForm((f) => ({ ...f, timezone: v }))}
           renderInput={(params) => (
-            <TextField {...params} label="Timezone" size="small" fullWidth />
+            <TextField {...params} label={t("profile.timezone")} size="small" fullWidth />
           )}
         />
 
         <TextField
           select
           size="small"
-          label="Date format"
+          label={t("profile.dateFormat")}
           value={form.date_format}
           onChange={(e) => setForm((f) => ({ ...f, date_format: e.target.value }))}
           fullWidth
@@ -136,20 +138,20 @@ export function PreferencesSection({ profile }: { profile: MyProfile }) {
         <TextField
           select
           size="small"
-          label="Time format"
+          label={t("profile.timeFormat")}
           value={form.time_format}
           onChange={(e) =>
             setForm((f) => ({ ...f, time_format: e.target.value as "12h" | "24h" }))
           }
           fullWidth
         >
-          <MenuItem value="24h">24-hour (14:30)</MenuItem>
-          <MenuItem value="12h">12-hour (2:30 PM)</MenuItem>
+          <MenuItem value="24h">{t("profile.PreferencesSection.24Hour1430")}</MenuItem>
+          <MenuItem value="12h">{t("profile.PreferencesSection.12Hour230Pm")}</MenuItem>
         </TextField>
       </Box>
 
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-      {saved && <Alert severity="success" sx={{ mt: 2 }}>Preferences saved.</Alert>}
+      {saved && <Alert severity="success" sx={{ mt: 2 }}>{t("profile.PreferencesSection.preferencesSaved")}</Alert>}
 
       <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
         <Button
@@ -162,7 +164,7 @@ export function PreferencesSection({ profile }: { profile: MyProfile }) {
           }
           sx={{ fontWeight: 800 }}
         >
-          {update.isPending ? "Saving…" : "Save preferences"}
+          {update.isPending ? t("common.saving") : t("profile.PreferencesSection.savePreferences")}
         </Button>
       </Stack>
     </Paper>

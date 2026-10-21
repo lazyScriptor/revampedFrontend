@@ -23,6 +23,7 @@ import {
   useUpdateReview,
 } from "@/features/reviews/hooks/useInvoiceReviews";
 import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 interface ReviewThreadProps {
   invoiceId: number;
@@ -31,10 +32,10 @@ interface ReviewThreadProps {
 }
 
 const STAGE_LABELS: Record<InvoiceReview["stage"], string> = {
-  handover: "Handover",
-  return: "Return",
-  followup: "Follow-up",
-  adhoc: "Ad-hoc",
+  handover: tk("reviews.stages.handover"),
+  return: tk("reviews.stages.return"),
+  followup: tk("reviews.stages.followup"),
+  adhoc: tk("reviews.stages.adhoc"),
 };
 
 export function ReviewThread({ invoiceId, reviews, isLoading }: ReviewThreadProps) {
@@ -76,6 +77,7 @@ export function ReviewThread({ invoiceId, reviews, isLoading }: ReviewThreadProp
 }
 
 function ReviewRow({ invoiceId, review }: { invoiceId: number; review: InvoiceReview }) {
+  const { t } = useTranslation();
   const myUserId = useAuthStore((s) => s.user?.id);
   const canEdit = myUserId === review.author_user_id;
   const [editing, setEditing] = useState(false);
@@ -108,27 +110,27 @@ function ReviewRow({ invoiceId, review }: { invoiceId: number; review: InvoiceRe
           {review.rating !== null ? (
             <Rating value={review.rating} readOnly size="small" icon={<StarIcon sx={{ color: "#f59e0b" }} fontSize="inherit" />} />
           ) : (
-            <Chip size="small" label="Comment" variant="outlined" sx={{ fontWeight: 700, height: 22 }} />
+            <Chip size="small" label={t("reviews.ReviewThread.comment")} variant="outlined" sx={{ fontWeight: 700, height: 22 }} />
           )}
-          <Chip size="small" label={STAGE_LABELS[review.stage]} sx={{ height: 22, fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
-          {review.is_primary && <Chip size="small" label="Primary" sx={{ height: 22, fontWeight: 700, bgcolor: "#ecfdf5", color: "#047857" }} />}
+          <Chip size="small" label={t(STAGE_LABELS[review.stage])} sx={{ height: 22, fontWeight: 700, bgcolor: "#eff6ff", color: "#1d4ed8" }} />
+          {review.is_primary && <Chip size="small" label={t("reviews.ReviewThread.primary")} sx={{ height: 22, fontWeight: 700, bgcolor: "#ecfdf5", color: "#047857" }} />}
         </Box>
         <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5, alignItems: "center" }}>
           <Typography variant="caption" color="text.secondary">
             {review.Author
-              ? `${review.Author.first_name || ""} ${review.Author.last_name || ""}`.trim() || "Staff"
-              : "Staff"}
+              ? `${review.Author.first_name || ""} ${review.Author.last_name || ""}`.trim() || t("admin.roles.tiers.staff")
+              : t("admin.roles.tiers.staff")}
             {" · "}
             {formatDisplayDate(review.createdAt)}
           </Typography>
           {canEdit && !editing && (
             <>
-              <Tooltip title="Edit">
+              <Tooltip title={t("common.edit")}>
                 <IconButton size="small" onClick={() => setEditing(true)}>
                   <EditIcon fontSize="inherit" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Delete">
+              <Tooltip title={t("common.delete")}>
                 <IconButton size="small" disabled={deleting} onClick={() => deleteReview(review.review_id)}>
                   <DeleteIcon fontSize="inherit" />
                 </IconButton>
@@ -152,7 +154,7 @@ function ReviewRow({ invoiceId, review }: { invoiceId: number; review: InvoiceRe
             minRows={2}
             value={draftComment}
             onChange={(e) => setDraftComment(e.target.value)}
-            placeholder="Comment (optional if rating set)"
+            placeholder={t("reviews.ReviewThread.commentOptionalIfRatingSet")}
           />
           <Box sx={{ display: "flex", flexDirection: "row", gap: 1, justifyContent: "flex-end" }}>
             <Button
@@ -166,7 +168,7 @@ function ReviewRow({ invoiceId, review }: { invoiceId: number; review: InvoiceRe
               disabled={saving}
               sx={{ textTransform: "none" }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               size="small"
@@ -177,7 +179,7 @@ function ReviewRow({ invoiceId, review }: { invoiceId: number; review: InvoiceRe
               disabled={saving || (!draftRating && !draftComment.trim())}
               sx={{ textTransform: "none", fontWeight: 700 }}
             >
-              Save
+              {t("common.save")}
             </Button>
           </Box>
         </Box>

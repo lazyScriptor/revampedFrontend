@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { zt } from '@/i18n/zod';
 
 export const categorySchema = z.object({
-  category_name: z.string().min(2, 'Category name must be at least 2 characters'),
+  category_name: z.string().min(2, zt("validation.categoryNameMin2")),
   description: z.string().optional().or(z.literal('')),
 });
 

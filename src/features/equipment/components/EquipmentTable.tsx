@@ -152,7 +152,7 @@ export function EquipmentTable({
       type: "number",
       renderCell: (params) => (
         <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", color: "text.secondary" }}>
-          {params.value || 1} day{(params.value || 1) > 1 ? "s" : ""}
+          {t("equipment.EquipmentTable.days", { count: params.value || 1 })}
         </Typography>
       ),
     },
@@ -169,7 +169,7 @@ export function EquipmentTable({
             color: "text.secondary",
           }}
         >
-          {params.value ? `Rs. ${Number(params.value).toLocaleString()}` : "N/A"}
+          {params.value ? t("equipment.EquipmentTable.rs", { value: Number(params.value).toLocaleString() }) : "N/A"}
         </Typography>
       ),
     },
@@ -451,15 +451,14 @@ export function EquipmentTable({
       {/* Delete Dialog */}
       <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
         <DialogTitle className="font-bold text-slate-800">
-          Confirm Deletion
+          {t("equipment.EquipmentTable.confirmDeletion")}
         </DialogTitle>
         <DialogContent>
-          Are you sure you want to delete this equipment? This action cannot be
-          undone.
+          {t("equipment.EquipmentTable.areYouSureYouWant")}
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button onClick={() => setDeleteId(null)} color="inherit">
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleDeleteConfirm}
@@ -468,7 +467,7 @@ export function EquipmentTable({
             disabled={deleteMutation.isPending}
             disableElevation
           >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            {deleteMutation.isPending ? t("customers.CustomerTable.deleting") : t("common.delete")}
           </Button>
         </DialogActions>
       </Dialog>

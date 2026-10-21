@@ -242,7 +242,7 @@ const MasterFilterBar: React.FC = () => {
             },
           }}
         >
-          {isCustomActive ? "Custom" : "Dates"}
+          {isCustomActive ? t("accounting.custom") : t("dashboard.MasterFilterBar.dates")}
         </Button>
       </Box>
 
@@ -267,12 +267,12 @@ const MasterFilterBar: React.FC = () => {
         }}
       >
         <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, mb: 1.5, color: dt.color.foreground }}>
-          Custom Date Range
+          {t("dashboard.MasterFilterBar.customDateRange")}
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <TextField
             type="date"
-            label="Start Date"
+            label={t("dashboard.MasterFilterBar.startDate")}
             size="small"
             value={customStart}
             onChange={(e) => setCustomStart(e.target.value)}
@@ -281,7 +281,7 @@ const MasterFilterBar: React.FC = () => {
           />
           <TextField
             type="date"
-            label="End Date"
+            label={t("dashboard.MasterFilterBar.endDate")}
             size="small"
             value={customEnd}
             onChange={(e) => setCustomEnd(e.target.value)}
@@ -294,7 +294,7 @@ const MasterFilterBar: React.FC = () => {
               onClick={() => setCustomAnchorEl(null)}
               sx={{ textTransform: "none", fontSize: "0.75rem", color: dt.color.foregroundMuted }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               size="small"
@@ -310,7 +310,7 @@ const MasterFilterBar: React.FC = () => {
                 "&:hover": { bgcolor: dt.color.primaryStrong },
               }}
             >
-              Apply
+              {t("common.apply")}
             </Button>
           </Box>
         </Box>

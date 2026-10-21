@@ -13,6 +13,7 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import { MyProfile } from "../api/me.api";
 import { useUpdatePreferences } from "../hooks/useMe";
+import { useTranslation } from "react-i18next";
 
 type Prefs = {
   channels: { in_app: boolean; email: boolean };
@@ -78,6 +79,7 @@ const Row = ({
 );
 
 export function NotificationsSection({ profile }: { profile: MyProfile }) {
+  const { t } = useTranslation();
   const update = useUpdatePreferences();
   const [prefs, setPrefs] = useState<Prefs>(mergePrefs(profile.notification_prefs));
   const [saved, setSaved] = useState(false);
@@ -94,7 +96,7 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
       await update.mutateAsync({ notification_prefs: prefs });
       setSaved(true);
     } catch (err: any) {
-      setError(err?.message || "Save failed.");
+      setError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
     }
   };
 
@@ -104,19 +106,19 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
       sx={{ p: 3, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white" }}
     >
       <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-        DELIVERY CHANNELS
+        {t("profile.NotificationsSection.deliveryChannels")}
       </Typography>
       <Box sx={{ mt: 0.5 }}>
         <Row
-          title="In-app bell"
-          description="Live notifications in the top header. Always recommended."
+          title={t("profile.NotificationsSection.inAppBell")}
+          description={t("profile.NotificationsSection.liveNotificationsInTheTop")}
           checked={prefs.channels.in_app}
           onChange={(v) => setPrefs((p) => ({ ...p, channels: { ...p.channels, in_app: v } }))}
         />
         <Divider />
         <Row
-          title="Email"
-          description="Important updates copied to your inbox. (Coming soon — toggle is saved.)"
+          title={t("common.email")}
+          description={t("profile.NotificationsSection.importantUpdatesCopiedToYour")}
           checked={prefs.channels.email}
           onChange={(v) => setPrefs((p) => ({ ...p, channels: { ...p.channels, email: v } }))}
         />
@@ -130,8 +132,8 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
       </Typography>
       <Box sx={{ mt: 0.5 }}>
         <Row
-          title="Bulk jobs"
-          description="Imports, exports, downloads — completion alerts."
+          title={t("profile.NotificationsSection.bulkJobs")}
+          description={t("profile.NotificationsSection.importsExportsDownloadsCompletionAlerts")}
           checked={prefs.categories.bulk_jobs}
           onChange={(v) =>
             setPrefs((p) => ({ ...p, categories: { ...p.categories, bulk_jobs: v } }))
@@ -139,8 +141,8 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
         />
         <Divider />
         <Row
-          title="Reports"
-          description="Scheduled report runs and threshold alerts."
+          title={t("nav.reports")}
+          description={t("profile.NotificationsSection.scheduledReportRunsAndThreshold")}
           checked={prefs.categories.reports}
           onChange={(v) =>
             setPrefs((p) => ({ ...p, categories: { ...p.categories, reports: v } }))
@@ -148,8 +150,8 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
         />
         <Divider />
         <Row
-          title="Invoices"
-          description="New invoices, payments, overdues."
+          title={t("nav.invoices")}
+          description={t("profile.NotificationsSection.newInvoicesPaymentsOverdues")}
           checked={prefs.categories.invoices}
           onChange={(v) =>
             setPrefs((p) => ({ ...p, categories: { ...p.categories, invoices: v } }))
@@ -157,8 +159,8 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
         />
         <Divider />
         <Row
-          title="Maintenance"
-          description="Equipment service alerts and defect logs."
+          title={t("nav.maintenance")}
+          description={t("profile.NotificationsSection.equipmentServiceAlertsAndDefect")}
           checked={prefs.categories.maintenance}
           onChange={(v) =>
             setPrefs((p) => ({ ...p, categories: { ...p.categories, maintenance: v } }))
@@ -166,8 +168,8 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
         />
         <Divider />
         <Row
-          title="System"
-          description="Account and security announcements."
+          title={t("admin.roles.system")}
+          description={t("profile.NotificationsSection.accountAndSecurityAnnouncements")}
           checked={prefs.categories.system}
           onChange={(v) =>
             setPrefs((p) => ({ ...p, categories: { ...p.categories, system: v } }))
@@ -176,7 +178,7 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
       </Box>
 
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-      {saved && <Alert severity="success" sx={{ mt: 2 }}>Notification preferences saved.</Alert>}
+      {saved && <Alert severity="success" sx={{ mt: 2 }}>{t("profile.NotificationsSection.notificationPreferencesSaved")}</Alert>}
 
       <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
         <Button
@@ -189,7 +191,7 @@ export function NotificationsSection({ profile }: { profile: MyProfile }) {
           }
           sx={{ fontWeight: 800 }}
         >
-          {update.isPending ? "Saving…" : "Save settings"}
+          {update.isPending ? t("common.saving") : t("profile.NotificationsSection.saveSettings")}
         </Button>
       </Stack>
     </Paper>

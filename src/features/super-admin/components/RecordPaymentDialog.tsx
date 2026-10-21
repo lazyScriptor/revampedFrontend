@@ -20,6 +20,7 @@ import {
   FormSection,
 } from "@/components/forms/FormDialogShell";
 import { useRecordPayment } from "../hooks/useSuperAdminHooks";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -48,6 +49,7 @@ export default function RecordPaymentDialog({
   tenantName,
   onSuccess,
 }: Props) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(INITIAL);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export default function RecordPaymentDialog({
           onSuccess();
           onClose();
         },
-        onError: (err: any) => setError(err?.message || "Failed to record payment."),
+        onError: (err: any) => setError(err?.message || t("superAdmin.RecordPaymentDialog.failedToRecordPayment")),
       },
     );
   };
@@ -87,9 +89,9 @@ export default function RecordPaymentDialog({
       open={open}
       onClose={onClose}
       maxWidth="md"
-      eyebrow="Subscription Payment"
-      title={`Record payment for ${tenantName}`}
-      subtitle="Log an offline payment received from the tenant."
+      eyebrow={t("superAdmin.RecordPaymentDialog.subscriptionPayment")}
+      title={t("superAdmin.RecordPaymentDialog.recordPaymentFor", { tenantName })}
+      subtitle={t("superAdmin.RecordPaymentDialog.logAnOfflinePaymentReceived")}
       avatarIcon={<PaymentsOutlinedIcon sx={{ fontSize: 22 }} />}
       footer={
         <>
@@ -97,12 +99,12 @@ export default function RecordPaymentDialog({
             {error
               ? error
               : dirty && !mutation.isPending
-                ? "Unsaved changes"
+                ? t("common.unsavedChanges")
                 : ""}
           </FormFooterMeta>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={onClose} disabled={mutation.isPending} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -113,7 +115,7 @@ export default function RecordPaymentDialog({
                 mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined
               }
             >
-              {mutation.isPending ? "Saving…" : "Record payment"}
+              {mutation.isPending ? t("common.saving") : t("superAdmin.RecordPaymentDialog.recordPayment")}
             </Button>
           </Box>
         </>
@@ -133,20 +135,20 @@ export default function RecordPaymentDialog({
 
         <FormSection
           icon={<PaymentsOutlinedIcon />}
-          title="Payment details"
-          hint="Amount, currency, and the subscription plan being billed."
+          title={t("superAdmin.RecordPaymentDialog.paymentDetails")}
+          hint={t("superAdmin.RecordPaymentDialog.amountCurrencyAndTheSubscription")}
         >
           <FieldGrid>
             <TextField
               size="small"
-              label="Plan name"
+              label={t("superAdmin.RecordPaymentDialog.planName")}
               value={form.plan_name}
               onChange={(e) => set("plan_name", e.target.value)}
               fullWidth
             />
             <TextField
               size="small"
-              label="Amount"
+              label={t("common.amount")}
               type="number"
               value={form.amount}
               onChange={(e) => set("amount", e.target.value)}
@@ -158,7 +160,7 @@ export default function RecordPaymentDialog({
             <TextField
               select
               size="small"
-              label="Currency"
+              label={t("superAdmin.RecordPaymentDialog.currency")}
               value={form.currency}
               onChange={(e) => set("currency", e.target.value)}
               fullWidth
@@ -172,7 +174,7 @@ export default function RecordPaymentDialog({
             <TextField
               select
               size="small"
-              label="Status"
+              label={t("common.status")}
               value={form.status}
               onChange={(e) => set("status", e.target.value)}
               fullWidth
@@ -188,13 +190,13 @@ export default function RecordPaymentDialog({
 
         <FormSection
           icon={<EventNoteOutlinedIcon />}
-          title="Billing period"
-          hint="What stretch of time does this payment cover?"
+          title={t("superAdmin.RecordPaymentDialog.billingPeriod")}
+          hint={t("superAdmin.RecordPaymentDialog.whatStretchOfTimeDoes")}
         >
           <FieldGrid>
             <TextField
               size="small"
-              label="Period start"
+              label={t("superAdmin.RecordPaymentDialog.periodStart")}
               type="date"
               value={form.billing_period_start}
               onChange={(e) => set("billing_period_start", e.target.value)}
@@ -203,7 +205,7 @@ export default function RecordPaymentDialog({
             />
             <TextField
               size="small"
-              label="Period end"
+              label={t("superAdmin.RecordPaymentDialog.periodEnd")}
               type="date"
               value={form.billing_period_end}
               onChange={(e) => set("billing_period_end", e.target.value)}
@@ -215,14 +217,14 @@ export default function RecordPaymentDialog({
 
         <FormSection
           icon={<ReceiptLongOutlinedIcon />}
-          title="Method & reference"
-          hint="Where the money came from, and any reference id for reconciliation."
+          title={t("superAdmin.RecordPaymentDialog.methodReference")}
+          hint={t("superAdmin.RecordPaymentDialog.whereTheMoneyCameFrom")}
         >
           <FieldGrid>
             <TextField
               select
               size="small"
-              label="Method"
+              label={t("accounting.method")}
               value={form.method}
               onChange={(e) => set("method", e.target.value)}
               fullWidth
@@ -235,7 +237,7 @@ export default function RecordPaymentDialog({
             </TextField>
             <TextField
               size="small"
-              label="Reference number"
+              label={t("superAdmin.RecordPaymentDialog.referenceNumber")}
               value={form.reference_number}
               onChange={(e) => set("reference_number", e.target.value)}
               fullWidth
@@ -254,12 +256,12 @@ export default function RecordPaymentDialog({
 
         <FormSection
           icon={<NotesOutlinedIcon />}
-          title="Notes"
-          hint="Optional context for future reviewers."
+          title={t("common.notes")}
+          hint={t("superAdmin.RecordPaymentDialog.optionalContextForFutureReviewers")}
         >
           <TextField
             size="small"
-            label="Notes"
+            label={t("common.notes")}
             multiline
             rows={3}
             value={form.notes}

@@ -11,11 +11,13 @@ import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useProfitLossReport } from "../hooks/useReportsHooks";
 import { api } from "@/lib/api";
 import { todayLocalStr, addDaysLocal } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function ProfitLossReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -75,8 +77,8 @@ export default function ProfitLossReport() {
 
   return (
     <ReportShell
-      title="Profit & Loss"
-      subtitle="Financial performance, operating margins, and expenditure distribution for the selected period"
+      title={t("accounting.profitAndLoss")}
+      subtitle={t("reports.ProfitLossReport.financialPerformanceOperatingMarginsAnd")}
       actionsSlot={<ExportMenu onExport={onExport} />}
       filterSlot={<DateRangeFilter from={range.from} to={range.to} onChange={setRange} />}
     >
@@ -92,28 +94,28 @@ export default function ProfitLossReport() {
         }}
       >
         <KpiTile
-          label="Gross Revenue"
+          label={t("reports.ProfitLossReport.grossRevenue")}
           value={formatCurrency(data?.grossRevenue || 0)}
           icon={<AttachMoneyIcon />}
           tone="info"
           loading={isLoading}
         />
         <KpiTile
-          label="Operating Expenses"
+          label={t("accounting.ProfitLossTable.operatingExpenses")}
           value={formatCurrency(data?.totalExpenses || 0)}
           icon={<TrendingDownIcon />}
           tone="warning"
           loading={isLoading}
         />
         <KpiTile
-          label="Depreciation"
+          label={t("accounting.ProfitLossTable.depreciation")}
           value={formatCurrency(data?.periodDepreciation || 0)}
           icon={<AccountBalanceIcon />}
           tone="default"
           loading={isLoading}
         />
         <KpiTile
-          label="Net Operating Profit"
+          label={t("reports.ProfitLossReport.netOperatingProfit")}
           value={formatCurrency(data?.netProfit || 0)}
           icon={<TrendingUpIcon />}
           tone={(data?.netProfit ?? 0) >= 0 ? "success" : "error"}
@@ -142,7 +144,7 @@ export default function ProfitLossReport() {
             fontSize: "0.72rem",
           }}
         >
-          EXPENSES BREAKDOWN BY CATEGORY
+          {t("reports.ProfitLossReport.expensesBreakdownByCategory")}
         </Typography>
 
         {expenses.length === 0 ? (
@@ -150,7 +152,7 @@ export default function ProfitLossReport() {
             variant="body2"
             sx={{ py: 3, color: isDark ? "#64748b" : "text.secondary", textAlign: "center" }}
           >
-            No operating expenses recorded in this period.
+            {t("reports.ProfitLossReport.noOperatingExpensesRecordedIn")}
           </Typography>
         ) : (
           <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>

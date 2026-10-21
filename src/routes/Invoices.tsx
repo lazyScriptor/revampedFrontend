@@ -180,7 +180,7 @@ export default function InvoicesRoute() {
       };
 
       setLastDispatchedInvoice(hydratedInvoice);
-      showToast("Invoice created successfully!", "success");
+      showToast(t("pages.Invoices.invoiceCreatedSuccessfully"), "success");
       setIsConfirmDispatchOpen(false);
 
       if (shouldAutoPrint) {
@@ -216,7 +216,7 @@ export default function InvoicesRoute() {
       setCartItems([]);
       setFees({ transport: 0, discount: 0, advance: 0 });
     } catch (error: any) {
-      showToast(error.response?.data?.message || "Failed to create invoice.", "error");
+      showToast(error.response?.data?.message || t("pages.Invoices.failedToCreateInvoice"), "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -277,7 +277,7 @@ export default function InvoicesRoute() {
         </Box>
         <Chip
           size="small"
-          label={posMode === "dispatch" ? "Step 1" : "Index"}
+          label={posMode === "dispatch" ? t("dataArena.BulkManager.step1") : t("pages.Invoices.index")}
           sx={{
             height: 20,
             fontSize: "0.65rem",
@@ -379,7 +379,7 @@ export default function InvoicesRoute() {
               px: 1.5,
             }}
           >
-            Clear Cart
+            {t("pages.Invoices.clearCart")}
           </Button>
         )}
       </Box>
@@ -446,21 +446,21 @@ export default function InvoicesRoute() {
 
   // ── Mobile tab labels ─────────────────────────────────────────────────────────
   const dispatchTabs = [
-    { label: "Client", icon: <PersonIcon sx={{ fontSize: 20 }} /> },
+    { label: t("pages.Invoices.client"), icon: <PersonIcon sx={{ fontSize: 20 }} /> },
     {
-      label: "Cart",
+      label: t("pages.Invoices.cart"),
       icon: (
         <Badge badgeContent={cartItems.length} color="primary" max={99}>
           <ShoppingCartIcon sx={{ fontSize: 20 }} />
         </Badge>
       ),
     },
-    { label: "Checkout", icon: <ReceiptLongIcon sx={{ fontSize: 20 }} /> },
+    { label: t("pages.Invoices.checkout"), icon: <ReceiptLongIcon sx={{ fontSize: 20 }} /> },
   ];
   const manageTabs = [
-    { label: "Search", icon: <SearchIcon sx={{ fontSize: 20 }} /> },
-    { label: "Details", icon: <ListAltIcon sx={{ fontSize: 20 }} /> },
-    { label: "Financial", icon: <AccountBalanceIcon sx={{ fontSize: 20 }} /> },
+    { label: t("common.search"), icon: <SearchIcon sx={{ fontSize: 20 }} /> },
+    { label: t("dataArena.JobHistoryTable.details"), icon: <ListAltIcon sx={{ fontSize: 20 }} /> },
+    { label: t("pages.Invoices.financial"), icon: <AccountBalanceIcon sx={{ fontSize: 20 }} /> },
   ];
   const tabs = posMode === "dispatch" ? dispatchTabs : manageTabs;
 
@@ -496,12 +496,12 @@ export default function InvoicesRoute() {
                 ? t("invoices.newDispatch")
                 : posMode === "manage"
                 ? t("orders.title")
-                : "Bill Printing Audit Logs"}
+                : t("invoices.InvoicePrintLogsView.billPrintingAuditLogs")}
             </Typography>
             {posMode === "dispatch" && cartItems.length > 0 && (
               <Chip
                 icon={<ShoppingCartIcon sx={{ fontSize: "14px !important" }} />}
-                label={`${cartItems.length} items · Rs. ${subTotal.toLocaleString()}`}
+                label={t("pages.Invoices.itemsRs", { cartItemsCount: cartItems.length, subTotal: subTotal.toLocaleString() })}
                 size="small"
                 sx={{
                   fontWeight: 800,
@@ -543,10 +543,10 @@ export default function InvoicesRoute() {
           </Box>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, mt: 0.25, display: "block" }}>
             {posMode === "dispatch"
-              ? t("invoices.newDispatch") + " — Point of Sale & asset checkout manifest"
+              ? `${t("invoices.newDispatch")} — ${t("pages.Invoices.posSubtitle")}`
               : posMode === "manage"
-              ? t("orders.subtitle") + " — Ledger tracking, returns, & financial terminal"
-              : "Complete immutable log of all thermal receipts printed, operator attribution, and point-in-time bill snapshots"}
+              ? `${t("orders.subtitle")} — ${t("pages.Invoices.manageSubtitle")}`
+              : t("pages.Reports.completeImmutableLogOfAll")}
           </Typography>
         </Box>
 
@@ -726,12 +726,12 @@ export default function InvoicesRoute() {
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <RocketLaunchIcon sx={{ fontSize: 20 }} />
-            Confirm Dispatch
+            {t("pages.Invoices.confirmDispatch")}
           </Box>
         </DialogTitle>
         <DialogContent dividers sx={{ bgcolor: "#f8fafc" }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Review the order before committing to the inventory ledger.
+            {t("pages.Invoices.reviewTheOrderBeforeCommitting")}
           </Typography>
 
           {/* Client block */}
@@ -746,7 +746,7 @@ export default function InvoicesRoute() {
             }}
           >
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-              Client
+              {t("pages.Invoices.client")}
             </Typography>
             <Typography variant="h6" sx={{ color: "#2563eb", fontWeight: 800, lineHeight: 1.2 }}>
               {selectedCustomer?.customer_type === "Business"
@@ -768,7 +768,7 @@ export default function InvoicesRoute() {
                 }}
               >
                 <Typography variant="caption" sx={{ color: "#4338ca", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-                  On behalf of
+                  {t("customers.onBehalfOf")}
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 800, color: "#1e1b4b", mt: 0.25 }}>
                   {onBehalfOfCustomer.company_name ||
@@ -780,7 +780,7 @@ export default function InvoicesRoute() {
 
           {/* Items */}
           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
-            Items ({cartItems.length})
+            {t("pages.Invoices.items", { cartItemsCount: cartItems.length })}
           </Typography>
           <Box
             sx={{
@@ -817,7 +817,7 @@ export default function InvoicesRoute() {
                       {item.borrow_date} → {item.expected_return_date} ({totalDays}d)
                     </Typography>
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                      Qty: {item.borrow_quantity}
+                      {t("pages.Invoices.qty")} {item.borrow_quantity}
                     </Typography>
                   </Box>
                 </Box>
@@ -827,7 +827,7 @@ export default function InvoicesRoute() {
 
           {/* Financial breakdown */}
           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
-            Financial Summary
+            {t("pages.Invoices.financialSummary")}
           </Typography>
           <Box
             sx={{
@@ -840,14 +840,14 @@ export default function InvoicesRoute() {
             }}
           >
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>Subtotal</Typography>
+              <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("common.subtotal")}</Typography>
               <Typography variant="body2" sx={{ color: "#cbd5e1", fontWeight: 700 }}>
                 Rs. {subTotal.toLocaleString()}
               </Typography>
             </Box>
             {fees.transport > 0 && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" sx={{ color: "#94a3b8" }}>Transport</Typography>
+                <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("invoices.transport")}</Typography>
                 <Typography variant="body2" sx={{ color: "#cbd5e1", fontWeight: 700 }}>
                   + Rs. {fees.transport.toLocaleString()}
                 </Typography>
@@ -855,7 +855,7 @@ export default function InvoicesRoute() {
             )}
             {fees.discount > 0 && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" sx={{ color: "#94a3b8" }}>Discount</Typography>
+                <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("common.discount")}</Typography>
                 <Typography variant="body2" sx={{ color: "#f87171", fontWeight: 700 }}>
                   − Rs. {fees.discount.toLocaleString()}
                 </Typography>
@@ -863,7 +863,7 @@ export default function InvoicesRoute() {
             )}
             {fees.advance > 0 && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" sx={{ color: "#94a3b8" }}>Advance Paid</Typography>
+                <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("pages.Invoices.advancePaid")}</Typography>
                 <Typography variant="body2" sx={{ color: "#4ade80", fontWeight: 700 }}>
                   − Rs. {fees.advance.toLocaleString()}
                 </Typography>
@@ -871,7 +871,7 @@ export default function InvoicesRoute() {
             )}
             <Divider sx={{ borderColor: "#334155" }} />
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography sx={{ color: "#94a3b8", fontWeight: 700 }}>Balance Due</Typography>
+              <Typography sx={{ color: "#94a3b8", fontWeight: 700 }}>{t("orders.balanceDue")}</Typography>
               <Typography variant="h6" sx={{ color: balanceDue > 0 ? "#f87171" : "#4ade80", fontWeight: 900 }}>
                 Rs. {balanceDue.toLocaleString()}
               </Typography>
@@ -880,7 +880,7 @@ export default function InvoicesRoute() {
         </DialogContent>
         <DialogActions sx={{ p: 2.5, bgcolor: "white", gap: 1 }}>
           <Button onClick={() => setIsConfirmDispatchOpen(false)} color="inherit" disabled={isSubmitting}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => executeDispatch(true)}
@@ -894,7 +894,7 @@ export default function InvoicesRoute() {
               "&:hover": { bgcolor: "#eff6ff", borderColor: "#93c5fd" },
             }}
           >
-            Confirm & Print Bill
+            {t("pages.Invoices.confirmPrintBill")}
           </Button>
           <Button
             onClick={() => executeDispatch(false)}
@@ -904,7 +904,7 @@ export default function InvoicesRoute() {
             startIcon={<RocketLaunchIcon />}
             sx={{ bgcolor: "#16a34a", fontWeight: 800, px: 2.5, "&:hover": { bgcolor: "#15803d" } }}
           >
-            {isSubmitting ? "Processing…" : "Confirm & Dispatch"}
+            {isSubmitting ? t("invoices.PosCheckoutPanel.processing") : t("pages.Invoices.confirmDispatch2")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -935,10 +935,10 @@ export default function InvoicesRoute() {
             <CheckCircleIcon sx={{ fontSize: 36 }} />
           </Box>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a" }}>
-            Dispatched Successfully!
+            {t("pages.Invoices.dispatchedSuccessfully")}
           </Typography>
           <Typography variant="body2" sx={{ color: "#64748b", mt: 0.5 }}>
-            Invoice #{lastDispatchedInvoice?.invoice_id} is now Active
+            {t("pages.Invoices.invoiceIsNowActive", { invoice_id: lastDispatchedInvoice?.invoice_id })}
           </Typography>
         </DialogTitle>
         <DialogContent sx={{ textAlign: "center", px: 3, py: 1.5 }}>
@@ -953,20 +953,20 @@ export default function InvoicesRoute() {
             }}
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-              <Typography variant="caption" sx={{ color: "#64748b" }}>Client:</Typography>
+              <Typography variant="caption" sx={{ color: "#64748b" }}>{t("pages.Invoices.client2")}</Typography>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a" }}>
                 {lastDispatchedInvoice?.Customer?.company_name ||
                   `${lastDispatchedInvoice?.Customer?.first_name || ""} ${lastDispatchedInvoice?.Customer?.last_name || ""}`}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-              <Typography variant="caption" sx={{ color: "#64748b" }}>Equipment:</Typography>
+              <Typography variant="caption" sx={{ color: "#64748b" }}>{t("pages.Invoices.equipment")}</Typography>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                {lastDispatchedInvoice?.InvoiceLines?.reduce((sum: number, l: any) => sum + (l.borrow_quantity || 1), 0) || 0} machines
+                {t("pages.Invoices.machinesCount", { count: lastDispatchedInvoice?.InvoiceLines?.reduce((sum: number, l: any) => sum + (l.borrow_quantity || 1), 0) || 0 })}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="caption" sx={{ color: "#64748b" }}>Net Total:</Typography>
+              <Typography variant="caption" sx={{ color: "#64748b" }}>{t("pages.Invoices.netTotal")}</Typography>
               <Typography variant="caption" sx={{ fontWeight: 800, color: "#16a34a" }}>
                 Rs. {Number(lastDispatchedInvoice?.total_amount || 0).toLocaleString()}
               </Typography>
@@ -988,7 +988,7 @@ export default function InvoicesRoute() {
               borderRadius: 2,
             }}
           >
-            Print POS Bill (Thermal)
+            {t("pages.Invoices.printPosBillThermal")}
           </Button>
           <Button
             fullWidth
@@ -997,7 +997,7 @@ export default function InvoicesRoute() {
             onClick={() => setIsPostDispatchOpen(false)}
             sx={{ fontWeight: 700, color: "#64748b" }}
           >
-            Start Next Order
+            {t("pages.Invoices.startNextOrder")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1016,7 +1016,7 @@ export default function InvoicesRoute() {
           open={isDispatchPrintOpen}
           onClose={() => setIsDispatchPrintOpen(false)}
           invoice={lastDispatchedInvoice}
-          title={`POS Bill · INV-${lastDispatchedInvoice.invoice_id}`}
+          title={t("pages.Invoices.posBillInv", { invoice_id: lastDispatchedInvoice.invoice_id })}
         />
       )}
 
@@ -1031,7 +1031,7 @@ export default function InvoicesRoute() {
           items: cartItems,
           fees,
         }}
-        title="Quotation / Estimate Slip Preview"
+        title={t("pages.Invoices.quotationEstimateSlipPreview")}
       />
 
       {/* ── Clear Cart Dialog ─────────────────────────────────────────────────────── */}
@@ -1040,15 +1040,15 @@ export default function InvoicesRoute() {
         onClose={() => setIsClearCartOpen(false)}
         slotProps={{ paper: { sx: { borderRadius: 3 } } }}
       >
-        <DialogTitle sx={{ fontWeight: 800 }}>Clear Cart?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>{t("pages.Invoices.clearCart2")}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
-            All items and adjustments will be removed. This cannot be undone.
+            {t("pages.Invoices.allItemsAndAdjustmentsWill")}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button onClick={() => setIsClearCartOpen(false)} color="inherit">
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => {
@@ -1061,7 +1061,7 @@ export default function InvoicesRoute() {
             disableElevation
             sx={{ fontWeight: 700 }}
           >
-            Clear Everything
+            {t("pages.Invoices.clearEverything")}
           </Button>
         </DialogActions>
       </Dialog>

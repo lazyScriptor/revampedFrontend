@@ -3,6 +3,7 @@ import { Box, Button, Collapse, Typography, useTheme, alpha } from "@mui/materia
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import { useTranslation } from "react-i18next";
 
 interface ResponsiveKpiStripProps {
   children: React.ReactNode;
@@ -22,9 +23,10 @@ export function ResponsiveKpiStrip({
   children,
   columns = 4,
   collapsibleOnMobile = true,
-  mobileLabel = "Overview Metrics",
+  mobileLabel,
   sx = {},
 }: ResponsiveKpiStripProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [mobileExpanded, setMobileExpanded] = useState(true);
@@ -54,7 +56,7 @@ export function ResponsiveKpiStrip({
                 fontSize: "0.68rem",
               }}
             >
-              {mobileLabel}
+              {mobileLabel ?? t("shared.ResponsiveKpiStrip.overviewMetrics")}
             </Typography>
           </Box>
           <Button
@@ -81,7 +83,7 @@ export function ResponsiveKpiStrip({
               },
             }}
           >
-            {mobileExpanded ? "Hide" : "Show"}
+            {mobileExpanded ? t("common.hide") : t("common.show")}
           </Button>
         </Box>
       )}

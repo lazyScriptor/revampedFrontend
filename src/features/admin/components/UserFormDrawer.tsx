@@ -16,6 +16,7 @@ import {
   FormDialogShell,
   FormSection,
 } from "@/components/forms/FormDialogShell";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -34,6 +35,7 @@ const blankForm = {
 };
 
 export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = null }: Props) {
+  const { t } = useTranslation();
   const isEditMode = Boolean(userToEdit);
 
   const [formData, setFormData] = useState(blankForm);
@@ -85,7 +87,7 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
       }
       onSuccess();
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      setError(err.message || t("admin.RoleFormDrawer.somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -100,23 +102,23 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      eyebrow={isEditMode ? "Edit User" : "New User"}
+      eyebrow={isEditMode ? t("admin.UserFormDrawer.editUser") : t("superAdmin.TenantDetailPanel.newUser")}
       title={
         isEditMode
           ? `${userToEdit?.first_name || ""} ${userToEdit?.last_name || ""}`.trim() ||
             userToEdit?.username
-          : "Create a team member"
+          : t("admin.UserFormDrawer.createATeamMember")
       }
-      subtitle="Identity, credentials, and basic profile."
+      subtitle={t("admin.UserFormDrawer.identityCredentialsAndBasicProfile")}
       avatarText={avatarText}
       footer={
         <>
           <Box sx={{ minWidth: 0, color: "text.secondary", fontSize: "0.78rem" }}>
-            {dirty && !loading && !error ? "Unsaved changes" : ""}
+            {dirty && !loading && !error ? t("common.unsavedChanges") : ""}
           </Box>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={onClose} disabled={loading} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -125,7 +127,7 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
               disabled={loading}
               startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
             >
-              {loading ? "Saving…" : isEditMode ? "Save changes" : "Create user"}
+              {loading ? t("common.saving") : isEditMode ? t("common.saveChanges") : t("admin.users.createUser")}
             </Button>
           </Box>
         </>
@@ -146,12 +148,12 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
         {/* Identity */}
         <FormSection
           icon={<PersonOutlineIcon />}
-          title="Identity"
-          hint="What the user is called inside the system."
+          title={t("admin.RoleFormDrawer.identity")}
+          hint={t("admin.UserFormDrawer.whatTheUserIsCalled")}
         >
           <FieldGrid>
             <TextField
-              label="First name"
+              label={t("common.firstName")}
               required
               value={formData.first_name}
               onChange={handleChange("first_name")}
@@ -159,7 +161,7 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
               fullWidth
             />
             <TextField
-              label="Last name"
+              label={t("common.lastName")}
               required
               value={formData.last_name}
               onChange={handleChange("last_name")}
@@ -168,24 +170,24 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
             />
           </FieldGrid>
           <TextField
-            label="National ID"
+            label={t("admin.UserFormDrawer.nationalId")}
             value={formData.nic_no}
             onChange={handleChange("nic_no")}
             size="small"
             fullWidth
-            helperText="Optional but useful for HR/audit records"
+            helperText={t("admin.UserFormDrawer.optionalButUsefulForHr")}
           />
         </FormSection>
 
         {/* Account */}
         <FormSection
           icon={<BadgeOutlinedIcon />}
-          title="Account"
-          hint="Login credentials. Username is what they type at the login screen."
+          title={t("admin.UserFormDrawer.account")}
+          hint={t("admin.UserFormDrawer.loginCredentialsUsernameIsWhat")}
         >
           <FieldGrid>
             <TextField
-              label="Username"
+              label={t("common.username")}
               required
               value={formData.username}
               onChange={handleChange("username")}
@@ -193,7 +195,7 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
               fullWidth
             />
             <TextField
-              label="Email address"
+              label={t("admin.UserFormDrawer.emailAddress")}
               type="email"
               required
               value={formData.email}
@@ -207,15 +209,15 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
         {/* Password */}
         <FormSection
           icon={<LockOutlinedIcon />}
-          title={isEditMode ? "Reset password" : "Initial password"}
+          title={isEditMode ? t("admin.UserFormDrawer.resetPassword") : t("admin.UserFormDrawer.initialPassword")}
           hint={
             isEditMode
-              ? "Leave blank to keep the user's current password."
-              : "The user will use this for their first login. They can change it later from their profile."
+              ? t("admin.UserFormDrawer.leaveBlankToKeepThe")
+              : t("admin.UserFormDrawer.theUserWillUseThis")
           }
         >
           <TextField
-            label={isEditMode ? "New password" : "Password"}
+            label={isEditMode ? t("profile.newPassword") : t("common.password")}
             type="password"
             required={!isEditMode}
             value={formData.password}

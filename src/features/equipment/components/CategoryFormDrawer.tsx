@@ -25,6 +25,7 @@ import {
   FormDialogShell,
   FormSection,
 } from "@/components/forms/FormDialogShell";
+import { useTranslation } from "react-i18next";
 
 interface CategoryFormDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ export function CategoryFormDrawer({
   onClose,
   initialData,
 }: CategoryFormDialogProps) {
+  const { t } = useTranslation();
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
 
@@ -73,7 +75,7 @@ export function CategoryFormDrawer({
       description: data.description === "" ? null : data.description,
     };
 
-    const onErr = (err: any) => setError(err?.message || "Save failed.");
+    const onErr = (err: any) => setError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
 
     if (isEditing && initialData) {
       updateMutation.mutate(
@@ -93,18 +95,18 @@ export function CategoryFormDrawer({
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      eyebrow={isEditing ? "Edit Category" : "New Category"}
-      title={isEditing ? initialData?.category_name || "Category" : "Create a category"}
-      subtitle="Categories group similar equipment so they can be assigned and reported together."
+      eyebrow={isEditing ? t("equipment.CategoryTable.editCategory") : t("equipment.CategoryFormDrawer.newCategory")}
+      title={isEditing ? initialData?.category_name || t("common.category") : t("equipment.CategoryFormDrawer.createACategory")}
+      subtitle={t("equipment.CategoryFormDrawer.categoriesGroupSimilarEquipmentSo")}
       avatarText={(initialData?.category_name || "C")[0].toUpperCase()}
       footer={
         <>
           <Box sx={{ minWidth: 0, color: "text.secondary", fontSize: "0.78rem" }}>
-            {isDirty && !isPending && !error ? "Unsaved changes" : ""}
+            {isDirty && !isPending && !error ? t("common.unsavedChanges") : ""}
           </Box>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={onClose} disabled={isPending} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -113,7 +115,7 @@ export function CategoryFormDrawer({
               disabled={isPending}
               startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
             >
-              {isPending ? "Saving…" : isEditing ? "Save changes" : "Create category"}
+              {isPending ? t("common.saving") : isEditing ? t("common.saveChanges") : t("equipment.CategoryFormDrawer.createCategory")}
             </Button>
           </Box>
         </>
@@ -133,14 +135,14 @@ export function CategoryFormDrawer({
 
         <FormSection
           icon={<CategoryOutlinedIcon />}
-          title="Category"
-          hint="Use a short, recognisable name — it shows in dropdowns everywhere."
+          title={t("common.category")}
+          hint={t("equipment.CategoryFormDrawer.useAShortRecognisableName")}
         >
           <TextField
-            label="Category name"
+            label={t("equipment.CategoryFormDrawer.categoryName")}
             required
             fullWidth
-            placeholder="e.g. Power Tools"
+            placeholder={t("equipment.CategoryFormDrawer.eGPowerTools")}
             {...register("category_name")}
             error={!!errors.category_name}
             helperText={errors.category_name?.message || " "}
@@ -150,11 +152,11 @@ export function CategoryFormDrawer({
 
         <FormSection
           icon={<TextSnippetOutlinedIcon />}
-          title="Description"
-          hint="Optional. Useful for onboarding new staff."
+          title={t("common.description")}
+          hint={t("equipment.CategoryFormDrawer.optionalUsefulForOnboardingNew")}
         >
           <TextField
-            label="Description"
+            label={t("common.description")}
             fullWidth
             multiline
             rows={4}

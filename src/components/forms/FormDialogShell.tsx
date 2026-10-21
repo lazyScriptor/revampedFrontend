@@ -11,6 +11,7 @@ import {
   alpha,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { useTranslation } from "react-i18next";
 
 /**
  * FormDialogShell — the project's signature form dialog scaffold.
@@ -61,6 +62,7 @@ export function FormDialogShell({
   footer: ReactNode;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   return (
     <Dialog
@@ -183,7 +185,7 @@ export function FormDialogShell({
               "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
               flexShrink: 0,
             }}
-            aria-label="Close dialog"
+            aria-label={t("shared.FormDialogShell.closeDialog")}
           >
             <CloseIcon fontSize="small" />
           </IconButton>

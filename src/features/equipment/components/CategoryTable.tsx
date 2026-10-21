@@ -26,6 +26,7 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 
 import { useDeleteCategory } from "../hooks/useCategoryHooks";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 interface CategoryTableProps {
   data: any[];
@@ -44,6 +45,7 @@ export function CategoryTable({
   onPaginationModelChange,
   onEdit,
 }: CategoryTableProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const deleteMutation = useDeleteCategory();
@@ -76,7 +78,7 @@ export function CategoryTable({
         onSuccess: () => {
           setToast({
             open: true,
-            message: "Category successfully deleted.",
+            message: t("equipment.CategoryTable.categorySuccessfullyDeleted"),
             severity: "success",
           });
           setDeleteId(null);
@@ -85,7 +87,7 @@ export function CategoryTable({
           const errorMessage =
             error.response?.data?.message ||
             error.message ||
-            "Failed to delete category.";
+            t("equipment.CategoryTable.failedToDeleteCategory");
           setToast({ open: true, message: errorMessage, severity: "error" });
           setDeleteId(null);
         },
@@ -118,7 +120,7 @@ export function CategoryTable({
     },
     {
       field: "category_name",
-      headerName: "Category Name",
+      headerName: t("equipment.CategoryTable.categoryName"),
       flex: 1.2,
       minWidth: 220,
       renderCell: (params: GridRenderCellParams) => (
@@ -160,7 +162,7 @@ export function CategoryTable({
                   fontWeight: 500,
                 }}
               >
-                {params.row.equipment_count} asset{params.row.equipment_count === 1 ? "" : "s"}
+                {t("equipment.CategoryTable.assets", { count: params.row.equipment_count })}
               </Typography>
             )}
           </Box>
@@ -169,7 +171,7 @@ export function CategoryTable({
     },
     {
       field: "description",
-      headerName: "Description",
+      headerName: t("common.description"),
       flex: 2,
       minWidth: 280,
       sortable: false,
@@ -185,13 +187,13 @@ export function CategoryTable({
             py: 0.5,
           }}
         >
-          {params.value || "No description provided"}
+          {params.value || t("equipment.CategoryTable.noDescriptionProvided")}
         </Typography>
       ),
     },
     {
       field: "createdAt",
-      headerName: "Date Created",
+      headerName: t("equipment.CategoryTable.dateCreated"),
       width: 150,
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
@@ -211,17 +213,17 @@ export function CategoryTable({
     },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: t("common.actions"),
       width: 110,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-          <Tooltip title="Edit Category">
+          <Tooltip title={t("equipment.CategoryTable.editCategory")}>
             <IconButton
               size="small"
               onClick={() => onEdit(params.row)}
-              aria-label={`Edit ${params.row.category_name}`}
+              aria-label={t("equipment.CategoryTable.edit", { category_name: params.row.category_name })}
               sx={{
                 color: isDark ? "#93c5fd" : "#2563eb",
                 "&:hover": {
@@ -232,11 +234,11 @@ export function CategoryTable({
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Category">
+          <Tooltip title={t("equipment.CategoryTable.deleteCategory")}>
             <IconButton
               size="small"
               onClick={() => setDeleteId(params.row.category_id)}
-              aria-label={`Delete ${params.row.category_name}`}
+              aria-label={t("equipment.CategoryTable.delete", { category_name: params.row.category_name })}
               sx={{
                 color: isDark ? "#fca5a5" : "#dc2626",
                 "&:hover": {
@@ -320,17 +322,16 @@ export function CategoryTable({
         }}
       >
         <DialogTitle sx={{ fontWeight: 700, color: "text.primary" }}>
-          Delete Category
+          {t("equipment.CategoryTable.deleteCategory")}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
-            Are you sure you want to delete this category? If there is equipment
-            attached to it, this action will fail to preserve database integrity.
+            {t("equipment.CategoryTable.areYouSureYouWant")}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0, gap: 1 }}>
           <Button onClick={() => setDeleteId(null)} color="inherit" sx={{ textTransform: "none", fontWeight: 600 }}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleDeleteConfirm}
@@ -340,7 +341,7 @@ export function CategoryTable({
             disableElevation
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
           >
-            {deleteMutation.isPending ? "Deleting..." : "Delete Category"}
+            {deleteMutation.isPending ? t("customers.CustomerTable.deleting") : t("equipment.CategoryTable.deleteCategory")}
           </Button>
         </DialogActions>
       </Dialog>

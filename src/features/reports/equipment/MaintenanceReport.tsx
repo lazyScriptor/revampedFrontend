@@ -12,11 +12,13 @@ import { StatTable } from "@/components/reports/StatTable";
 import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useEquipmentMaintenanceByUnit } from "../hooks/useReportsHooks";
 import { todayLocalStr, addDaysLocal } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function MaintenanceReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -76,7 +78,7 @@ export default function MaintenanceReport() {
   const columns: GridColDef[] = [
     {
       field: "equipment_name",
-      headerName: "Equipment",
+      headerName: t("nav.equipment"),
       flex: 1.2,
       minWidth: 200,
       renderCell: (p) => (
@@ -94,7 +96,7 @@ export default function MaintenanceReport() {
     },
     {
       field: "category_name",
-      headerName: "Category",
+      headerName: t("common.category"),
       width: 140,
       renderCell: (p) => (
         <span className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>{p.value || "—"}</span>
@@ -102,15 +104,15 @@ export default function MaintenanceReport() {
     },
     {
       field: "warehouse",
-      headerName: "Warehouse",
+      headerName: t("equipment.warehouse"),
       width: 130,
       renderCell: (p) => (
-        <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{p.value || "Main"}</span>
+        <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{p.value || t("reports.MaintenanceReport.main")}</span>
       ),
     },
     {
       field: "defect_count",
-      headerName: "Defect Logs",
+      headerName: t("reports.MaintenanceReport.defectLogs"),
       width: 120,
       type: "number",
       renderCell: (p) => {
@@ -124,7 +126,7 @@ export default function MaintenanceReport() {
             }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-rose-400" : "bg-rose-600"}`} />
-            {v} logs
+            {t("reports.MaintenanceReport.logs", { v })}
           </span>
         ) : (
           <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>0</span>
@@ -133,7 +135,7 @@ export default function MaintenanceReport() {
     },
     {
       field: "pending_units",
-      headerName: "Pending",
+      headerName: t("common.pending"),
       width: 110,
       type: "number",
       renderCell: (p) => {
@@ -151,7 +153,7 @@ export default function MaintenanceReport() {
     },
     {
       field: "repaired_units",
-      headerName: "Repaired",
+      headerName: t("maintenance.repaired"),
       width: 110,
       type: "number",
       renderCell: (p) => (
@@ -162,17 +164,17 @@ export default function MaintenanceReport() {
     },
     {
       field: "avg_turnaround_days",
-      headerName: "Avg Turnaround",
+      headerName: t("reports.MaintenanceReport.avgTurnaround"),
       width: 140,
       renderCell: (p) => (
         <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-          {Number(p.value || 0).toFixed(1)} days
+          {t("reports.MaintenanceReport.days", { value: Number(p.value || 0).toFixed(1) })}
         </span>
       ),
     },
     {
       field: "period_revenue",
-      headerName: "Revenue",
+      headerName: t("dashboard.widgets.revenue"),
       width: 145,
       type: "number",
       renderCell: (p) => (
@@ -193,8 +195,8 @@ export default function MaintenanceReport() {
 
   return (
     <ReportShell
-      title="Maintenance by Unit"
-      subtitle="Per-equipment breakdown of incident defects, repairs in progress, and servicing turnaround time"
+      title={t("reports.MaintenanceReport.maintenanceByUnit")}
+      subtitle={t("reports.MaintenanceReport.perEquipmentBreakdownOfIncident")}
       actionsSlot={
         <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
       }
@@ -212,28 +214,28 @@ export default function MaintenanceReport() {
         }}
       >
         <KpiTile
-          label="Total Defect Logs"
+          label={t("reports.MaintenanceReport.totalDefectLogs")}
           value={totals.totalDefects}
           icon={<BuildCircleIcon />}
           tone="error"
           loading={isLoading}
         />
         <KpiTile
-          label="Pending Repairs"
+          label={t("reports.MaintenanceReport.pendingRepairs")}
           value={totals.totalPending}
           icon={<HandymanIcon />}
           tone="warning"
           loading={isLoading}
         />
         <KpiTile
-          label="Repaired Units"
+          label={t("reports.MaintenanceReport.repairedUnits")}
           value={totals.totalRepaired}
           icon={<CheckCircleIcon />}
           tone="success"
           loading={isLoading}
         />
         <KpiTile
-          label="Period Revenue"
+          label={t("reports.MaintenanceReport.periodRevenue")}
           value={formatCurrency(totals.totalRevenue)}
           icon={<AttachMoneyIcon />}
           tone="info"

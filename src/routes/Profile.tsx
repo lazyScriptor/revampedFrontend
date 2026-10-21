@@ -31,7 +31,7 @@ import { GearGridLoader } from "@/components/ui/GearGridLoader";
 const buildTabs = (t: (k: string) => string) => [
   { key: "profile",       label: t("profile.tabs.profile"),       icon: <PersonIcon fontSize="small" /> },
   { key: "security",      label: t("profile.tabs.security"),      icon: <LockResetIcon fontSize="small" /> },
-  { key: "signature",     label: "Signature",                     icon: <DrawIcon fontSize="small" /> },
+  { key: "signature",     label: t("profile.tabs.signature"),       icon: <DrawIcon fontSize="small" /> },
   { key: "preferences",   label: t("profile.tabs.preferences"),   icon: <TuneIcon fontSize="small" /> },
   { key: "notifications", label: t("profile.tabs.notifications"), icon: <NotificationsActiveIcon fontSize="small" /> },
   { key: "activity",      label: t("profile.tabs.activity"),      icon: <TimelineIcon fontSize="small" /> },
@@ -66,15 +66,15 @@ export default function ProfileRoute() {
 
   if (me.isLoading) {
     return (
-      <GearGridLoader centered size="lg" label="Loading User Profile..." sublabel="Fetching security credentials & organization preferences" sx={{ py: 10 }} />
+      <GearGridLoader centered size="lg" label={t("pages.Profile.loadingUserProfile")} sublabel={t("pages.Profile.fetchingSecurityCredentialsOrganizationP")} sx={{ py: 10 }} />
     );
   }
 
   if (me.isError || !me.data) {
     return (
       <Alert severity="error" sx={{ borderRadius: 2 }}>
-        Failed to load profile.{" "}
-        {(me.error as any)?.message || "Please try again."}
+        {t("profile.loadFailed")}{" "}
+        {(me.error as any)?.message || t("profile.tryAgain")}
       </Alert>
     );
   }
@@ -104,7 +104,7 @@ export default function ProfileRoute() {
             mb: 1.5,
           }}
         >
-          Account
+          {t("admin.UserFormDrawer.account")}
         </Typography>
         <AvatarBlock profile={profile} />
       </Paper>

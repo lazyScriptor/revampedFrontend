@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 
 // MUI Imports
@@ -286,7 +286,7 @@ export default function LoginRoute() {
                     fontSize: "0.68rem",
                   }}
                 >
-                  Operations OS
+                  {t("pages.login.operationsOs")}
                 </Typography>
               </Box>
             </Box>
@@ -302,7 +302,7 @@ export default function LoginRoute() {
             >
               <Chip
                 icon={<AutoModeIcon sx={{ fontSize: 15, color: "#F59E0B !important" }} />}
-                label="Enterprise Fleet Telemetry & Rental POS"
+                label={t("pages.login.enterpriseFleetTelemetryRentalPos")}
                 size="small"
                 sx={{
                   backgroundColor: "rgba(245, 158, 11, 0.12)",
@@ -333,17 +333,16 @@ export default function LoginRoute() {
                   mb: 2.5,
                 }}
               >
-                Orchestrate fleet operations with{" "}
-                <Box
-                  component="span"
-                  sx={{
+                <Trans
+                  i18nKey="pages.login.orchestrateHeadline"
+                  components={{
+                    hl: <Box component="span" sx={{
                     background: "linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #F97316 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
+                  }} />,
                   }}
-                >
-                  absolute clarity.
-                </Box>
+                />
               </Typography>
             </motion.div>
 
@@ -362,9 +361,7 @@ export default function LoginRoute() {
                   mb: 5,
                 }}
               >
-                Multi-warehouse asset dispatching, continuous return settlements,
-                preventative maintenance tickets, and double-entry accounting — unified in a
-                single multi-tenant architecture.
+                {t("pages.login.multiWarehouseAssetDispatchingContinuous")}
               </Typography>
             </motion.div>
 
@@ -373,18 +370,18 @@ export default function LoginRoute() {
               {[
                 {
                   icon: <EquipmentIcon sx={{ color: "#F59E0B" }} />,
-                  title: "Intelligent Fleet Lifecycle",
-                  desc: "Barcode/serial tracking with automated defect resolution pipelines.",
+                  title: t("pages.login.intelligentFleetLifecycle"),
+                  desc: t("pages.login.featureTrackingDesc"),
                 },
                 {
                   icon: <WarehouseIcon sx={{ color: "#38BDF8" }} />,
-                  title: "Multi-Warehouse Routing",
-                  desc: "Real-time inventory sync & split-quantity return reconciliations.",
+                  title: t("pages.login.multiWarehouseRouting"),
+                  desc: t("pages.login.featureSyncDesc"),
                 },
                 {
                   icon: <ShieldIcon sx={{ color: "#10B981" }} />,
-                  title: "Dedicated Tenant Security",
-                  desc: "Database-per-tenant isolation with granular role permission overrides.",
+                  title: t("pages.login.dedicatedTenantSecurity"),
+                  desc: t("pages.login.featureSecurityDesc"),
                 },
               ].map((item, idx) => (
                 <motion.div
@@ -468,12 +465,12 @@ export default function LoginRoute() {
                 }}
               />
               <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 600 }}>
-                Master Platform Telemetry: Active
+                {t("pages.login.masterPlatformTelemetryActive")}
               </Typography>
             </Box>
 
             <Typography variant="caption" sx={{ color: "#64748B", fontWeight: 500 }}>
-              GearGrid Engine v2.4
+              {t("pages.login.geargridEngineV24")}
             </Typography>
           </Box>
         </Box>
@@ -536,7 +533,7 @@ export default function LoginRoute() {
                 variant="caption"
                 sx={{ color: "#64748B", fontWeight: 600, letterSpacing: "0.03em" }}
               >
-                All Systems Operational
+                {t("pages.login.allSystemsOperational")}
               </Typography>
             </Box>
           )}
@@ -626,14 +623,14 @@ export default function LoginRoute() {
                   fontSize: { xs: "1.75rem", sm: "2rem" },
                 }}
               >
-                {t("login.signIn") || "Welcome Back"}
+                {t("login.signIn") || t("pages.login.welcomeBack")}
               </Typography>
             </Box>
             <Typography
               variant="body2"
               sx={{ color: "#94A3B8", fontWeight: 500, fontSize: "0.88rem" }}
             >
-              Enter your corporate email to access your workspace.
+              {t("pages.login.enterYourCorporateEmailTo")}
             </Typography>
           </Box>
 
@@ -658,7 +655,7 @@ export default function LoginRoute() {
                   mb: 0.75,
                 }}
               >
-                {t("login.workEmail") || "Corporate Email"}
+                {t("login.workEmail") || t("pages.login.corporateEmail")}
               </Typography>
               <TextField
                 required
@@ -719,9 +716,9 @@ export default function LoginRoute() {
                     letterSpacing: "0.06em",
                   }}
                 >
-                  {t("login.password") || "Password"}
+                  {t("login.password") || t("common.password")}
                 </Typography>
-                <Tooltip title="Contact your tenant administrator to reset credentials" arrow>
+                <Tooltip title={t("pages.login.contactYourTenantAdministratorTo")} arrow>
                   <Typography
                     variant="caption"
                     sx={{
@@ -732,7 +729,7 @@ export default function LoginRoute() {
                       "&:hover": { textDecoration: "underline" },
                     }}
                   >
-                    {t("login.forgotPassword") || "Forgot?"}
+                    {t("login.forgotPassword") || t("pages.login.forgot")}
                   </Typography>
                 </Tooltip>
               </Box>
@@ -756,7 +753,7 @@ export default function LoginRoute() {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        aria-label="toggle password visibility"
+                        aria-label={t("pages.login.togglePasswordVisibility")}
                         onClick={handleClickShowPassword}
                         edge="end"
                         size="small"
@@ -812,7 +809,7 @@ export default function LoginRoute() {
                 }
                 label={
                   <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.8rem" }}>
-                    {t("login.rememberMe") || "Remember this device for 30 days"}
+                    {t("login.rememberMe") || t("pages.login.rememberThisDeviceFor30")}
                   </Typography>
                 }
               />
@@ -843,7 +840,7 @@ export default function LoginRoute() {
                   >
                     {loginMutation.error instanceof Error
                       ? loginMutation.error.message
-                      : t("login.invalidCredentials") || "Invalid email or password"}
+                      : t("login.invalidCredentials") || t("pages.login.invalidEmailOrPassword")}
                   </Alert>
                 </motion.div>
               )}
@@ -885,10 +882,10 @@ export default function LoginRoute() {
               }}
             >
               {loginMutation.isPending ? (
-                <GearGridLoader size="xs" color="secondary" label="Authenticating Workspace..." />
+                <GearGridLoader size="xs" color="secondary" label={t("pages.login.authenticatingWorkspace")} />
               ) : (
                 <>
-                  <span>{t("login.signIn") || "Sign In to Workspace"}</span>
+                  <span>{t("login.signIn") || t("pages.login.signInToWorkspace")}</span>
                   <ArrowForwardIcon sx={{ fontSize: 18 }} />
                 </>
               )}
@@ -910,7 +907,7 @@ export default function LoginRoute() {
             }}
           >
             <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 500, fontSize: "0.76rem" }}>
-              Platform Super Administrator?
+              {t("pages.login.platformSuperAdministrator")}
             </Typography>
             <Link
               to="/super-admin/login"
@@ -928,7 +925,7 @@ export default function LoginRoute() {
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                Control Console →
+                {t("pages.login.controlConsole")}
               </Typography>
             </Link>
           </Box>
@@ -949,7 +946,7 @@ export default function LoginRoute() {
             }}
           >
             <Typography variant="caption" sx={{ color: "#94A3B8", fontWeight: 500, fontSize: "0.76rem" }}>
-              Signing bills from a phone?
+              {t("pages.login.signingBillsFromAPhone")}
             </Typography>
             <Link to="/pair" style={{ textDecoration: "none" }}>
               <Typography
@@ -964,7 +961,7 @@ export default function LoginRoute() {
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                Pair this phone →
+                {t("pages.login.pairThisPhone")}
               </Typography>
             </Link>
           </Box>
@@ -986,11 +983,11 @@ export default function LoginRoute() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <ShieldIcon sx={{ fontSize: 14, color: "#64748B" }} />
             <Typography variant="caption" sx={{ color: "#64748B", fontSize: "0.72rem", fontWeight: 500 }}>
-              End-to-End Encrypted • Multi-Tenant Schema Isolated
+              {t("pages.login.endToEndEncryptedMulti")}
             </Typography>
           </Box>
           <Typography variant="caption" sx={{ color: "#475569", fontSize: "0.68rem" }}>
-            © {new Date().getFullYear()} GearGrid Technologies Inc. All rights reserved.
+            {t("pages.login.geargridTechnologiesIncAllRights", { value: new Date().getFullYear() })}
           </Typography>
         </Box>
       </Box>

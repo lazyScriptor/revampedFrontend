@@ -4,6 +4,8 @@ import ClearAllIcon from "@mui/icons-material/ClearAll";
 import TodayIcon from "@mui/icons-material/Today";
 import dayjs from "dayjs";
 import type { AccountingFilters } from "../hooks/useAccountingFilters";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 interface FilterBarProps {
   filters: AccountingFilters;
@@ -27,13 +29,13 @@ interface FilterBarProps {
 }
 
 const DATE_PRESETS = [
-  { label: "Today", from: dayjs().format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
-  { label: "This Week", from: dayjs().startOf("week").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
-  { label: "This Month", from: dayjs().startOf("month").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
-  { label: "Last 30 Days", from: dayjs().subtract(30, "day").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
-  { label: "Last 90 Days", from: dayjs().subtract(90, "day").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
-  { label: "This Year", from: dayjs().startOf("year").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
-  { label: "All Time", from: "", to: "" },
+  { label: tk("common.today"), from: dayjs().format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
+  { label: tk("accounting.AccountingFilterBar.thisWeek"), from: dayjs().startOf("week").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
+  { label: tk("accounting.thisMonth"), from: dayjs().startOf("month").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
+  { label: tk("accounting.last30Days"), from: dayjs().subtract(30, "day").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
+  { label: tk("accounting.last90Days"), from: dayjs().subtract(90, "day").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
+  { label: tk("accounting.thisYear"), from: dayjs().startOf("year").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
+  { label: tk("accounting.AccountingFilterBar.allTime"), from: "", to: "" },
 ];
 
 export default function AccountingFilterBar({
@@ -46,6 +48,7 @@ export default function AccountingFilterBar({
   categoryOptions = [],
   methodOptions = [],
 }: FilterBarProps) {
+  const { t } = useTranslation();
   const {
     search = false,
     dateRange = true,
@@ -74,7 +77,7 @@ export default function AccountingFilterBar({
         {search && (
           <TextField
             size="small"
-            placeholder="Search..."
+            placeholder={t("accounting.AccountingFilterBar.search")}
             value={filters.search}
             onChange={(e) => onUpdate("search", e.target.value)}
             InputProps={{
@@ -96,7 +99,7 @@ export default function AccountingFilterBar({
             <TextField
               type="date"
               size="small"
-              label="From"
+              label={t("common.dateFrom")}
               value={filters.dateFrom}
               onChange={(e) => onUpdate("dateFrom", e.target.value)}
               InputLabelProps={{ shrink: true }}
@@ -105,7 +108,7 @@ export default function AccountingFilterBar({
             <TextField
               type="date"
               size="small"
-              label="To"
+              label={t("common.dateTo")}
               value={filters.dateTo}
               onChange={(e) => onUpdate("dateTo", e.target.value)}
               InputLabelProps={{ shrink: true }}
@@ -118,17 +121,17 @@ export default function AccountingFilterBar({
           <TextField
             select
             size="small"
-            label="Status"
+            label={t("common.status")}
             value={filters.status.length === 1 ? filters.status[0] : ""}
             onChange={(e) =>
               onUpdate("status", e.target.value ? [e.target.value] : [])
             }
             sx={{ width: 150, "& .MuiInputBase-input": { fontSize: "0.8rem", py: 0.8 } }}
           >
-            <MenuItem value="">All Statuses</MenuItem>
+            <MenuItem value="">{t("accounting.AccountingFilterBar.allStatuses")}</MenuItem>
             {statusOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(opt.label)}
               </MenuItem>
             ))}
           </TextField>
@@ -138,15 +141,15 @@ export default function AccountingFilterBar({
           <TextField
             select
             size="small"
-            label="Category"
+            label={t("common.category")}
             value={filters.category}
             onChange={(e) => onUpdate("category", e.target.value)}
             sx={{ width: 150, "& .MuiInputBase-input": { fontSize: "0.8rem", py: 0.8 } }}
           >
-            <MenuItem value="">All Categories</MenuItem>
+            <MenuItem value="">{t("accounting.AccountingFilterBar.allCategories")}</MenuItem>
             {categoryOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(opt.label)}
               </MenuItem>
             ))}
           </TextField>
@@ -156,15 +159,15 @@ export default function AccountingFilterBar({
           <TextField
             select
             size="small"
-            label="Method"
+            label={t("accounting.method")}
             value={filters.method}
             onChange={(e) => onUpdate("method", e.target.value)}
             sx={{ width: 150, "& .MuiInputBase-input": { fontSize: "0.8rem", py: 0.8 } }}
           >
-            <MenuItem value="">All Methods</MenuItem>
+            <MenuItem value="">{t("accounting.AccountingFilterBar.allMethods")}</MenuItem>
             {methodOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(opt.label)}
               </MenuItem>
             ))}
           </TextField>
@@ -174,14 +177,14 @@ export default function AccountingFilterBar({
           <TextField
             select
             size="small"
-            label="Type"
+            label={t("common.type")}
             value={filters.type}
             onChange={(e) => onUpdate("type", e.target.value)}
             sx={{ width: 140, "& .MuiInputBase-input": { fontSize: "0.8rem", py: 0.8 } }}
           >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="income">Income Only</MenuItem>
-            <MenuItem value="expense">Expenses Only</MenuItem>
+            <MenuItem value="">{t("common.all")}</MenuItem>
+            <MenuItem value="income">{t("accounting.AccountingFilterBar.incomeOnly")}</MenuItem>
+            <MenuItem value="expense">{t("accounting.AccountingFilterBar.expensesOnly")}</MenuItem>
           </TextField>
         )}
 
@@ -189,7 +192,7 @@ export default function AccountingFilterBar({
           <>
             <TextField
               size="small"
-              label="Min Amount"
+              label={t("accounting.AccountingFilterBar.minAmount")}
               type="number"
               value={filters.minAmount}
               onChange={(e) => onUpdate("minAmount", e.target.value)}
@@ -197,7 +200,7 @@ export default function AccountingFilterBar({
             />
             <TextField
               size="small"
-              label="Max Amount"
+              label={t("accounting.AccountingFilterBar.maxAmount")}
               type="number"
               value={filters.maxAmount}
               onChange={(e) => onUpdate("maxAmount", e.target.value)}
@@ -208,7 +211,7 @@ export default function AccountingFilterBar({
 
         <Box sx={{ flexGrow: 1 }} />
 
-        <Tooltip title="Reset Filters">
+        <Tooltip title={t("accounting.AccountingFilterBar.resetFilters")}>
           <IconButton size="small" onClick={onReset} sx={{ color: "#64748b" }}>
             <ClearAllIcon fontSize="small" />
           </IconButton>
@@ -223,7 +226,7 @@ export default function AccountingFilterBar({
             return (
               <Chip
                 key={preset.label}
-                label={preset.label}
+                label={t(preset.label)}
                 size="small"
                 variant={isActive ? "filled" : "outlined"}
                 color={isActive ? "primary" : "default"}

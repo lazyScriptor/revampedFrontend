@@ -22,11 +22,13 @@ import { StatTable } from "@/components/reports/StatTable";
 import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useAllCustomersReport } from "../hooks/useReportsHooks";
 import { todayLocalStr, addDaysLocal, formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function AllCustomersReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -101,7 +103,7 @@ export default function AllCustomersReport() {
   const columns: GridColDef[] = [
     {
       field: "name",
-      headerName: "Customer",
+      headerName: t("invoices.customer"),
       flex: 1.4,
       minWidth: 240,
       renderCell: (p: GridRenderCellParams) => {
@@ -149,7 +151,7 @@ export default function AllCustomersReport() {
                 }}
                 noWrap
               >
-                {r.phone_number || r.nic_number || "No contact"}
+                {r.phone_number || r.nic_number || t("customers.CustomerBulkEditDialog.noContact")}
               </Typography>
             </Box>
           </Box>
@@ -158,7 +160,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "invoice_count",
-      headerName: "Invoices",
+      headerName: t("nav.invoices"),
       width: 95,
       type: "number",
       renderCell: (p) => (
@@ -177,7 +179,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "total_revenue",
-      headerName: "Revenue",
+      headerName: t("dashboard.widgets.revenue"),
       width: 140,
       type: "number",
       renderCell: (p) => (
@@ -196,7 +198,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "total_paid",
-      headerName: "Paid",
+      headerName: t("invoices.paid"),
       width: 140,
       type: "number",
       renderCell: (p) => (
@@ -215,7 +217,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "balance_due",
-      headerName: "Balance",
+      headerName: t("reports.AllCustomersReport.balance"),
       width: 140,
       type: "number",
       renderCell: (p) => (
@@ -234,7 +236,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "overdue_amount",
-      headerName: "Overdue",
+      headerName: t("invoices.overdue"),
       width: 140,
       type: "number",
       renderCell: (p) => (
@@ -253,7 +255,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "avg_rating",
-      headerName: "Rating",
+      headerName: t("customers.rating"),
       width: 120,
       renderCell: (p) => (
         <Rating
@@ -267,7 +269,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "last_rental_date",
-      headerName: "Last Rental",
+      headerName: t("reports.AllCustomersReport.lastRental"),
       width: 130,
       renderCell: (p) => (
         <span className={`tabular-nums text-xs font-mono ${isDark ? "text-slate-400" : "text-slate-600"}`}>
@@ -277,7 +279,7 @@ export default function AllCustomersReport() {
     },
     {
       field: "status",
-      headerName: "Status",
+      headerName: t("common.status"),
       width: 120,
       renderCell: (p) => {
         const isBlacklisted = p.value === "Blacklisted";
@@ -309,8 +311,8 @@ export default function AllCustomersReport() {
 
   return (
     <ReportShell
-      title="All Customers"
-      subtitle="Per-customer revenue, paid, balance, and overdue figures for the selected period"
+      title={t("reports.allCustomers")}
+      subtitle={t("reports.AllCustomersReport.perCustomerRevenuePaidBalance")}
       actionsSlot={
         <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
       }
@@ -327,7 +329,7 @@ export default function AllCustomersReport() {
           <DateRangeFilter from={range.from} to={range.to} onChange={setRange} />
           <TextField
             size="small"
-            placeholder="Search name, phone, NIC…"
+            placeholder={t("reports.AllCustomersReport.searchNamePhoneNic")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             slotProps={{
@@ -371,28 +373,28 @@ export default function AllCustomersReport() {
         }}
       >
         <KpiTile
-          label="Customers"
+          label={t("nav.customers")}
           value={totals.customerCount}
           icon={<PeopleAltIcon />}
           tone="info"
           loading={isLoading}
         />
         <KpiTile
-          label="Total Revenue"
+          label={t("dashboard.widgets.totalRevenue")}
           value={formatCurrency(totals.totalRevenue)}
           icon={<AttachMoneyIcon />}
           tone="success"
           loading={isLoading}
         />
         <KpiTile
-          label="Outstanding Balance"
+          label={t("reports.AllCustomersReport.outstandingBalance")}
           value={formatCurrency(totals.totalBalance)}
           icon={<AccountBalanceWalletIcon />}
           tone="warning"
           loading={isLoading}
         />
         <KpiTile
-          label="Overdue Amount"
+          label={t("reports.AllCustomersReport.overdueAmount")}
           value={formatCurrency(totals.totalOverdue)}
           icon={<WarningAmberIcon />}
           tone="error"

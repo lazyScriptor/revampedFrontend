@@ -11,6 +11,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import { useTenants } from "../hooks/useSuperAdminHooks";
+import { useTranslation } from "react-i18next";
 
 const STATUS_DOT: Record<string, string> = {
   Active: "#10b981",
@@ -40,6 +41,7 @@ const resolveLogo = (url?: string | null) => {
 };
 
 export default function TenantListPanel({ selectedId, onSelect }: Props) {
+  const { t } = useTranslation();
   const { data: tenants = [], isLoading } = useTenants();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusKey>("all");
@@ -74,17 +76,17 @@ export default function TenantListPanel({ selectedId, onSelect }: Props) {
   }, [tenants, search, status, tier]);
 
   const STATUS_FILTERS: { key: StatusKey; label: string; color: string }[] = [
-    { key: "all", label: "All", color: "#94a3b8" },
-    { key: "active", label: "Active", color: "#10b981" },
-    { key: "overdue", label: "Overdue", color: "#f59e0b" },
-    { key: "suspended", label: "Suspended", color: "#ef4444" },
+    { key: "all", label: t("common.all"), color: "#94a3b8" },
+    { key: "active", label: t("common.active"), color: "#10b981" },
+    { key: "overdue", label: t("invoices.overdue"), color: "#f59e0b" },
+    { key: "suspended", label: t("superAdmin.suspendedTenants"), color: "#ef4444" },
   ];
 
   const TIER_FILTERS: { key: TierKey; label: string }[] = [
-    { key: "all", label: "All tiers" },
-    { key: "Basic", label: "Basic" },
-    { key: "Pro", label: "Pro" },
-    { key: "Enterprise", label: "Enterprise" },
+    { key: "all", label: t("superAdmin.TenantListPanel.allTiers") },
+    { key: "Basic", label: t("superAdmin.TenantListPanel.basic") },
+    { key: "Pro", label: t("superAdmin.TenantListPanel.pro") },
+    { key: "Enterprise", label: t("superAdmin.TenantListPanel.enterprise") },
   ];
 
   return (
@@ -102,7 +104,7 @@ export default function TenantListPanel({ selectedId, onSelect }: Props) {
         <TextField
           size="small"
           fullWidth
-          placeholder="Search by name, db, or contact…"
+          placeholder={t("superAdmin.TenantListPanel.searchByNameDbOr")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           slotProps={{
@@ -224,10 +226,10 @@ export default function TenantListPanel({ selectedId, onSelect }: Props) {
           >
             <BusinessOutlinedIcon sx={{ fontSize: 32, opacity: 0.4 }} />
             <Typography variant="body2" sx={{ fontSize: "0.78rem", fontWeight: 600 }}>
-              No tenants match
+              {t("superAdmin.TenantListPanel.noTenantsMatch")}
             </Typography>
             <Typography variant="caption" sx={{ fontSize: "0.66rem" }}>
-              Try removing a filter or clearing the search.
+              {t("superAdmin.TenantListPanel.tryRemovingAFilterOr")}
             </Typography>
           </Box>
         ) : (
@@ -377,7 +379,7 @@ export default function TenantListPanel({ selectedId, onSelect }: Props) {
           variant="caption"
           sx={{ color: "#475569", fontSize: "0.65rem", fontWeight: 600 }}
         >
-          Showing {filtered.length} of {(tenants as any[]).length} tenants
+          {t("superAdmin.TenantListPanel.showingOfTenants", { filteredCount: filtered.length, tenantsCount: (tenants as any[]).length })}
         </Typography>
       </Box>
     </Box>

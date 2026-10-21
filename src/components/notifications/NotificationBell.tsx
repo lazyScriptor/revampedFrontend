@@ -4,8 +4,10 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { NotificationPanel } from "./NotificationPanel";
+import { useTranslation } from "react-i18next";
 
 export function NotificationBell() {
+  const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const init = useNotificationStore((s) => s.init);
   const teardown = useNotificationStore((s) => s.teardown);
@@ -26,7 +28,7 @@ export function NotificationBell() {
 
   return (
     <>
-      <Tooltip title="Notifications">
+      <Tooltip title={t("nav.notifications")}>
         <IconButton
           ref={anchorRef}
           onClick={() => setOpen((v) => !v)}

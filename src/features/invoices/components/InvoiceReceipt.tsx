@@ -4,6 +4,8 @@ import { Box, Typography } from "@mui/material";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 import { useInvoiceSignatures } from "@/features/signatures/hooks/useSignatures";
+import i18n from "@/i18n";
+import { tk } from "@/i18n/marker";
 
 // Signature URLs come from the backend as paths like /uploads/signatures/...
 // For the receipt (rendered in a print iframe or printed to a thermal
@@ -163,119 +165,89 @@ const calculateDays = (start: string, end: string) => {
 // ─── Interface Definition & Localization Dictionary ──────────────────────────
 export type ReceiptLanguage = "en" | "si";
 
-export const RECEIPT_LABELS = {
-  en: {
-    category: "HEAVY MACHINERY & EQUIPMENT RENTALS",
-    estimateTitle: "*** RENTAL ESTIMATE / QUOTATION ***",
-    estimateSubtitle: "* ESTIMATE ONLY · GOODS NOT YET DISPATCHED *",
-    dispatchTitle: "*** OFFICIAL RENTAL DISPATCH BILL ***",
-    dispatchSubtitle: "* GEAR DISPATCHED · HIRER ACKNOWLEDGED *",
-    completedTitle: "*** RENTAL INVOICE (COMPLETED & SETTLED) ***",
-    completedSubtitle: "* ALL EQUIPMENT RETURNED & SETTLED *",
-    docNumber: "DOC NUMBER:",
-    dateTime: "DATE & TIME:",
-    operator: "OPERATOR:",
-    status: "STATUS:",
-    statusActive: "ACTIVE",
-    statusCompleted: "COMPLETED",
-    statusDraft: "DRAFT",
-    client: "CLIENT:",
-    nicReg: "NIC / REG NO:",
-    phone: "PHONE:",
-    address: "ADDRESS:",
-    onBehalfOf: "ON BEHALF OF:",
-    vaultCollateral: "VAULT COLLATERAL:",
-    vaultHeld: "HELD IN VAULT",
-    vaultReleased: "RELEASED / NONE",
-    vaultPending: "PENDING CHECK-IN",
-    walkInCustomer: "Walk-in Customer",
-    notOnFile: "Not on file",
-    itemCol: "ITEM / RENTAL PERIOD",
-    qtyTotalCol: "QTY & TOTAL",
-    noItems: "[ No equipment items selected ]",
-    qty: "Qty",
-    rate: "Rate",
-    returnedOn: "RETURNED ON:",
-    totalLineItems: "TOTAL LINE ITEMS:",
-    totalMachines: "TOTAL MACHINES:",
-    subtotal: "EQUIPMENT SUBTOTAL:",
-    transport: "TRANSPORT / DELIVERY:",
-    discount: "DISCOUNT APPLIED:",
-    lateFees: "LATE / OVERDUE CHARGES:",
-    netTotal: "NET TOTAL:",
-    advanceDeposit: "Advance Deposit",
-    initialAdvance: "Initial Advance",
-    payment: "Payment",
-    totalPaid: "TOTAL PAID TO DATE:",
-    balanceDue: "BALANCE DUE:",
-    paidInFull: "PAID IN FULL",
-    remarks: "REMARKS / SITE NOTE:",
-    termsTitle: "RENTAL ACKNOWLEDGEMENT & CONDITIONS",
-    term1: "1. Hirer accepts equipment in good working order with all standard fittings.",
-    term2: "2. Return on or before agreed date; late returns incur daily overdue rates.",
-    term3: "3. Hirer is strictly liable for breakdown due to negligence, loss, or bad fuel.",
-    term4: "4. Retained collateral/NIC released upon inspection and complete settlement.",
-    custSign: "Customer Signature",
-    authSign: "Authorized Signatory",
-    thankYou: (company: string) => `Thank you for choosing ${company}!`,
-    poweredBy: "Powered by GearGrid System · www.geargrid.live",
-  },
-  si: {
-    category: "බර යන්ත්‍රෝපකරණ සහ උපකරණ කුලියට දීම",
-    estimateTitle: "*** කුලී ඇස්තමේන්තුව / මිල ගණන් පත්‍රිකාව ***",
-    estimateSubtitle: "* ඇස්තමේන්තුවක් පමණි · භාණ්ඩ නිකුත් කර නැත *",
-    dispatchTitle: "*** නිල කුලී නිකුත් කිරීමේ බිල්පත ***",
-    dispatchSubtitle: "* උපකරණ නිකුත් කරන ලදී · කුලීකරු එකඟ විය *",
-    completedTitle: "*** කුලී බිල්පත (සම්පූර්ණ කර අවසන්) ***",
-    completedSubtitle: "* සියලු උපකරණ භාරගෙන ගෙවීම් අවසන් *",
-    docNumber: "බිල්පත් අංකය:",
-    dateTime: "දිනය සහ වේලාව:",
-    operator: "නිකුත් කළේ:",
-    status: "තත්ත්වය:",
-    statusActive: "ක්‍රියාත්මකයි",
-    statusCompleted: "සම්පූර්ණයි",
-    statusDraft: "ඇස්තමේන්තුව",
-    client: "පාරිභෝගිකයා:",
-    nicReg: "ජා.හැ. / ලියාපදිංචි අංකය:",
-    phone: "දුරකථන:",
-    address: "ලිපිනය:",
-    onBehalfOf: "වෙනුවෙන් නිකුත් කළේ:",
-    vaultCollateral: "ඇප සුරැකුම (හැඳුනුම්පත):",
-    vaultHeld: "ආරක්ෂිතව රඳවා ඇත",
-    vaultReleased: "නිදහස් කර ඇත / නැත",
-    vaultPending: "රඳවා ගැනීමට නියමිතයි",
-    walkInCustomer: "පැමිණි පාරිභෝගිකයා",
-    notOnFile: "සටහන් කර නැත",
-    itemCol: "උපකරණය / කුලී කාලය",
-    qtyTotalCol: "ප්‍රමාණය සහ එකතුව",
-    noItems: "[ කිසිදු උපකරණයක් තෝරාගෙන නැත ]",
-    qty: "ප්‍රමාණය",
-    rate: "ගාස්තුව",
-    returnedOn: "භාරගත් දිනය:",
-    totalLineItems: "මුළු උපකරණ වර්ග:",
-    totalMachines: "මුළු යන්ත්‍ර සංඛ්‍යාව:",
-    subtotal: "උපකරණ අතුරු එකතුව:",
-    transport: "ප්‍රවාහන ගාස්තු:",
-    discount: "ලබාදුන් වට්ටම්:",
-    lateFees: "ප්‍රමාද ගාස්තු:",
-    netTotal: "මුළු මුදල:",
-    advanceDeposit: "මූලික අත්තිකාරම් තැන්පතුව",
-    initialAdvance: "මූලික අත්තිකාරම",
-    payment: "ගෙවීම",
-    totalPaid: "මුළු ගෙවූ මුදල:",
-    balanceDue: "ගෙවිය යුතු ශේෂය:",
-    paidInFull: "සම්පූර්ණයෙන්ම ගෙවා ඇත",
-    remarks: "විශේෂ සටහන් / වැඩබිම් විස්තරය:",
-    termsTitle: "කුලී කොන්දේසි සහ වගකීම් ප්‍රකාශය",
-    term1: "1. උපකරණ නිසි ක්‍රියාකාරී තත්ත්වයෙන් හා සියලු උපාංග සහිතව පරීක්ෂා කර භාරගන්නා ලදී.",
-    term2: "2. නියමිත දිනට හෝ ඊට පෙර භාරදිය යුතු අතර, ප්‍රමාද වන දින සඳහා අමතර දෛනික ගාස්තු අය කෙරේ.",
-    term3: "3. නොසැලකිලිමත් භාවිතය, අලාභහානි, වැරදි ඉන්ධන හෝ අස්ථානගතවීම් සඳහා කුලීකරු සම්පූර්ණයෙන් වගකිව යුතුය.",
-    term4: "4. සියලු ගෙවීම් අවසන් කර උපකරණ පරීක්ෂාවෙන් පසු ඇපයට තබාගත් හැඳුනුම්පත නිදහස් කෙරේ.",
-    custSign: "පාරිභෝගික අත්සන",
-    authSign: "බලයලත් නිලධාරී අත්සන",
-    thankYou: (company: string) => `${company} තෝරාගත් ඔබට ස්තූතියි!`,
-    poweredBy: "GearGrid පද්ධතිය මගින් ක්‍රියාත්මකයි · www.geargrid.live",
-  },
+// Receipt labels live in the locale files (`receipt.*`) so the printed bill is maintained with
+// every other translation. The receipt language is chosen per bill — independent of the app
+// language — so labels are resolved with an explicit `lng`.
+const RECEIPT_KEYS = {
+  category: tk("receipt.category"),
+  estimateTitle: tk("receipt.estimateTitle"),
+  estimateSubtitle: tk("receipt.estimateSubtitle"),
+  dispatchTitle: tk("receipt.dispatchTitle"),
+  dispatchSubtitle: tk("receipt.dispatchSubtitle"),
+  completedTitle: tk("receipt.completedTitle"),
+  completedSubtitle: tk("receipt.completedSubtitle"),
+  docNumber: tk("receipt.docNumber"),
+  dateTime: tk("receipt.dateTime"),
+  operator: tk("receipt.operator"),
+  status: tk("receipt.status"),
+  statusActive: tk("receipt.statusActive"),
+  statusCompleted: tk("receipt.statusCompleted"),
+  statusDraft: tk("receipt.statusDraft"),
+  client: tk("receipt.client"),
+  nicReg: tk("receipt.nicReg"),
+  phone: tk("receipt.phone"),
+  address: tk("receipt.address"),
+  onBehalfOf: tk("receipt.onBehalfOf"),
+  vaultCollateral: tk("receipt.vaultCollateral"),
+  vaultHeld: tk("receipt.vaultHeld"),
+  vaultReleased: tk("receipt.vaultReleased"),
+  vaultPending: tk("receipt.vaultPending"),
+  walkInCustomer: tk("receipt.walkInCustomer"),
+  notOnFile: tk("receipt.notOnFile"),
+  itemCol: tk("receipt.itemCol"),
+  qtyTotalCol: tk("receipt.qtyTotalCol"),
+  noItems: tk("receipt.noItems"),
+  qty: tk("receipt.qty"),
+  rate: tk("receipt.rate"),
+  returnedOn: tk("receipt.returnedOn"),
+  totalLineItems: tk("receipt.totalLineItems"),
+  totalMachines: tk("receipt.totalMachines"),
+  subtotal: tk("receipt.subtotal"),
+  transport: tk("receipt.transport"),
+  discount: tk("receipt.discount"),
+  lateFees: tk("receipt.lateFees"),
+  netTotal: tk("receipt.netTotal"),
+  advanceDeposit: tk("receipt.advanceDeposit"),
+  initialAdvance: tk("receipt.initialAdvance"),
+  payment: tk("receipt.payment"),
+  totalPaid: tk("receipt.totalPaid"),
+  balanceDue: tk("receipt.balanceDue"),
+  paidInFull: tk("receipt.paidInFull"),
+  remarks: tk("receipt.remarks"),
+  termsTitle: tk("receipt.termsTitle"),
+  term1: tk("receipt.term1"),
+  term2: tk("receipt.term2"),
+  term3: tk("receipt.term3"),
+  term4: tk("receipt.term4"),
+  custSign: tk("receipt.custSign"),
+  authSign: tk("receipt.authSign"),
+  poweredBy: tk("receipt.poweredBy"),
+  tel: tk("receipt.tel"),
+  equipmentItem: tk("receipt.equipmentItem"),
+  methodCashWallet: tk("receipt.methodCashWallet"),
+  methodCash: tk("receipt.methodCash"),
+  methodBank: tk("receipt.methodBank"),
+  methodCard: tk("receipt.methodCard"),
+  daysSuffix: tk("receipt.daysSuffix"),
+  authorizedOperator: tk("receipt.authorizedOperator"),
+  priceTiered: tk("receipt.priceTiered"),
+} as const;
+
+export type ReceiptLabels = { [K in keyof typeof RECEIPT_KEYS]: string } & {
+  thankYou: (company: string) => string;
+  equipmentNumber: (id: unknown) => string;
+  priceDaily: (days: number, rate: string) => string;
+  priceTiered: (base: string, days: number, extra: string) => string;
+};
+
+export const getReceiptLabels = (lng: ReceiptLanguage): ReceiptLabels => {
+  const out: Record<string, unknown> = {};
+  for (const [name, key] of Object.entries(RECEIPT_KEYS)) out[name] = i18n.t(key, { lng });
+  out.thankYou = (company: string) => i18n.t("receipt.thankYou", { lng, company });
+  out.equipmentNumber = (id: unknown) => i18n.t("receipt.equipmentNumber", { lng, id });
+  out.priceDaily = (days: number, rate: string) => i18n.t("receipt.priceDaily", { lng, count: days, rate });
+  out.priceTiered = (base: string, days: number, extra: string) => i18n.t("receipt.priceTiered", { lng, base, days, extra });
+  return out as ReceiptLabels;
 };
 
 export interface InvoiceReceiptProps {
@@ -421,7 +393,7 @@ export const InvoiceReceipt = ({
       ? ((localStorage.getItem("pos_receipt_language") as ReceiptLanguage) || "en")
       : "en");
 
-  const t = RECEIPT_LABELS[activeLang] || RECEIPT_LABELS.en;
+  const t = getReceiptLabels(activeLang);
 
   // Captured signatures for this invoice. Hook returns null when invoice has
   // no id (draft / snapshot preview). We pick the most recent CUSTOMER +
@@ -462,7 +434,7 @@ export const InvoiceReceipt = ({
     cashierName ||
     (user?.first_name
       ? `${user.first_name} ${user.last_name || ""}`.trim()
-      : user?.username || (activeLang === "si" ? "බලයලත් නිලධාරී" : "Authorized Operator"));
+      : user?.username || t.authorizedOperator);
 
   // Normalization logic: handles BOTH active/completed invoices, point-in-time snapshots, AND mid-way draft quotes
   const normalized = useMemo(() => {
@@ -473,7 +445,7 @@ export const InvoiceReceipt = ({
       const fees: any = draftData?.fees || { transport: 0, discount: 0, advance: 0 };
 
       const lines = items.map((item: any, idx: number) => {
-        const math = calculateLineMath(item);
+        const math = calculateLineMath(item, activeLang);
         let pricingText = math.calculationText;
         if (activeLang === "si") {
           const isDailyDraft =
@@ -481,8 +453,12 @@ export const InvoiceReceipt = ({
             Number(item.base_price || item.locked_base_price || 0) ===
               Number(item.extra_daily_rate || item.locked_extra_daily_rate || item.base_price || 0);
           pricingText = isDailyDraft
-            ? `දින ${math.totalDays}ක් (දිනකට ${fmtMoney(item.daily_rate || item.base_price || item.locked_base_price, currencyCode)})`
-            : `මූලික: ${fmtMoney(item.base_price || item.locked_base_price, currencyCode)} (දින ${item.minimum_rental_period || item.locked_minimum_days || 1}) + අමතර: ${fmtMoney(item.extra_daily_rate || item.locked_extra_daily_rate, currencyCode)}/දිනකට`;
+            ? t.priceDaily(math.totalDays, fmtMoney(item.daily_rate || item.base_price || item.locked_base_price, currencyCode))
+            : t.priceTiered(
+                fmtMoney(item.base_price || item.locked_base_price, currencyCode),
+                Number(item.minimum_rental_period || item.locked_minimum_days || 1),
+                fmtMoney(item.extra_daily_rate || item.locked_extra_daily_rate, currencyCode),
+              );
         }
 
         return {
@@ -490,7 +466,7 @@ export const InvoiceReceipt = ({
           name:
             item.equipment_name ||
             item.Equipment?.equipment_name ||
-            (activeLang === "si" ? "උපකරණය" : "Equipment Item"),
+            t.equipmentItem,
           qty: Number(item.borrow_quantity || 1),
           start: item.borrow_date,
           end: item.expected_return_date,
@@ -552,7 +528,7 @@ export const InvoiceReceipt = ({
                 {
                   label: t.advanceDeposit,
                   amount: advance,
-                  method: activeLang === "si" ? "මුදලින් (Cash)" : "Cash/Wallet",
+                  method: t.methodCashWallet,
                   date: new Date().toISOString(),
                 },
               ]
@@ -581,19 +557,15 @@ export const InvoiceReceipt = ({
       const isDaily = minDays <= 1 && basePrice === extraRate;
 
       const pricingText = isDaily
-        ? activeLang === "si"
-          ? `දින ${days}ක් (දිනකට ${fmtMoney(basePrice, currencyCode)})`
-          : `${days} day${days !== 1 ? "s" : ""} @ ${fmtMoney(basePrice, currencyCode)}/d`
-        : activeLang === "si"
-        ? `මූලික: ${fmtMoney(basePrice, currencyCode)} (දින ${minDays}) + අමතර: ${fmtMoney(extraRate, currencyCode)}/දිනකට`
-        : `Base: ${fmtMoney(basePrice, currencyCode)} (${minDays}d) + Extra: ${fmtMoney(extraRate, currencyCode)}/d`;
+        ? t.priceDaily(days, fmtMoney(basePrice, currencyCode))
+          : t.priceTiered(fmtMoney(basePrice, currencyCode), minDays, fmtMoney(extraRate, currencyCode));
 
       return {
         id: line.line_id || `line-${idx}`,
         name:
           line.Equipment?.equipment_name ||
           line.equipment_name ||
-          (activeLang === "si" ? `උපකරණ අංක #${line.equipment_id}` : `Equipment #${line.equipment_id}`),
+          t.equipmentNumber(line.equipment_id),
         qty: Number(line.borrow_quantity ?? line.quantity ?? 1),
         start: line.borrow_date,
         end: line.expected_return_date,
@@ -633,11 +605,11 @@ export const InvoiceReceipt = ({
         : Math.max(0, grandTotal - totalPaid);
 
     const formatPaymentMethod = (m: string) => {
-      if (!m) return activeLang === "si" ? "මුදලින් (Cash)" : "Cash";
-      if (m.toLowerCase().includes("cash")) return activeLang === "si" ? "මුදලින් (Cash)" : "Cash";
+      if (!m) return t.methodCash;
+      if (m.toLowerCase().includes("cash")) return t.methodCash;
       if (m.toLowerCase().includes("bank") || m.toLowerCase().includes("transfer"))
-        return activeLang === "si" ? "බැංකු (Bank)" : "Bank Transfer";
-      if (m.toLowerCase().includes("card")) return activeLang === "si" ? "කාඩ්පත් (Card)" : "Card";
+        return t.methodBank;
+      if (m.toLowerCase().includes("card")) return t.methodCard;
       return m;
     };
 
@@ -772,7 +744,7 @@ export const InvoiceReceipt = ({
           {companyAddress}
         </div>
         <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", color: "#000000", fontWeight: 500 }}>
-          Tel: {companyPhone} · {companyEmail}
+          {t.tel} {companyPhone} · {companyEmail}
         </div>
       </div>
 
@@ -947,7 +919,7 @@ export const InvoiceReceipt = ({
                 }}
               >
                 <span>
-                  {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{activeLang === "si" ? " දින" : "d"})
+                  {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{t.daysSuffix})
                 </span>
                 <span style={{ fontWeight: 600 }}>{t.qty}: {line.qty}</span>
               </div>
@@ -1172,7 +1144,7 @@ export const InvoiceReceipt = ({
             {capturedCustomer ? (
               <img
                 src={resolveImageUrl(capturedCustomer.image_url) || ""}
-                alt="Customer signature"
+                alt={t.custSign}
                 style={{
                   display: "block",
                   maxHeight: 42,
@@ -1193,7 +1165,7 @@ export const InvoiceReceipt = ({
             {capturedOperator ? (
               <img
                 src={resolveImageUrl(capturedOperator.image_url) || ""}
-                alt="Operator signature"
+                alt={t.authSign}
                 style={{
                   display: "block",
                   maxHeight: 42,

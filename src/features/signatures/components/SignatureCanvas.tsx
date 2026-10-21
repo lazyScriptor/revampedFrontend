@@ -8,6 +8,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import { useTranslation } from "react-i18next";
 
 export interface SignatureCanvasHandle {
   isEmpty(): boolean;
@@ -35,10 +36,11 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
       backgroundColor = '#ffffff',
       disabled = false,
       onDirtyChange,
-      placeholder = 'Sign here',
+      placeholder,
     },
     ref,
   ) {
+    const { t } = useTranslation();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     const drawingRef = useRef(false);
@@ -183,7 +185,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
                 userSelect: 'none',
               }}
             >
-              {placeholder}
+              {placeholder ?? t('signatures.SignatureCanvas.signHere')}
             </Typography>
           )}
         </Box>
@@ -195,7 +197,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
             disabled={disabled || !isDirty}
             sx={{ color: '#64748b', textTransform: 'none' }}
           >
-            Clear
+            {t("common.clear")}
           </Button>
         </Box>
       </Box>

@@ -13,6 +13,7 @@ import GridOnIcon from "@mui/icons-material/GridOn";
 import DescriptionIcon from "@mui/icons-material/Description";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 interface ExportMenuProps {
   onExport: (format: "csv" | "pdf" | "excel") => void | Promise<void>;
@@ -20,6 +21,7 @@ interface ExportMenuProps {
 }
 
 export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const hasPermission = useAuthStore((s) => s.hasPermission);
@@ -57,7 +59,7 @@ export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
           },
         }}
       >
-        Export
+        {t("common.export")}
       </Button>
 
       <Menu
@@ -94,7 +96,7 @@ export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
           </ListItemIcon>
           <ListItemText
             primary="CSV"
-            secondary="Quick spreadsheet copy"
+            secondary={t("shared.ExportMenu.quickSpreadsheetCopy")}
             slotProps={{
               primary: { sx: { fontWeight: 700, fontSize: "0.85rem", color: isDark ? "#f8fafc" : "#0f172a" } },
               secondary: { sx: { fontSize: "0.72rem", color: isDark ? "#94a3b8" : "#64748b" } },
@@ -116,8 +118,8 @@ export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
             <GridOnIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText
-            primary="Excel"
-            secondary="Formatted workbook"
+            primary={t("shared.ExportMenu.excel")}
+            secondary={t("shared.ExportMenu.formattedWorkbook")}
             slotProps={{
               primary: { sx: { fontWeight: 700, fontSize: "0.85rem", color: isDark ? "#f8fafc" : "#0f172a" } },
               secondary: { sx: { fontSize: "0.72rem", color: isDark ? "#94a3b8" : "#64748b" } },
@@ -140,7 +142,7 @@ export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
           </ListItemIcon>
           <ListItemText
             primary="PDF"
-            secondary="Print-ready document"
+            secondary={t("shared.ExportMenu.printReadyDocument")}
             slotProps={{
               primary: { sx: { fontWeight: 700, fontSize: "0.85rem", color: isDark ? "#f8fafc" : "#0f172a" } },
               secondary: { sx: { fontSize: "0.72rem", color: isDark ? "#94a3b8" : "#64748b" } },

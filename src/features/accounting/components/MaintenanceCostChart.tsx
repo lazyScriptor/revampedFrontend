@@ -1,5 +1,6 @@
 import { Box, Paper, Typography, Skeleton } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { useTranslation } from "react-i18next";
 
 interface DefectCategory {
     category_name: string;
@@ -27,6 +28,7 @@ const fmt = (v: number, c = 'Rs.') =>
     `${c} ${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
 
 export default function MaintenanceCostChart({ data, isLoading, currency = 'Rs.' }: Props) {
+    const { t } = useTranslation();
     if (isLoading) {
         return (
             <Paper elevation={0} sx={{ p: 3, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
@@ -39,7 +41,7 @@ export default function MaintenanceCostChart({ data, isLoading, currency = 'Rs.'
     if (!data || data.defectsByCategory.length === 0) {
         return (
             <Paper elevation={0} sx={{ p: 4, border: '1px solid #e2e8f0', borderRadius: 2.5, textAlign: 'center' }}>
-                <Typography color="text.secondary">No defect data for the selected period.</Typography>
+                <Typography color="text.secondary">{t("accounting.MaintenanceCostChart.noDefectDataForThe")}</Typography>
             </Paper>
         );
     }
@@ -57,14 +59,14 @@ export default function MaintenanceCostChart({ data, isLoading, currency = 'Rs.'
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Paper elevation={0} sx={{ px: 2.5, py: 1.5, border: '1px solid #e2e8f0', borderRadius: 2, flex: '1 1 180px' }}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.6rem', textTransform: 'uppercase' }}>
-                        Total Repair Expenses
+                        {t("accounting.MaintenanceCostChart.totalRepairExpenses")}
                     </Typography>
                     <Typography variant="h6" fontWeight={800} color="#dc2626">{fmt(data.totalRepairCost, currency)}</Typography>
-                    <Typography variant="caption" color="text.secondary">{data.repairExpenseCount} expense records</Typography>
+                    <Typography variant="caption" color="text.secondary">{t("accounting.MaintenanceCostChart.expenseRecords", { repairExpenseCount: data.repairExpenseCount })}</Typography>
                 </Paper>
                 <Paper elevation={0} sx={{ px: 2.5, py: 1.5, border: '1px solid #e2e8f0', borderRadius: 2, flex: '1 1 180px' }}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.6rem', textTransform: 'uppercase' }}>
-                        Categories Affected
+                        {t("accounting.MaintenanceCostChart.categoriesAffected")}
                     </Typography>
                     <Typography variant="h6" fontWeight={800}>{data.defectsByCategory.length}</Typography>
                 </Paper>
@@ -73,7 +75,7 @@ export default function MaintenanceCostChart({ data, isLoading, currency = 'Rs.'
             {/* Bar chart */}
             <Paper elevation={0} sx={{ p: 3, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
                 <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
-                    Defects by Equipment Category
+                    {t("accounting.MaintenanceCostChart.defectsByEquipmentCategory")}
                 </Typography>
                 <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -83,7 +85,7 @@ export default function MaintenanceCostChart({ data, isLoading, currency = 'Rs.'
                         <Tooltip
                             contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             formatter={(value: number, name: string) => {
-                                const labels: Record<string, string> = { defects: 'Defect Reports', units: 'Total Units', repaired: 'Repaired' };
+                                const labels: Record<string, string> = { defects: t('accounting.MaintenanceCostChart.defectReports'), units: t('accounting.MaintenanceCostChart.totalUnits'), repaired: t('accounting.MaintenanceCostChart.repaired') };
                                 return [value, labels[name] || name];
                             }}
                         />

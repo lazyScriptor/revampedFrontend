@@ -11,8 +11,10 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import { MyProfile } from "../api/me.api";
 import { useUpdateProfile } from "../hooks/useMe";
+import { useTranslation } from "react-i18next";
 
 export function ProfileForm({ profile }: { profile: MyProfile }) {
+  const { t } = useTranslation();
   const update = useUpdateProfile();
   const [form, setForm] = useState({
     first_name: profile.first_name || "",
@@ -45,7 +47,7 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
       await update.mutateAsync(form);
       setSaved(true);
     } catch (err: any) {
-      setError(err?.message || "Save failed.");
+      setError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
     }
   };
 
@@ -58,29 +60,29 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-        PERSONAL INFORMATION
+        {t("profile.ProfileForm.personalInformation")}
       </Typography>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-        <TextField label="First name" size="small" {...field("first_name")} fullWidth />
-        <TextField label="Last name" size="small" {...field("last_name")} fullWidth />
+        <TextField label={t("common.firstName")} size="small" {...field("first_name")} fullWidth />
+        <TextField label={t("common.lastName")} size="small" {...field("last_name")} fullWidth />
       </Box>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-        <TextField label="Email" size="small" value={profile.email} disabled fullWidth helperText="Email is managed by admin" />
-        <TextField label="Username" size="small" value={profile.username} disabled fullWidth helperText="Username is managed by admin" />
+        <TextField label={t("common.email")} size="small" value={profile.email} disabled fullWidth helperText={t("profile.ProfileForm.emailIsManagedByAdmin")} />
+        <TextField label={t("common.username")} size="small" value={profile.username} disabled fullWidth helperText={t("profile.ProfileForm.usernameIsManagedByAdmin")} />
       </Box>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-        <TextField label="Job title" size="small" {...field("job_title")} fullWidth />
-        <TextField label="Phone number" size="small" {...field("phone_number")} fullWidth />
+        <TextField label={t("profile.jobTitle")} size="small" {...field("job_title")} fullWidth />
+        <TextField label={t("profile.ProfileForm.phoneNumber")} size="small" {...field("phone_number")} fullWidth />
       </Box>
 
-      <TextField label="Address line 1" size="small" {...field("address_line1")} fullWidth />
-      <TextField label="Address line 2" size="small" {...field("address_line2")} fullWidth />
+      <TextField label={t("profile.ProfileForm.addressLine1")} size="small" {...field("address_line1")} fullWidth />
+      <TextField label={t("profile.ProfileForm.addressLine2")} size="small" {...field("address_line2")} fullWidth />
 
       <TextField
-        label="About / Bio"
+        label={t("profile.ProfileForm.aboutBio")}
         size="small"
         {...field("bio")}
         multiline
@@ -89,7 +91,7 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
       />
 
       {error && <Alert severity="error">{error}</Alert>}
-      {saved && <Alert severity="success">Profile saved.</Alert>}
+      {saved && <Alert severity="success">{t("profile.ProfileForm.profileSaved")}</Alert>}
 
       <Stack direction="row" justifyContent="flex-end" spacing={1}>
         <Button
@@ -100,7 +102,7 @@ export function ProfileForm({ profile }: { profile: MyProfile }) {
           startIcon={update.isPending ? <CircularProgress size={14} sx={{ color: "white" }} /> : <SaveIcon />}
           sx={{ fontWeight: 800 }}
         >
-          {update.isPending ? "Saving…" : "Save changes"}
+          {update.isPending ? t("common.saving") : t("common.saveChanges")}
         </Button>
       </Stack>
     </Box>

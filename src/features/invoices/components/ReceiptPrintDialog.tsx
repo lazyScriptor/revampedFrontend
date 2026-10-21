@@ -30,6 +30,7 @@ import type { PrintAgentHealth } from "../utils/thermalPrint";
 import { SignatureCaptureDialog } from "@/features/signatures/components/SignatureCaptureDialog";
 import { useInvoiceSignatures } from "@/features/signatures/hooks/useSignatures";
 import { useQueryClient } from "@tanstack/react-query";
+import { Trans, useTranslation } from "react-i18next";
 
 export interface ReceiptPrintDialogProps {
   open: boolean;
@@ -50,6 +51,7 @@ export function ReceiptPrintDialog({
   title,
   defaultCustomNotes = "",
 }: ReceiptPrintDialogProps) {
+  const { t } = useTranslation();
   const [paperWidth, setPaperWidth] = useState<"80mm" | "58mm">("80mm");
   const [density, setDensity] = useState<"standard" | "compact">("standard");
   const [language, setLanguage] = useState<ReceiptLanguage>(() => {
@@ -119,8 +121,8 @@ export function ReceiptPrintDialog({
       const result = await handlePrintInvoice(printDomId, {
         paperWidth,
         title: isDraft
-          ? (language === "si" ? "කුලී ඇස්තමේන්තුව" : "Rental Estimate")
-          : (language === "si" ? `බිල්පත INV-${invoice?.invoice_id || "POS"}` : `Bill INV-${invoice?.invoice_id || "POS"}`),
+          ? t("invoices.ReceiptPrintDialog.rentalEstimate", { lng: language })
+          : t("invoices.ReceiptPrintDialog.billTitle", { lng: language, id: invoice?.invoice_id || "POS" }),
         invoiceId: invoice?.invoice_id || null,
         docNumber: docNum,
         docType: docType as any,
@@ -173,9 +175,9 @@ export function ReceiptPrintDialog({
         },
       });
       if (result?.method === "direct") {
-        setPrintStatus({ ok: true, text: `Sent to ${result.printer} · ${result.heightMm}mm` });
+        setPrintStatus({ ok: true, text: t("invoices.ReceiptPrintDialog.sentToMm", { printer: result.printer, heightMm: result.heightMm }) });
       } else if (result?.method === "dialog") {
-        setPrintStatus({ ok: false, text: "Printed via browser dialog (agent offline)" });
+        setPrintStatus({ ok: false, text: t("invoices.ReceiptPrintDialog.printedViaBrowserDialogAgent") });
       }
     } finally {
       setPrinting(false);
@@ -185,8 +187,8 @@ export function ReceiptPrintDialog({
   const dialogTitle =
     title ||
     (isDraft
-      ? (language === "si" ? "කුලී ඇස්තමේන්තුව / මිල ගණන් පත්‍රිකාව" : "Rental Estimate / Quotation Slip")
-      : (language === "si" ? `POS බිල්පත · INV-${invoice?.invoice_id || ""}` : `POS Bill · INV-${invoice?.invoice_id || ""}`));
+      ? t("invoices.ReceiptPrintDialog.quotationSlip", { lng: language })
+      : t("invoices.ReceiptPrintDialog.posBillTitle", { lng: language, id: invoice?.invoice_id || "" }));
 
   return (
     <>
@@ -255,7 +257,7 @@ export function ReceiptPrintDialog({
                 {dialogTitle}
               </Typography>
               <Typography variant="caption" sx={{ color: "#64748b" }}>
-                Thermal Printer Layout Preview & Adjustments
+                {t("invoices.ReceiptPrintDialog.thermalPrinterLayoutPreviewAdjustments")}
               </Typography>
             </Box>
           </Box>
@@ -292,14 +294,14 @@ export function ReceiptPrintDialog({
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <TuneIcon sx={{ fontSize: 18, color: "#2563eb" }} />
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a" }}>
-                Print Settings
+                {t("invoices.ReceiptPrintDialog.printSettings")}
               </Typography>
             </Box>
 
             {/* Receipt Language / භාෂාව Toggle */}
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 1 }}>
-                RECEIPT LANGUAGE / භාෂාව
+                {t("invoices.ReceiptPrintDialog.receiptLanguage")}
               </Typography>
               <ToggleButtonGroup
                 value={language}
@@ -327,7 +329,7 @@ export function ReceiptPrintDialog({
                     }),
                   }}
                 >
-                  English
+                  {t("invoices.ReceiptPrintDialog.english")}
                 </ToggleButton>
                 <ToggleButton
                   value="si"
@@ -342,7 +344,7 @@ export function ReceiptPrintDialog({
                     }),
                   }}
                 >
-                  සිංහල (Sinhala)
+                  {t("invoices.ReceiptPrintDialog.sinhala")}
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -350,7 +352,7 @@ export function ReceiptPrintDialog({
             {/* Roll Size */}
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 1 }}>
-                THERMAL ROLL WIDTH
+                {t("invoices.ReceiptPrintDialog.thermalRollWidth")}
               </Typography>
               <ToggleButtonGroup
                 value={paperWidth}
@@ -360,10 +362,10 @@ export function ReceiptPrintDialog({
                 size="small"
               >
                 <ToggleButton value="80mm" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
-                  80mm Standard
+                  {t("invoices.ReceiptPrintDialog.80mmStandard")}
                 </ToggleButton>
                 <ToggleButton value="58mm" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
-                  58mm Compact
+                  {t("invoices.ReceiptPrintDialog.58mmCompact")}
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -371,7 +373,7 @@ export function ReceiptPrintDialog({
             {/* Layout Density */}
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 1 }}>
-                LAYOUT DENSITY
+                {t("invoices.ReceiptPrintDialog.layoutDensity")}
               </Typography>
               <ToggleButtonGroup
                 value={density}
@@ -381,10 +383,10 @@ export function ReceiptPrintDialog({
                 size="small"
               >
                 <ToggleButton value="standard" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
-                  Normal (11px)
+                  {t("invoices.ReceiptPrintDialog.normal11px")}
                 </ToggleButton>
                 <ToggleButton value="compact" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
-                  Tight (Save Paper)
+                  {t("invoices.ReceiptPrintDialog.tightSavePaper")}
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -404,7 +406,7 @@ export function ReceiptPrintDialog({
                 }
                 label={
                   <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155" }}>
-                    {language === "si" ? "කුලී කොන්දේසි (Terms & Liability)" : "Rental Terms & Liability"}
+                    {t("invoices.ReceiptPrintDialog.rentalTermsLiability", { lng: language })}
                   </Typography>
                 }
               />
@@ -419,7 +421,7 @@ export function ReceiptPrintDialog({
                 }
                 label={
                   <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155" }}>
-                    {language === "si" ? "තීරු කේතය (Barcode Code 39)" : "Barcode Code 39"}
+                    {t("invoices.ReceiptPrintDialog.barcodeCode39", { lng: language })}
                   </Typography>
                 }
               />
@@ -430,12 +432,12 @@ export function ReceiptPrintDialog({
             {/* Custom Delivery/Site Note */}
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 0.75 }}>
-                {language === "si" ? "විශේෂ වැඩබිම් සටහන් (විකල්ප)" : "SITE / DELIVERY NOTE (OPTIONAL)"}
+                {t("invoices.ReceiptPrintDialog.siteNoteOptional", { lng: language })}
               </Typography>
               <TextField
                 size="small"
                 fullWidth
-                placeholder={language === "si" ? "උදා: වරාය නගරය ගේට්ටුව 3, භාරකරු: කමල්" : "e.g. Site: Port City Gate 3, Attn: Kamal"}
+                placeholder={t("invoices.ReceiptPrintDialog.siteNotePlaceholder", { lng: language })}
                 value={customNotes}
                 onChange={(e) => setCustomNotes(e.target.value)}
                 multiline
@@ -463,18 +465,18 @@ export function ReceiptPrintDialog({
             >
               <Typography variant="caption" sx={{ color: agent?.ok ? "#166534" : "#92400e", fontWeight: 800 }}>
                 {agent === null
-                  ? "Checking direct printer connection…"
+                  ? t("invoices.ReceiptPrintDialog.checkingDirectPrinterConnection")
                   : agent.ok
-                    ? `● Direct printing ready · ${agent.defaultPrinter || "default printer"}`
-                    : "○ Direct printing offline — browser dialog will be used"}
+                    ? t("invoices.ReceiptPrintDialog.directPrintingReady", { printer: agent.defaultPrinter || t("invoices.ReceiptPrintDialog.defaultPrinter") })
+                    : t("invoices.ReceiptPrintDialog.directPrintingOfflineBrowserDialog")}
               </Typography>
               <Typography variant="caption" sx={{ color: agent?.ok ? "#15803d" : "#92400e", fontSize: "0.74rem", lineHeight: 1.35 }}>
                 {agent?.ok ? (
-                  <>Prints instantly with no dialog. Paper feeds exactly to the end of the bill, then cuts.</>
+                  <>{t("invoices.ReceiptPrintDialog.printsInstantlyWithNoDialog")}</>
                 ) : (
                   <>
-                    Start the GearGrid Print Agent on this computer for exact-length, dialog-free printing.<br />
-                    Fallback: choose <b>Margins: None</b> in the print dialog.
+                    {t("invoices.ReceiptPrintDialog.startTheGeargridPrintAgent")}<br />
+                    <Trans i18nKey="invoices.ReceiptPrintDialog.fallbackChooseMargins" values={{ margins: t("invoices.ReceiptPrintDialog.marginsNone") }} components={{ b: <b /> }} />
                   </>
                 )}
               </Typography>
@@ -497,7 +499,7 @@ export function ReceiptPrintDialog({
             }}
           >
             <Typography variant="caption" sx={{ color: "#94a3b8", mb: 2, fontWeight: 700, letterSpacing: 1 }}>
-              PRINT PREVIEW · {paperWidth.toUpperCase()} THERMAL PAPER ROLL ({language === "si" ? "සිංහල" : "ENGLISH"})
+              {t("invoices.ReceiptPrintDialog.printPreviewHeading", { width: paperWidth.toUpperCase(), language: language === "si" ? "සිංහල" : "ENGLISH", lng: language })}
             </Typography>
 
             {/* Simulated thermal receipt paper sheet */}
@@ -540,7 +542,7 @@ export function ReceiptPrintDialog({
           }}
         >
           <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
-            {language === "si" ? "අවලංගු කරන්න" : "Cancel"}
+            {t("common.cancel", { lng: language })}
           </Button>
 
           {/* Capture signatures via phone before printing (hidden for drafts). */}
@@ -558,8 +560,8 @@ export function ReceiptPrintDialog({
               }}
             >
               {hasCustomerSig && hasOperatorSig
-                ? (language === "si" ? "අත්සන් කර ඇත ✓" : "Signatures captured ✓")
-                : (language === "si" ? "ජංගම දුරකථනයෙන් අත්සන් කරන්න" : "Capture signatures (phone)")}
+                ? t("invoices.ReceiptPrintDialog.signaturesCaptured", { lng: language })
+                : t("invoices.ReceiptPrintDialog.captureSignaturesPhone", { lng: language })}
             </Button>
           )}
 
@@ -587,9 +589,7 @@ export function ReceiptPrintDialog({
               borderRadius: 2,
             }}
           >
-            {language === "si"
-              ? `බිල්පත මුද්‍රණය කරන්න (${paperWidth})`
-              : `Print POS Bill (${paperWidth})`}
+            {t("invoices.ReceiptPrintDialog.printPosBill", { lng: language, paperWidth })}
           </Button>
         </DialogActions>
       </Dialog>

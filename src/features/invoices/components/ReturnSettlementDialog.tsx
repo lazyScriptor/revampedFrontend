@@ -28,6 +28,8 @@ import RestoreIcon from "@mui/icons-material/Restore";
 import { useProcessReturn } from "../hooks/useInvoiceHooks";
 import { QuantityReturnSplitter } from "./QuantityReturnSplitter";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 // ─── Live late fee engine (mirrors backend logic exactly) ──────────────────────
 // `track_overdue === false` is the explicit opt-out: skip late fees entirely.
@@ -53,6 +55,7 @@ const calcDaysLate = (line: any): number => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: any) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const returnMutation = useProcessReturn();
@@ -86,7 +89,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
           return {
             line_id: line.line_id,
-            equipment_name: line.Equipment?.equipment_name || "Unknown Item",
+            equipment_name: line.Equipment?.equipment_name || i18n.t("invoices.ReturnSettlementDialog.unknownItem"),
             borrow_qty: line.borrow_quantity,
             remaining_qty: remainingToReturn,
             locked_extra_rate: Number(line.locked_extra_daily_rate),
@@ -127,11 +130,11 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
       { id: invoice.invoice_id, data: payload },
       {
         onSuccess: () => {
-          showToast("Handover processed. Ledger updated.", "success");
+          showToast(t("invoices.ReturnSettlementDialog.handoverProcessedLedgerUpdated"), "success");
           onClose();
         },
         onError: (err: any) =>
-          showToast(err.response?.data?.message || "Return failed", "error"),
+          showToast(err.response?.data?.message || t("invoices.ReturnSettlementDialog.returnFailed"), "error"),
       }
     );
   };
@@ -175,10 +178,10 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           </Box>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-              Equipment Handover — INV-{invoice.invoice_id}
+              {t("invoices.ReturnSettlementDialog.equipmentHandoverInv", { invoice_id: invoice.invoice_id })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Log physical returns. Late fees are calculated automatically. Payments are handled in the Financial Terminal.
+              {t("invoices.ReturnSettlementDialog.logPhysicalReturnsLateFees")}
             </Typography>
           </Box>
         </Box>
@@ -195,10 +198,10 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
               sx={{ borderRadius: 2 }}
             >
               <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                Estimated Late Fees: Rs. {totalLateFees.toLocaleString()}
+                {t("invoices.ReturnSettlementDialog.estimatedLateFeesRs", { totalLateFees: totalLateFees.toLocaleString() })}
               </Typography>
               <Typography variant="caption">
-                This will be added to the invoice total upon confirmation.
+                {t("invoices.ReturnSettlementDialog.thisWillBeAddedTo")}
               </Typography>
             </Alert>
           )}
@@ -246,7 +249,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
                     <Chip
                       size="small"
-                      label={`${line.remaining_qty} / ${line.borrow_qty} pending`}
+                      label={t("invoices.ReturnSettlementDialog.pendingOf", { remaining: line.remaining_qty, total: line.borrow_qty })}
                       color="warning"
                       variant="outlined"
                       sx={{ fontWeight: 700, fontSize: "0.7rem" }}
@@ -255,7 +258,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                       <Chip
                         size="small"
                         icon={<AccessTimeIcon sx={{ fontSize: 12 }} />}
-                        label={`${daysLate}d late · +Rs.${lineLF.toLocaleString()}`}
+                        label={t("invoices.ReturnSettlementDialog.dLateRs", { daysLate, lineLF: lineLF.toLocaleString() })}
                         color="error"
                         variant="filled"
                         sx={{ fontWeight: 700, fontSize: "0.7rem" }}
@@ -265,7 +268,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                       <Chip
                         size="small"
                         icon={<MoneyOffIcon sx={{ fontSize: 12 }} />}
-                        label="Late fees waived"
+                        label={t("invoices.ReturnSettlementDialog.lateFeesWaived")}
                         variant="outlined"
                         sx={{ fontWeight: 700, fontSize: "0.68rem", color: "warning.dark", borderColor: "#fde68a", bgcolor: "#fffbeb" }}
                       />
@@ -273,7 +276,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                     {!overdueTracked && !isWaived && (
                       <Chip
                         size="small"
-                        label="No overdue tracking"
+                        label={t("invoices.ReturnSettlementDialog.noOverdueTracking")}
                         variant="outlined"
                         sx={{ fontWeight: 600, fontSize: "0.68rem", color: "text.secondary", borderColor: "#cbd5e1" }}
                       />
@@ -301,7 +304,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                           px: 1,
                         }}
                       >
-                        {isWaived ? "Restore late fees" : "Waive late fees"}
+                        {isWaived ? t("invoices.ReturnSettlementDialog.restoreLateFees") : t("invoices.ReturnSettlementDialog.waiveLateFees")}
                       </Button>
                     )}
                   </Box>
@@ -311,8 +314,8 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                 {overdueTracked && line.expected_return && (
                   <Box sx={{ px: 2.5, pt: 1.5, pb: 0.5 }}>
                     <Typography variant="caption" color={isLate ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
-                      Expected return: {formatDisplayDate(line.expected_return)}
-                      {isLate && ` · ${daysLate} day${daysLate !== 1 ? "s" : ""} overdue`}
+                      {t("invoices.ReturnSettlementDialog.expectedReturn")} {formatDisplayDate(line.expected_return)}
+                      {isLate && ` · ${t("invoices.ReturnSettlementDialog.daysOverdue", { count: daysLate })}`}
                     </Typography>
                   </Box>
                 )}
@@ -350,13 +353,13 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
             }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-              Collect Final Settlement Payment
+              {t("invoices.ReturnSettlementDialog.collectFinalSettlementPayment")}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-              Collect outstanding rental dues or late fees immediately at counter.
+              {t("invoices.ReturnSettlementDialog.collectOutstandingRentalDuesOr")}
             </Typography>
             <TextField
-              label="Payment Amount (Rs.)"
+              label={t("invoices.ReturnSettlementDialog.paymentAmountRs")}
               type="number"
               size="small"
               fullWidth
@@ -379,10 +382,10 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
             }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-              Client Trust Rating
+              {t("invoices.ReturnSettlementDialog.clientTrustRating")}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-              Rate the client's return condition and punctuality for this order.
+              {t("invoices.ReturnSettlementDialog.rateTheClientSReturn")}
             </Typography>
             <Rating
               value={customerRating}
@@ -410,10 +413,10 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                 <VerifiedUserIcon sx={{ color: "#b45309", mt: 0.25 }} />
                 <Box>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: "#b45309" }}>
-                    Security Vault Action
+                    {t("invoices.ReturnSettlementDialog.securityVaultAction")}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#b45309" }}>
-                    Client's ID is currently retained. Release upon return?
+                    {t("invoices.ReturnSettlementDialog.clientSIdIsCurrently")}
                   </Typography>
                 </Box>
               </Box>
@@ -427,7 +430,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                 }
                 label={
                   <Typography variant="body2" sx={{ fontWeight: 700, color: "#b45309" }}>
-                    {releaseId ? "Release ID" : "Keep in Vault"}
+                    {releaseId ? t("orders.releaseId") : t("invoices.ReturnSettlementDialog.keepInVault")}
                   </Typography>
                 }
               />
@@ -447,11 +450,11 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
       >
         {hasLateFees && (
           <Typography variant="caption" sx={{ color: "warning.dark", fontWeight: 700, mr: "auto" }}>
-            +Rs.{totalLateFees.toLocaleString()} in late fees will be applied
+            {t("invoices.ReturnSettlementDialog.rsInLateFeesWill", { totalLateFees: totalLateFees.toLocaleString() })}
           </Typography>
         )}
         <Button onClick={onClose} disabled={returnMutation.isPending} color="inherit">
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button
           variant="contained"
@@ -461,7 +464,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           disableElevation
           sx={{ fontWeight: 700, px: 3 }}
         >
-          {returnMutation.isPending ? <CircularProgress size={20} /> : "Confirm Return"}
+          {returnMutation.isPending ? <CircularProgress size={20} /> : t("invoices.ReturnSettlementDialog.confirmReturn")}
         </Button>
       </DialogActions>
     </Dialog>

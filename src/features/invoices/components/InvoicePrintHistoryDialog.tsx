@@ -31,6 +31,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { InvoiceReceipt, buildSnapshotReceiptProps } from "./InvoiceReceipt";
 import { handlePrintInvoice } from "../utils/thermalPrint";
+import { useTranslation } from "react-i18next";
 
 interface PrintLogItem {
   log_id: number;
@@ -84,6 +85,7 @@ export function InvoicePrintHistoryDialog({
   invoiceNumber,
   docNumber,
 }: InvoicePrintHistoryDialogProps) {
+  const { t } = useTranslation();
   const effectiveInvoiceNumber = invoiceNumber || docNumber || `INV-${invoiceId}`;
   const [selectedSnapshot, setSelectedSnapshot] = useState<PrintLogItem | null>(null);
   const [reprinting, setReprinting] = useState(false);
@@ -115,7 +117,7 @@ export function InvoicePrintHistoryDialog({
     try {
       setReprinting(true);
       await handlePrintInvoice("history-reprint-dom", {
-        title: `Reprint ${selectedSnapshot.doc_number}`,
+        title: t("invoices.InvoicePrintHistoryDialog.reprint", { doc_number: selectedSnapshot.doc_number }),
         invoiceId: selectedSnapshot.invoice_id || invoiceId,
         docNumber: selectedSnapshot.doc_number,
         docType: selectedSnapshot.doc_type,
@@ -172,10 +174,10 @@ export function InvoicePrintHistoryDialog({
             </Box>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.1rem", color: "#0f172a" }}>
-                Print Audit Trail · {effectiveInvoiceNumber}
+                {t("invoices.InvoicePrintHistoryDialog.printAuditTrail", { effectiveInvoiceNumber })}
               </Typography>
               <Typography variant="caption" sx={{ color: "#64748b" }}>
-                Complete log of physical bills printed for this invoice
+                {t("invoices.InvoicePrintHistoryDialog.completeLogOfPhysicalBills")}
               </Typography>
             </Box>
           </Box>
@@ -194,7 +196,7 @@ export function InvoicePrintHistoryDialog({
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8, gap: 1.5 }}>
               <CircularProgress size={32} />
               <Typography variant="body2" sx={{ color: "#64748b" }}>
-                Loading print history...
+                {t("invoices.InvoicePrintHistoryDialog.loadingPrintHistory")}
               </Typography>
             </Box>
           ) : isError ? (
@@ -209,13 +211,13 @@ export function InvoicePrintHistoryDialog({
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#dc2626" }}>
-                Unable to load print history
+                {t("invoices.InvoicePrintHistoryDialog.unableToLoadPrintHistory")}
               </Typography>
               <Typography variant="caption" sx={{ color: "#64748b", display: "block", mt: 0.5, mb: 2 }}>
-                {(error as any)?.response?.data?.message || (error as any)?.message || "Please verify your permissions and try again."}
+                {(error as any)?.response?.data?.message || (error as any)?.message || t("invoices.InvoicePrintHistoryDialog.pleaseVerifyYourPermissionsAnd")}
               </Typography>
               <Button variant="outlined" size="small" color="error" startIcon={<RefreshIcon />} onClick={() => refetch()}>
-                Retry
+                {t("common.retry")}
               </Button>
             </Box>
           ) : logs.length === 0 ? (
@@ -231,10 +233,10 @@ export function InvoicePrintHistoryDialog({
             >
               <HistoryIcon sx={{ fontSize: 44, color: "#94a3b8", mb: 1 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#334155" }}>
-                No Bills Printed Yet
+                {t("invoices.InvoicePrintHistoryDialog.noBillsPrintedYet")}
               </Typography>
               <Typography variant="caption" sx={{ color: "#64748b", maxWidth: 360, display: "block", mx: "auto" }}>
-                There are no thermal receipt prints logged for this invoice yet. Future prints will appear here automatically with complete audit details.
+                {t("invoices.InvoicePrintHistoryDialog.thereAreNoThermalReceipt")}
               </Typography>
             </Box>
           ) : (
@@ -242,13 +244,13 @@ export function InvoicePrintHistoryDialog({
               <Table size="small">
                 <TableHead sx={{ bgcolor: "#f8fafc" }}>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>Printed At</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>Operator</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>Method / Device</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>Paper / Copies</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>Balance Due</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>{t("invoices.InvoicePrintHistoryDialog.printedAt")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>{t("invoices.InvoicePrintHistoryDialog.operator")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>{t("invoices.InvoicePrintHistoryDialog.methodDevice")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>{t("invoices.InvoicePrintHistoryDialog.paperCopies")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569" }}>{t("orders.balanceDue")}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700, color: "#475569" }}>
-                      Action
+                      {t("invoices.InvoicePrintHistoryDialog.action")}
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -296,7 +298,7 @@ export function InvoicePrintHistoryDialog({
                       <TableCell>
                         <Chip
                           size="small"
-                          label={log.print_method === "direct_agent" ? "Direct Agent (CUPS)" : "Browser Dialog"}
+                          label={log.print_method === "direct_agent" ? t("invoices.InvoicePrintHistoryDialog.directAgentCups") : t("invoices.InvoicePrintLogsView.browserDialog")}
                           color={log.print_method === "direct_agent" ? "success" : "default"}
                           variant={log.print_method === "direct_agent" ? "filled" : "outlined"}
                           sx={{ fontWeight: 700, fontSize: "0.68rem" }}
@@ -323,10 +325,10 @@ export function InvoicePrintHistoryDialog({
                             color: Number(log.balance_due) > 0 ? "#dc2626" : "#16a34a",
                           }}
                         >
-                          {Number(log.balance_due) === 0 ? "PAID" : `Rs. ${Number(log.balance_due).toLocaleString()}`}
+                          {Number(log.balance_due) === 0 ? "PAID" : t("invoices.InvoicePrintHistoryDialog.rs", { balance_due: Number(log.balance_due).toLocaleString() })}
                         </Typography>
                         <Typography variant="caption" sx={{ color: "#64748b" }}>
-                          Total: Rs. {Number(log.grand_total).toLocaleString()}
+                          {t("invoices.InvoicePrintHistoryDialog.totalRs", { grand_total: Number(log.grand_total).toLocaleString() })}
                         </Typography>
                       </TableCell>
                       <TableCell align="right" onClick={(e) => e.stopPropagation()}>
@@ -344,7 +346,7 @@ export function InvoicePrintHistoryDialog({
                             color: "#0f172a",
                           }}
                         >
-                          View Bill
+                          {t("invoices.InvoicePrintHistoryDialog.viewBill")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -357,7 +359,7 @@ export function InvoicePrintHistoryDialog({
 
         <DialogActions sx={{ p: 2, borderTop: "1px solid #e2e8f0" }}>
           <Button onClick={onClose} sx={{ fontWeight: 700, color: "#64748b" }}>
-            Close
+            {t("common.close")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -380,15 +382,15 @@ export function InvoicePrintHistoryDialog({
         >
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              Exact Bill Snapshot · Log #{selectedSnapshot?.log_id}
+              {t("invoices.InvoicePrintHistoryDialog.exactBillSnapshotLog", { log_id: selectedSnapshot?.log_id })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Printed by{" "}
-              {selectedSnapshot?.PrintedBy?.first_name
-                ? `${selectedSnapshot.PrintedBy.first_name} ${selectedSnapshot.PrintedBy.last_name || ""}`.trim()
-                : selectedSnapshot?.printed_by_name}{" "}
-              on{" "}
-              {selectedSnapshot?.printed_at ? new Date(selectedSnapshot.printed_at).toLocaleString() : ""}
+              {t("invoices.InvoicePrintHistoryDialog.printedByOn", {
+                  name: selectedSnapshot?.PrintedBy?.first_name
+                    ? `${selectedSnapshot.PrintedBy.first_name} ${selectedSnapshot.PrintedBy.last_name || ""}`.trim()
+                    : selectedSnapshot?.printed_by_name,
+                  date: selectedSnapshot?.printed_at ? new Date(selectedSnapshot.printed_at).toLocaleString() : "",
+                })}
             </Typography>
           </Box>
           <IconButton onClick={() => setSelectedSnapshot(null)}>
@@ -401,10 +403,10 @@ export function InvoicePrintHistoryDialog({
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
                 <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
-                    Metadata Summary
+                    {t("invoices.InvoicePrintHistoryDialog.metadataSummary")}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#475569" }}>
-                    <strong>Operator:</strong>{" "}
+                    <strong>{t("invoices.InvoicePrintHistoryDialog.operator2")}</strong>{" "}
                     {selectedSnapshot.PrintedBy?.first_name
                       ? `${selectedSnapshot.PrintedBy.first_name} ${selectedSnapshot.PrintedBy.last_name || ""}`.trim() +
                         (selectedSnapshot.PrintedBy.username ? ` (@${selectedSnapshot.PrintedBy.username})` : "")
@@ -412,50 +414,50 @@ export function InvoicePrintHistoryDialog({
                     ({selectedSnapshot.printed_by_role})
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#475569" }}>
-                    <strong>Print Method:</strong>{" "}
-                    {selectedSnapshot.print_method === "direct_agent" ? "Direct Agent (CUPS)" : "Browser Dialog"}
+                    <strong>{t("invoices.InvoicePrintHistoryDialog.printMethod")}</strong>{" "}
+                    {selectedSnapshot.print_method === "direct_agent" ? t("invoices.InvoicePrintHistoryDialog.directAgentCups") : t("invoices.InvoicePrintLogsView.browserDialog")}
                   </Typography>
                   {selectedSnapshot.printer_name && (
                     <Typography variant="body2" sx={{ color: "#475569" }}>
-                      <strong>Target Printer:</strong> {selectedSnapshot.printer_name}
+                      <strong>{t("invoices.InvoicePrintHistoryDialog.targetPrinter")}</strong> {selectedSnapshot.printer_name}
                     </Typography>
                   )}
                   <Typography variant="body2" sx={{ color: "#475569" }}>
-                    <strong>Paper Width:</strong> {selectedSnapshot.paper_width}
+                    <strong>{t("invoices.InvoicePrintHistoryDialog.paperWidth")}</strong> {selectedSnapshot.paper_width}
                     {selectedSnapshot.height_mm ? ` · ${selectedSnapshot.height_mm}mm` : ""}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#475569" }}>
-                    <strong>Language:</strong> {selectedSnapshot.language === "si" ? "Sinhala (සිංහල)" : "English"}
+                    <strong>{t("invoices.InvoicePrintHistoryDialog.language")}</strong> {selectedSnapshot.language === "si" ? "Sinhala (සිංහල)" : "English"}
                   </Typography>
                   {selectedSnapshot.ip_address && (
                     <Typography variant="body2" sx={{ color: "#475569" }}>
-                      <strong>IP Address:</strong> {selectedSnapshot.ip_address}
+                      <strong>{t("invoices.InvoicePrintHistoryDialog.ipAddress")}</strong> {selectedSnapshot.ip_address}
                     </Typography>
                   )}
                 </Paper>
 
                 <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
-                    Financial State at Print Time
+                    {t("invoices.InvoicePrintHistoryDialog.financialStateAtPrintTime")}
                   </Typography>
                   <Typography variant="body2">
-                    Subtotal: Rs. {Number(selectedSnapshot.subtotal).toLocaleString()}
+                    {t("invoices.InvoicePrintHistoryDialog.subtotalRs", { subtotal: Number(selectedSnapshot.subtotal).toLocaleString() })}
                   </Typography>
                   {Number(selectedSnapshot.transport_fee) > 0 && (
                     <Typography variant="body2">
-                      Transport: +Rs. {Number(selectedSnapshot.transport_fee).toLocaleString()}
+                      {t("invoices.InvoicePrintHistoryDialog.transportRs", { transport_fee: Number(selectedSnapshot.transport_fee).toLocaleString() })}
                     </Typography>
                   )}
                   {Number(selectedSnapshot.discount_amount) > 0 && (
                     <Typography variant="body2">
-                      Discount: -Rs. {Number(selectedSnapshot.discount_amount).toLocaleString()}
+                      {t("invoices.InvoicePrintHistoryDialog.discountRs", { discount_amount: Number(selectedSnapshot.discount_amount).toLocaleString() })}
                     </Typography>
                   )}
                   <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
-                    Grand Total: Rs. {Number(selectedSnapshot.grand_total).toLocaleString()}
+                    {t("invoices.InvoicePrintHistoryDialog.grandTotalRs", { grand_total: Number(selectedSnapshot.grand_total).toLocaleString() })}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#16a34a" }}>
-                    Total Paid: Rs. {Number(selectedSnapshot.total_paid).toLocaleString()}
+                    {t("invoices.InvoicePrintHistoryDialog.totalPaidRs", { total_paid: Number(selectedSnapshot.total_paid).toLocaleString() })}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -464,14 +466,14 @@ export function InvoicePrintHistoryDialog({
                       color: Number(selectedSnapshot.balance_due) > 0 ? "#dc2626" : "#16a34a",
                     }}
                   >
-                    Balance Due: Rs. {Number(selectedSnapshot.balance_due).toLocaleString()}
+                    {t("invoices.InvoicePrintHistoryDialog.balanceDueRs", { balance_due: Number(selectedSnapshot.balance_due).toLocaleString() })}
                   </Typography>
                 </Paper>
               </Box>
 
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", mb: 1 }}>
-                  Physical Bill Preview
+                  {t("invoices.InvoicePrintHistoryDialog.physicalBillPreview")}
                 </Typography>
                 <Box
                   sx={{
@@ -496,7 +498,7 @@ export function InvoicePrintHistoryDialog({
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: "1px solid #e2e8f0", justifyContent: "space-between" }}>
-          <Button onClick={() => setSelectedSnapshot(null)}>Close</Button>
+          <Button onClick={() => setSelectedSnapshot(null)}>{t("common.close")}</Button>
           <Button
             variant="contained"
             startIcon={reprinting ? <CircularProgress size={16} color="inherit" /> : <PrintIcon />}
@@ -504,7 +506,7 @@ export function InvoicePrintHistoryDialog({
             disabled={reprinting}
             sx={{ fontWeight: 800, bgcolor: "#0f172a" }}
           >
-            Re-print Copy
+            {t("invoices.InvoicePrintHistoryDialog.rePrintCopy")}
           </Button>
         </DialogActions>
       </Dialog>

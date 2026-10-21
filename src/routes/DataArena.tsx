@@ -15,6 +15,8 @@ import { ImportPanel } from "@/features/data-arena/components/ImportPanel";
 import { ExportPanel } from "@/features/data-arena/components/ExportPanel";
 import { JobHistoryTable } from "@/features/data-arena/components/JobHistoryTable";
 import { DownloadsTable } from "@/features/data-arena/components/DownloadsTable";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 type SectionKey = "imports" | "exports" | "bulk" | "downloads" | "jobs";
 
@@ -26,32 +28,32 @@ const SECTIONS: {
 }[] = [
   {
     key: "imports",
-    label: "Imports",
-    subtitle: "Upload CSV/Excel to bulk-create records. Jobs run asynchronously.",
+    label: tk("nav.imports"),
+    subtitle: tk("pages.DataArena.uploadCsvExcelToBulk"),
     icon: <UploadFileIcon />,
   },
   {
     key: "exports",
-    label: "Exports",
-    subtitle: "Generate filterable Excel/CSV exports. Files appear in Downloads when ready.",
+    label: tk("nav.exports"),
+    subtitle: tk("pages.DataArena.generateFilterableExcelCsvExports"),
     icon: <FileDownloadIcon />,
   },
   {
     key: "bulk",
-    label: "Bulk Actions",
-    subtitle: "Apply changes (delete, status update, tag) to many rows at once.",
+    label: tk("nav.bulkActions"),
+    subtitle: tk("pages.DataArena.applyChangesDeleteStatusUpdate"),
     icon: <PlaylistAddCheckIcon />,
   },
   {
     key: "downloads",
-    label: "Downloads",
-    subtitle: "Every generated export file is here. Re-download anytime.",
+    label: tk("nav.downloads"),
+    subtitle: tk("pages.DataArena.everyGeneratedExportFileIs"),
     icon: <FolderZipIcon />,
   },
   {
     key: "jobs",
-    label: "Job History",
-    subtitle: "Track every bulk operation — running, completed, failed, cancelled.",
+    label: tk("nav.jobHistory"),
+    subtitle: tk("pages.DataArena.trackEveryBulkOperationRunning"),
     icon: <HistoryIcon />,
   },
 ];
@@ -59,6 +61,7 @@ const SECTIONS: {
 const SECTION_KEYS = SECTIONS.map((s) => s.key);
 
 export default function DataArenaRoute() {
+  const { t } = useTranslation();
   const search = useSearch({ strict: false }) as { section?: string };
 
   const activeKey: SectionKey = useMemo(() => {
@@ -82,7 +85,7 @@ export default function DataArenaRoute() {
             color: "#64748b",
           }}
         >
-          Data Arena
+          {t("nav.dataArena")}
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.25 }}>
           <Box
@@ -101,10 +104,10 @@ export default function DataArenaRoute() {
           </Box>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 800, color: "#0f172a", lineHeight: 1.1 }}>
-              {active.label}
+              {t(active.label)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {active.subtitle}
+              {t(active.subtitle)}
             </Typography>
           </Box>
         </Box>
@@ -121,6 +124,7 @@ export default function DataArenaRoute() {
 }
 
 function ImportsView() {
+  const { t } = useTranslation();
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <ImportPanel />
@@ -129,7 +133,7 @@ function ImportsView() {
         sx={{ p: 2, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "#f8fafc" }}
       >
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          RECENT JOBS
+          {t("pages.DataArena.recentJobs")}
         </Typography>
         <Box sx={{ mt: 1 }}>
           <JobHistoryTable />
@@ -140,6 +144,7 @@ function ImportsView() {
 }
 
 function ExportsView() {
+  const { t } = useTranslation();
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <ExportPanel />
@@ -148,7 +153,7 @@ function ExportsView() {
         sx={{ p: 2, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "#f8fafc" }}
       >
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          RECENT JOBS
+          {t("pages.DataArena.recentJobs")}
         </Typography>
         <Box sx={{ mt: 1 }}>
           <JobHistoryTable />
@@ -159,6 +164,7 @@ function ExportsView() {
 }
 
 function BulkActionsView() {
+  const { t } = useTranslation();
   return (
     <Alert
       severity="info"
@@ -166,13 +172,10 @@ function BulkActionsView() {
       sx={{ borderRadius: 2.5, p: 3 }}
     >
       <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
-        Bulk Actions — coming next
+        {t("pages.DataArena.bulkActionsComingNext")}
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Multi-select rows on the Equipment, Customers, and Invoices pages, then dispatch
-        operations here (bulk delete, status change, category reassign, tag update). The
-        pipeline, worker and notification rails are already in place — the row-selector
-        UI lands in the next iteration.
+        {t("pages.DataArena.multiSelectRowsOnThe")}
       </Typography>
     </Alert>
   );

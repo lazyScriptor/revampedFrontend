@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSuperAdminStore } from '@/stores/useSuperAdminStore';
+import i18n from "@/i18n";
 
 // 1. Define the shape of your backend's standard error response
 interface ApiErrorResponse {
@@ -81,7 +82,7 @@ api.interceptors.response.use(
                 return new Promise((resolve, reject) => {
                     refreshWaiters.push((ok) => {
                         if (ok) resolve(api(original));
-                        else reject(new Error('Session expired'));
+                        else reject(new Error(i18n.t('errors.sessionExpired')));
                     });
                 });
             }
@@ -104,7 +105,7 @@ api.interceptors.response.use(
             } catch {
                 flushWaiters(false);
                 window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-                return Promise.reject(new Error('Session expired'));
+                return Promise.reject(new Error(i18n.t('errors.sessionExpired')));
             } finally {
                 isRefreshing = false;
             }
@@ -117,7 +118,7 @@ api.interceptors.response.use(
             window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         }
 
-        const errorMessage = error.response?.data?.message || 'An unexpected error occurred';
+        const errorMessage = error.response?.data?.message || i18n.t('errors.unexpected');
         return Promise.reject(new Error(errorMessage));
     }
 );

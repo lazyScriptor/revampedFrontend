@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Paper, Typography, Chip, Pagination } from '@mui/material';
 import { useAuditLog } from '../hooks/useSuperAdminHooks';
+import { useTranslation } from "react-i18next";
 
 const actionColors: Record<string, string> = {
     IMPERSONATION: '#ef4444',
@@ -11,6 +12,7 @@ const actionColors: Record<string, string> = {
 };
 
 const AuditLogTable: React.FC = () => {
+    const { t } = useTranslation();
     const [page, setPage] = useState(1);
     const { data, isLoading } = useAuditLog(page);
 
@@ -30,10 +32,10 @@ const AuditLogTable: React.FC = () => {
         >
             <Box sx={{ p: 2, borderBottom: '1px solid #1e293b' }}>
                 <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600 }}>
-                    Audit Log
+                    {t("superAdmin.auditLog")}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    {total} total events
+                    {t("superAdmin.AuditLogTable.totalEvents", { total })}
                 </Typography>
             </Box>
 
@@ -67,9 +69,9 @@ const AuditLogTable: React.FC = () => {
 
             {/* Rows */}
             {isLoading ? (
-                <Box sx={{ p: 4, textAlign: 'center', color: '#64748b' }}>Loading...</Box>
+                <Box sx={{ p: 4, textAlign: 'center', color: '#64748b' }}>{t("superAdmin.AuditLogTable.loading")}</Box>
             ) : logs.length === 0 ? (
-                <Box sx={{ p: 4, textAlign: 'center', color: '#64748b' }}>No audit events</Box>
+                <Box sx={{ p: 4, textAlign: 'center', color: '#64748b' }}>{t("superAdmin.AuditLogTable.noAuditEvents")}</Box>
             ) : (
                 logs.map((log: Record<string, unknown>) => (
                     <Box

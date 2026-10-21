@@ -12,11 +12,13 @@ import {
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { NotificationItem } from "./NotificationItem";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const TAB_FILTERS = [
-  { key: "all", label: "All" },
-  { key: "bulk_job", label: "Jobs" },
-  { key: "alerts", label: "Alerts" }, // success/warning/error
+  { key: "all", label: tk("common.all") },
+  { key: "bulk_job", label: tk("shared.NotificationPanel.jobs") },
+  { key: "alerts", label: tk("shared.NotificationPanel.alerts") }, // success/warning/error
 ] as const;
 
 export function NotificationPanel({
@@ -28,6 +30,7 @@ export function NotificationPanel({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const items = useNotificationStore((s) => s.items);
   const loading = useNotificationStore((s) => s.loading);
   const markRead = useNotificationStore((s) => s.markRead);
@@ -79,10 +82,10 @@ export function NotificationPanel({
       >
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#0f172a", lineHeight: 1.1 }}>
-            Notifications
+            {t("nav.notifications")}
           </Typography>
           <Typography variant="caption" sx={{ color: socketConnected ? "#16a34a" : "#94a3b8" }}>
-            {socketConnected ? "● Live" : "○ Offline"}
+            {socketConnected ? t("shared.NotificationPanel.live") : t("shared.NotificationPanel.offline")}
           </Typography>
         </Box>
         <Button
@@ -90,7 +93,7 @@ export function NotificationPanel({
           onClick={markAllRead}
           sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
         >
-          Mark all read
+          {t("shared.NotificationPanel.markAllRead")}
         </Button>
       </Box>
 
@@ -110,8 +113,8 @@ export function NotificationPanel({
           borderBottom: "1px solid #e2e8f0",
         }}
       >
-        {TAB_FILTERS.map((t) => (
-          <Tab key={t.key} value={t.key} label={t.label} />
+        {TAB_FILTERS.map((tab) => (
+          <Tab key={tab.key} value={tab.key} label={t(tab.label)} />
         ))}
       </Tabs>
 
@@ -133,7 +136,7 @@ export function NotificationPanel({
             }}
           >
             <NotificationsOffIcon />
-            <Typography variant="caption">No notifications yet</Typography>
+            <Typography variant="caption">{t("shared.NotificationPanel.noNotificationsYet")}</Typography>
           </Box>
         ) : (
           filtered.map((n, i) => (

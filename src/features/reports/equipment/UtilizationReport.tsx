@@ -11,11 +11,13 @@ import { StatTable } from "@/components/reports/StatTable";
 import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useEquipmentUtilization } from "../hooks/useReportsHooks";
 import { todayLocalStr, addDaysLocal } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function UtilizationReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -88,7 +90,7 @@ export default function UtilizationReport() {
   const columns: GridColDef[] = [
     {
       field: "equipment_name",
-      headerName: "Equipment",
+      headerName: t("nav.equipment"),
       flex: 1.2,
       minWidth: 200,
       renderCell: (p) => (
@@ -123,7 +125,7 @@ export default function UtilizationReport() {
     },
     {
       field: "category_name",
-      headerName: "Category",
+      headerName: t("common.category"),
       width: 140,
       renderCell: (p) => (
         <span className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>{p.value || "—"}</span>
@@ -131,15 +133,15 @@ export default function UtilizationReport() {
     },
     {
       field: "warehouse",
-      headerName: "Warehouse",
+      headerName: t("equipment.warehouse"),
       width: 130,
       renderCell: (p) => (
-        <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{p.value || "Main"}</span>
+        <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{p.value || t("reports.MaintenanceReport.main")}</span>
       ),
     },
     {
       field: "total_owned_qty",
-      headerName: "Owned",
+      headerName: t("reports.UtilizationReport.owned"),
       width: 85,
       type: "number",
       renderCell: (p) => (
@@ -150,7 +152,7 @@ export default function UtilizationReport() {
     },
     {
       field: "rented_qty",
-      headerName: "Rented",
+      headerName: t("equipment.rented"),
       width: 85,
       type: "number",
       renderCell: (p) => (
@@ -161,7 +163,7 @@ export default function UtilizationReport() {
     },
     {
       field: "available_qty",
-      headerName: "Avail",
+      headerName: t("reports.UtilizationReport.avail"),
       width: 85,
       type: "number",
       renderCell: (p) => (
@@ -172,7 +174,7 @@ export default function UtilizationReport() {
     },
     {
       field: "utilizationPct",
-      headerName: "Utilization",
+      headerName: t("reports.utilization"),
       width: 170,
       renderCell: (p) => {
         const v = Math.min(100, Math.max(0, Number(p.value) || 0));
@@ -206,7 +208,7 @@ export default function UtilizationReport() {
     },
     {
       field: "total_revenue",
-      headerName: "Revenue",
+      headerName: t("dashboard.widgets.revenue"),
       width: 145,
       type: "number",
       renderCell: (p) => (
@@ -247,8 +249,8 @@ export default function UtilizationReport() {
 
   return (
     <ReportShell
-      title="Equipment Utilization"
-      subtitle="Per-unit rental deployment rate, revenue generation, and return on investment"
+      title={t("reports.UtilizationReport.equipmentUtilization")}
+      subtitle={t("reports.UtilizationReport.perUnitRentalDeploymentRate")}
       actionsSlot={
         <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
       }
@@ -265,21 +267,21 @@ export default function UtilizationReport() {
         }}
       >
         <KpiTile
-          label="Tracked Equipment Units"
+          label={t("reports.UtilizationReport.trackedEquipmentUnits")}
           value={totals.units}
           icon={<ConstructionIcon />}
           tone="info"
           loading={isLoading}
         />
         <KpiTile
-          label="Fleet Avg Utilization"
+          label={t("reports.UtilizationReport.fleetAvgUtilization")}
           value={`${avgUtil}%`}
           icon={<TrendingUpIcon />}
           tone={avgUtil >= 60 ? "success" : "warning"}
           loading={isLoading}
         />
         <KpiTile
-          label="Total Equipment Revenue"
+          label={t("reports.UtilizationReport.totalEquipmentRevenue")}
           value={formatCurrency(totals.totalRevenue)}
           icon={<AttachMoneyIcon />}
           tone="success"

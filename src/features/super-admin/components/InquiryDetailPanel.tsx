@@ -24,6 +24,8 @@ import {
 } from "../hooks/useSuperAdminHooks";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/AppToast";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 // Status workflow: new → contacted → qualified → closed
 // Each step is one-click. We don't lock backwards moves — sometimes triage
@@ -33,10 +35,10 @@ const STATUS_FLOW: Array<{
     label: string;
     color: string;
 }> = [
-    { value: "new", label: "New", color: "#3b82f6" },
-    { value: "contacted", label: "Contacted", color: "#f59e0b" },
-    { value: "qualified", label: "Qualified", color: "#10b981" },
-    { value: "closed", label: "Closed", color: "#64748b" },
+    { value: "new", label: tk("common.new"), color: "#3b82f6" },
+    { value: "contacted", label: tk("superAdmin.InquiryDetailPanel.contacted"), color: "#f59e0b" },
+    { value: "qualified", label: tk("superAdmin.InquiryDetailPanel.qualified"), color: "#10b981" },
+    { value: "closed", label: tk("superAdmin.InquiryDetailPanel.closed"), color: "#64748b" },
 ];
 
 interface Props {
@@ -44,6 +46,7 @@ interface Props {
 }
 
 export default function InquiryDetailPanel({ inquiryId }: Props) {
+    const { t } = useTranslation();
     const { data: inquiry, isLoading } = useInquiry(inquiryId);
     const updateMut = useUpdateInquiry();
     const deleteMut = useDeleteInquiry();
@@ -79,7 +82,7 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
         updateMut.mutate(
             { id: inquiry.inquiry_id, status },
             {
-                onSuccess: () => showSuccess(`Marked as ${status}.`),
+                onSuccess: () => showSuccess(t("superAdmin.InquiryDetailPanel.markedAs", { status: t(STATUS_FLOW.find((s) => s.value === status)?.label || status) })),
                 onError: (err: Error) => showError(err.message),
             },
         );
@@ -91,7 +94,7 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
             {
                 onSuccess: () => {
                     setNotesDirty(false);
-                    showSuccess("Notes saved.");
+                    showSuccess(t("superAdmin.InquiryDetailPanel.notesSaved"));
                 },
                 onError: (err: Error) => showError(err.message),
             },
@@ -100,15 +103,15 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
 
     const handleDelete = async () => {
         const ok = await confirm({
-            title: "Delete this inquiry?",
+            title: t("superAdmin.InquiryDetailPanel.deleteThisInquiry"),
             message:
-                "This permanently removes the inquiry record. Use Close status instead if you want to keep a paper trail.",
-            confirmLabel: "Delete",
+                t("superAdmin.InquiryDetailPanel.thisPermanentlyRemovesTheInquiry"),
+            confirmLabel: t("common.delete"),
             severity: "error",
         });
         if (!ok) return;
         deleteMut.mutate(inquiry.inquiry_id, {
-            onSuccess: () => showSuccess("Inquiry deleted."),
+            onSuccess: () => showSuccess(t("superAdmin.InquiryDetailPanel.inquiryDeleted")),
             onError: (err: Error) => showError(err.message),
         });
     };
@@ -123,9 +126,9 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
     const copyToClipboard = async (text: string, label: string) => {
         try {
             await navigator.clipboard.writeText(text);
-            showSuccess(`${label} copied.`);
+            showSuccess(t("superAdmin.InquiryDetailPanel.copied", { label }));
         } catch {
-            showError("Copy failed — your browser blocked it.");
+            showError(t("superAdmin.InquiryDetailPanel.copyFailedYourBrowserBlocked"));
         }
     };
 
@@ -204,9 +207,9 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                                 "&:hover": { bgcolor: "#2563eb" },
                             }}
                         >
-                            Reply
+                            {t("superAdmin.InquiryDetailPanel.reply")}
                         </Button>
-                        <Tooltip title="Delete inquiry">
+                        <Tooltip title={t("superAdmin.InquiryDetailPanel.deleteInquiry")}>
                             <IconButton
                                 size="small"
                                 onClick={handleDelete}
@@ -229,7 +232,7 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                 </Box>
 
                 {/* Status workflow */}
-                <SectionCard title="Status">
+                <SectionCard title={t("common.status")}>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                         {STATUS_FLOW.map((s) => {
                             const active = s.value === inquiry.status;
@@ -256,7 +259,7 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                                         },
                                     }}
                                 >
-                                    {s.label}
+                                    {t(s.label)}
                                 </Button>
                             );
                         })}
@@ -264,25 +267,25 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                 </SectionCard>
 
                 {/* Contact details */}
-                <SectionCard title="Contact">
+                <SectionCard title={t("superAdmin.InquiryDetailPanel.contact")}>
                     <Box sx={{ display: "grid", gap: 1.25 }}>
                         <DetailRow
                             icon={
                                 <MailOutlineOutlinedIcon sx={{ fontSize: 16 }} />
                             }
-                            label="Email"
+                            label={t("common.email")}
                             value={inquiry.email}
                             onCopy={() =>
-                                copyToClipboard(inquiry.email, "Email")
+                                copyToClipboard(inquiry.email, t("common.email"))
                             }
                         />
                         {inquiry.phone && (
                             <DetailRow
                                 icon={<PhoneOutlinedIcon sx={{ fontSize: 16 }} />}
-                                label="Phone"
+                                label={t("common.phone")}
                                 value={inquiry.phone}
                                 onCopy={() =>
-                                    copyToClipboard(inquiry.phone!, "Phone")
+                                    copyToClipboard(inquiry.phone!, t("common.phone"))
                                 }
                                 hrefPrefix="tel:"
                             />
@@ -292,7 +295,7 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                                 icon={
                                     <BusinessOutlinedIcon sx={{ fontSize: 16 }} />
                                 }
-                                label="Company"
+                                label={t("superAdmin.InquiryDetailPanel.company")}
                                 value={inquiry.company}
                             />
                         )}
@@ -300,7 +303,7 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                 </SectionCard>
 
                 {/* Message */}
-                <SectionCard title="Message">
+                <SectionCard title={t("superAdmin.InquiryDetailPanel.message")}>
                     <Typography
                         sx={{
                             color: "#e2e8f0",
@@ -315,8 +318,8 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
 
                 {/* Internal notes — admin-only */}
                 <SectionCard
-                    title="Internal notes"
-                    subtitle="Visible only to super admins. Use for triage context, follow-up reminders, etc."
+                    title={t("superAdmin.InquiryDetailPanel.internalNotes")}
+                    subtitle={t("superAdmin.InquiryDetailPanel.visibleOnlyToSuperAdmins")}
                 >
                     <TextField
                         multiline
@@ -330,7 +333,7 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                                 e.target.value !== (inquiry.internal_notes ?? ""),
                             );
                         }}
-                        placeholder="No notes yet…"
+                        placeholder={t("superAdmin.InquiryDetailPanel.noNotesYet")}
                         sx={{
                             "& .MuiInputBase-root": {
                                 bgcolor: "#020617",
@@ -364,15 +367,15 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                                 "&:hover": { bgcolor: "#2563eb" },
                             }}
                         >
-                            {updateMut.isPending ? "Saving…" : "Save notes"}
+                            {updateMut.isPending ? t("common.saving") : t("superAdmin.InquiryDetailPanel.saveNotes")}
                         </Button>
                     </Box>
                 </SectionCard>
 
                 {/* Spam triage context — collapsed by default-ish via styling */}
                 <SectionCard
-                    title="Audit context"
-                    subtitle="Captured at submission time — useful for spam triage."
+                    title={t("superAdmin.InquiryDetailPanel.auditContext")}
+                    subtitle={t("superAdmin.InquiryDetailPanel.capturedAtSubmissionTimeUseful")}
                 >
                     <Box
                         sx={{
@@ -384,9 +387,9 @@ export default function InquiryDetailPanel({ inquiryId }: Props) {
                         }}
                     >
                         <Row k="IP" v={inquiry.source_ip ?? "—"} />
-                        <Row k="Referrer" v={inquiry.referrer ?? "—"} />
-                        <Row k="User agent" v={inquiry.user_agent ?? "—"} />
-                        <Row k="Updated" v={new Date(inquiry.updatedAt).toLocaleString()} />
+                        <Row k={t("superAdmin.InquiryDetailPanel.referrer")} v={inquiry.referrer ?? "—"} />
+                        <Row k={t("superAdmin.InquiryDetailPanel.userAgent")} v={inquiry.user_agent ?? "—"} />
+                        <Row k={t("superAdmin.InquiryDetailPanel.updated")} v={new Date(inquiry.updatedAt).toLocaleString()} />
                     </Box>
                 </SectionCard>
             </Box>
@@ -460,6 +463,7 @@ function DetailRow({
     onCopy?: () => void;
     hrefPrefix?: string;
 }) {
+    const { t } = useTranslation();
     return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
             <Box sx={{ color: "#64748b", flexShrink: 0 }}>{icon}</Box>
@@ -490,7 +494,7 @@ function DetailRow({
                 )}
             </Box>
             {onCopy && (
-                <Tooltip title={`Copy ${label.toLowerCase()}`}>
+                <Tooltip title={t("superAdmin.InquiryDetailPanel.copy", { label: label.toLowerCase() })}>
                     <IconButton
                         size="small"
                         onClick={onCopy}

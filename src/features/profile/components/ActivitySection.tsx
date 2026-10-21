@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { useMyActivity, useMyRecentWork } from "../hooks/useMe";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const StatusChip = ({ status }: { status: string }) => {
   const tone: Record<string, { bg: string; color: string }> = {
@@ -29,6 +30,7 @@ const StatusChip = ({ status }: { status: string }) => {
 };
 
 export function ActivitySection() {
+  const { t } = useTranslation();
   const activity = useMyActivity(25);
   const work = useMyRecentWork(10);
 
@@ -40,7 +42,7 @@ export function ActivitySection() {
         sx={{ p: 2.5, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white" }}
       >
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          RECENT NOTIFICATIONS
+          {t("profile.ActivitySection.recentNotifications")}
         </Typography>
         {activity.isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
@@ -48,7 +50,7 @@ export function ActivitySection() {
           </Box>
         ) : (activity.data?.notifications || []).length === 0 ? (
           <Typography variant="body2" sx={{ color: "#94a3b8", py: 2 }}>
-            No notifications yet.
+            {t("profile.ActivitySection.noNotificationsYet")}
           </Typography>
         ) : (
           <Box>
@@ -80,7 +82,7 @@ export function ActivitySection() {
         sx={{ p: 2.5, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white" }}
       >
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          RECENT BULK JOBS
+          {t("profile.ActivitySection.recentBulkJobs")}
         </Typography>
         {activity.isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
@@ -88,7 +90,7 @@ export function ActivitySection() {
           </Box>
         ) : (activity.data?.bulk_jobs || []).length === 0 ? (
           <Typography variant="body2" sx={{ color: "#94a3b8", py: 2 }}>
-            You haven't run any bulk operations yet.
+            {t("profile.ActivitySection.youHavenTRunAny")}
           </Typography>
         ) : (
           <Box>
@@ -108,7 +110,7 @@ export function ActivitySection() {
                       {String(j.operation || "").replace(/_/g, " ")}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "#94a3b8" }}>
-                      Job #{j.job_id} · {formatDisplayDate(String(j.createdAt).slice(0, 10))}
+                      {t("dataArena.DownloadsTable.job", { job_id: j.job_id, value: formatDisplayDate(String(j.createdAt).slice(0, 10)) })}
                     </Typography>
                   </Box>
                   <StatusChip status={j.status} />
@@ -126,7 +128,7 @@ export function ActivitySection() {
         sx={{ p: 2.5, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white" }}
       >
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          RECENT INVOICES YOU ISSUED
+          {t("profile.ActivitySection.recentInvoicesYouIssued")}
         </Typography>
         {work.isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
@@ -134,7 +136,7 @@ export function ActivitySection() {
           </Box>
         ) : (work.data?.recent_invoices || []).length === 0 ? (
           <Typography variant="body2" sx={{ color: "#94a3b8", py: 2 }}>
-            You haven't issued any invoices yet.
+            {t("profile.ActivitySection.youHavenTIssuedAny")}
           </Typography>
         ) : (
           <Box>
@@ -151,7 +153,7 @@ export function ActivitySection() {
                 >
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                      Invoice #{inv.invoice_id}
+                      {t("profile.ActivitySection.invoice", { invoice_id: inv.invoice_id })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "#94a3b8" }}>
                       {formatDisplayDate(String(inv.createdAt).slice(0, 10))} · Rs.{" "}
@@ -173,7 +175,7 @@ export function ActivitySection() {
         sx={{ p: 2.5, border: "1px solid #e2e8f0", borderRadius: 2.5, bgcolor: "white" }}
       >
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          RECENT PAYMENTS YOU LOGGED
+          {t("profile.ActivitySection.recentPaymentsYouLogged")}
         </Typography>
         {work.isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
@@ -181,7 +183,7 @@ export function ActivitySection() {
           </Box>
         ) : (work.data?.recent_payments || []).length === 0 ? (
           <Typography variant="body2" sx={{ color: "#94a3b8", py: 2 }}>
-            You haven't logged any payments yet.
+            {t("profile.ActivitySection.youHavenTLoggedAny")}
           </Typography>
         ) : (
           <Box>
@@ -198,7 +200,7 @@ export function ActivitySection() {
                 >
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                      Payment #{p.payment_id}
+                      {t("profile.ActivitySection.payment", { payment_id: p.payment_id })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "#94a3b8" }}>
                       {formatDisplayDate(String(p.createdAt).slice(0, 10))} · {p.method} · Rs.{" "}
@@ -206,7 +208,7 @@ export function ActivitySection() {
                     </Typography>
                   </Box>
                   <Typography variant="caption" sx={{ color: "#64748b" }}>
-                    Inv #{p.invoice_id}
+                    {t("profile.ActivitySection.inv", { invoice_id: p.invoice_id })}
                   </Typography>
                 </Box>
                 {i < arr.length - 1 && <Divider />}

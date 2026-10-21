@@ -32,6 +32,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import HistoryIcon from "@mui/icons-material/History";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
+import { useTranslation } from "react-i18next";
 
 export interface ReadOnlyInvoiceModalProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function ReadOnlyInvoiceModal({
   onClose,
   invoice,
 }: ReadOnlyInvoiceModalProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isPrintOpen, setIsPrintOpen] = useState(false);
@@ -80,7 +82,7 @@ export function ReadOnlyInvoiceModal({
   const customerName =
     customer?.company_name ||
     `${customer?.first_name || ""} ${customer?.last_name || ""}`.trim() ||
-    "Customer";
+    t("invoices.ReadOnlyInvoiceModal.customer");
 
   const onBehalfName = onBehalf
     ? onBehalf.company_name ||
@@ -128,7 +130,7 @@ export function ReadOnlyInvoiceModal({
             </Typography>
             <Chip
               size="small"
-              label={invoice.status || "Unknown"}
+              label={invoice.status || t("invoices.ReadOnlyInvoiceModal.unknown")}
               color={isActive ? "warning" : "success"}
               sx={{
                 fontWeight: 700,
@@ -141,7 +143,7 @@ export function ReadOnlyInvoiceModal({
               <Chip
                 size="small"
                 icon={<LockIcon sx={{ fontSize: 13, color: "#854d0e !important" }} />}
-                label="ID in Vault"
+                label={t("customers.CustomerFormDialog.idInVault")}
                 sx={{
                   bgcolor: "#fef08a",
                   color: "#854d0e",
@@ -159,7 +161,7 @@ export function ReadOnlyInvoiceModal({
                 display: { xs: "none", sm: "inline" },
               }}
             >
-              Issued: {invoice.issued_date ? new Date(invoice.issued_date).toLocaleDateString() : "—"}
+              {t("invoices.ReadOnlyInvoiceModal.issued")} {invoice.issued_date ? new Date(invoice.issued_date).toLocaleDateString() : "—"}
             </Typography>
           </Box>
           <IconButton
@@ -220,7 +222,7 @@ export function ReadOnlyInvoiceModal({
                   <Chip
                     size="small"
                     icon={customer?.customer_type === "Business" ? <BusinessIcon sx={{ fontSize: 13 }} /> : <PersonIcon sx={{ fontSize: 13 }} />}
-                    label={customer?.customer_type || "Individual"}
+                    label={customer?.customer_type || t("customers.individual")}
                     variant="outlined"
                     sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600 }}
                   />
@@ -260,7 +262,7 @@ export function ReadOnlyInvoiceModal({
                 <AccountTreeIcon sx={{ fontSize: 16, color: "#4f46e5" }} />
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "#4f46e5", display: "block", fontSize: "0.68rem" }}>
-                    ON BEHALF OF
+                    {t("invoices.ReadOnlyInvoiceModal.onBehalfOf")}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e1b4b" }}>
                     {onBehalfName}
@@ -281,19 +283,19 @@ export function ReadOnlyInvoiceModal({
           >
             <Box sx={{ px: 2, py: 1.5, bgcolor: "#f1f5f9", borderBottom: "1px solid #e2e8f0" }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a" }}>
-                Rented Assets ({lines.length})
+                {t("invoices.ReadOnlyInvoiceModal.rentedAssets", { linesCount: lines.length })}
               </Typography>
             </Box>
             <Box sx={{ overflowX: "auto" }}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>Asset</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "center" }}>Qty</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>Rental Period</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>Base Rate</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "center" }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>Line Total</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>{t("accounting.asset")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "center" }}>{t("common.qty")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>{t("invoices.ReadOnlyInvoiceModal.rentalPeriod")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>{t("invoices.ReadOnlyInvoiceModal.baseRate")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "center" }}>{t("common.status")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>{t("invoices.ReadOnlyInvoiceModal.lineTotal")}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -311,7 +313,7 @@ export function ReadOnlyInvoiceModal({
                             {equipName}
                           </Typography>
                           {line.Equipment?.is_bulk_item && (
-                            <Chip size="small" label="Bulk Asset" sx={{ height: 16, fontSize: "0.6rem", mt: 0.25 }} />
+                            <Chip size="small" label={t("invoices.ReadOnlyInvoiceModal.bulkAsset")} sx={{ height: 16, fontSize: "0.6rem", mt: 0.25 }} />
                           )}
                         </TableCell>
                         <TableCell sx={{ textAlign: "center", fontVariantNumeric: "tabular-nums", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
@@ -324,7 +326,7 @@ export function ReadOnlyInvoiceModal({
                             {line.expected_return_date ? new Date(line.expected_return_date).toLocaleDateString() : "—"}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            Min {line.locked_minimum_days || 1} day(s) · Extra Rs. {Number(line.locked_extra_daily_rate || 0).toLocaleString()}/day
+                            {t("invoices.ReadOnlyInvoiceModal.minDaySExtraRs", { value: line.locked_minimum_days || 1, value2: Number(line.locked_extra_daily_rate || 0).toLocaleString() })}
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
@@ -333,7 +335,7 @@ export function ReadOnlyInvoiceModal({
                         <TableCell sx={{ textAlign: "center" }}>
                           <Chip
                             size="small"
-                            label={isFullyReturned ? "Returned" : `${returnedQty}/${qty} Ret.`}
+                            label={isFullyReturned ? t("invoices.returned") : `${returnedQty}/${qty} Ret.`}
                             color={isFullyReturned ? "success" : "warning"}
                             sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20, fontVariantNumeric: "tabular-nums" }}
                           />
@@ -364,29 +366,29 @@ export function ReadOnlyInvoiceModal({
             {/* Left: Costs breakdown */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Typography variant="caption" sx={{ fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                Order Summary
+                {t("invoices.ReadOnlyInvoiceModal.orderSummary")}
               </Typography>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Subtotal</Typography>
+                <Typography variant="body2" color="text.secondary">{t("common.subtotal")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {Number(invoice.sub_total || 0).toLocaleString()}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Transport Fee</Typography>
+                <Typography variant="body2" color="text.secondary">{t("invoices.ManageInvoiceViews.transportFee")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                   + Rs. {Number(invoice.transport_fee || 0).toLocaleString()}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Discount</Typography>
+                <Typography variant="body2" color="text.secondary">{t("common.discount")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>
                   - Rs. {Number(invoice.discount_amount || 0).toLocaleString()}
                 </Typography>
               </Box>
               <Divider sx={{ my: 0.5 }} />
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a" }}>Grand Total</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a" }}>{t("invoices.grandTotal")}</Typography>
                 <Typography variant="subtitle1" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 900, color: "#0f172a", fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {totalAmount.toLocaleString()}
                 </Typography>
@@ -396,18 +398,18 @@ export function ReadOnlyInvoiceModal({
             {/* Middle: Payments collected */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Typography variant="caption" sx={{ fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                Payments Collected
+                {t("invoices.ReadOnlyInvoiceModal.paymentsCollected")}
               </Typography>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Total Paid</Typography>
+                <Typography variant="body2" color="text.secondary">{t("orders.totalPaid")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#059669", fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {totalPaid.toLocaleString()}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Transactions</Typography>
+                <Typography variant="body2" color="text.secondary">{t("accounting.CashFlowSummary.transactions")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-                  {payments.length} record(s)
+                  {t("invoices.ReadOnlyInvoiceModal.recordS", { paymentsCount: payments.length })}
                 </Typography>
               </Box>
               {payments.length > 0 && (
@@ -415,7 +417,7 @@ export function ReadOnlyInvoiceModal({
                   {payments.slice(0, 3).map((p: any, i: number) => (
                     <Box key={p.payment_id || i} sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
                       <Typography variant="caption" color="text.secondary">
-                        {p.method || "Cash"} ({p.payment_date ? new Date(p.payment_date).toLocaleDateString() : "—"})
+                        {p.method || t("orders.methodCash")} ({p.payment_date ? new Date(p.payment_date).toLocaleDateString() : "—"})
                       </Typography>
                       <Typography variant="caption" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                         Rs. {Number(p.payment_amount).toLocaleString()}
@@ -424,7 +426,7 @@ export function ReadOnlyInvoiceModal({
                   ))}
                   {payments.length > 3 && (
                     <Typography variant="caption" color="text.disabled" sx={{ fontStyle: "italic" }}>
-                      +{payments.length - 3} more payments
+                      {t("invoices.ReadOnlyInvoiceModal.morePayments", { value: payments.length - 3 })}
                     </Typography>
                   )}
                 </Stack>
@@ -450,26 +452,26 @@ export function ReadOnlyInvoiceModal({
                 <>
                   <CheckCircleOutlineIcon sx={{ fontSize: 32, color: "#16a34a", mb: 0.5 }} />
                   <Typography variant="caption" sx={{ fontWeight: 800, color: "#16a34a", textTransform: "uppercase" }}>
-                    Fully Settled
+                    {t("invoices.ReadOnlyInvoiceModal.fullySettled")}
                   </Typography>
                   <Typography variant="h6" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 900, color: "#15803d" }}>
-                    Rs. 0
+                    {t("invoices.ReadOnlyInvoiceModal.rs0")}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    No outstanding balance
+                    {t("invoices.ReadOnlyInvoiceModal.noOutstandingBalance")}
                   </Typography>
                 </>
               ) : (
                 <>
                   <ErrorOutlineIcon sx={{ fontSize: 32, color: "#dc2626", mb: 0.5 }} />
                   <Typography variant="caption" sx={{ fontWeight: 800, color: "#dc2626", textTransform: "uppercase" }}>
-                    Balance Outstanding
+                    {t("invoices.ReadOnlyInvoiceModal.balanceOutstanding")}
                   </Typography>
                   <Typography variant="h6" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 900, color: "#b91c1c" }}>
                     Rs. {balanceDue.toLocaleString()}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#dc2626", fontWeight: 600 }}>
-                    Payment pending
+                    {t("invoices.ReadOnlyInvoiceModal.paymentPending")}
                   </Typography>
                 </>
               )}
@@ -482,24 +484,24 @@ export function ReadOnlyInvoiceModal({
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                 <HistoryIcon sx={{ fontSize: 16, color: "#64748b" }} />
                 <Typography variant="caption" sx={{ fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                  Audit Activity ({traces.length})
+                  {t("invoices.ReadOnlyInvoiceModal.auditActivity", { tracesCount: traces.length })}
                 </Typography>
               </Box>
               <Stack spacing={0.75}>
-                {traces.slice(0, 4).map((t: any, i: number) => (
-                  <Box key={t.trace_id || i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                {traces.slice(0, 4).map((trace: any, i: number) => (
+                  <Box key={trace.trace_id || i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Chip
                         size="small"
-                        label={t.event_action || t.event_category || "EVENT"}
+                        label={trace.event_action || trace.event_category || "EVENT"}
                         sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
                       />
                       <Typography variant="caption" sx={{ color: "#334155" }}>
-                        {t.comments || "Activity logged"}
+                        {trace.comments || t("invoices.ReadOnlyInvoiceModal.activityLogged")}
                       </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: "text.disabled", fontVariantNumeric: "tabular-nums" }}>
-                      {t.createdAt ? new Date(t.createdAt).toLocaleDateString() : ""}
+                      {trace.createdAt ? new Date(trace.createdAt).toLocaleDateString() : ""}
                     </Typography>
                   </Box>
                 ))}
@@ -523,7 +525,7 @@ export function ReadOnlyInvoiceModal({
               color: "#334155",
             }}
           >
-            Print Receipt
+            {t("invoices.ReadOnlyInvoiceModal.printReceipt")}
           </Button>
 
           <Button
@@ -539,7 +541,7 @@ export function ReadOnlyInvoiceModal({
               px: 3,
             }}
           >
-            Close
+            {t("common.close")}
           </Button>
         </DialogActions>
       </Dialog>

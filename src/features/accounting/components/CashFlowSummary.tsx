@@ -1,4 +1,5 @@
 import { Box, Paper, Typography, Skeleton, Chip } from '@mui/material';
+import { useTranslation } from "react-i18next";
 
 interface CashFlowMethod {
     method: string;
@@ -36,6 +37,7 @@ const methodColors: Record<string, string> = {
 };
 
 export default function CashFlowSummary({ data, isLoading, currency = 'Rs.' }: Props) {
+    const { t } = useTranslation();
     if (isLoading) {
         return (
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
@@ -52,7 +54,7 @@ export default function CashFlowSummary({ data, isLoading, currency = 'Rs.' }: P
     if (!data || data.methods.length === 0) {
         return (
             <Paper elevation={0} sx={{ p: 4, border: '1px solid #e2e8f0', borderRadius: 2.5, textAlign: 'center' }}>
-                <Typography color="text.secondary">No transactions recorded for {data?.date || 'today'}.</Typography>
+                <Typography color="text.secondary">{t("accounting.CashFlowSummary.noTransactionsFor", { date: data?.date || t("accounting.CashFlowSummary.today") })}</Typography>
             </Paper>
         );
     }
@@ -63,19 +65,19 @@ export default function CashFlowSummary({ data, isLoading, currency = 'Rs.' }: P
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 2 }}>
                 <Paper elevation={0} sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.6rem', textTransform: 'uppercase' }}>
-                        Total Income
+                        {t("accounting.CashFlowSummary.totalIncome")}
                     </Typography>
                     <Typography variant="h6" fontWeight={800} color="#16a34a">{fmt(data.totals.totalIncome, currency)}</Typography>
                 </Paper>
                 <Paper elevation={0} sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.6rem', textTransform: 'uppercase' }}>
-                        Total Refunds
+                        {t("accounting.CashFlowSummary.totalRefunds")}
                     </Typography>
                     <Typography variant="h6" fontWeight={800} color="#dc2626">{fmt(data.totals.totalRefunds, currency)}</Typography>
                 </Paper>
                 <Paper elevation={0} sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.6rem', textTransform: 'uppercase' }}>
-                        Net Cash Flow
+                        {t("accounting.CashFlowSummary.netCashFlow")}
                     </Typography>
                     <Typography variant="h6" fontWeight={800} color={data.totals.totalNet >= 0 ? '#16a34a' : '#dc2626'}>
                         {fmt(data.totals.totalNet, currency)}
@@ -83,7 +85,7 @@ export default function CashFlowSummary({ data, isLoading, currency = 'Rs.' }: P
                 </Paper>
                 <Paper elevation={0} sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: 2.5 }}>
                     <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.6rem', textTransform: 'uppercase' }}>
-                        Transactions
+                        {t("accounting.CashFlowSummary.transactions")}
                     </Typography>
                     <Typography variant="h6" fontWeight={800}>{data.totals.totalTransactions}</Typography>
                 </Paper>

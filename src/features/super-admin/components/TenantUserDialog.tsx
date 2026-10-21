@@ -25,6 +25,7 @@ import {
   useUpdateTenantUser,
   useTenantRoles,
 } from "@/features/super-admin/hooks/useSuperAdminHooks";
+import { useTranslation } from "react-i18next";
 
 interface FormValues {
   username: string;
@@ -54,6 +55,7 @@ interface Props {
 }
 
 export default function TenantUserDialog({ open, onClose, tenantId, editUser }: Props) {
+  const { t } = useTranslation();
   const isEdit = !!editUser;
   const { data: roles = [] } = useTenantRoles(tenantId);
 
@@ -162,7 +164,7 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
     activeMutation.isError &&
     (activeMutation.error instanceof Error
       ? activeMutation.error.message
-      : "Operation failed.");
+      : t("superAdmin.TenantUserDialog.operationFailed"));
 
   const avatarText = isEdit && editUser
     ? `${editUser.first_name?.[0] || ""}${editUser.last_name?.[0] || ""}`.toUpperCase() || "U"
@@ -173,32 +175,32 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
       open={open}
       onClose={handleClose}
       maxWidth="md"
-      eyebrow={isEdit ? "Edit User" : "New User"}
+      eyebrow={isEdit ? t("admin.UserFormDrawer.editUser") : t("superAdmin.TenantDetailPanel.newUser")}
       title={
         isEdit && editUser
           ? `${editUser.first_name} ${editUser.last_name}`.trim() || editUser.username
-          : "Create a tenant user"
+          : t("superAdmin.TenantUserDialog.createATenantUser")
       }
       subtitle={
         isEdit
-          ? "Update account details and role assignment."
-          : "Provisions a new login inside this tenant."
+          ? t("superAdmin.TenantUserDialog.updateAccountDetailsAndRole")
+          : t("superAdmin.TenantUserDialog.provisionsANewLoginInside")
       }
       avatarText={avatarText}
       footer={
         <>
           <FormFooterMeta>
             {errorCount > 0
-              ? `Fix ${errorCount} issue${errorCount > 1 ? "s" : ""} before saving`
+              ? t("forms.fixIssuesBeforeSaving", { count: errorCount })
               : mutationError
                 ? mutationError
                 : isDirty && !activeMutation.isPending
-                  ? "Unsaved changes"
+                  ? t("common.unsavedChanges")
                   : ""}
           </FormFooterMeta>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={handleClose} disabled={activeMutation.isPending} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -210,10 +212,10 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
               }
             >
               {activeMutation.isPending
-                ? "Saving…"
+                ? t("common.saving")
                 : isEdit
-                  ? "Save changes"
-                  : "Create user"}
+                  ? t("common.saveChanges")
+                  : t("admin.users.createUser")}
             </Button>
           </Box>
         </>
@@ -233,50 +235,50 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
 
         <FormSection
           icon={<Person2OutlinedIcon />}
-          title="Identity"
-          hint="Personal information shown across the tenant's product."
+          title={t("admin.RoleFormDrawer.identity")}
+          hint={t("superAdmin.TenantUserDialog.personalInformationShownAcrossThe")}
         >
           <FieldGrid>
             <TextField
-              label="First name"
+              label={t("common.firstName")}
               size="small"
               required
               fullWidth
-              {...register("first_name", { required: "Required" })}
+              {...register("first_name", { required: t("validation.required") })}
               error={!!errors.first_name}
               helperText={errors.first_name?.message}
             />
             <TextField
-              label="Last name"
+              label={t("common.lastName")}
               size="small"
               required
               fullWidth
-              {...register("last_name", { required: "Required" })}
+              {...register("last_name", { required: t("validation.required") })}
               error={!!errors.last_name}
               helperText={errors.last_name?.message}
             />
           </FieldGrid>
           <FieldGrid>
             <TextField
-              label="Username"
+              label={t("common.username")}
               size="small"
               required
               fullWidth
-              {...register("username", { required: "Required" })}
+              {...register("username", { required: t("validation.required") })}
               error={!!errors.username}
               helperText={errors.username?.message}
             />
             <TextField
-              label="Email"
+              label={t("common.email")}
               size="small"
               type="email"
               required
               fullWidth
               {...register("email", {
-                required: "Required",
+                required: t("validation.required"),
                 pattern: {
                   value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Invalid email",
+                  message: t("superAdmin.CreateTenantDialog.invalidEmail"),
                 },
               })}
               error={!!errors.email}
@@ -287,15 +289,15 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
 
         <FormSection
           icon={<LockOutlinedIcon />}
-          title={isEdit ? "Reset password" : "Initial password"}
+          title={isEdit ? t("admin.UserFormDrawer.resetPassword") : t("admin.UserFormDrawer.initialPassword")}
           hint={
             isEdit
-              ? "Leave blank to keep the user's existing password."
-              : "Provided on first login. They can change it later from their profile."
+              ? t("superAdmin.TenantUserDialog.leaveBlankToKeepThe")
+              : t("superAdmin.TenantUserDialog.providedOnFirstLoginThey")
           }
         >
           <TextField
-            label={isEdit ? "New password" : "Password"}
+            label={isEdit ? t("profile.newPassword") : t("common.password")}
             size="small"
             type="password"
             fullWidth
@@ -305,8 +307,8 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
               isEdit
                 ? {}
                 : {
-                    required: "Required",
-                    minLength: { value: 8, message: "Min 8 characters" },
+                    required: t("validation.required"),
+                    minLength: { value: 8, message: t("superAdmin.CreateTenantDialog.min8Characters") },
                   },
             )}
             error={!!errors.password}
@@ -316,15 +318,15 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
 
         <FormSection
           icon={<SecurityOutlinedIcon />}
-          title="Role assignment"
-          hint="The role governs which permissions the user inherits."
+          title={t("superAdmin.TenantUserDialog.roleAssignment")}
+          hint={t("superAdmin.TenantUserDialog.theRoleGovernsWhichPermissions")}
         >
           <Controller
             name="role_id"
             control={control}
             render={({ field }) => (
-              <TextField {...field} select label="Role" size="small" fullWidth>
-                <MenuItem value="">— No role —</MenuItem>
+              <TextField {...field} select label={t("superAdmin.TenantUserDialog.role")} size="small" fullWidth>
+                <MenuItem value="">{t("superAdmin.TenantUserDialog.noRole")}</MenuItem>
                 {roles.map((r) => (
                   <MenuItem key={r.role_id} value={r.role_id.toString()}>
                     {r.role_name}
@@ -342,8 +344,8 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
             render={({ field }) => (
               <ToggleRow
                 icon={<ToggleOnOutlinedIcon />}
-                title="Account active"
-                hint="Inactive users cannot sign in but their data remains intact."
+                title={t("superAdmin.TenantUserDialog.accountActive")}
+                hint={t("superAdmin.TenantUserDialog.inactiveUsersCannotSignIn")}
                 checked={!!field.value}
                 onChange={field.onChange}
               />

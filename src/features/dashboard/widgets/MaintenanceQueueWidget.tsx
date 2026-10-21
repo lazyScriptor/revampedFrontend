@@ -9,14 +9,15 @@ import { useMaintenanceQueue } from "@/features/dashboard/hooks/useDashboardHook
 import type { MaintenanceItem } from "@/features/dashboard/types";
 import dayjs from "dayjs";
 import { dashboardTokens as dt, dashboardTones } from "../_tokens";
+import { tk } from "@/i18n/marker";
 
 const STATUS_STYLES: Record<
   string,
   { tone: typeof dashboardTones[keyof typeof dashboardTones]; label: string }
 > = {
-  "Pending Assignment": { tone: dashboardTones.danger, label: "Unassigned" },
-  "In Repair":          { tone: dashboardTones.warning, label: "In Repair" },
-  "Partially Resolved": { tone: dashboardTones.info, label: "Partial" },
+  "Pending Assignment": { tone: dashboardTones.danger, label: tk("pages.Maintenance.unassigned") },
+  "In Repair":          { tone: dashboardTones.warning, label: tk("maintenance.inRepair") },
+  "Partially Resolved": { tone: dashboardTones.info, label: tk("invoices.partial") },
 };
 
 const MaintenanceQueueWidget: React.FC = () => {
@@ -156,7 +157,7 @@ const MaintenanceQueueWidget: React.FC = () => {
               <CheckCircleOutlineIcon sx={{ fontSize: 22 }} />
             </Box>
             <Typography variant="body2" sx={{ color: dt.color.foreground, fontWeight: 700, fontSize: "0.82rem" }}>
-              Queue is clear
+              {t("dashboard.MaintenanceQueueWidget.queueIsClear")}
             </Typography>
             <Typography variant="caption" sx={{ color: dt.color.foregroundFaint, fontSize: "0.72rem" }}>
               {t("dashboard.widgets.noMaintenance", "No equipment under repair")}
@@ -208,7 +209,7 @@ const MaintenanceQueueWidget: React.FC = () => {
                       {item.equipment_name}
                     </Typography>
                     <Chip
-                      label={style.label}
+                      label={t(style.label)}
                       size="small"
                       sx={{
                         bgcolor: style.tone.soft,
@@ -231,7 +232,7 @@ const MaintenanceQueueWidget: React.FC = () => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {item.category_name} · {item.pending_quantity} unit{item.pending_quantity !== 1 ? "s" : ""} pending
+                    {item.category_name} · {t("dashboard.MaintenanceQueueWidget.unitsPending", { count: item.pending_quantity })}
                   </Typography>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.35 }}>
@@ -250,7 +251,7 @@ const MaintenanceQueueWidget: React.FC = () => {
                           fontSize: "0.68rem",
                         }}
                       >
-                        {techName || "Unassigned"}
+                        {techName || t("pages.Maintenance.unassigned")}
                       </Typography>
                     </Box>
                   </Box>

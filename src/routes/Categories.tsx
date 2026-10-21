@@ -108,8 +108,8 @@ export default function CategoriesRoute() {
   if (isError) {
     return (
       <Alert severity="error" className="m-4">
-        Failed to load categories:{" "}
-        {error instanceof Error ? error.message : "Unknown error"}
+        {t("pages.Categories.failedToLoadCategories")}{" "}
+        {error instanceof Error ? error.message : t("pages.Categories.unknownError")}
       </Alert>
     );
   }
@@ -141,7 +141,7 @@ export default function CategoriesRoute() {
             {t("nav.categories")}
           </Typography>
           <Typography variant="body2" color="text.secondary" className="mt-1">
-            {t("equipment.subtitle")} · Taxonomy & catalog organization
+            {t("equipment.subtitle")} · {t("pages.Categories.taxonomyCatalogOrganization")}
           </Typography>
         </div>
         <Button
@@ -156,11 +156,11 @@ export default function CategoriesRoute() {
       </Box>
 
       {/* KPI Cards Strip */}
-      <ResponsiveKpiStrip mobileLabel="Categories Overview">
+      <ResponsiveKpiStrip mobileLabel={t("pages.Categories.categoriesOverview")}>
         <KpiTile
-          label="Total Categories"
+          label={t("pages.Categories.totalCategories")}
           value={`${totalRowCount}`}
-          hint="Catalog taxonomy groups"
+          hint={t("pages.Categories.catalogTaxonomyGroups")}
           icon={<CategoryOutlinedIcon />}
           tone="default"
           onClick={clearSearch}
@@ -169,7 +169,7 @@ export default function CategoriesRoute() {
           badge={
             debouncedSearch ? (
               <Chip
-                label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`}
+                label={t("common.matches", { count: totalRowCount })}
                 size="small"
                 sx={{
                   height: 18,
@@ -184,27 +184,27 @@ export default function CategoriesRoute() {
         />
 
         <KpiTile
-          label="Documented"
+          label={t("pages.Categories.documented")}
           value={`${stats.documented}`}
-          hint="With detailed descriptions"
+          hint={t("pages.Categories.withDetailedDescriptions")}
           icon={<DescriptionOutlinedIcon />}
           tone="info"
           compact
         />
 
         <KpiTile
-          label="Active Structure"
+          label={t("pages.Categories.activeStructure")}
           value="100%"
-          hint="Valid relational taxonomy"
+          hint={t("pages.Categories.validRelationalTaxonomy")}
           icon={<CheckCircleOutlinedIcon />}
           tone="success"
           compact
         />
 
         <KpiTile
-          label="Recent Additions"
+          label={t("pages.Categories.recentAdditions")}
           value={`${stats.recent}`}
-          hint="Added in last 30 days"
+          hint={t("pages.Categories.addedInLast30Days")}
           icon={<ClassOutlinedIcon />}
           tone="warning"
           compact
@@ -228,7 +228,7 @@ export default function CategoriesRoute() {
       >
         <TextField
           size="small"
-          placeholder="Search categories by name or description..."
+          placeholder={t("pages.Categories.searchCategoriesByNameOr")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           sx={{
@@ -244,7 +244,7 @@ export default function CategoriesRoute() {
               ),
               endAdornment: searchInput ? (
                 <InputAdornment position="end">
-                  <Tooltip title="Clear search">
+                  <Tooltip title={t("pages.Categories.clearSearch")}>
                     <ClearOutlinedIcon
                       onClick={clearSearch}
                       sx={{ fontSize: 16, color: theme.palette.text.disabled, cursor: "pointer" }}
@@ -264,7 +264,7 @@ export default function CategoriesRoute() {
             onClick={clearSearch}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Clear search
+            {t("pages.Categories.clearSearch")}
           </Button>
         )}
 
@@ -278,8 +278,8 @@ export default function CategoriesRoute() {
           }}
         >
           {isLoading
-            ? "Loading…"
-            : `${totalRowCount.toLocaleString()} categor${totalRowCount === 1 ? "y" : "ies"} registered`}
+            ? t("common.loading")
+            : t("pages.Categories.categoriesRegistered", { count: totalRowCount })}
         </Typography>
       </Card>
 
@@ -302,8 +302,8 @@ export default function CategoriesRoute() {
           <GearGridLoader
             centered
             size="lg"
-            label="Loading Fleet Categories..."
-            sublabel="Organizing equipment taxonomy & catalog mappings"
+            label={t("pages.Categories.loadingFleetCategories")}
+            sublabel={t("pages.Categories.organizingEquipmentTaxonomyCatalogMappin")}
           />
         ) : (
           <CategoryTable

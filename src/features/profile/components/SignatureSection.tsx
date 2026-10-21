@@ -27,6 +27,7 @@ import {
   useDeleteOperatorSignature,
 } from '@/features/signatures/hooks/useSignatures';
 import { PairedPhonesSection } from '@/features/signatures/components/PairedPhonesSection';
+import { useTranslation } from "react-i18next";
 
 const resolveImageUrl = (url?: string | null) => {
   if (!url) return null;
@@ -54,6 +55,7 @@ interface OperatorSavedSignatureCardProps {
 }
 
 function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<SignatureCanvasHandle | null>(null);
   const [dirty, setDirty] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
@@ -70,26 +72,26 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
   const handleSave = async () => {
     const dataUrl = canvasRef.current?.toDataUrl('image/png') || null;
     if (!dataUrl) {
-      setNotice({ kind: 'error', text: 'Please draw your signature first.' });
+      setNotice({ kind: 'error', text: t("profile.SignatureSection.pleaseDrawYourSignatureFirst") });
       return;
     }
     try {
       await setMut.mutateAsync(dataUrl);
-      setNotice({ kind: 'success', text: 'Signature saved. You can now use it on every bill with one tap.' });
+      setNotice({ kind: 'success', text: t("profile.SignatureSection.signatureSavedYouCanNow") });
       canvasRef.current?.clear();
       setDirty(false);
       setShowEditor(false);
     } catch (err: any) {
-      setNotice({ kind: 'error', text: err?.message || 'Could not save signature.' });
+      setNotice({ kind: 'error', text: err?.message || t("profile.SignatureSection.couldNotSaveSignature") });
     }
   };
 
   const handleDelete = async () => {
     try {
       await delMut.mutateAsync();
-      setNotice({ kind: 'success', text: 'Saved signature removed.' });
+      setNotice({ kind: 'success', text: t("profile.SignatureSection.savedSignatureRemoved") });
     } catch (err: any) {
-      setNotice({ kind: 'error', text: err?.message || 'Could not remove signature.' });
+      setNotice({ kind: 'error', text: err?.message || t("profile.SignatureSection.couldNotRemoveSignature") });
     }
   };
 
@@ -107,10 +109,10 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
         <DrawIcon sx={{ color: '#64748b' }} />
         <Box>
           <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>
-            My saved signature
+            {t("profile.SignatureSection.mySavedSignature")}
           </Typography>
           <Typography sx={{ fontSize: 13, color: '#64748b' }}>
-            Draw once; reuse on every bill with a single tap.
+            {t("profile.SignatureSection.drawOnceReuseOnEvery")}
           </Typography>
         </Box>
       </Stack>
@@ -153,20 +155,20 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
           >
             <img
               src={storedUrl}
-              alt="Saved signature"
+              alt={t("profile.SignatureSection.savedSignature")}
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Chip
               icon={<CheckCircleOutlinedIcon />}
-              label="Active"
+              label={t("common.active")}
               size="small"
               sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 600 }}
             />
             {capturedAt && (
               <Typography sx={{ fontSize: 12, color: '#64748b', mt: 0.75 }}>
-                Saved on {capturedAt.toLocaleString()}
+                {t("profile.SignatureSection.savedOn", { capturedAt: capturedAt.toLocaleString() })}
               </Typography>
             )}
             <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
@@ -176,7 +178,7 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
                 onClick={() => setShowEditor(true)}
                 sx={{ textTransform: 'none' }}
               >
-                Replace
+                {t("profile.SignatureSection.replace")}
               </Button>
               <Button
                 size="small"
@@ -187,7 +189,7 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
                 onClick={handleDelete}
                 sx={{ textTransform: 'none' }}
               >
-                Remove
+                {t("common.remove")}
               </Button>
             </Stack>
           </Box>
@@ -198,7 +200,7 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
             ref={canvasRef}
             height={200}
             onDirtyChange={setDirty}
-            placeholder="Draw your signature"
+            placeholder={t("profile.SignatureSection.drawYourSignature")}
           />
           <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ mt: 2 }}>
             {storedUrl && (
@@ -207,7 +209,7 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
                 onClick={() => setShowEditor(false)}
                 sx={{ textTransform: 'none', color: '#64748b' }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
             )}
             <Button
@@ -217,7 +219,7 @@ function OperatorSavedSignatureCard({ profile }: OperatorSavedSignatureCardProps
               onClick={handleSave}
               sx={{ textTransform: 'none', fontWeight: 700 }}
             >
-              {setMut.isPending ? 'Saving…' : storedUrl ? 'Replace signature' : 'Save signature'}
+              {setMut.isPending ? t("common.saving") : storedUrl ? t("profile.SignatureSection.replaceSignature") : t("profile.SignatureSection.saveSignature")}
             </Button>
           </Stack>
         </>

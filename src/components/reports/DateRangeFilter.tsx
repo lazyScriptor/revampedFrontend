@@ -1,6 +1,8 @@
 import { Box, TextField, Chip, Typography, useTheme } from "@mui/material";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import { todayLocalStr, addDaysLocal } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 type PresetKey = "today" | "7d" | "30d" | "90d" | "month" | "lastMonth" | "ytd" | "all";
 
@@ -40,14 +42,14 @@ const presetRange = (key: PresetKey): { from: string; to: string } => {
 };
 
 const PRESETS: { key: PresetKey; label: string }[] = [
-  { key: "today", label: "Today" },
-  { key: "7d", label: "7 days" },
-  { key: "30d", label: "30 days" },
-  { key: "90d", label: "90 days" },
-  { key: "month", label: "This month" },
-  { key: "lastMonth", label: "Last month" },
+  { key: "today", label: tk("common.today") },
+  { key: "7d", label: tk("shared.DateRangeFilter.7Days") },
+  { key: "30d", label: tk("shared.DateRangeFilter.30Days") },
+  { key: "90d", label: tk("shared.DateRangeFilter.90Days") },
+  { key: "month", label: tk("shared.DateRangeFilter.thisMonth") },
+  { key: "lastMonth", label: tk("shared.DateRangeFilter.lastMonth") },
   { key: "ytd", label: "YTD" },
-  { key: "all", label: "All time" },
+  { key: "all", label: tk("shared.DateRangeFilter.allTime") },
 ];
 
 interface DateRangeFilterProps {
@@ -63,6 +65,7 @@ export function DateRangeFilter({
   onChange,
   showLabel = true,
 }: DateRangeFilterProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -86,7 +89,7 @@ export function DateRangeFilter({
               fontSize: "0.7rem",
             }}
           >
-            DATE RANGE
+            {t("shared.DateRangeFilter.dateRange")}
           </Typography>
         </Box>
       )}
@@ -106,7 +109,7 @@ export function DateRangeFilter({
           return (
             <Chip
               key={p.key}
-              label={p.label}
+              label={t(p.label)}
               size="small"
               clickable
               onClick={() => onChange(presetRange(p.key))}
@@ -155,7 +158,7 @@ export function DateRangeFilter({
         <TextField
           type="date"
           size="small"
-          label="From"
+          label={t("common.dateFrom")}
           value={from}
           onChange={(e) => onChange({ from: e.target.value, to })}
           slotProps={{
@@ -198,13 +201,13 @@ export function DateRangeFilter({
             fontWeight: 700,
           }}
         >
-          to
+          {t("shared.DateRangeFilter.to")}
         </Typography>
 
         <TextField
           type="date"
           size="small"
-          label="To"
+          label={t("common.dateTo")}
           value={to}
           onChange={(e) => onChange({ from, to: e.target.value })}
           slotProps={{

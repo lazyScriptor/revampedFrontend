@@ -30,8 +30,10 @@ import {
   useMintPairingCode,
   useUnpairDevice,
 } from '../hooks/useSignatures';
+import { useTranslation } from "react-i18next";
 
 export function PairedPhonesSection() {
+  const { t } = useTranslation();
   const devices = useMyDevices();
   const mintMut = useMintPairingCode();
   const unpairMut = useUnpairDevice();
@@ -44,7 +46,7 @@ export function PairedPhonesSection() {
       await mintMut.mutateAsync();
       setDialogOpen(true);
     } catch (err: any) {
-      setNotice({ kind: 'error', text: err?.message || 'Could not generate a pairing code.' });
+      setNotice({ kind: 'error', text: err?.message || t("signatures.PairedPhonesSection.couldNotGenerateAPairing") });
     }
   };
 
@@ -52,12 +54,12 @@ export function PairedPhonesSection() {
   const expiresAt = mintMut.data?.expires_at ? new Date(mintMut.data.expires_at) : null;
 
   const handleUnpair = async (id: number, label?: string | null) => {
-    if (!confirm(`Unpair ${label || 'this phone'}? It will stop receiving signature requests.`)) return;
+    if (!confirm(t("signatures.PairedPhonesSection.confirmUnpair", { name: label || t("signatures.PairedPhonesSection.thisPhone") }))) return;
     try {
       await unpairMut.mutateAsync(id);
-      setNotice({ kind: 'success', text: 'Phone unpaired.' });
+      setNotice({ kind: 'success', text: t("signatures.PairedPhonesSection.phoneUnpaired") });
     } catch (err: any) {
-      setNotice({ kind: 'error', text: err?.message || 'Could not unpair.' });
+      setNotice({ kind: 'error', text: err?.message || t("signatures.PairedPhonesSection.couldNotUnpair") });
     }
   };
 
@@ -85,10 +87,10 @@ export function PairedPhonesSection() {
         <SmartphoneIcon sx={{ color: '#64748b' }} />
         <Box sx={{ flex: 1 }}>
           <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>
-            Paired phones
+            {t("signatures.PairedPhonesSection.pairedPhones")}
           </Typography>
           <Typography sx={{ fontSize: 13, color: '#64748b' }}>
-            Install the app on a phone and pair it here to sign bills in one tap.
+            {t("signatures.PairedPhonesSection.installTheAppOnA")}
           </Typography>
         </Box>
         <Button
@@ -99,7 +101,7 @@ export function PairedPhonesSection() {
           disabled={mintMut.isPending}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          Pair a phone
+          {t("signatures.PairedPhonesSection.pairAPhone")}
         </Button>
       </Stack>
 
@@ -111,11 +113,11 @@ export function PairedPhonesSection() {
 
       {devices.isLoading && <CircularProgress size={24} />}
       {devices.isError && (
-        <Alert severity="error">Couldn't load paired phones.</Alert>
+        <Alert severity="error">{t("signatures.PairedPhonesSection.couldnTLoadPairedPhones")}</Alert>
       )}
       {devices.data?.devices.length === 0 && !devices.isLoading && (
         <Typography sx={{ fontSize: 13, color: '#94a3b8', py: 1 }}>
-          No phones paired yet.
+          {t("signatures.PairedPhonesSection.noPhonesPairedYet")}
         </Typography>
       )}
       {!!devices.data?.devices.length && (
@@ -136,11 +138,11 @@ export function PairedPhonesSection() {
               <SmartphoneIcon sx={{ color: '#475569' }} />
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>
-                  {d.device_label || 'Unlabelled phone'}
+                  {d.device_label || t("signatures.PairedPhonesSection.unlabelledPhone")}
                 </Typography>
                 <Typography sx={{ fontSize: 12, color: '#64748b' }}>
-                  Paired {new Date(d.paired_at).toLocaleString()}
-                  {d.last_seen_at && ` · last seen ${new Date(d.last_seen_at).toLocaleString()}`}
+                  {t("signatures.PairedPhonesSection.paired", { value: new Date(d.paired_at).toLocaleString() })}
+                  {d.last_seen_at && ` · ${t("signatures.PairedPhonesSection.lastSeen", { value: new Date(d.last_seen_at).toLocaleString() })}`}
                 </Typography>
               </Box>
               <IconButton
@@ -167,13 +169,12 @@ export function PairedPhonesSection() {
         <DialogTitle sx={{ pb: 1 }}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <SmartphoneIcon color="primary" />
-            <span>Pair a phone</span>
+            <span>{t("signatures.PairedPhonesSection.pairAPhone")}</span>
           </Stack>
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ fontSize: 13, color: '#64748b', mb: 2 }}>
-            On the phone: install this app from the browser menu
-            ("Add to Home Screen"), open it, and type the code below.
+            {t("signatures.PairedPhonesSection.onThePhoneInstallThis")}
           </Typography>
 
           <Box
@@ -201,7 +202,7 @@ export function PairedPhonesSection() {
               <Chip
                 size="small"
                 icon={<HourglassBottomIcon fontSize="small" />}
-                label={`Expires ${expiresAt.toLocaleTimeString()}`}
+                label={t("signatures.PairedPhonesSection.expires", { value: expiresAt.toLocaleTimeString() })}
                 sx={{ mt: 1.5, bgcolor: '#fef3c7', color: '#92400e' }}
               />
             )}
@@ -215,12 +216,12 @@ export function PairedPhonesSection() {
             disabled={!code}
             sx={{ textTransform: 'none' }}
           >
-            Copy code
+            {t("signatures.PairedPhonesSection.copyCode")}
           </Button>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>
-            Done
+            {t("signatures.PairedPhonesSection.done")}
           </Button>
         </DialogActions>
       </Dialog>

@@ -25,20 +25,23 @@ import InquiryDetailPanel from '@/features/super-admin/components/InquiryDetailP
 
 import { usePlatformDashboard, useTenants, useInquiryStats } from '@/features/super-admin/hooks/useSuperAdminHooks';
 import { useSuperAdminStore } from '@/stores/useSuperAdminStore';
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 type NavKey = 'dashboard' | 'tenants' | 'inquiries' | 'cors' | 'audit';
 
 const NAV: { key: NavKey; icon: React.ReactNode; label: string }[] = [
-    { key: 'dashboard', icon: <DashboardOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Dashboard' },
-    { key: 'tenants', icon: <BusinessOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Tenants' },
-    { key: 'inquiries', icon: <MailOutlineOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Inquiries' },
-    { key: 'cors', icon: <PublicOutlinedIcon sx={{ fontSize: 18 }} />, label: 'CORS & Security' },
-    { key: 'audit', icon: <HistoryOutlinedIcon sx={{ fontSize: 18 }} />, label: 'Audit Log' },
+    { key: 'dashboard', icon: <DashboardOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("nav.dashboard") },
+    { key: 'tenants', icon: <BusinessOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.tenants") },
+    { key: 'inquiries', icon: <MailOutlineOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.inquiries") },
+    { key: 'cors', icon: <PublicOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.cors") },
+    { key: 'audit', icon: <HistoryOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.auditLog") },
 ];
 
 // ─── KPI extras ───────────────────────────────────────────────────────────────
 function DashboardView() {
+    const { t } = useTranslation();
     const { data: dashData, isLoading } = usePlatformDashboard();
     const { data: tenants = [] } = useTenants();
 
@@ -67,16 +70,16 @@ function DashboardView() {
                             mb: 0.5,
                         }}
                     >
-                        Platform Control
+                        {t("superAdmin.eyebrow")}
                     </Typography>
                     <Typography
                         variant="h5"
                         sx={{ color: '#f1f5f9', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}
                     >
-                        Mission Control
+                        {t("superAdmin.missionControl")}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.72rem', mt: 0.5, display: 'block' }}>
-                        Real-time overview of all tenant activity, revenue, and platform health.
+                        {t("superAdmin.subtitle")}
                     </Typography>
                 </Box>
                 <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.7rem', fontWeight: 600 }}>
@@ -91,27 +94,27 @@ function DashboardView() {
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
                 {[
                     {
-                        label: 'Overdue Accounts',
+                        label: t("superAdmin.overdueAccounts"),
                         value: isLoading ? '—' : overdue.toString(),
-                        hint: 'Past their billing date',
+                        hint: t("pages.SuperAdmin.pastTheirBillingDate"),
                         icon: <WarningAmberOutlinedIcon sx={{ fontSize: 22 }} />,
                         accent: '#f59e0b',
                         glow: 'rgba(245,158,11,0.20)',
                     },
                     {
-                        label: 'Revenue Collected',
+                        label: t("superAdmin.revenueCollected"),
                         value: isLoading ? '—' : `LKR ${Number(totalRevenue).toLocaleString()}`,
-                        hint: 'All-time platform receipts',
+                        hint: t("pages.SuperAdmin.allTimePlatformReceipts"),
                         icon: <TrendingUpOutlinedIcon sx={{ fontSize: 22 }} />,
                         accent: '#10b981',
                         glow: 'rgba(16,185,129,0.20)',
                     },
                     {
-                        label: 'Tier Mix',
+                        label: t("superAdmin.tierMix"),
                         value: isLoading
                             ? '—'
                             : ((dashData as any)?.tierBreakdown || []).map((t: any) => `${t.tier}: ${t.count}`).join(' · ') || '—',
-                        hint: 'Workspaces by subscription tier',
+                        hint: t("pages.SuperAdmin.workspacesBySubscriptionTier"),
                         icon: <WorkspacePremiumOutlinedIcon sx={{ fontSize: 22 }} />,
                         accent: '#8b5cf6',
                         glow: 'rgba(139,92,246,0.20)',
@@ -223,14 +226,14 @@ function DashboardView() {
                 >
                     <Box>
                         <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 700, fontSize: '0.88rem' }}>
-                            Recent Tenants
+                            {t("superAdmin.recentTenants")}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.66rem' }}>
-                            Latest 8 workspaces — click "Tenants" to manage all
+                            {t("pages.SuperAdmin.latest8WorkspacesClickTenants")}
                         </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.66rem', fontVariantNumeric: 'tabular-nums' }}>
-                        {(tenants as any[]).length} total
+                        {t("pages.SuperAdmin.total", { tenantsCount: (tenants as any[]).length })}
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr 1fr 1.1fr', px: 2.5, py: 1, borderBottom: '1px solid #1e293b', bgcolor: 'rgba(30,41,59,0.5)' }}>
@@ -304,9 +307,9 @@ function DashboardView() {
                 })}
                 {(tenants as any[]).length === 0 && !isLoading && (
                     <Box sx={{ py: 4, textAlign: 'center', color: '#475569' }}>
-                        <Typography variant="body2" sx={{ fontSize: '0.78rem' }}>No tenants yet</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.78rem' }}>{t("pages.SuperAdmin.noTenantsYet")}</Typography>
                         <Typography variant="caption" sx={{ fontSize: '0.66rem' }}>
-                            Create the first tenant from the Tenants tab.
+                            {t("pages.SuperAdmin.createTheFirstTenantFrom")}
                         </Typography>
                     </Box>
                 )}
@@ -317,6 +320,7 @@ function DashboardView() {
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function SuperAdminDashboard() {
+    const { t } = useTranslation();
     const [activeNav, setActiveNav] = useState<NavKey>('dashboard');
     const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
     const [selectedInquiryId, setSelectedInquiryId] = useState<number | null>(null);
@@ -354,7 +358,7 @@ export default function SuperAdminDashboard() {
                                 GearGrid<Box component="span" sx={{ color: '#ef4444' }}>.</Box>
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.62rem', letterSpacing: '0.05em' }}>
-                                SUPER ADMIN
+                                {t("pages.SuperAdmin.superAdmin")}
                             </Typography>
                         </Box>
                     </Box>
@@ -389,7 +393,7 @@ export default function SuperAdminDashboard() {
                             >
                                 {icon}
                                 <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: isActive ? 700 : 500, flex: 1 }}>
-                                    {label}
+                                    {t(label)}
                                 </Typography>
                                 {key === 'inquiries' && newInquiryCount > 0 && (
                                     <Box
@@ -420,13 +424,13 @@ export default function SuperAdminDashboard() {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Box sx={{ minWidth: 0 }}>
                             <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, display: 'block', fontSize: '0.72rem' }} noWrap>
-                                {admin?.displayName || 'Super Admin'}
+                                {admin?.displayName || t("pages.SuperAdmin.superAdmin2")}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.66rem' }} noWrap>
                                 {admin?.email}
                             </Typography>
                         </Box>
-                        <Tooltip title="Logout">
+                        <Tooltip title={t("nav.logout")}>
                             <IconButton
                                 size="small"
                                 onClick={logout}
@@ -456,8 +460,8 @@ export default function SuperAdminDashboard() {
 
                 {activeNav === 'audit' && (
                     <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-                        <Typography variant="h6" sx={{ color: '#f1f5f9', fontWeight: 700, mb: 1 }}>Audit Log</Typography>
-                        <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 3 }}>Full history of every Super Admin action across the platform.</Typography>
+                        <Typography variant="h6" sx={{ color: '#f1f5f9', fontWeight: 700, mb: 1 }}>{t("superAdmin.auditLog")}</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 3 }}>{t("pages.SuperAdmin.fullHistoryOfEverySuper")}</Typography>
                         <AuditLogTable />
                     </Box>
                 )}
@@ -468,10 +472,10 @@ export default function SuperAdminDashboard() {
                         <Box sx={{ width: 320, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             <Box sx={{ px: 2, py: 1.25, borderBottom: '1px solid #1e293b', bgcolor: '#0f172a', flexShrink: 0 }}>
                                 <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.82rem' }}>
-                                    Contact Inquiries
+                                    {t("pages.SuperAdmin.contactInquiries")}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>
-                                    From geargrid.live/contact
+                                    {t("pages.SuperAdmin.fromGeargridLiveContact")}
                                 </Typography>
                             </Box>
                             <InquiryListPanel
@@ -495,9 +499,9 @@ export default function SuperAdminDashboard() {
                                     color: '#334155',
                                 }}>
                                     <MailOutlineOutlinedIcon sx={{ fontSize: 48, opacity: 0.4 }} />
-                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>Select an inquiry</Typography>
+                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{t("pages.SuperAdmin.selectAnInquiry")}</Typography>
                                     <Typography variant="caption" sx={{ color: '#475569' }}>
-                                        Pick an inquiry from the list to triage, reply, and update its status.
+                                        {t("pages.SuperAdmin.pickAnInquiryFromThe")}
                                     </Typography>
                                 </Box>
                             )}
@@ -512,7 +516,7 @@ export default function SuperAdminDashboard() {
                             {/* Panel header */}
                             <Box sx={{ px: 2, py: 1.25, borderBottom: '1px solid #1e293b', bgcolor: '#0f172a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.82rem' }}>
-                                    All Tenants
+                                    {t("pages.SuperAdmin.allTenants")}
                                 </Typography>
                                 <Button
                                     size="small"
@@ -528,7 +532,7 @@ export default function SuperAdminDashboard() {
                                         '&:hover': { bgcolor: 'rgba(239,68,68,0.08)' },
                                     }}
                                 >
-                                    New
+                                    {t("common.new")}
                                 </Button>
                             </Box>
                             <Box sx={{ flex: 1, overflow: 'hidden' }}>
@@ -554,9 +558,9 @@ export default function SuperAdminDashboard() {
                                     color: '#334155',
                                 }}>
                                     <BusinessOutlinedIcon sx={{ fontSize: 48, opacity: 0.4 }} />
-                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>Select a tenant</Typography>
+                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{t("pages.SuperAdmin.selectATenant")}</Typography>
                                     <Typography variant="caption" sx={{ color: '#475569' }}>
-                                        Click a tenant in the list to view and manage its configuration.
+                                        {t("pages.SuperAdmin.clickATenantInThe")}
                                     </Typography>
                                 </Box>
                             )}

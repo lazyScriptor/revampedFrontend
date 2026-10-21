@@ -19,6 +19,8 @@ import {
     type InquiryListParams,
     type InquiryRow,
 } from "../hooks/useSuperAdminHooks";
+import { useTranslation } from "react-i18next";
+import { relativeCompact } from "@/lib/relativeTime";
 
 // Aligned with the backend ENUM values — keep in sync if you add a new status.
 const STATUS_DOT: Record<string, string> = {
@@ -42,6 +44,7 @@ interface Props {
 }
 
 export default function InquiryListPanel({ selectedId, onSelect }: Props) {
+    const { t } = useTranslation();
     // Local filter state; passed to useInquiries which server-paginates.
     const [filters, setFilters] = useState<InquiryListParams>({
         page: 1,
@@ -88,7 +91,7 @@ export default function InquiryListPanel({ selectedId, onSelect }: Props) {
                 <TextField
                     size="small"
                     fullWidth
-                    placeholder="Search name, email, company…"
+                    placeholder={t("superAdmin.InquiryListPanel.searchNameEmailCompany")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     slotProps={{
@@ -127,7 +130,7 @@ export default function InquiryListPanel({ selectedId, onSelect }: Props) {
                                 }))
                             }
                         >
-                            <MenuItem value="">All statuses</MenuItem>
+                            <MenuItem value="">{t("superAdmin.InquiryListPanel.allStatuses")}</MenuItem>
                             {["new", "contacted", "qualified", "closed"].map(
                                 (s) => (
                                     <MenuItem key={s} value={s}>
@@ -149,7 +152,7 @@ export default function InquiryListPanel({ selectedId, onSelect }: Props) {
                                 }))
                             }
                         >
-                            <MenuItem value="">All types</MenuItem>
+                            <MenuItem value="">{t("superAdmin.InquiryListPanel.allTypes")}</MenuItem>
                             {[
                                 "demo",
                                 "sales",
@@ -164,7 +167,7 @@ export default function InquiryListPanel({ selectedId, onSelect }: Props) {
                         </Select>
                     </FormControl>
                     {hasFilters && (
-                        <Tooltip title="Clear filters">
+                        <Tooltip title={t("superAdmin.InquiryListPanel.clearFilters")}>
                             <IconButton
                                 size="small"
                                 onClick={resetFilters}
@@ -202,8 +205,8 @@ export default function InquiryListPanel({ selectedId, onSelect }: Props) {
                             sx={{ color: "#64748b" }}
                         >
                             {hasFilters
-                                ? "No inquiries match your filters."
-                                : "No inquiries yet — submissions from geargrid.live/contact will appear here."}
+                                ? t("superAdmin.InquiryListPanel.noInquiriesMatchYourFilters")
+                                : t("superAdmin.InquiryListPanel.noInquiriesYetSubmissionsFrom")}
                         </Typography>
                     </Box>
                 )}
@@ -345,8 +348,7 @@ export default function InquiryListPanel({ selectedId, onSelect }: Props) {
                         variant="caption"
                         sx={{ color: "#64748b", fontSize: "0.65rem" }}
                     >
-                        {data.total} inquir
-                        {data.total === 1 ? "y" : "ies"} total
+                        {t("superAdmin.InquiryListPanel.inquiriesTotal", { count: data.total })}
                     </Typography>
                 </Box>
             )}
@@ -356,18 +358,7 @@ export default function InquiryListPanel({ selectedId, onSelect }: Props) {
 
 // Small relative time formatter — keeps the list scannable without leaning on
 // a date library. Falls back to "MMM D" for anything older than a week.
-const formatRelative = (iso: string) => {
-    const d = new Date(iso);
-    const diffMs = Date.now() - d.getTime();
-    const m = Math.floor(diffMs / 60000);
-    if (m < 1) return "just now";
-    if (m < 60) return `${m}m`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h`;
-    const days = Math.floor(h / 24);
-    if (days < 7) return `${days}d`;
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-};
+const formatRelative = relativeCompact;
 
 const filterSx = {
     minWidth: 110,

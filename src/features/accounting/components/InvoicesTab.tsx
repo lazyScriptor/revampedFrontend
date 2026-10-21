@@ -5,12 +5,14 @@ import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useAccountingInvoices } from "../hooks/useAccountingQueries";
 import { useCurrencyFormatter } from "../utils/currency";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 const STATUS_OPTIONS = [
-  { value: "Active", label: "Active" },
-  { value: "Completed", label: "Completed" },
-  { value: "Settled", label: "Settled" },
-  { value: "Overdue", label: "Overdue" },
+  { value: "Active", label: tk("common.active") },
+  { value: "Completed", label: tk("invoices.completed") },
+  { value: "Settled", label: tk("orders.settled") },
+  { value: "Overdue", label: tk("invoices.overdue") },
 ];
 
 const STATUS_COLORS: Record<string, "primary" | "success" | "error" | "default" | "warning"> = {
@@ -21,6 +23,7 @@ const STATUS_COLORS: Record<string, "primary" | "success" | "error" | "default" 
 };
 
 export default function InvoicesTab() {
+  const { t } = useTranslation();
   const { filters, updateFilter, updateMultiple, resetFilters, setPage, setPageSize, toQueryParams } =
     useAccountingFilters({ sortField: "issued_date" });
   const { format } = useCurrencyFormatter();
@@ -29,7 +32,7 @@ export default function InvoicesTab() {
   const columns: GridColDef[] = [
     {
       field: "invoice_id",
-      headerName: "Invoice #",
+      headerName: t("invoices.invoiceNumber"),
       width: 100,
       renderCell: (p) => (
         <Chip label={`INV-${p.value}`} size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: "0.72rem" }} />
@@ -37,13 +40,13 @@ export default function InvoicesTab() {
     },
     {
       field: "issued_date",
-      headerName: "Date",
+      headerName: t("common.date"),
       width: 120,
       valueFormatter: (value: string) => formatDisplayDate(value),
     },
     {
       field: "Customer",
-      headerName: "Customer",
+      headerName: t("invoices.customer"),
       flex: 1,
       minWidth: 180,
       sortable: false,
@@ -55,14 +58,14 @@ export default function InvoicesTab() {
     },
     {
       field: "number_of_days_of_the_bill",
-      headerName: "Days",
+      headerName: t("accounting.InvoicesTab.days"),
       width: 80,
       align: "center",
       headerAlign: "center",
     },
     {
       field: "total_amount",
-      headerName: "Total",
+      headerName: t("common.total"),
       width: 130,
       align: "right",
       headerAlign: "right",
@@ -74,7 +77,7 @@ export default function InvoicesTab() {
     },
     {
       field: "total_paid",
-      headerName: "Paid",
+      headerName: t("invoices.paid"),
       width: 130,
       align: "right",
       headerAlign: "right",
@@ -86,7 +89,7 @@ export default function InvoicesTab() {
     },
     {
       field: "outstanding",
-      headerName: "Outstanding",
+      headerName: t("accounting.InvoicesTab.outstanding"),
       width: 130,
       align: "right",
       headerAlign: "right",
@@ -104,7 +107,7 @@ export default function InvoicesTab() {
     },
     {
       field: "status",
-      headerName: "Status",
+      headerName: t("common.status"),
       width: 120,
       renderCell: (p) => (
         <Chip

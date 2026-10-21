@@ -36,6 +36,7 @@ import {
   FormSection,
 } from "@/components/forms/FormDialogShell";
 import { useToast } from "@/components/ui/AppToast";
+import { useTranslation } from "react-i18next";
 
 interface EquipmentBulkEditDialogProps {
   open: boolean;
@@ -50,6 +51,7 @@ export function EquipmentBulkEditDialog({
   selectedIds,
   onSuccess,
 }: EquipmentBulkEditDialogProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { showSuccess, showError } = useToast();
   const bulkUpdateMutation = useBulkUpdateEquipment();
@@ -118,12 +120,12 @@ export function EquipmentBulkEditDialog({
     setLocalError(null);
 
     if (selectedIds.length === 0) {
-      setLocalError("No equipment items selected.");
+      setLocalError(t("equipment.EquipmentBulkEditDialog.noEquipmentItemsSelected"));
       return;
     }
 
     if (!hasAnyFieldSelected) {
-      setLocalError("Please enable and configure at least one field to bulk update.");
+      setLocalError(t("customers.CustomerBulkEditDialog.pleaseEnableAndConfigureAt"));
       return;
     }
 
@@ -131,7 +133,7 @@ export function EquipmentBulkEditDialog({
 
     if (enableCategory) {
       if (categoryId === "") {
-        setLocalError("Please select a valid category or uncheck the Category field.");
+        setLocalError(t("equipment.EquipmentBulkEditDialog.pleaseSelectAValidCategory"));
         return;
       }
       updates.category_id = Number(categoryId);
@@ -139,7 +141,7 @@ export function EquipmentBulkEditDialog({
 
     if (enableWarehouse) {
       if (warehouseId === "") {
-        setLocalError("Please select a valid warehouse or uncheck the Warehouse field.");
+        setLocalError(t("equipment.EquipmentBulkEditDialog.pleaseSelectAValidWarehouse"));
         return;
       }
       updates.warehouse_id = Number(warehouseId);
@@ -152,7 +154,7 @@ export function EquipmentBulkEditDialog({
     if (enableMinRentalDays) {
       const minDays = Number(minRentalDays);
       if (isNaN(minDays) || minDays < 1) {
-        setLocalError("Minimum rental days must be at least 1.");
+        setLocalError(t("equipment.EquipmentBulkEditDialog.minimumRentalDaysMustBe"));
         return;
       }
       updates.minimum_rental_days = minDays;
@@ -161,13 +163,13 @@ export function EquipmentBulkEditDialog({
     if (enablePricing) {
       if (pricingMode === "direct") {
         if (basePrice === "" && extraDailyRate === "") {
-          setLocalError("Please specify at least one price rate (Base or Extra rate).");
+          setLocalError(t("equipment.EquipmentBulkEditDialog.pleaseSpecifyAtLeastOne"));
           return;
         }
         if (basePrice !== "") {
           const bp = Number(basePrice);
           if (isNaN(bp) || bp < 0) {
-            setLocalError("Base rental price must be 0 or greater.");
+            setLocalError(t("equipment.EquipmentBulkEditDialog.baseRentalPriceMustBe"));
             return;
           }
           updates.base_rental_price = bp;
@@ -175,7 +177,7 @@ export function EquipmentBulkEditDialog({
         if (extraDailyRate !== "") {
           const ep = Number(extraDailyRate);
           if (isNaN(ep) || ep < 0) {
-            setLocalError("Extra daily rate must be 0 or greater.");
+            setLocalError(t("equipment.EquipmentBulkEditDialog.extraDailyRateMustBe"));
             return;
           }
           updates.extra_daily_rate = ep;
@@ -184,7 +186,7 @@ export function EquipmentBulkEditDialog({
         // Adjustment mode
         const val = Number(adjustmentValue);
         if (adjustmentValue === "" || isNaN(val)) {
-          setLocalError("Please specify a valid price adjustment delta value.");
+          setLocalError(t("equipment.EquipmentBulkEditDialog.pleaseSpecifyAValidPrice"));
           return;
         }
         updates.price_adjustment = {
@@ -202,16 +204,16 @@ export function EquipmentBulkEditDialog({
       });
 
       showSuccess(
-        `Successfully updated ${result.data?.updatedCount || selectedIds.length} equipment items.`,
-        "Bulk Update Complete"
+        t("equipment.EquipmentBulkEditDialog.successfullyUpdatedEquipmentItems", { value: result.data?.updatedCount || selectedIds.length }),
+        t("customers.CustomerBulkEditDialog.bulkUpdateComplete")
       );
       resetForm();
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "Failed to bulk update equipment.";
+      const msg = err.response?.data?.message || err.message || t("equipment.EquipmentBulkEditDialog.failedToBulkUpdateEquipment");
       setLocalError(msg);
-      showError(msg, "Bulk Update Failed");
+      showError(msg, t("customers.CustomerBulkEditDialog.bulkUpdateFailed"));
     }
   };
 
@@ -222,15 +224,15 @@ export function EquipmentBulkEditDialog({
       open={open}
       onClose={handleClose}
       maxWidth="md"
-      eyebrow="BATCH FLEET OPERATIONS"
-      title={`Bulk Edit Equipment (${selectedCount} Item${selectedCount === 1 ? "" : "s"})`}
-      subtitle="Only explicitly checked fields will be modified across the selected fleet inventory. Untouched properties remain intact."
+      eyebrow={t("equipment.EquipmentBulkEditDialog.batchFleetOperations")}
+      title={t("equipment.EquipmentBulkEditDialog.bulkEditTitle", { count: selectedCount })}
+      subtitle={t("equipment.EquipmentBulkEditDialog.onlyExplicitlyCheckedFieldsWill")}
       avatarIcon={<EditNoteIcon sx={{ fontSize: 28 }} />}
       headerChips={
         <>
           <Chip
             size="small"
-            label={`${selectedCount} Selected`}
+            label={t("customers.CustomerBulkEditDialog.selected", { selectedCount })}
             color="primary"
             variant="filled"
             sx={{ fontWeight: 700, bgcolor: "rgba(255, 255, 255, 0.2)", color: "#fff" }}
@@ -238,7 +240,7 @@ export function EquipmentBulkEditDialog({
           <Chip
             size="small"
             icon={<CheckCircleOutlinedIcon sx={{ color: "#fff !important", fontSize: "14px !important" }} />}
-            label="Safe Transactional Update"
+            label={t("customers.CustomerBulkEditDialog.safeTransactionalUpdate")}
             sx={{ fontWeight: 600, bgcolor: "rgba(255, 255, 255, 0.12)", color: "#fff" }}
           />
         </>
@@ -246,7 +248,7 @@ export function EquipmentBulkEditDialog({
       footer={
         <>
           <Button onClick={handleClose} color="inherit" disabled={bulkUpdateMutation.isPending}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -260,8 +262,8 @@ export function EquipmentBulkEditDialog({
             sx={{ fontWeight: 700, px: 3 }}
           >
             {bulkUpdateMutation.isPending
-              ? "Applying Updates..."
-              : `Apply to ${selectedCount} Item${selectedCount === 1 ? "" : "s"}`}
+              ? t("customers.CustomerBulkEditDialog.applyingUpdates")
+              : t("equipment.EquipmentBulkEditDialog.applyToItems", { count: selectedCount })}
           </Button>
         </>
       }
@@ -275,8 +277,8 @@ export function EquipmentBulkEditDialog({
       {/* ── 1. Category & Location ── */}
       <FormSection
         icon={<LayersOutlinedIcon />}
-        title="Category & Warehouse Assignment"
-        hint="Transfer or reclassify the selected equipment to specific categories or storage depots."
+        title={t("equipment.EquipmentBulkEditDialog.categoryWarehouseAssignment")}
+        hint={t("equipment.EquipmentBulkEditDialog.transferOrReclassifyTheSelected")}
       >
         {/* Category Row */}
         <Box
@@ -298,7 +300,7 @@ export function EquipmentBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Category
+                {t("equipment.EquipmentBulkEditDialog.updateCategory")}
               </Typography>
             }
           />
@@ -308,7 +310,7 @@ export function EquipmentBulkEditDialog({
                 select
                 fullWidth
                 size="small"
-                label="Select Target Category"
+                label={t("equipment.EquipmentBulkEditDialog.selectTargetCategory")}
                 value={categoryId}
                 onChange={(e) => setCategoryId(Number(e.target.value))}
                 disabled={isLoadingCategories}
@@ -343,7 +345,7 @@ export function EquipmentBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Warehouse Location
+                {t("equipment.EquipmentBulkEditDialog.updateWarehouseLocation")}
               </Typography>
             }
           />
@@ -353,7 +355,7 @@ export function EquipmentBulkEditDialog({
                 select
                 fullWidth
                 size="small"
-                label="Select Target Warehouse / Depot"
+                label={t("equipment.EquipmentBulkEditDialog.selectTargetWarehouseDepot")}
                 value={warehouseId}
                 onChange={(e) => setWarehouseId(Number(e.target.value))}
                 disabled={isLoadingWarehouses}
@@ -372,8 +374,8 @@ export function EquipmentBulkEditDialog({
       {/* ── 2. Inventory & Classification ── */}
       <FormSection
         icon={<Inventory2OutlinedIcon />}
-        title="Inventory Tracking & Policy"
-        hint="Modify stock tracking mode or minimum rental duration across all chosen items."
+        title={t("equipment.EquipmentBulkEditDialog.inventoryTrackingPolicy")}
+        hint={t("equipment.EquipmentBulkEditDialog.modifyStockTrackingModeOr")}
       >
         {/* Bulk vs Serialized tracking */}
         <Box
@@ -395,14 +397,14 @@ export function EquipmentBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Inventory Tracking Mode
+                {t("equipment.EquipmentBulkEditDialog.updateInventoryTrackingMode")}
               </Typography>
             }
           />
           {enableBulkItem && (
             <Box sx={{ mt: 1.5, pl: { sm: 4 }, display: "flex", alignItems: "center", gap: 2 }}>
               <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                Individual / Serialized
+                {t("equipment.EquipmentBulkEditDialog.individualSerialized")}
               </Typography>
               <Switch
                 checked={isBulkItem}
@@ -410,7 +412,7 @@ export function EquipmentBulkEditDialog({
                 color="primary"
               />
               <Typography variant="body2" sx={{ fontWeight: isBulkItem ? 700 : 500, color: theme.palette.text.primary }}>
-                Bulk Stock (Quantity Tracked)
+                {t("equipment.EquipmentBulkEditDialog.bulkStockQuantityTracked")}
               </Typography>
             </Box>
           )}
@@ -436,7 +438,7 @@ export function EquipmentBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Minimum Rental Days
+                {t("equipment.EquipmentBulkEditDialog.updateMinimumRentalDays")}
               </Typography>
             }
           />
@@ -445,7 +447,7 @@ export function EquipmentBulkEditDialog({
               <TextField
                 type="number"
                 size="small"
-                label="Minimum Rental Days"
+                label={t("equipment.EquipmentBulkEditDialog.minimumRentalDays")}
                 value={minRentalDays}
                 onChange={(e) => setMinRentalDays(e.target.value === "" ? "" : Number(e.target.value))}
                 inputProps={{ min: 1 }}
@@ -459,8 +461,8 @@ export function EquipmentBulkEditDialog({
       {/* ── 3. Pricing Strategy ── */}
       <FormSection
         icon={<AttachMoneyIcon />}
-        title="Rental Rates & Pricing Adjustment"
-        hint="Directly assign new price rates or apply a delta adjustment (percentage or fixed amount)."
+        title={t("equipment.EquipmentBulkEditDialog.rentalRatesPricingAdjustment")}
+        hint={t("equipment.EquipmentBulkEditDialog.directlyAssignNewPriceRates")}
       >
         <Box
           sx={{
@@ -481,7 +483,7 @@ export function EquipmentBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Pricing Strategy
+                {t("equipment.EquipmentBulkEditDialog.updatePricingStrategy")}
               </Typography>
             }
           />
@@ -496,12 +498,12 @@ export function EquipmentBulkEditDialog({
                 <FormControlLabel
                   value="direct"
                   control={<Radio size="small" />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Set Fixed Rate Values</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{t("equipment.EquipmentBulkEditDialog.setFixedRateValues")}</Typography>}
                 />
                 <FormControlLabel
                   value="adjustment"
                   control={<Radio size="small" />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Apply Delta Adjustment (± % or $)</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{t("equipment.EquipmentBulkEditDialog.applyDeltaAdjustmentOr")}</Typography>}
                 />
               </RadioGroup>
 
@@ -510,8 +512,8 @@ export function EquipmentBulkEditDialog({
                   <TextField
                     type="number"
                     size="small"
-                    label="New Base Rental Daily Price"
-                    placeholder="Leave blank to keep unchanged"
+                    label={t("equipment.EquipmentBulkEditDialog.newBaseRentalDailyPrice")}
+                    placeholder={t("equipment.EquipmentBulkEditDialog.leaveBlankToKeepUnchanged")}
                     value={basePrice}
                     onChange={(e) => setBasePrice(e.target.value === "" ? "" : Number(e.target.value))}
                     slotProps={{
@@ -524,8 +526,8 @@ export function EquipmentBulkEditDialog({
                   <TextField
                     type="number"
                     size="small"
-                    label="New Extra Daily Rate"
-                    placeholder="Leave blank to keep unchanged"
+                    label={t("equipment.EquipmentBulkEditDialog.newExtraDailyRate")}
+                    placeholder={t("equipment.EquipmentBulkEditDialog.leaveBlankToKeepUnchanged")}
                     value={extraDailyRate}
                     onChange={(e) => setExtraDailyRate(e.target.value === "" ? "" : Number(e.target.value))}
                     slotProps={{
@@ -542,30 +544,30 @@ export function EquipmentBulkEditDialog({
                     <TextField
                       select
                       size="small"
-                      label="Adjustment Type"
+                      label={t("equipment.EquipmentBulkEditDialog.adjustmentType")}
                       value={adjustmentType}
                       onChange={(e) => setAdjustmentType(e.target.value as "percentage" | "fixed")}
                     >
-                      <MenuItem value="percentage">Percentage (%)</MenuItem>
-                      <MenuItem value="fixed">Fixed Amount ($)</MenuItem>
+                      <MenuItem value="percentage">{t("equipment.EquipmentBulkEditDialog.percentage")}</MenuItem>
+                      <MenuItem value="fixed">{t("equipment.EquipmentBulkEditDialog.fixedAmount")}</MenuItem>
                     </TextField>
 
                     <TextField
                       select
                       size="small"
-                      label="Apply To"
+                      label={t("equipment.EquipmentBulkEditDialog.applyTo")}
                       value={adjustmentField}
                       onChange={(e) => setAdjustmentField(e.target.value as "both" | "base" | "extra")}
                     >
-                      <MenuItem value="both">Both Base & Extra Rates</MenuItem>
-                      <MenuItem value="base">Base Rental Price Only</MenuItem>
-                      <MenuItem value="extra">Extra Daily Rate Only</MenuItem>
+                      <MenuItem value="both">{t("equipment.EquipmentBulkEditDialog.bothBaseExtraRates")}</MenuItem>
+                      <MenuItem value="base">{t("equipment.EquipmentBulkEditDialog.baseRentalPriceOnly")}</MenuItem>
+                      <MenuItem value="extra">{t("equipment.EquipmentBulkEditDialog.extraDailyRateOnly")}</MenuItem>
                     </TextField>
 
                     <TextField
                       type="number"
                       size="small"
-                      label={adjustmentType === "percentage" ? "Delta Percentage" : "Delta Amount ($)"}
+                      label={adjustmentType === "percentage" ? t("equipment.EquipmentBulkEditDialog.deltaPercentage") : t("equipment.EquipmentBulkEditDialog.deltaAmount")}
                       placeholder={adjustmentType === "percentage" ? "e.g. 10 or -5" : "e.g. 15 or -10"}
                       value={adjustmentValue}
                       onChange={(e) => setAdjustmentValue(e.target.value === "" ? "" : Number(e.target.value))}
@@ -582,9 +584,18 @@ export function EquipmentBulkEditDialog({
                   </FieldGrid>
                   {adjustmentValue !== "" && (
                     <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                      {Number(adjustmentValue) >= 0 ? "Increasing" : "Decreasing"}{" "}
-                      {adjustmentField === "both" ? "both base and extra rates" : `${adjustmentField} rate`}{" "}
-                      by {Math.abs(Number(adjustmentValue))}{adjustmentType === "percentage" ? "%" : "$"} across {selectedCount} items.
+                      {t("equipment.EquipmentBulkEditDialog.adjustSummary", {
+                          direction: Number(adjustmentValue) >= 0 ? t("equipment.EquipmentBulkEditDialog.increasing") : t("equipment.EquipmentBulkEditDialog.decreasing"),
+                          target:
+                            adjustmentField === "both"
+                              ? t("equipment.EquipmentBulkEditDialog.bothRates")
+                              : adjustmentField === "base"
+                                ? t("equipment.EquipmentBulkEditDialog.baseRate")
+                                : t("equipment.EquipmentBulkEditDialog.extraRate"),
+                          amount: Math.abs(Number(adjustmentValue)),
+                          unit: adjustmentType === "percentage" ? "%" : "$",
+                          items: selectedCount,
+                        })}
                     </Typography>
                   )}
                 </Box>

@@ -43,10 +43,12 @@ import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useCurrencyFormatter } from "../utils/currency";
 import { useReportStore } from "@/stores/useReportStore";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"];
 
 export default function AccountingChartsPanel() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { filters, toQueryParams } = useAccountingFilters();
   const { format } = useCurrencyFormatter();
@@ -174,10 +176,10 @@ export default function AccountingChartsPanel() {
   };
 
   const chartTitleMap: Record<string, string> = {
-    cashFlow: "Financial Performance",
-    expensesByCategory: "Spending Distribution",
-    invoicesByStatus: "Receivables Status",
-    paymentsByMethod: "Collection Channels",
+    cashFlow: t("accounting.AccountingChartsPanel.financialPerformance"),
+      expensesByCategory: t("accounting.AccountingChartsPanel.spendingDistribution"),
+      invoicesByStatus: t("accounting.AccountingChartsPanel.receivablesStatus"),
+      paymentsByMethod: t("accounting.AccountingChartsPanel.collectionChannels"),
   };
 
   return (
@@ -187,13 +189,13 @@ export default function AccountingChartsPanel() {
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
           <Box>
             <Typography variant="overline" color="primary.main" fontWeight="800" sx={{ letterSpacing: 1.5, display: "block", mb: 0.5 }}>
-              BUSINESS INTELLIGENCE
+              {t("accounting.AccountingChartsPanel.businessIntelligence")}
             </Typography>
             <Typography variant="h6" fontWeight="900" color="text.primary">
               {chartTitleMap[activeChart]}
             </Typography>
           </Box>
-          <MuiTooltip title="Refresh Illustration">
+          <MuiTooltip title={t("accounting.AccountingChartsPanel.refreshIllustration")}>
             <Button 
               size="small" variant="outlined" 
               onClick={() => refetch()} 
@@ -211,45 +213,45 @@ export default function AccountingChartsPanel() {
           {/* X-AXIS / TIME GRAIN CONTROL */}
           {activeChart === "cashFlow" && (
             <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>GROUP BY (X-AXIS)</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>{t("accounting.AccountingChartsPanel.groupByXAxis")}</Typography>
               <ToggleButtonGroup
                 size="small" value={timeGrain} exclusive
                 onChange={(_, v) => v && setTimeGrain(v)}
                 sx={{ bgcolor: "#f8fafc", p: 0.5, borderRadius: 2 }}
               >
-                <ToggleButton value="day" sx={{ px: 1.5 }}><DayIcon sx={{ fontSize: 16, mr: 0.5 }} /> Day</ToggleButton>
-                <ToggleButton value="week" sx={{ px: 1.5 }}><WeekIcon sx={{ fontSize: 16, mr: 0.5 }} /> Week</ToggleButton>
-                <ToggleButton value="month" sx={{ px: 1.5 }}><MonthIcon sx={{ fontSize: 16, mr: 0.5 }} /> Month</ToggleButton>
+                <ToggleButton value="day" sx={{ px: 1.5 }}><DayIcon sx={{ fontSize: 16, mr: 0.5 }} /> {t("accounting.AccountingChartsPanel.day")}</ToggleButton>
+                <ToggleButton value="week" sx={{ px: 1.5 }}><WeekIcon sx={{ fontSize: 16, mr: 0.5 }} /> {t("accounting.AccountingChartsPanel.week")}</ToggleButton>
+                <ToggleButton value="month" sx={{ px: 1.5 }}><MonthIcon sx={{ fontSize: 16, mr: 0.5 }} /> {t("accounting.AccountingChartsPanel.month")}</ToggleButton>
               </ToggleButtonGroup>
             </Box>
           )}
 
           {/* ILLUSTRATION TYPE */}
           <Box>
-            <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>ILLUSTRATION STYLE</Typography>
+            <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>{t("accounting.AccountingChartsPanel.illustrationStyle")}</Typography>
             <ToggleButtonGroup
               size="small" value={chartType} exclusive
               onChange={(_, v) => v && setChartType(v)}
               sx={{ bgcolor: "#f8fafc", p: 0.5, borderRadius: 2 }}
             >
-              <ToggleButton value="bar"><BarIcon sx={{ fontSize: 16, mr: 0.5 }} /> Bar</ToggleButton>
-              <ToggleButton value="pie" disabled={activeChart === "cashFlow"}><PieIcon sx={{ fontSize: 16, mr: 0.5 }} /> Pie</ToggleButton>
-              <ToggleButton value="area" disabled={activeChart !== "cashFlow"}><LineIcon sx={{ fontSize: 16, mr: 0.5 }} /> Trend</ToggleButton>
+              <ToggleButton value="bar"><BarIcon sx={{ fontSize: 16, mr: 0.5 }} /> {t("accounting.AccountingChartsPanel.bar")}</ToggleButton>
+              <ToggleButton value="pie" disabled={activeChart === "cashFlow"}><PieIcon sx={{ fontSize: 16, mr: 0.5 }} /> {t("accounting.AccountingChartsPanel.pie")}</ToggleButton>
+              <ToggleButton value="area" disabled={activeChart !== "cashFlow"}><LineIcon sx={{ fontSize: 16, mr: 0.5 }} /> {t("accounting.AccountingChartsPanel.trend")}</ToggleButton>
             </ToggleButtonGroup>
           </Box>
 
           {/* VIEW SELECTOR */}
           <Box sx={{ flexGrow: 1, minWidth: 140 }}>
-            <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>DATA PERSPECTIVE</Typography>
+            <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ display: "block", mb: 0.5 }}>{t("accounting.AccountingChartsPanel.dataPerspective")}</Typography>
             <Select
               fullWidth value={activeChart} size="small"
               onChange={(e) => setActiveChart(e.target.value)}
               sx={{ borderRadius: 2, bgcolor: "#f8fafc", fontSize: "0.85rem", fontWeight: 600 }}
             >
-              <MenuItem value="cashFlow">Cash Flow (Performance)</MenuItem>
-              <MenuItem value="expensesByCategory">Expenses (By Category)</MenuItem>
-              <MenuItem value="invoicesByStatus">Invoices (By Status)</MenuItem>
-              <MenuItem value="paymentsByMethod">Payments (By Channel)</MenuItem>
+              <MenuItem value="cashFlow">{t("accounting.AccountingChartsPanel.cashFlowPerformance")}</MenuItem>
+              <MenuItem value="expensesByCategory">{t("accounting.AccountingChartsPanel.expensesByCategory")}</MenuItem>
+              <MenuItem value="invoicesByStatus">{t("accounting.AccountingChartsPanel.invoicesByStatus")}</MenuItem>
+              <MenuItem value="paymentsByMethod">{t("accounting.AccountingChartsPanel.paymentsByChannel")}</MenuItem>
             </Select>
           </Box>
         </Stack>
@@ -271,7 +273,7 @@ export default function AccountingChartsPanel() {
       <Box sx={{ mt: 3, p: 2, bgcolor: "primary.light", borderRadius: 2, display: "flex", alignItems: "center", gap: 1.5, border: "1px solid", borderColor: "primary.main" }}>
         <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "primary.main", animation: "pulse 2s infinite" }} />
         <Typography variant="caption" color="primary.main" fontWeight="700">
-          LIVE SYNC ACTIVE: {filters.search ? `Filtering for "${filters.search}"` : "Global Data Stream"}
+          {t("accounting.AccountingChartsPanel.liveSyncActive")} {filters.search ? t("accounting.AccountingChartsPanel.filteringFor", { search: filters.search }) : t("accounting.AccountingChartsPanel.globalDataStream")}
         </Typography>
       </Box>
     </Box>

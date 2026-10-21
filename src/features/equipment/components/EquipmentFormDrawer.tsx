@@ -32,6 +32,7 @@ import {
 } from "../hooks/useEquipmentHooks";
 import { useCategoryOptions } from "../hooks/useCategoryHooks";
 import { useWarehouseOptions } from "@/features/warehouses/hooks/useWarehouseOptions";
+import { useTranslation } from "react-i18next";
 
 interface EquipmentFormDrawerProps {
   open: boolean;
@@ -66,6 +67,7 @@ export function EquipmentFormDrawer({
   onClose,
   initialData,
 }: EquipmentFormDrawerProps) {
+  const { t } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
 
   const createMutation = useCreateEquipment();
@@ -227,7 +229,7 @@ export function EquipmentFormDrawer({
             sx={{ fontWeight: "bold" }}
             color="text.primary"
           >
-            {isEditing ? "Edit Asset Profile" : "Register New Equipment"}
+            {isEditing ? t("equipment.EquipmentFormDrawer.editAssetProfile") : t("equipment.EquipmentFormDrawer.registerNewEquipment")}
           </Typography>
           <IconButton onClick={onClose} size="small" edge="end">
             <CloseIcon />
@@ -238,9 +240,9 @@ export function EquipmentFormDrawer({
           onChange={(_, v) => setTabIndex(v)}
           variant="fullWidth"
         >
-          <Tab label="General Details" />
-          <Tab label="Rental & Pricing" />
-          <Tab label="Inventory Tracking" />
+          <Tab label={t("equipment.EquipmentFormDrawer.generalDetails")} />
+          <Tab label={t("equipment.EquipmentFormDrawer.rentalPricing")} />
+          <Tab label={t("equipment.EquipmentFormDrawer.inventoryTracking")} />
         </Tabs>
       </Box>
 
@@ -256,15 +258,15 @@ export function EquipmentFormDrawer({
           <Box className="space-y-5">
             <TextField
               fullWidth
-              label="Equipment Name"
+              label={t("equipment.EquipmentFormDrawer.equipmentName")}
               {...register("equipment_name")}
               error={!!errors.equipment_name}
               helperText={errors.equipment_name?.message}
-              placeholder="e.g. Bosch Hammer Drill 800W"
+              placeholder={t("equipment.EquipmentFormDialog.eGBoschHammerDrill")}
             />
             <TextField
               fullWidth
-              label="SKU / Serial Number"
+              label={t("equipment.EquipmentFormDrawer.skuSerialNumber")}
               {...register("serial_number")}
               error={!!errors.serial_number}
               helperText={errors.serial_number?.message}
@@ -278,7 +280,7 @@ export function EquipmentFormDrawer({
                   <TextField
                     select
                     fullWidth
-                    label="Category"
+                    label={t("common.category")}
                     {...field}
                     value={field.value ?? ""}
                     error={!!errors.category_id}
@@ -300,7 +302,7 @@ export function EquipmentFormDrawer({
                   <TextField
                     select
                     fullWidth
-                    label="Warehouse Location"
+                    label={t("equipment.EquipmentFormDrawer.warehouseLocation")}
                     {...field}
                     value={field.value ?? ""}
                     error={!!errors.warehouse_id}
@@ -318,7 +320,7 @@ export function EquipmentFormDrawer({
 
             <TextField
               fullWidth
-              label="Image URL (Optional)"
+              label={t("equipment.EquipmentFormDrawer.imageUrlOptional")}
               {...register("image_url")}
               error={!!errors.image_url}
               helperText={errors.image_url?.message}
@@ -333,7 +335,7 @@ export function EquipmentFormDrawer({
             <div className="grid grid-cols-2 gap-4">
               <TextField
                 fullWidth
-                label="Base Daily Rate"
+                label={t("equipment.EquipmentFormDrawer.baseDailyRate")}
                 type="number"
                 slotProps={{
                   htmlInput: { step: "0.01", min: "0" },
@@ -349,7 +351,7 @@ export function EquipmentFormDrawer({
               />
               <TextField
                 fullWidth
-                label="Overdue / Extra Daily Rate"
+                label={t("equipment.EquipmentFormDrawer.overdueExtraDailyRate")}
                 type="number"
                 slotProps={{
                   htmlInput: { step: "0.01", min: "0" },
@@ -362,7 +364,7 @@ export function EquipmentFormDrawer({
                 {...register("extra_daily_rate", { valueAsNumber: true })}
                 error={!!errors.extra_daily_rate}
                 helperText={
-                  errors.extra_daily_rate?.message || "Applied if returned late"
+                  errors.extra_daily_rate?.message || t("equipment.EquipmentFormDialog.appliedIfReturnedLate")
                 }
               />
             </div>
@@ -370,7 +372,7 @@ export function EquipmentFormDrawer({
             <div className="grid grid-cols-2 gap-4">
               <TextField
                 fullWidth
-                label="Minimum Rental Days"
+                label={t("equipment.EquipmentBulkEditDialog.minimumRentalDays")}
                 type="number"
                 slotProps={{ htmlInput: { min: "1" } }}
                 {...register("minimum_rental_days", { valueAsNumber: true })}
@@ -379,7 +381,7 @@ export function EquipmentFormDrawer({
               />
               <TextField
                 fullWidth
-                label="Original Purchase Cost"
+                label={t("equipment.EquipmentFormDrawer.originalPurchaseCost")}
                 type="number"
                 slotProps={{
                   htmlInput: { step: "0.01", min: "0" },
@@ -392,7 +394,7 @@ export function EquipmentFormDrawer({
                 {...register("purchase_cost", { valueAsNumber: true })}
                 error={!!errors.purchase_cost}
                 helperText={
-                  errors.purchase_cost?.message || "For internal ROI tracking"
+                  errors.purchase_cost?.message || t("equipment.EquipmentFormDialog.forInternalRoiTracking")
                 }
               />
             </div>
@@ -419,10 +421,10 @@ export function EquipmentFormDrawer({
                   sx={{ fontWeight: "bold" }}
                   color="primary.dark"
                 >
-                  Bulk Item Tracking
+                  {t("equipment.EquipmentFormDrawer.bulkItemTracking")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Is this a serialized asset or a bulk asset?
+                  {t("equipment.EquipmentFormDrawer.isThisASerializedAsset")}
                 </Typography>
               </Box>
               <Controller
@@ -437,7 +439,7 @@ export function EquipmentFormDrawer({
                         color="primary"
                       />
                     }
-                    label={value ? "Bulk" : "Serialized"}
+                    label={value ? t("equipment.EquipmentFormDrawer.bulk") : t("equipment.EquipmentFormDrawer.serialized")}
                     labelPlacement="start"
                     sx={{ m: 0 }}
                   />
@@ -459,7 +461,7 @@ export function EquipmentFormDrawer({
               >
                 <CalculateIcon color="primary" />
                 <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                  Live Stock Equation
+                  {t("equipment.EquipmentFormDrawer.liveStockEquation")}
                 </Typography>
               </Box>
 
@@ -468,7 +470,7 @@ export function EquipmentFormDrawer({
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
-                    label="Total Owned"
+                    label={t("equipment.EquipmentFormDrawer.totalOwned")}
                     type="number"
                     {...register("total_owned_qty", { valueAsNumber: true })}
                     disabled={!isBulkItem}
@@ -479,7 +481,7 @@ export function EquipmentFormDrawer({
                       input: { sx: { fontWeight: "bold" } },
                     }}
                     error={!!errors.total_owned_qty}
-                    helperText={!isBulkItem ? "Locked at 1" : "Total stock"}
+                    helperText={!isBulkItem ? t("equipment.EquipmentFormDrawer.lockedAt1") : t("equipment.EquipmentFormDrawer.totalStock")}
                   />
                 </Grid>
 
@@ -487,7 +489,7 @@ export function EquipmentFormDrawer({
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
-                    label="Out on Rent"
+                    label={t("equipment.EquipmentFormDrawer.outOnRent")}
                     type="number"
                     {...register("rented_qty")}
                     slotProps={{
@@ -496,7 +498,7 @@ export function EquipmentFormDrawer({
                         sx: { bgcolor: "#f1f5f9", color: "text.secondary" },
                       },
                     }}
-                    helperText="- Managed by POS"
+                    helperText={t("equipment.EquipmentFormDrawer.managedByPos")}
                   />
                 </Grid>
 
@@ -504,7 +506,7 @@ export function EquipmentFormDrawer({
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
-                    label="In Workshop"
+                    label={t("equipment.EquipmentFormDrawer.inWorkshop")}
                     type="number"
                     {...register("defective_qty")}
                     slotProps={{
@@ -513,7 +515,7 @@ export function EquipmentFormDrawer({
                         sx: { bgcolor: "#fef2f2", color: "error.main" },
                       },
                     }}
-                    helperText="- Managed by Logs"
+                    helperText={t("equipment.EquipmentFormDrawer.managedByLogs")}
                   />
                 </Grid>
 
@@ -536,7 +538,7 @@ export function EquipmentFormDrawer({
                       color="primary.dark"
                       sx={{ fontWeight: "bold", textTransform: "uppercase" }}
                     >
-                      = Currently Available to Rent
+                      {t("equipment.EquipmentFormDrawer.currentlyAvailableToRent")}
                     </Typography>
                     <Typography
                       variant="h4"
@@ -555,14 +557,14 @@ export function EquipmentFormDrawer({
               sx={{ fontWeight: 600, mt: 4, mb: -1 }}
               color="text.primary"
             >
-              Warranty Information
+              {t("equipment.EquipmentFormDrawer.warrantyInformation")}
             </Typography>
             <Divider />
 
             <div className="grid grid-cols-2 gap-4">
               <TextField
                 fullWidth
-                label="Warranty Period (Months)"
+                label={t("equipment.EquipmentFormDrawer.warrantyPeriodMonths")}
                 type="number"
                 slotProps={{ htmlInput: { min: "0" } }}
                 {...register("warranty_period_months", { valueAsNumber: true })}
@@ -571,7 +573,7 @@ export function EquipmentFormDrawer({
               />
               <TextField
                 fullWidth
-                label="Warranty Expiry Date"
+                label={t("equipment.EquipmentFormDrawer.warrantyExpiryDate")}
                 type="date"
                 slotProps={{ inputLabel: { shrink: true } }}
                 {...register("end_of_warranty_date")}
@@ -599,11 +601,11 @@ export function EquipmentFormDrawer({
         }}
       >
         <Typography variant="caption" color="error">
-          {Object.keys(errors).length > 0 && "Please fix errors before saving."}
+          {Object.keys(errors).length > 0 && t("equipment.EquipmentFormDrawer.pleaseFixErrors")}
         </Typography>
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button variant="outlined" onClick={onClose} disabled={isPending}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             type="submit"
@@ -616,10 +618,10 @@ export function EquipmentFormDrawer({
             }
           >
             {isPending
-              ? "Saving..."
+              ? t("accounting.ExpensesTab.saving")
               : isEditing
-                ? "Save Changes"
-                : "Save Equipment"}
+                ? t("equipment.EquipmentFormDrawer.saveChanges")
+                : t("equipment.EquipmentFormDrawer.saveEquipment")}
           </Button>
         </Box>
       </Box>

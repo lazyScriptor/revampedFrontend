@@ -9,8 +9,10 @@ import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import { useGlobalCors, useUpdateGlobalCors } from '../hooks/useSuperAdminHooks';
+import { useTranslation } from "react-i18next";
 
 export default function CorsManagerPanel() {
+    const { t } = useTranslation();
     const { data: origins = [], isLoading, refetch } = useGlobalCors();
     const updateMutation = useUpdateGlobalCors();
 
@@ -60,16 +62,16 @@ export default function CorsManagerPanel() {
             {/* Header */}
             <Box>
                 <Typography variant="h6" sx={{ color: '#f1f5f9', fontWeight: 700 }}>
-                    CORS & Security
+                    {t("superAdmin.cors")}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    Manage which frontend origins are allowed to connect to the GearGrid API. Changes take effect immediately without a server restart.
+                    {t("superAdmin.CorsManagerPanel.manageWhichFrontendOriginsAre")}
                 </Typography>
             </Box>
 
             {saved && (
                 <Alert severity="success" sx={{ borderRadius: 2, bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
-                    CORS origins updated and applied live.
+                    {t("superAdmin.CorsManagerPanel.corsOriginsUpdatedAndApplied")}
                 </Alert>
             )}
 
@@ -81,15 +83,15 @@ export default function CorsManagerPanel() {
                             <PublicOutlinedIcon sx={{ color: '#3b82f6', fontSize: 16 }} />
                         </Box>
                         <Box>
-                            <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600 }}>Allowed Origins</Typography>
+                            <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600 }}>{t("superAdmin.CorsManagerPanel.allowedOrigins")}</Typography>
                             <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                {currentOrigins.length} origin{currentOrigins.length !== 1 ? 's' : ''} whitelisted
+                                {t("superAdmin.CorsManagerPanel.originsWhitelisted", { count: currentOrigins.length })}
                             </Typography>
                         </Box>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         {isDirty && (
-                            <Tooltip title="Reset to last saved">
+                            <Tooltip title={t("superAdmin.CorsManagerPanel.resetToLastSaved")}>
                                 <IconButton size="small" onClick={handleReset} sx={{ color: '#94a3b8' }}>
                                     <RefreshOutlinedIcon sx={{ fontSize: 16 }} />
                                 </IconButton>
@@ -106,7 +108,7 @@ export default function CorsManagerPanel() {
                         </Box>
                     ) : currentOrigins.length === 0 ? (
                         <Typography variant="body2" sx={{ color: '#475569', textAlign: 'center', py: 3 }}>
-                            No origins configured. Add at least one origin.
+                            {t("superAdmin.CorsManagerPanel.noOriginsConfiguredAddAt")}
                         </Typography>
                     ) : (
                         currentOrigins.map((origin) => (
@@ -134,7 +136,7 @@ export default function CorsManagerPanel() {
                                     {origin.includes('localhost') && (
                                         <Chip label="local" size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 600 }} />
                                     )}
-                                    <Tooltip title="Remove origin">
+                                    <Tooltip title={t("superAdmin.CorsManagerPanel.removeOrigin")}>
                                         <IconButton
                                             size="small"
                                             onClick={() => handleRemove(origin)}
@@ -177,7 +179,7 @@ export default function CorsManagerPanel() {
                         startIcon={<AddIcon />}
                         sx={{ borderColor: '#334155', color: '#94a3b8', '&:hover': { borderColor: '#3b82f6', color: '#3b82f6' }, whiteSpace: 'nowrap', minWidth: 100 }}
                     >
-                        Add
+                        {t("common.add")}
                     </Button>
                 </Box>
             </Paper>
@@ -185,7 +187,7 @@ export default function CorsManagerPanel() {
             {/* Save bar */}
             {isDirty && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
-                    <Button onClick={handleReset} sx={{ color: '#64748b' }}>Discard Changes</Button>
+                    <Button onClick={handleReset} sx={{ color: '#64748b' }}>{t("superAdmin.CorsManagerPanel.discardChanges")}</Button>
                     <Button
                         variant="contained"
                         startIcon={updateMutation.isPending ? <CircularProgress size={14} /> : <SaveOutlinedIcon />}
@@ -193,7 +195,7 @@ export default function CorsManagerPanel() {
                         disabled={updateMutation.isPending}
                         sx={{ bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, fontWeight: 700 }}
                     >
-                        Apply Changes Live
+                        {t("superAdmin.CorsManagerPanel.applyChangesLive")}
                     </Button>
                 </Box>
             )}
@@ -201,10 +203,10 @@ export default function CorsManagerPanel() {
             {/* Info box */}
             <Paper elevation={0} sx={{ bgcolor: '#0f172a', border: '1px solid #1e293b', borderRadius: 2, p: 2.5 }}>
                 <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 1 }}>
-                    HOW CORS WORKS
+                    {t("superAdmin.CorsManagerPanel.howCorsWorks")}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#475569', display: 'block', lineHeight: 1.7 }}>
-                    Cross-Origin Resource Sharing (CORS) controls which web applications can make API requests. Only add origins you control. Changes are applied in-process immediately — no server restart required. For production deployments with multiple processes, a restart is recommended to propagate changes across all instances.
+                    {t("superAdmin.CorsManagerPanel.crossOriginResourceSharingCors")}
                 </Typography>
             </Paper>
         </Box>

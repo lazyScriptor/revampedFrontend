@@ -11,11 +11,13 @@ import { StatTable } from "@/components/reports/StatTable";
 import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useInvoiceAging } from "../hooks/useReportsHooks";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function AgingReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -56,7 +58,7 @@ export default function AgingReport() {
   const columns: GridColDef[] = [
     {
       field: "invoice_id",
-      headerName: "Invoice #",
+      headerName: t("invoices.invoiceNumber"),
       width: 125,
       renderCell: (p) => (
         <span
@@ -72,7 +74,7 @@ export default function AgingReport() {
     },
     {
       field: "customer",
-      headerName: "Customer",
+      headerName: t("invoices.customer"),
       flex: 1.4,
       minWidth: 240,
       renderCell: (p) => {
@@ -119,7 +121,7 @@ export default function AgingReport() {
                   fontSize: "0.72rem",
                 }}
               >
-                {r.phone_number || "No phone"}
+                {r.phone_number || t("reports.AgingReport.noPhone")}
               </Typography>
             </Box>
           </Box>
@@ -128,7 +130,7 @@ export default function AgingReport() {
     },
     {
       field: "issued_date",
-      headerName: "Issued",
+      headerName: t("invoices.issuedDate"),
       width: 130,
       renderCell: (p) => (
         <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
@@ -138,7 +140,7 @@ export default function AgingReport() {
     },
     {
       field: "total_amount",
-      headerName: "Total",
+      headerName: t("common.total"),
       width: 140,
       type: "number",
       renderCell: (p) => (
@@ -157,7 +159,7 @@ export default function AgingReport() {
     },
     {
       field: "total_paid",
-      headerName: "Paid",
+      headerName: t("invoices.paid"),
       width: 140,
       type: "number",
       renderCell: (p) => (
@@ -176,7 +178,7 @@ export default function AgingReport() {
     },
     {
       field: "balance_due",
-      headerName: "Balance",
+      headerName: t("reports.AllCustomersReport.balance"),
       width: 145,
       type: "number",
       renderCell: (p) => (
@@ -195,7 +197,7 @@ export default function AgingReport() {
     },
     {
       field: "days_overdue",
-      headerName: "Days Overdue",
+      headerName: t("reports.AgingReport.daysOverdue"),
       width: 145,
       type: "number",
       renderCell: (p) => {
@@ -219,7 +221,7 @@ export default function AgingReport() {
             }`}
           >
             <WarningAmberIcon sx={{ fontSize: 13 }} />
-            {v} days
+            {t("reports.AgingReport.days", { v })}
           </span>
         );
       },
@@ -228,8 +230,8 @@ export default function AgingReport() {
 
   return (
     <ReportShell
-      title="Invoice Aging"
-      subtitle="Outstanding receivable invoices categorized by overdue aging buckets"
+      title={t("reports.AgingReport.invoiceAging")}
+      subtitle={t("reports.AgingReport.outstandingReceivableInvoicesCategorized")}
       actionsSlot={
         <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
       }
@@ -246,21 +248,21 @@ export default function AgingReport() {
         }}
       >
         <KpiTile
-          label="0-30 Days"
+          label={t("reports.OutstandingBalancesReport.030Days")}
           value={formatCurrency(buckets?.current?.total || 0)}
           hint={`${buckets?.current?.rows?.length || 0} invoices`}
           tone="info"
           loading={isLoading}
         />
         <KpiTile
-          label="31-60 Days"
+          label={t("reports.OutstandingBalancesReport.3160Days")}
           value={formatCurrency(buckets?.thirtyToSixty?.total || 0)}
           hint={`${buckets?.thirtyToSixty?.rows?.length || 0} invoices`}
           tone="warning"
           loading={isLoading}
         />
         <KpiTile
-          label="61-90 Days"
+          label={t("reports.OutstandingBalancesReport.6190Days")}
           value={formatCurrency(buckets?.sixtyToNinety?.total || 0)}
           hint={`${buckets?.sixtyToNinety?.rows?.length || 0} invoices`}
           icon={<WarningAmberIcon />}
@@ -268,7 +270,7 @@ export default function AgingReport() {
           loading={isLoading}
         />
         <KpiTile
-          label="90+ Days (High Risk)"
+          label={t("reports.AgingReport.90DaysHighRisk")}
           value={formatCurrency(buckets?.overNinety?.total || 0)}
           hint={`${buckets?.overNinety?.rows?.length || 0} invoices`}
           icon={<AccountBalanceWalletIcon />}

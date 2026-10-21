@@ -26,8 +26,10 @@ import {
   useDeviceStatus,
   useDevicePendingSignatures,
 } from '../hooks/useSignatures';
+import { useTranslation } from "react-i18next";
 
 export function DeviceHomePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const deviceId = getDeviceId();
 
@@ -113,7 +115,7 @@ export function DeviceHomePage() {
             {tenant.business_display_name}
           </Typography>
           <Typography sx={{ fontSize: 12, opacity: 0.9 }}>
-            Paired to {operator.operator_name}
+            {t("signatures.DeviceHomePage.pairedTo", { operator_name: operator.operator_name })}
           </Typography>
         </Box>
       </Box>
@@ -142,17 +144,16 @@ export function DeviceHomePage() {
             <CheckCircleOutlinedIcon sx={{ fontSize: 44 }} />
           </Avatar>
           <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#0f172a', mb: 0.5 }}>
-            Ready to sign
+            {t("signatures.DeviceHomePage.readyToSign")}
           </Typography>
           <Typography sx={{ fontSize: 13, color: '#64748b', mb: 2 }}>
-            This phone will open automatically the next time a bill needs a
-            signature.
+            {t("signatures.DeviceHomePage.thisPhoneWillOpenAutomatically")}
           </Typography>
 
           <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
             <HourglassBottomIcon sx={{ color: '#64748b', fontSize: 18 }} />
             <Typography sx={{ fontSize: 12, color: '#64748b' }}>
-              Waiting for signature requests…
+              {t("signatures.DeviceHomePage.waitingForSignatureRequests")}
             </Typography>
           </Stack>
 
@@ -160,7 +161,7 @@ export function DeviceHomePage() {
             <Chip
               size="small"
               icon={<DrawIcon />}
-              label="Your saved signature is active"
+              label={t("signatures.DeviceHomePage.yourSavedSignatureIsActive")}
               sx={{ mt: 2, bgcolor: '#f0fdf4', color: '#166534' }}
             />
           )}
@@ -168,9 +169,9 @@ export function DeviceHomePage() {
 
         {pending.isError && (
           <Alert severity="warning">
-            <strong>Couldn't fetch pending requests.</strong>
+            <strong>{t("signatures.DeviceHomePage.couldnTFetchPendingRequests")}</strong>
             {' '}
-            {(pending.error as Error)?.message || 'Retrying automatically.'}
+            {(pending.error as Error)?.message || t("signatures.DeviceHomePage.retryingAutomatically")}
           </Alert>
         )}
       </Box>
@@ -181,14 +182,14 @@ export function DeviceHomePage() {
           variant="text"
           size="small"
           onClick={() => {
-            if (confirm('Unpair this phone? You will need a new code from the POS.')) {
+            if (confirm(t("signatures.DeviceHomePage.unpairThisPhoneYouWill"))) {
               clearDeviceId();
               navigate({ to: '/pair', replace: true });
             }
           }}
           sx={{ textTransform: 'none', color: '#64748b' }}
         >
-          Unpair this phone
+          {t("signatures.DeviceHomePage.unpairThisPhone")}
         </Button>
       </Box>
     </Box>

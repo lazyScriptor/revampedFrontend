@@ -4,6 +4,7 @@ import {
   Typography, Button,
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { useTranslation } from "react-i18next";
 
 interface ConfirmState {
   open: boolean;
@@ -18,7 +19,7 @@ const defaultState: ConfirmState = {
   open: false,
   title: "",
   message: "",
-  confirmLabel: "Confirm",
+  confirmLabel: "",
   severity: "warning",
   onConfirm: () => {},
 };
@@ -38,7 +39,7 @@ export function useConfirmDialog() {
           open: true,
           title: options.title,
           message: options.message,
-          confirmLabel: options.confirmLabel || "Confirm",
+          confirmLabel: options.confirmLabel || "",
           severity: options.severity || "warning",
           onConfirm: () => {
             setState(defaultState);
@@ -57,6 +58,7 @@ export function useConfirmDialog() {
   }, []);
 
   const ConfirmDialogComponent = () => {
+    const { t } = useTranslation();
     const colorMap = {
       error: "error" as const,
       warning: "warning" as const,
@@ -79,10 +81,10 @@ export function useConfirmDialog() {
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={handleClose} variant="outlined">
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={state.onConfirm} variant="contained" color={btnColor} disableElevation>
-            {state.confirmLabel}
+            {state.confirmLabel || t("common.confirm")}
           </Button>
         </DialogActions>
       </Dialog>

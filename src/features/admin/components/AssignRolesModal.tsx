@@ -18,6 +18,7 @@ import {
   FormSection,
 } from "@/components/forms/FormDialogShell";
 import { userApi, roleApi } from "../api/admin.api";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function AssignRolesModal({ open, onClose, user, onSuccess }: Props) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [allRoles, setAllRoles] = useState<any[]>([]);
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<number>>(new Set());
@@ -50,7 +52,7 @@ export default function AssignRolesModal({ open, onClose, user, onSuccess }: Pro
         setSelectedRoleIds(currentRoleIds);
         setInitialIds(currentRoleIds);
       } catch (err: any) {
-        setError(err.message || "Failed to load roles.");
+        setError(err.message || t("admin.AssignRolesModal.failedToLoadRoles"));
       } finally {
         setLoading(false);
       }
@@ -74,7 +76,7 @@ export default function AssignRolesModal({ open, onClose, user, onSuccess }: Pro
       await userApi.assignRoles(user.user_id, Array.from(selectedRoleIds));
       onSuccess();
     } catch (err: any) {
-      setError(err.message || "Failed to assign roles.");
+      setError(err.message || t("admin.AssignRolesModal.failedToAssignRoles"));
     } finally {
       setSaving(false);
     }
@@ -93,20 +95,20 @@ export default function AssignRolesModal({ open, onClose, user, onSuccess }: Pro
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      eyebrow="Assign Roles"
-      title={user?.username || "User"}
-      subtitle="Toggle the roles that govern this user's permissions."
+      eyebrow={t("admin.AssignRolesModal.assignRoles")}
+      title={user?.username || t("admin.AssignRolesModal.user")}
+      subtitle={t("admin.AssignRolesModal.toggleTheRolesThatGovern")}
       avatarText={initials}
       footer={
         <>
           <FormFooterMeta>
             {dirty && !saving && !error
-              ? `${selectedRoleIds.size} role${selectedRoleIds.size === 1 ? "" : "s"} selected`
+              ? t("admin.AssignRolesModal.rolesSelected", { count: selectedRoleIds.size })
               : ""}
           </FormFooterMeta>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={onClose} disabled={saving} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="contained"
@@ -114,7 +116,7 @@ export default function AssignRolesModal({ open, onClose, user, onSuccess }: Pro
               disabled={saving || loading || !dirty}
               startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
             >
-              {saving ? "Saving…" : "Save roles"}
+              {saving ? t("common.saving") : t("admin.AssignRolesModal.saveRoles")}
             </Button>
           </Box>
         </>
@@ -128,8 +130,8 @@ export default function AssignRolesModal({ open, onClose, user, onSuccess }: Pro
 
       <FormSection
         icon={<VerifiedUserIcon />}
-        title="Available roles"
-        hint="Selected roles will be granted; unchecked roles will be removed."
+        title={t("admin.AssignRolesModal.availableRoles")}
+        hint={t("admin.AssignRolesModal.selectedRolesWillBeGranted")}
       >
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -180,12 +182,12 @@ export default function AssignRolesModal({ open, onClose, user, onSuccess }: Pro
                       {role.role_name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                      {role.description || `Hierarchy level ${role.hierarchy_level}`}
+                      {role.description || t("admin.AssignRolesModal.hierarchyLevel", { hierarchy_level: role.hierarchy_level })}
                     </Typography>
                   </Box>
                   {role.is_system_default && (
                     <Chip
-                      label="System"
+                      label={t("admin.roles.system")}
                       size="small"
                       color="warning"
                       sx={{ height: 20, fontSize: 10 }}

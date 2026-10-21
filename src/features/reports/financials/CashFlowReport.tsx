@@ -10,11 +10,13 @@ import { StatTable } from "@/components/reports/StatTable";
 import { useCashFlowReport } from "../hooks/useReportsHooks";
 import { todayLocalStr } from "@/lib/dates";
 import { GridColDef } from "@mui/x-data-grid";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function CashFlowReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -24,7 +26,7 @@ export default function CashFlowReport() {
   const columns: GridColDef[] = [
     {
       field: "method",
-      headerName: "Payment Method",
+      headerName: t("orders.paymentMethod"),
       flex: 1.2,
       minWidth: 150,
       renderCell: (p) => (
@@ -33,7 +35,7 @@ export default function CashFlowReport() {
     },
     {
       field: "income",
-      headerName: "Gross Inflow",
+      headerName: t("reports.CashFlowReport.grossInflow"),
       width: 170,
       type: "number",
       renderCell: (p) => (
@@ -52,7 +54,7 @@ export default function CashFlowReport() {
     },
     {
       field: "refunds",
-      headerName: "Refunds / Outflow",
+      headerName: t("reports.CashFlowReport.refundsOutflow"),
       width: 170,
       type: "number",
       renderCell: (p) => {
@@ -74,7 +76,7 @@ export default function CashFlowReport() {
     },
     {
       field: "net",
-      headerName: "Net Collected",
+      headerName: t("reports.CashFlowReport.netCollected"),
       width: 170,
       type: "number",
       renderCell: (p) => {
@@ -96,12 +98,12 @@ export default function CashFlowReport() {
     },
     {
       field: "transaction_count",
-      headerName: "Transactions",
+      headerName: t("accounting.CashFlowSummary.transactions"),
       width: 130,
       type: "number",
       renderCell: (p) => (
         <span className={`tabular-nums font-mono font-medium text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-          {p.value} txns
+          {t("reports.CashFlowReport.txns", { value: p.value })}
         </span>
       ),
     },
@@ -117,14 +119,14 @@ export default function CashFlowReport() {
 
   return (
     <ReportShell
-      title="Daily Cash Flow"
-      subtitle="Breakdown of receipts, payment channels, and settlement refunds for a single operational day"
+      title={t("reports.CashFlowReport.dailyCashFlow")}
+      subtitle={t("reports.CashFlowReport.breakdownOfReceiptsPaymentChannels")}
       filterSlot={
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <TextField
             type="date"
             size="small"
-            label="Selected Date"
+            label={t("reports.CashFlowReport.selectedDate")}
             value={date}
             onChange={(e) => setDate(e.target.value)}
             slotProps={{
@@ -171,28 +173,28 @@ export default function CashFlowReport() {
         }}
       >
         <KpiTile
-          label="Total Inflow"
+          label={t("reports.CashFlowReport.totalInflow")}
           value={formatCurrency(totals.totalIncome)}
           icon={<PaymentsIcon />}
           tone="success"
           loading={isLoading}
         />
         <KpiTile
-          label="Total Refunds"
+          label={t("accounting.CashFlowSummary.totalRefunds")}
           value={formatCurrency(totals.totalRefunds)}
           icon={<KeyboardReturnIcon />}
           tone="error"
           loading={isLoading}
         />
         <KpiTile
-          label="Net Inflow"
+          label={t("reports.CashFlowReport.netInflow")}
           value={formatCurrency(totals.totalNet)}
           icon={<AccountBalanceWalletIcon />}
           tone={totals.totalNet >= 0 ? "success" : "error"}
           loading={isLoading}
         />
         <KpiTile
-          label="Transactions"
+          label={t("accounting.CashFlowSummary.transactions")}
           value={totals.totalTransactions}
           icon={<ReceiptIcon />}
           tone="info"

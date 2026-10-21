@@ -3,6 +3,8 @@ import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 interface PlatformKpiCardsProps {
   data: {
@@ -29,32 +31,32 @@ interface KpiSpec {
 const KPIS: KpiSpec[] = [
   {
     key: "totalTenants",
-    label: "Total Tenants",
-    hint: "All workspaces on the platform",
+    label: tk("superAdmin.totalTenants"),
+    hint: tk("superAdmin.PlatformKpiCards.allWorkspacesOnThePlatform"),
     icon: <BusinessOutlinedIcon sx={{ fontSize: 22 }} />,
     accent: "#3b82f6",
     glow: "rgba(59,130,246,0.20)",
   },
   {
     key: "activeTenants",
-    label: "Active",
-    hint: "In good standing",
+    label: tk("common.active"),
+    hint: tk("superAdmin.PlatformKpiCards.inGoodStanding"),
     icon: <WorkspacePremiumOutlinedIcon sx={{ fontSize: 22 }} />,
     accent: "#10b981",
     glow: "rgba(16,185,129,0.20)",
   },
   {
     key: "suspendedTenants",
-    label: "Suspended",
-    hint: "Manually paused",
+    label: tk("superAdmin.suspendedTenants"),
+    hint: tk("superAdmin.PlatformKpiCards.manuallyPaused"),
     icon: <BlockOutlinedIcon sx={{ fontSize: 22 }} />,
     accent: "#ef4444",
     glow: "rgba(239,68,68,0.20)",
   },
   {
     key: "totalGlobalUsers",
-    label: "Total Users",
-    hint: "Across every tenant",
+    label: tk("admin.users.totalUsers"),
+    hint: tk("superAdmin.PlatformKpiCards.acrossEveryTenant"),
     icon: <PeopleOutlinedIcon sx={{ fontSize: 22 }} />,
     accent: "#8b5cf6",
     glow: "rgba(139,92,246,0.20)",
@@ -62,6 +64,7 @@ const KPIS: KpiSpec[] = [
 ];
 
 export default function PlatformKpiCards({ data, isLoading }: PlatformKpiCardsProps) {
+  const { t } = useTranslation();
   const total = data?.totalTenants ?? 0;
   return (
     <Box
@@ -148,7 +151,7 @@ export default function PlatformKpiCards({ data, isLoading }: PlatformKpiCardsPr
                     lineHeight: 1.2,
                   }}
                 >
-                  {kpi.label}
+                  {t(kpi.label)}
                 </Typography>
                 <Typography
                   sx={{
@@ -189,7 +192,7 @@ export default function PlatformKpiCards({ data, isLoading }: PlatformKpiCardsPr
                         lineHeight: 1.2,
                       }}
                     >
-                      {kpi.hint}
+                      {t(kpi.hint)}
                     </Typography>
                   )}
                 </Box>

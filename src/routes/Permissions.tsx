@@ -48,6 +48,7 @@ import { roleApi, userApi } from "@/features/admin/api/admin.api";
 import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import PermissionMatrix from "@/features/permissions/components/PermissionMatrix";
+import { useTranslation } from "react-i18next";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,6 +129,7 @@ function RoleFormDialog({
   onSubmit,
   isSubmitting,
 }: RoleFormDialogProps) {
+  const { t } = useTranslation();
   const isEdit = Boolean(roleToEdit);
   const [form, setForm] = useState({
     roleName: "",
@@ -152,11 +154,11 @@ function RoleFormDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.roleName.trim()) {
-      setErr("Role name is required.");
+      setErr(t("pages.Permissions.roleNameIsRequired"));
       return;
     }
     if (form.hierarchyLevel < 1 || form.hierarchyLevel > 99) {
-      setErr("Hierarchy level must be between 1 and 99.");
+      setErr(t("pages.Permissions.hierarchyLevelMustBeBetween"));
       return;
     }
     onSubmit(form);
@@ -173,7 +175,7 @@ function RoleFormDialog({
           py: 1.5,
         }}
       >
-        {isEdit ? "Edit Role" : "Create New Role"}
+        {isEdit ? t("pages.Permissions.editRole") : t("pages.Permissions.createNewRole")}
         <IconButton size="small" onClick={onClose}>
           <CloseIcon />
         </IconButton>
@@ -187,7 +189,7 @@ function RoleFormDialog({
           )}
           <Stack spacing={2.5} sx={{ pt: 1 }}>
             <TextField
-              label="Role Name"
+              label={t("pages.Permissions.roleName")}
               fullWidth
               required
               size="small"
@@ -198,12 +200,12 @@ function RoleFormDialog({
               disabled={isEdit && Boolean(roleToEdit?.is_system_default)}
               helperText={
                 isEdit && roleToEdit?.is_system_default
-                  ? "System role names cannot be changed."
+                  ? t("pages.Permissions.systemRoleNamesCannotBe")
                   : ""
               }
             />
             <TextField
-              label="Description"
+              label={t("common.description")}
               fullWidth
               multiline
               rows={2}
@@ -214,7 +216,7 @@ function RoleFormDialog({
               }
             />
             <TextField
-              label="Hierarchy Level"
+              label={t("pages.Permissions.hierarchyLevel")}
               type="number"
               fullWidth
               required
@@ -226,7 +228,7 @@ function RoleFormDialog({
                   hierarchyLevel: parseInt(e.target.value) || 0,
                 }))
               }
-              helperText="1–99. Higher = more privileged. Users can only manage roles strictly below their own level."
+              helperText={t("pages.Permissions.199HigherMorePrivileged")}
               slotProps={{ htmlInput: { min: 1, max: 99 } }}
             />
           </Stack>
@@ -234,7 +236,7 @@ function RoleFormDialog({
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button
           type="submit"
@@ -249,7 +251,7 @@ function RoleFormDialog({
             ) : undefined
           }
         >
-          {isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Create Role"}
+          {isSubmitting ? t("accounting.ExpensesTab.saving") : isEdit ? t("equipment.EquipmentFormDrawer.saveChanges") : t("pages.Permissions.createRole")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -275,6 +277,7 @@ function AssignUsersDialog({
   onSubmit,
   isSubmitting,
 }: AssignUsersDialogProps) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
@@ -321,7 +324,7 @@ function AssignUsersDialog({
           py: 1.5,
         }}
       >
-        Assign Users — {role.role_name}
+        {t("pages.Permissions.assignUsers", { role_name: role.role_name })}
         <IconButton size="small" onClick={onClose}>
           <CloseIcon />
         </IconButton>
@@ -331,7 +334,7 @@ function AssignUsersDialog({
           <TextField
             size="small"
             fullWidth
-            placeholder="Search users…"
+            placeholder={t("pages.Permissions.searchUsers")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             slotProps={{
@@ -422,13 +425,13 @@ function AssignUsersDialog({
             variant="caption"
             sx={{ color: "#64748b", fontSize: "0.65rem" }}
           >
-            {selected.size} user{selected.size !== 1 ? "s" : ""} selected
+            {t("pages.Permissions.usersSelected", { count: selected.size })}
           </Typography>
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button
           onClick={() => onSubmit(Array.from(selected))}
@@ -441,7 +444,7 @@ function AssignUsersDialog({
             ) : undefined
           }
         >
-          {isSubmitting ? "Saving…" : "Save Assignments"}
+          {isSubmitting ? t("common.saving") : t("pages.Permissions.saveAssignments")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -457,6 +460,7 @@ function UserPermissionsTab({
   matrixData?: MatrixData;
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { showSuccess, showError } = useToast();
   const theme = useTheme();
@@ -527,7 +531,7 @@ function UserPermissionsTab({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["permission-matrix"] });
-      showSuccess("User roles updated.");
+      showSuccess(t("pages.Permissions.userRolesUpdated"));
       setAddRoleOpen(false);
       setRoleToAdd("");
     },
@@ -610,7 +614,7 @@ function UserPermissionsTab({
     if (!selectedUser || !roleToAdd) return;
     const existing = new Set(selectedUser.Roles.map((r) => r.role_id));
     if (existing.has(roleToAdd as number)) {
-      showError("User already has this role.");
+      showError(t("pages.Permissions.userAlreadyHasThisRole"));
       return;
     }
     assignRolesMutation.mutate({
@@ -627,7 +631,7 @@ function UserPermissionsTab({
 
   if (isLoading) {
     return (
-      <GearGridLoader centered size="lg" label="Loading Access Matrix..." sublabel="Compiling role hierarchy & permission overrides" sx={{ py: 10 }} />
+      <GearGridLoader centered size="lg" label={t("pages.Permissions.loadingAccessMatrix")} sublabel={t("pages.Permissions.compilingRoleHierarchyPermissionOverride")} sx={{ py: 10 }} />
     );
   }
 
@@ -638,7 +642,7 @@ function UserPermissionsTab({
         <TextField
           size="small"
           fullWidth
-          placeholder="Search users…"
+          placeholder={t("pages.Permissions.searchUsers")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           slotProps={{
@@ -752,7 +756,7 @@ function UserPermissionsTab({
         {filteredUsers.length === 0 && (
           <Box sx={{ p: 3, textAlign: "center" }}>
             <Typography variant="caption" sx={{ color: "#94a3b8" }}>
-              No users found
+              {t("pages.Permissions.noUsersFound")}
             </Typography>
           </Box>
         )}
@@ -869,7 +873,7 @@ function UserPermissionsTab({
                   variant="body2"
                   sx={{ fontWeight: 700, fontSize: "0.8rem" }}
                 >
-                  Assigned Roles
+                  {t("admin.permissions.assignedRoles")}
                 </Typography>
               </Box>
               <Button
@@ -885,7 +889,7 @@ function UserPermissionsTab({
                   minWidth: 0,
                 }}
               >
-                Add Role
+                {t("admin.permissions.addRole")}
               </Button>
             </Box>
             <Box
@@ -896,7 +900,7 @@ function UserPermissionsTab({
                   variant="caption"
                   sx={{ color: "#94a3b8", fontStyle: "italic" }}
                 >
-                  No roles assigned
+                  {t("admin.permissions.noRolesAssigned")}
                 </Typography>
               )}
               {selectedUser.Roles?.map((role) => {
@@ -970,14 +974,14 @@ function UserPermissionsTab({
                     fontSize: "0.72rem",
                   }}
                 >
-                  Permission Overrides
+                  {t("admin.permissions.permissionOverrides")}
                 </Typography>
               </Box>
               <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
               {[
-                { color: "#94a3b8", label: "Inherited" },
-                { color: "#10b981", label: "Explicitly Granted" },
-                { color: "#ef4444", label: "Explicitly Revoked" },
+                { color: "#94a3b8", label: t("admin.permissions.inherited") },
+                { color: "#10b981", label: t("admin.permissions.explicitlyGranted") },
+                { color: "#ef4444", label: t("admin.permissions.explicitlyRevoked") },
               ].map(({ color, label }) => (
                 <Box
                   key={label}
@@ -1003,7 +1007,7 @@ function UserPermissionsTab({
                 variant="caption"
                 sx={{ color: "#94a3b8", fontSize: "0.6rem", ml: "auto" }}
               >
-                Click a row to cycle: Inherited → Override → Flip → Clear
+                {t("pages.Permissions.clickARowToCycle")}
               </Typography>
             </Box>
 
@@ -1064,16 +1068,16 @@ function UserPermissionsTab({
                       ) ?? false;
 
                     let statusColor = "#94a3b8";
-                    let statusLabel = fromRole ? "Inherited ✓" : "Inherited ✗";
+                    let statusLabel = fromRole ? t("pages.Permissions.inherited") : t("pages.Permissions.inherited2");
                     let rowBg = "transparent";
 
                     if (override?.grant_type === "grant") {
                       statusColor = "#10b981";
-                      statusLabel = "Granted";
+                      statusLabel = t("pages.Permissions.granted");
                       rowBg = "#f0fdf4";
                     } else if (override?.grant_type === "revoke") {
                       statusColor = "#ef4444";
-                      statusLabel = "Revoked";
+                      statusLabel = t("pages.Permissions.revoked");
                       rowBg = "#fff5f5";
                     }
 
@@ -1146,7 +1150,7 @@ function UserPermissionsTab({
                                 fontStyle: "italic",
                               }}
                             >
-                              via {roleSource}
+                              {t("pages.Permissions.via", { roleSource })}
                             </Typography>
                           )}
                           <Chip
@@ -1191,7 +1195,7 @@ function UserPermissionsTab({
                 py: 1.5,
               }}
             >
-              Add Role to {selectedUser.first_name}
+              {t("pages.Permissions.addRoleTo", { first_name: selectedUser.first_name })}
               <IconButton
                 size="small"
                 onClick={() => {
@@ -1213,7 +1217,7 @@ function UserPermissionsTab({
                       availableRolesToAdd.find((r) => r.role_id === v)
                         ?.role_name
                     ) : (
-                      <em style={{ color: "#94a3b8" }}>Select a role…</em>
+                      <em style={{ color: "#94a3b8" }}>{t("pages.Permissions.selectARole")}</em>
                     )
                   }
                 >
@@ -1239,7 +1243,7 @@ function UserPermissionsTab({
                   ))}
                   {availableRolesToAdd.length === 0 && (
                     <MenuItem disabled>
-                      User already has all available roles
+                      {t("pages.Permissions.userAlreadyHasAllAvailable")}
                     </MenuItem>
                   )}
                 </Select>
@@ -1253,7 +1257,7 @@ function UserPermissionsTab({
                 }}
                 color="inherit"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={handleAddRole}
@@ -1261,7 +1265,7 @@ function UserPermissionsTab({
                 disableElevation
                 disabled={!roleToAdd || assignRolesMutation.isPending}
               >
-                Add Role
+                {t("admin.permissions.addRole")}
               </Button>
             </DialogActions>
           </Dialog>
@@ -1280,7 +1284,7 @@ function UserPermissionsTab({
         >
           <PersonOutlinedIcon sx={{ fontSize: 48, color: "#cbd5e1" }} />
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            Select a user to manage their permissions
+            {t("admin.permissions.selectUserHint")}
           </Typography>
           <Button
             variant="contained"
@@ -1288,7 +1292,7 @@ function UserPermissionsTab({
             onClick={() => setSidebarOpen(true)}
             sx={{ mt: 1 }}
           >
-            Select User
+            {t("pages.Permissions.selectUser")}
           </Button>
         </Box>
       ) : (
@@ -1307,7 +1311,7 @@ function UserPermissionsTab({
         >
           <PersonOutlinedIcon sx={{ fontSize: 40, color: "#cbd5e1" }} />
           <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-            Select a user to manage their permissions
+            {t("admin.permissions.selectUserHint")}
           </Typography>
         </Paper>
       )}
@@ -1318,6 +1322,7 @@ function UserPermissionsTab({
 // ─── Tab 2: Role Management ───────────────────────────────────────────────────
 
 function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { showSuccess, showError } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -1349,7 +1354,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["roles"] });
       qc.invalidateQueries({ queryKey: ["permission-matrix"] });
-      showSuccess("Role created.");
+      showSuccess(t("pages.Permissions.roleCreated"));
       setRoleFormOpen(false);
     },
     onError: (err: Error) => showError(err.message),
@@ -1361,7 +1366,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["roles"] });
       qc.invalidateQueries({ queryKey: ["permission-matrix"] });
-      showSuccess("Role updated.");
+      showSuccess(t("pages.Permissions.roleUpdated"));
       setRoleFormOpen(false);
       setRoleToEdit(null);
     },
@@ -1372,7 +1377,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
     mutationFn: (id: number) => roleApi.deleteRole(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["roles"] });
-      showSuccess("Role deactivated.");
+      showSuccess(t("pages.Permissions.roleDeactivated"));
     },
     onError: (err: Error) => showError(err.message),
   });
@@ -1384,7 +1389,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
       qc.invalidateQueries({ queryKey: ["roles"] });
       qc.invalidateQueries({ queryKey: ["permission-matrix"] });
       qc.invalidateQueries({ queryKey: ["role-users"] });
-      showSuccess("Users assigned to role.");
+      showSuccess(t("pages.Permissions.usersAssignedToRole"));
       setAssignUsersRole(null);
     },
     onError: (err: Error) => showError(err.message),
@@ -1410,7 +1415,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
         (r) => r.role_id === vars.sourceRoleId,
       )?.role_name;
       const to = roles.find((r) => r.role_id === vars.targetRoleId)?.role_name;
-      showSuccess(`Permissions cloned from "${from}" to "${to}".`);
+      showSuccess(t("pages.Permissions.permissionsClonedFromTo", { from, to }));
       setCloneFrom("");
       setCloneTo("");
     },
@@ -1419,9 +1424,9 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
 
   const handleDelete = async (role: RoleInfo) => {
     const ok = await confirm({
-      title: "Deactivate Role",
-      message: `Deactivate "${role.role_name}"? Users assigned to this role will lose its permissions.`,
-      confirmLabel: "Deactivate",
+      title: t("admin.RoleManagement.deactivateRole"),
+      message: t("pages.Permissions.deactivateUsersAssignedToThis", { role_name: role.role_name }),
+      confirmLabel: t("common.deactivate"),
       severity: "error",
     });
     if (ok) deleteMutation.mutate(role.role_id);
@@ -1460,7 +1465,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
               variant="caption"
               sx={{ fontWeight: 700, color: "#334155", fontSize: "0.7rem" }}
             >
-              Clone Permissions
+              {t("pages.Permissions.clonePermissions")}
             </Typography>
           </Box>
           <FormControl size="small" sx={{ minWidth: 130 }}>
@@ -1473,7 +1478,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                   roles.find((r) => r.role_id === v)?.role_name
                 ) : (
                   <em style={{ color: "#94a3b8", fontSize: "0.72rem" }}>
-                    From role
+                    {t("pages.Permissions.fromRole")}
                   </em>
                 )
               }
@@ -1506,7 +1511,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                   roles.find((r) => r.role_id === v)?.role_name
                 ) : (
                   <em style={{ color: "#94a3b8", fontSize: "0.72rem" }}>
-                    To role
+                    {t("pages.Permissions.toRole")}
                   </em>
                 )
               }
@@ -1538,13 +1543,13 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
             }
             sx={{ fontSize: "0.7rem", textTransform: "none", minWidth: 56 }}
           >
-            {cloneMutation.isPending ? "…" : "Clone"}
+            {cloneMutation.isPending ? "…" : t("permissions.PermissionMatrix.clone")}
           </Button>
         </Paper>
 
         <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
           <Chip
-            label={showInactive ? "Showing All" : "Active Only"}
+            label={showInactive ? t("pages.Permissions.showingAll") : t("pages.RentalHistory.activeOnly")}
             onClick={() => setShowInactive((v) => !v)}
             size="small"
             variant={showInactive ? "filled" : "outlined"}
@@ -1561,14 +1566,14 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
             }}
             sx={{ textTransform: "none" }}
           >
-            Create Role
+            {t("pages.Permissions.createRole")}
           </Button>
         </Box>
       </Box>
 
       {/* Role Cards */}
       {isLoading ? (
-        <GearGridLoader centered size="md" label="Loading Defined Roles..." />
+        <GearGridLoader centered size="md" label={t("pages.Permissions.loadingDefinedRoles")} />
       ) : (
         <Grid container spacing={{ xs: 1.5, md: 2 }}>
           {sortedRoles.map((role) => {
@@ -1646,7 +1651,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                           }}
                         >
                           <Chip
-                            label={`Level ${role.hierarchy_level}`}
+                            label={t("pages.Permissions.level", { hierarchy_level: role.hierarchy_level })}
                             size="small"
                             sx={{
                               height: 15,
@@ -1659,7 +1664,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                           />
                           {role.is_system_default && (
                             <Chip
-                              label="System"
+                              label={t("admin.roles.system")}
                               size="small"
                               sx={{
                                 height: 15,
@@ -1672,7 +1677,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                           )}
                           {!role.is_active && (
                             <Chip
-                              label="Inactive"
+                              label={t("common.inactive")}
                               size="small"
                               sx={{
                                 height: 15,
@@ -1687,7 +1692,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
 
                     {/* Actions */}
                     <Box sx={{ display: "flex", gap: 0.25, flexShrink: 0 }}>
-                      <Tooltip title="Assign Users to Role">
+                      <Tooltip title={t("pages.Permissions.assignUsersToRole")}>
                         <IconButton
                           size="small"
                           onClick={() => setAssignUsersRole(role)}
@@ -1700,7 +1705,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                       </Tooltip>
                       {!role.is_system_default && role.is_active && (
                         <>
-                          <Tooltip title="Edit Role">
+                          <Tooltip title={t("pages.Permissions.editRole")}>
                             <IconButton
                               size="small"
                               onClick={() => {
@@ -1714,7 +1719,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                               />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Deactivate Role">
+                          <Tooltip title={t("admin.RoleManagement.deactivateRole")}>
                             <IconButton
                               size="small"
                               onClick={() => handleDelete(role)}
@@ -1771,7 +1776,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
                         variant="caption"
                         sx={{ fontSize: "0.58rem", color: "#94a3b8" }}
                       >
-                        Permissions
+                        {t("nav.permissions")}
                       </Typography>
                     </Box>
                   </Box>
@@ -1784,7 +1789,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
             <Grid size={{ xs: 12 }}>
               <Box sx={{ p: 5, textAlign: "center", color: "#94a3b8" }}>
                 <ShieldOutlinedIcon sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="body2">No roles found.</Typography>
+                <Typography variant="body2">{t("pages.Permissions.noRolesFound")}</Typography>
               </Box>
             </Grid>
           )}
@@ -1837,6 +1842,7 @@ function RoleManagementTab({ allUsers }: { allUsers: UserData[] }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PermissionsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
 
   const { data: matrixData, isLoading } = useQuery({
@@ -1856,12 +1862,11 @@ export default function PermissionsPage() {
             sx={{ color: "#3b82f6", fontSize: 24 }}
           />
           <Typography variant="h5" sx={{ fontWeight: 800, color: "#0f172a" }}>
-            Access Control
+            {t("admin.permissions.title")}
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ color: "#64748b" }}>
-          Manage role-based permissions, user-level overrides, and role
-          hierarchies across the platform.
+          {t("pages.Permissions.manageRoleBasedPermissionsUser")}
         </Typography>
       </Box>
 
@@ -1891,17 +1896,17 @@ export default function PermissionsPage() {
           <Tab
             icon={<ShieldOutlinedIcon sx={{ fontSize: 16 }} />}
             iconPosition="start"
-            label="Role Permission Matrix"
+            label={t("admin.permissions.rolePermissionMatrix")}
           />
           <Tab
             icon={<PersonOutlinedIcon sx={{ fontSize: 16 }} />}
             iconPosition="start"
-            label="User Permissions"
+            label={t("admin.permissions.userPermissions")}
           />
           <Tab
             icon={<AdminPanelSettingsOutlinedIcon sx={{ fontSize: 16 }} />}
             iconPosition="start"
-            label="Role Management"
+            label={t("admin.roles.title")}
           />
         </Tabs>
 

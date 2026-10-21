@@ -13,6 +13,7 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useDownloads } from "../hooks/useBulkJobs";
 import { downloadJobUrl } from "../api/bulkJobs.api";
 import { formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatBytes = (n: number): string => {
   if (!n) return "—";
@@ -27,6 +28,7 @@ const formatBytes = (n: number): string => {
 };
 
 export function DownloadsTable() {
+  const { t } = useTranslation();
   const { data, isLoading, isFetching } = useDownloads();
   const rows = (data || []).map((d) => ({ ...d, id: d.job_id }));
   const totalSize = (data || []).reduce((sum, d) => sum + (d.file_size_bytes || 0), 0);
@@ -34,7 +36,7 @@ export function DownloadsTable() {
   const columns: GridColDef[] = [
     {
       field: "operation",
-      headerName: "File",
+      headerName: t("dataArena.DownloadsTable.file"),
       flex: 1.4,
       minWidth: 240,
       renderCell: (p) => (
@@ -45,7 +47,7 @@ export function DownloadsTable() {
               {String(p.value || "").replace(/_/g, " ")}
             </Typography>
             <Typography variant="caption" sx={{ color: "#64748b" }}>
-              Job #{p.row.job_id} · {p.row.entity || "—"}
+              {t("dataArena.DownloadsTable.job", { job_id: p.row.job_id, value: p.row.entity || "—" })}
             </Typography>
           </Box>
         </Box>
@@ -53,7 +55,7 @@ export function DownloadsTable() {
     },
     {
       field: "file_size_bytes",
-      headerName: "Size",
+      headerName: t("dataArena.DownloadsTable.size"),
       width: 110,
       renderCell: (p) => (
         <Typography variant="caption" sx={{ color: "#475569", fontWeight: 700 }}>
@@ -63,7 +65,7 @@ export function DownloadsTable() {
     },
     {
       field: "finished_at",
-      headerName: "Generated",
+      headerName: t("dataArena.DownloadsTable.generated"),
       width: 140,
       renderCell: (p) => (
         <Typography variant="caption" sx={{ color: "#475569" }}>
@@ -79,7 +81,7 @@ export function DownloadsTable() {
       filterable: false,
       renderCell: (p) => (
         <Stack direction="row" spacing={0.25}>
-          <Tooltip title="Download">
+          <Tooltip title={t("common.download")}>
             <IconButton
               size="small"
               component="a"
@@ -111,14 +113,14 @@ export function DownloadsTable() {
       >
         <Box>
           <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-            GENERATED FILES
+            {t("dataArena.DownloadsTable.generatedFiles")}
           </Typography>
           <Typography variant="body2" sx={{ color: "#475569" }}>
-            All export artifacts you can re-download.
+            {t("dataArena.DownloadsTable.allExportArtifactsYouCan")}
           </Typography>
         </Box>
         <Chip
-          label={`Total: ${formatBytes(totalSize)}`}
+          label={t("dataArena.DownloadsTable.total", { value: formatBytes(totalSize) })}
           size="small"
           sx={{ bgcolor: "#f1f5f9", color: "#475569", fontWeight: 700 }}
         />

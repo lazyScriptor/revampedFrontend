@@ -126,7 +126,7 @@ export default function CustomersRoute() {
   if (isError) {
     return (
       <Alert severity="error" className="m-4">
-        Error loading customers: {error instanceof Error ? error.message : "Unknown error"}
+        {t("pages.Customers.errorLoadingCustomers")} {error instanceof Error ? error.message : t("pages.Categories.unknownError")}
       </Alert>
     );
   }
@@ -174,7 +174,7 @@ export default function CustomersRoute() {
       </Box>
 
       {/* KPI Dashboard */}
-      <ResponsiveKpiStrip mobileLabel="Customer Overview">
+      <ResponsiveKpiStrip mobileLabel={t("pages.Customers.customerOverview")}>
         <KpiTile
           label={t("customers.totalClients")}
           value={totalClients}
@@ -187,7 +187,7 @@ export default function CustomersRoute() {
           badge={
             activeFilterCount > 0 || debouncedSearch ? (
               <Chip
-                label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`}
+                label={t("common.matches", { count: totalRowCount })}
                 size="small"
                 sx={{
                   height: 18,
@@ -204,7 +204,7 @@ export default function CustomersRoute() {
         <KpiTile
           label={t("customers.linkedToParent")}
           value={delegatedCount}
-          hint="Corporate & Staff Accounts"
+          hint={t("pages.Customers.corporateStaffAccounts")}
           icon={<AccountTreeIcon />}
           tone="info"
           onClick={() => setHasParent((v) => (v === "true" ? "" : "true"))}
@@ -213,7 +213,7 @@ export default function CustomersRoute() {
           badge={
             hasParent === "true" ? (
               <Chip
-                label="Filtered"
+                label={t("pages.Customers.filtered")}
                 size="small"
                 sx={{
                   height: 18,
@@ -230,7 +230,7 @@ export default function CustomersRoute() {
         <KpiTile
           label={t("customers.idsInVault")}
           value={idsInVault}
-          hint={idRetained === "true" ? "Filtered: Vault clients" : "ID Card collateral in vault"}
+          hint={idRetained === "true" ? t("pages.Customers.filteredVaultClients") : t("pages.Customers.idCardCollateralInVault")}
           icon={<VerifiedUserIcon />}
           tone="error"
           onClick={() => setIdRetained((v) => (v === "true" ? "" : "true"))}
@@ -239,7 +239,7 @@ export default function CustomersRoute() {
           badge={
             idRetained === "true" ? (
               <Chip
-                label="Active"
+                label={t("common.active")}
                 size="small"
                 sx={{
                   height: 18,
@@ -256,7 +256,7 @@ export default function CustomersRoute() {
         <KpiTile
           label={t("customers.totalAdvanceHeld")}
           value={`Rs. ${totalAdvance.toLocaleString()}`}
-          hint="Active client advance balances"
+          hint={t("pages.Customers.activeClientAdvanceBalances")}
           icon={<AccountBalanceWalletIcon />}
           tone="success"
           compact
@@ -297,7 +297,7 @@ export default function CustomersRoute() {
               ),
               endAdornment: searchInput ? (
                 <InputAdornment position="end">
-                  <Tooltip title="Clear">
+                  <Tooltip title={t("common.clear")}>
                     <ClearOutlinedIcon
                       onClick={() => setSearchInput("")}
                       sx={{ fontSize: 16, color: theme.palette.text.disabled, cursor: "pointer" }}
@@ -393,13 +393,13 @@ export default function CustomersRoute() {
               onClick={clearFilters}
               sx={{ textTransform: "none", fontWeight: 700, ml: { sm: "auto" } }}
             >
-              Clear filters
+              {t("superAdmin.InquiryListPanel.clearFilters")}
             </Button>
           ) : null}
         </Box>
 
         <Typography variant="caption" sx={{ color: theme.palette.text.secondary, whiteSpace: "nowrap", flexShrink: 0 }}>
-          {isLoading ? "Loading…" : `${totalRowCount.toLocaleString()} match${totalRowCount === 1 ? "" : "es"}`}
+          {isLoading ? t("common.loading") : t("common.matchesFormatted", { count: totalRowCount })}
         </Typography>
       </Card>
 
@@ -419,7 +419,7 @@ export default function CustomersRoute() {
         }}
       >
         {isLoading && customerList.length === 0 ? (
-          <GearGridLoader centered size="lg" label="Loading Client Accounts..." sublabel="Retrieving customer records & credit balances" />
+          <GearGridLoader centered size="lg" label={t("pages.Customers.loadingClientAccounts")} sublabel={t("pages.Customers.retrievingCustomerRecordsCreditBalances")} />
         ) : (
           <CustomerTable
             data={customerList}
@@ -472,7 +472,7 @@ export default function CustomersRoute() {
               }}
             />
             <Typography variant="body2" sx={{ fontWeight: 600, color: "#fff" }}>
-              client{selectedIds.length === 1 ? "" : "s"} selected
+              {t("pages.Customers.clientsSelected", { count: selectedIds.length })}
             </Typography>
           </Box>
 
@@ -493,7 +493,7 @@ export default function CustomersRoute() {
                 px: 2,
               }}
             >
-              Bulk Edit
+              {t("pages.Customers.bulkEdit")}
             </Button>
           </Can>
 
@@ -509,7 +509,7 @@ export default function CustomersRoute() {
               borderRadius: 9999,
             }}
           >
-            Deselect All
+            {t("pages.Customers.deselectAll")}
           </Button>
         </Box>
       )}

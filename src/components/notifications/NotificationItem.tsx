@@ -7,6 +7,8 @@ import WorkIcon from "@mui/icons-material/Work";
 import CloseIcon from "@mui/icons-material/Close";
 import { NotificationRow } from "@/features/notifications/api/notifications.api";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { relativeAgo } from "@/lib/relativeTime";
 
 const TONE: Record<string, { color: string; bg: string; icon: React.ReactNode }> = {
   success: { color: "#16a34a", bg: "#dcfce7", icon: <CheckCircleIcon sx={{ fontSize: 18 }} /> },
@@ -17,16 +19,7 @@ const TONE: Record<string, { color: string; bg: string; icon: React.ReactNode }>
   system: { color: "#475569", bg: "#f1f5f9", icon: <InfoOutlinedIcon sx={{ fontSize: 18 }} /> },
 };
 
-const relTime = (iso: string) => {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diffMs / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-};
+const relTime = relativeAgo;
 
 export function NotificationItem({
   item,
@@ -39,6 +32,7 @@ export function NotificationItem({
   onRemove: (id: number) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const tone = TONE[item.type] || TONE.info;
   const isUnread = !item.read_at;
@@ -125,7 +119,7 @@ export function NotificationItem({
         </Typography>
       </Box>
 
-      <Tooltip title="Dismiss">
+      <Tooltip title={t("shared.NotificationItem.dismiss")}>
         <IconButton
           size="small"
           onClick={(e) => {

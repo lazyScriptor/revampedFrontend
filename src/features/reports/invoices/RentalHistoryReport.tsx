@@ -15,6 +15,7 @@ import { StatTable } from "@/components/reports/StatTable";
 import { ExportMenu } from "@/components/reports/ExportMenu";
 import { useRentalHistoryReport } from "../hooks/useReportsHooks";
 import { todayLocalStr, addDaysLocal, formatDisplayDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 const formatCurrency = (n: number) =>
   `LKR ${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -30,6 +31,7 @@ const isOverdue = (inv: any) =>
   );
 
 export default function RentalHistoryReport() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
@@ -82,7 +84,7 @@ export default function RentalHistoryReport() {
   const columns: GridColDef[] = [
     {
       field: "invoice_id",
-      headerName: "Invoice #",
+      headerName: t("invoices.invoiceNumber"),
       width: 125,
       renderCell: (p) => (
         <span
@@ -98,7 +100,7 @@ export default function RentalHistoryReport() {
     },
     {
       field: "customer",
-      headerName: "Customer",
+      headerName: t("invoices.customer"),
       flex: 1.4,
       minWidth: 240,
       renderCell: (p) => {
@@ -145,7 +147,7 @@ export default function RentalHistoryReport() {
                   fontSize: "0.72rem",
                 }}
               >
-                {c.phone_number || "No contact"}
+                {c.phone_number || t("customers.CustomerBulkEditDialog.noContact")}
               </Typography>
             </Box>
           </Box>
@@ -154,7 +156,7 @@ export default function RentalHistoryReport() {
     },
     {
       field: "issued_date",
-      headerName: "Issued Date",
+      headerName: t("reports.RentalHistoryReport.issuedDate"),
       width: 135,
       renderCell: (p) => (
         <span className={`tabular-nums font-mono text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
@@ -164,7 +166,7 @@ export default function RentalHistoryReport() {
     },
     {
       field: "total_amount",
-      headerName: "Grand Total",
+      headerName: t("invoices.grandTotal"),
       width: 150,
       type: "number",
       renderCell: (p) => (
@@ -183,11 +185,11 @@ export default function RentalHistoryReport() {
     },
     {
       field: "status",
-      headerName: "Rental Status",
+      headerName: t("reports.RentalHistoryReport.rentalStatus"),
       width: 150,
       renderCell: (p) => {
         const overdue = isOverdue(p.row);
-        const label = overdue ? "Overdue" : p.value;
+        const label = overdue ? t("invoices.overdue") : p.value;
         const isCompleted = p.value === "Completed";
 
         return (
@@ -224,8 +226,8 @@ export default function RentalHistoryReport() {
 
   return (
     <ReportShell
-      title="Rental History"
-      subtitle="Complete ledger of dispatched, active, overdue, and returned rental orders"
+      title={t("reports.rentalHistory")}
+      subtitle={t("reports.RentalHistoryReport.completeLedgerOfDispatchedActive")}
       actionsSlot={
         <ExportMenu onExport={(f) => (f === "csv" ? downloadCsv() : undefined)} />
       }
@@ -251,7 +253,7 @@ export default function RentalHistoryReport() {
                 fontSize: "0.7rem",
               }}
             >
-              FILTER BY STATUS
+              {t("reports.RentalHistoryReport.filterByStatus")}
             </Typography>
             <ToggleButtonGroup
               value={status}
@@ -282,10 +284,10 @@ export default function RentalHistoryReport() {
                 },
               }}
             >
-              <ToggleButton value="All">All Invoices</ToggleButton>
-              <ToggleButton value="Active">Active</ToggleButton>
-              <ToggleButton value="Completed">Completed</ToggleButton>
-              <ToggleButton value="Draft">Draft</ToggleButton>
+              <ToggleButton value="All">{t("reports.RentalHistoryReport.allInvoices")}</ToggleButton>
+              <ToggleButton value="Active">{t("common.active")}</ToggleButton>
+              <ToggleButton value="Completed">{t("invoices.completed")}</ToggleButton>
+              <ToggleButton value="Draft">{t("common.draft")}</ToggleButton>
             </ToggleButtonGroup>
           </Box>
         </Box>

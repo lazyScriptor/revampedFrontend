@@ -8,6 +8,7 @@ import PersonSearchOutlinedIcon from '@mui/icons-material/PersonSearchOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useTenants, useSuspendTenant, useUpdateTenant, useImpersonate } from '../hooks/useSuperAdminHooks';
+import { useTranslation } from "react-i18next";
 
 const statusColors: Record<string, string> = {
     Active: '#10b981',
@@ -21,6 +22,7 @@ const tierColors: Record<string, string> = {
 };
 
 const TenantManagerTable = () => {
+    const { t } = useTranslation();
     const { data: tenants, isLoading } = useTenants();
     const suspendMutation = useSuspendTenant();
     const updateMutation = useUpdateTenant();
@@ -68,8 +70,8 @@ const TenantManagerTable = () => {
     return (
         <Paper elevation={0} sx={{ border: '1px solid #1e293b', borderRadius: 2, backgroundColor: '#0f172a', overflow: 'hidden' }}>
             <Box sx={{ p: 2, borderBottom: '1px solid #1e293b' }}>
-                <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600 }}>Tenant Manager</Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>{tenants?.length || 0} registered tenants</Typography>
+                <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600 }}>{t("superAdmin.TenantManagerTable.tenantManager")}</Typography>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>{t("superAdmin.TenantManagerTable.registeredTenants", { value: tenants?.length || 0 })}</Typography>
             </Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 0.5fr 2fr', px: 2, py: 1, borderBottom: '1px solid #1e293b', backgroundColor: 'rgba(30,41,59,0.5)' }}>
@@ -79,7 +81,7 @@ const TenantManagerTable = () => {
             </Box>
 
             {isLoading ? (
-                <Box sx={{ p: 4, textAlign: 'center', color: '#64748b' }}>Loading tenants...</Box>
+                <Box sx={{ p: 4, textAlign: 'center', color: '#64748b' }}>{t("superAdmin.TenantManagerTable.loadingTenants")}</Box>
             ) : (
                 tenants?.map((tenant: Record<string, unknown>) => (
                     <Box
@@ -96,20 +98,20 @@ const TenantManagerTable = () => {
                         <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: '0.8rem' }}>{tenant.max_users as number}</Typography>
                         <Typography variant="body2" sx={{ color: '#94a3b8', fontSize: '0.8rem', fontVariantNumeric: 'tabular-nums' }}>{tenant.userCount as number}</Typography>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <Tooltip title="Impersonate User">
+                            <Tooltip title={t("superAdmin.TenantManagerTable.impersonateUser")}>
                                 <IconButton size="small" onClick={() => handleImpersonate(tenant)} sx={{ color: '#3b82f6', '&:hover': { backgroundColor: 'rgba(59,130,246,0.1)' } }}>
                                     <PersonSearchOutlinedIcon sx={{ fontSize: 16 }} />
                                 </IconButton>
                             </Tooltip>
-                            <Tooltip title="Edit Subscription">
+                            <Tooltip title={t("superAdmin.TenantManagerTable.editSubscription")}>
                                 <IconButton size="small" onClick={() => handleEdit(tenant)} sx={{ color: '#f59e0b', '&:hover': { backgroundColor: 'rgba(245,158,11,0.1)' } }}>
                                     <EditOutlinedIcon sx={{ fontSize: 16 }} />
                                 </IconButton>
                             </Tooltip>
-                            <Tooltip title="Suspend Tenant">
+                            <Tooltip title={t("superAdmin.TenantManagerTable.suspendTenant")}>
                                 <IconButton
                                     size="small"
-                                    onClick={() => { if (window.confirm(`Suspend "${tenant.db_name}"?`)) suspendMutation.mutate(tenant.tenant_id as string); }}
+                                    onClick={() => { if (window.confirm(t("superAdmin.TenantManagerTable.confirmSuspend", { name: tenant.db_name }))) suspendMutation.mutate(tenant.tenant_id as string); }}
                                     disabled={(tenant.subscription_status as string) === 'Suspended'}
                                     sx={{ color: '#ef4444', '&:hover': { backgroundColor: 'rgba(239,68,68,0.1)' } }}
                                 >
@@ -122,43 +124,43 @@ const TenantManagerTable = () => {
             )}
 
             <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { backgroundColor: '#1e293b', color: '#f1f5f9' } } }}>
-                <DialogTitle sx={{ fontSize: '0.95rem' }}>Edit Tenant: {selectedTenant?.db_name as string}</DialogTitle>
+                <DialogTitle sx={{ fontSize: '0.95rem' }}>{t("superAdmin.TenantManagerTable.editTenant")} {selectedTenant?.db_name as string}</DialogTitle>
                 <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
                     <FormControl size="small" fullWidth>
-                        <InputLabel sx={{ color: '#94a3b8' }}>Status</InputLabel>
-                        <Select value={editForm.subscription_status} label="Status" onChange={(e) => setEditForm((f) => ({ ...f, subscription_status: e.target.value }))} sx={{ color: '#f1f5f9', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}>
-                            <MenuItem value="Active">Active</MenuItem>
-                            <MenuItem value="Suspended">Suspended</MenuItem>
-                            <MenuItem value="Overdue">Overdue</MenuItem>
+                        <InputLabel sx={{ color: '#94a3b8' }}>{t("common.status")}</InputLabel>
+                        <Select value={editForm.subscription_status} label={t("common.status")} onChange={(e) => setEditForm((f) => ({ ...f, subscription_status: e.target.value }))} sx={{ color: '#f1f5f9', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}>
+                            <MenuItem value="Active">{t("common.active")}</MenuItem>
+                            <MenuItem value="Suspended">{t("superAdmin.suspendedTenants")}</MenuItem>
+                            <MenuItem value="Overdue">{t("invoices.overdue")}</MenuItem>
                         </Select>
                     </FormControl>
                     <FormControl size="small" fullWidth>
-                        <InputLabel sx={{ color: '#94a3b8' }}>Tier</InputLabel>
-                        <Select value={editForm.tier} label="Tier" onChange={(e) => setEditForm((f) => ({ ...f, tier: e.target.value }))} sx={{ color: '#f1f5f9', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}>
-                            <MenuItem value="Basic">Basic</MenuItem>
-                            <MenuItem value="Pro">Pro</MenuItem>
-                            <MenuItem value="Enterprise">Enterprise</MenuItem>
+                        <InputLabel sx={{ color: '#94a3b8' }}>{t("superAdmin.CreateTenantDialog.tier")}</InputLabel>
+                        <Select value={editForm.tier} label={t("superAdmin.CreateTenantDialog.tier")} onChange={(e) => setEditForm((f) => ({ ...f, tier: e.target.value }))} sx={{ color: '#f1f5f9', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}>
+                            <MenuItem value="Basic">{t("superAdmin.TenantListPanel.basic")}</MenuItem>
+                            <MenuItem value="Pro">{t("superAdmin.TenantListPanel.pro")}</MenuItem>
+                            <MenuItem value="Enterprise">{t("superAdmin.TenantListPanel.enterprise")}</MenuItem>
                         </Select>
                     </FormControl>
-                    <TextField size="small" label="Max Users" type="number" value={editForm.max_users} onChange={(e) => setEditForm((f) => ({ ...f, max_users: parseInt(e.target.value) || 0 }))} sx={{ input: { color: '#f1f5f9' }, label: { color: '#94a3b8' }, '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }} />
+                    <TextField size="small" label={t("superAdmin.TenantDetailPanel.maxUsers")} type="number" value={editForm.max_users} onChange={(e) => setEditForm((f) => ({ ...f, max_users: parseInt(e.target.value) || 0 }))} sx={{ input: { color: '#f1f5f9' }, label: { color: '#94a3b8' }, '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }} />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setEditOpen(false)} sx={{ color: '#94a3b8' }}>Cancel</Button>
-                    <Button onClick={handleSaveEdit} variant="contained" size="small" sx={{ backgroundColor: '#3b82f6' }}>Save</Button>
+                    <Button onClick={() => setEditOpen(false)} sx={{ color: '#94a3b8' }}>{t("common.cancel")}</Button>
+                    <Button onClick={handleSaveEdit} variant="contained" size="small" sx={{ backgroundColor: '#3b82f6' }}>{t("common.save")}</Button>
                 </DialogActions>
             </Dialog>
 
             <Dialog open={impersonateOpen} onClose={() => setImpersonateOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { backgroundColor: '#1e293b', color: '#f1f5f9' } } }}>
-                <DialogTitle sx={{ fontSize: '0.95rem' }}>Impersonate User in: {selectedTenant?.db_name as string}</DialogTitle>
+                <DialogTitle sx={{ fontSize: '0.95rem' }}>{t("superAdmin.TenantManagerTable.impersonateUserIn")} {selectedTenant?.db_name as string}</DialogTitle>
                 <DialogContent sx={{ pt: '16px !important' }}>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', mb: 2, display: 'block' }}>Enter the User ID of the tenant user you want to impersonate.</Typography>
-                    <TextField size="small" label="Target User ID" type="number" fullWidth value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} sx={{ input: { color: '#f1f5f9' }, label: { color: '#94a3b8' }, '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }} />
+                    <Typography variant="caption" sx={{ color: '#94a3b8', mb: 2, display: 'block' }}>{t("superAdmin.TenantManagerTable.enterTheUserIdOf")}</Typography>
+                    <TextField size="small" label={t("superAdmin.TenantManagerTable.targetUserId")} type="number" fullWidth value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} sx={{ input: { color: '#f1f5f9' }, label: { color: '#94a3b8' }, '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }} />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setImpersonateOpen(false)} sx={{ color: '#94a3b8' }}>Cancel</Button>
+                    <Button onClick={() => setImpersonateOpen(false)} sx={{ color: '#94a3b8' }}>{t("common.cancel")}</Button>
                     <Button onClick={handleExecuteImpersonate} variant="contained" size="small" sx={{ backgroundColor: '#ef4444' }}>
                         <PersonSearchOutlinedIcon sx={{ fontSize: 14, mr: 0.5 }} />
-                        Impersonate
+                        {t("superAdmin.TenantManagerTable.impersonate")}
                     </Button>
                 </DialogActions>
             </Dialog>

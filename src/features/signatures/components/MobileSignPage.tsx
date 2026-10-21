@@ -39,13 +39,8 @@ import FlashOnIcon from '@mui/icons-material/FlashOn';
 import type { SignatureRole } from '@geargrid/contracts';
 import { SignatureCanvas, type SignatureCanvasHandle } from './SignatureCanvas';
 import { useSignatureSession, useSubmitSignature } from '../hooks/useSignatures';
-
-const ROLE_LABEL: Record<SignatureRole, string> = {
-  CUSTOMER: 'Customer',
-  OPERATOR: 'Operator',
-  GUARANTOR: 'Guarantor',
-  WITNESS: 'Witness',
-};
+import { ROLE_LABEL } from '../lib/labels';
+import { useTranslation } from "react-i18next";
 
 const ROLE_ICON: Record<SignatureRole, React.ReactElement> = {
   CUSTOMER: <PersonIcon />,
@@ -62,6 +57,7 @@ interface MobileSignPageProps {
 }
 
 export function MobileSignPage({ token }: MobileSignPageProps) {
+  const { t } = useTranslation();
   const { data: session, isLoading, error, refetch } = useSignatureSession(token);
   const submit = useSubmitSignature(token);
   const canvasRef = useRef<SignatureCanvasHandle | null>(null);
@@ -99,7 +95,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
     return (
       <FullBleedCentered>
         <CircularProgress />
-        <Typography sx={{ mt: 2, color: '#94a3b8' }}>Loading signature request…</Typography>
+        <Typography sx={{ mt: 2, color: '#94a3b8' }}>{t("signatures.MobileSignPage.loadingSignatureRequest")}</Typography>
       </FullBleedCentered>
     );
   }
@@ -108,9 +104,9 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
     return (
       <FullBleedCentered>
         <Alert severity="error" sx={{ mb: 2 }}>
-          {(error as Error)?.message || 'This signature request could not be loaded.'}
+          {(error as Error)?.message || t("signatures.MobileSignPage.thisSignatureRequestCouldNot")}
         </Alert>
-        <Button variant="outlined" onClick={() => refetch()}>Retry</Button>
+        <Button variant="outlined" onClick={() => refetch()}>{t("common.retry")}</Button>
       </FullBleedCentered>
     );
   }
@@ -128,15 +124,15 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
         </Avatar>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
           {session.status === 'COMPLETED'
-            ? 'All signatures captured'
+            ? t("signatures.SignatureCaptureDialog.allSignaturesCaptured")
             : session.status === 'EXPIRED'
-              ? 'Session expired'
-              : 'Session cancelled'}
+              ? t("signatures.MobileSignPage.sessionExpired")
+              : t("signatures.MobileSignPage.sessionCancelled")}
         </Typography>
         <Typography sx={{ color: '#64748b', textAlign: 'center', maxWidth: 320 }}>
           {session.status === 'COMPLETED'
-            ? 'You can hand the phone back to the operator.'
-            : 'Please ask the operator to start a new session.'}
+            ? t("signatures.MobileSignPage.youCanHandThePhone")
+            : t("signatures.MobileSignPage.pleaseAskTheOperatorTo")}
         </Typography>
       </FullBleedCentered>
     );
@@ -146,13 +142,13 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
     setSubmitError(null);
     if (!activeRole) return;
     if (!agreed) {
-      setSubmitError('You must agree to the rental terms before signing.');
+      setSubmitError(t("signatures.MobileSignPage.youMustAgreeToThe"));
       return;
     }
 
     const name = (signatoryName || prefilledName).trim();
     if (!name) {
-      setSubmitError('Please type your name.');
+      setSubmitError(t("signatures.MobileSignPage.pleaseTypeYourName"));
       return;
     }
 
@@ -160,7 +156,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
     if (!useStored) {
       imageDataUrl = canvasRef.current?.toDataUrl('image/png') ?? null;
       if (!imageDataUrl) {
-        setSubmitError('Please draw your signature.');
+        setSubmitError(t("signatures.MobileSignPage.pleaseDrawYourSignature"));
         return;
       }
     }
@@ -181,7 +177,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
       canvasRef.current?.clear();
       refetch();
     } catch (err: any) {
-      setSubmitError(err?.message || 'Submission failed. Please try again.');
+      setSubmitError(err?.message || t("signatures.MobileSignPage.submissionFailedPleaseTryAgain"));
     }
   };
 
@@ -224,7 +220,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
             {session.tenant.business_display_name}
           </Typography>
           <Typography sx={{ fontSize: 12, opacity: 0.9 }}>
-            Signature required · {session.checkpoint.replace(/_/g, ' ').toLowerCase()}
+            {t("signatures.MobileSignPage.signatureRequired", { value: session.checkpoint.replace(/_/g, ' ').toLowerCase() })}
           </Typography>
         </Box>
       </Box>
@@ -245,24 +241,24 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
           {session.invoice.invoice_number}
         </Typography>
         <Typography sx={{ fontSize: 15, color: '#0f172a', fontWeight: 500, mt: 0.5 }}>
-          {session.invoice.customer_name || 'Walk-in customer'}
+          {session.invoice.customer_name || t("signatures.MobileSignPage.walkInCustomer")}
         </Typography>
         <Divider sx={{ my: 1.5 }} />
         <Stack direction="row" justifyContent="space-between" sx={{ fontSize: 14 }}>
-          <Typography sx={{ color: '#64748b' }}>Total</Typography>
+          <Typography sx={{ color: '#64748b' }}>{t("common.total")}</Typography>
           <Typography sx={{ color: '#0f172a', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
             {formatLKR(session.invoice.total_amount)}
           </Typography>
         </Stack>
         <Stack direction="row" justifyContent="space-between" sx={{ fontSize: 14, mt: 0.5 }}>
-          <Typography sx={{ color: '#64748b' }}>Paid</Typography>
+          <Typography sx={{ color: '#64748b' }}>{t("invoices.paid")}</Typography>
           <Typography sx={{ color: '#0f172a', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
             {formatLKR(session.invoice.amount_paid)}
           </Typography>
         </Stack>
         {session.invoice.deposit_held > 0 && (
           <Stack direction="row" justifyContent="space-between" sx={{ fontSize: 14, mt: 0.5 }}>
-            <Typography sx={{ color: '#64748b' }}>Deposit held</Typography>
+            <Typography sx={{ color: '#64748b' }}>{t("signatures.MobileSignPage.depositHeld")}</Typography>
             <Typography sx={{ color: '#0f172a', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
               {formatLKR(session.invoice.deposit_held)}
             </Typography>
@@ -274,7 +270,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
       {session.pending_roles.length > 0 && (
         <Box sx={{ mx: 2, mt: 2 }}>
           <Typography sx={{ fontSize: 12, color: '#64748b', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', mb: 1 }}>
-            Signing as
+            {t("signatures.MobileSignPage.signingAs")}
           </Typography>
           <ToggleButtonGroup
             value={activeRole}
@@ -286,7 +282,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
             {session.pending_roles.map((role) => (
               <ToggleButton key={role} value={role} sx={{ gap: 1 }}>
                 {ROLE_ICON[role]}
-                <span>{ROLE_LABEL[role]}</span>
+                <span>{t(ROLE_LABEL[role])}</span>
               </ToggleButton>
             ))}
           </ToggleButtonGroup>
@@ -297,7 +293,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
                   key={c.role}
                   size="small"
                   icon={<CheckCircleIcon />}
-                  label={`${ROLE_LABEL[c.role]} signed`}
+                  label={t("signatures.roleSigned", { role: t(ROLE_LABEL[c.role]) })}
                   sx={{ bgcolor: '#dcfce7', color: '#166534', fontSize: 11 }}
                 />
               ))}
@@ -328,9 +324,9 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
         >
           <GavelIcon sx={{ color: '#64748b', fontSize: 20 }} />
           <Typography sx={{ fontSize: 13, color: '#0f172a', fontWeight: 600, flex: 1 }}>
-            Rental terms (v{session.terms.version})
+            {t("signatures.MobileSignPage.rentalTermsV", { version: session.terms.version })}
           </Typography>
-          <IconButton size="small" onClick={() => setShowTerms((s) => !s)} aria-label="toggle terms">
+          <IconButton size="small" onClick={() => setShowTerms((s) => !s)} aria-label={t("signatures.MobileSignPage.toggleTerms")}>
             {showTerms ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
           </IconButton>
         </Box>
@@ -367,7 +363,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
           }}
         >
           <Typography sx={{ fontSize: 13, color: '#0f172a', fontWeight: 600, mb: 1.5 }}>
-            Draw your signature
+            {t("profile.SignatureSection.drawYourSignature")}
           </Typography>
           <SignatureCanvas ref={canvasRef} height={200} />
 
@@ -375,7 +371,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
             fullWidth
             size="small"
             placeholder={
-              activeRole === 'OPERATOR' && prefilledName ? prefilledName : 'Your full name'
+              activeRole === 'OPERATOR' && prefilledName ? prefilledName : t("signatures.MobileSignPage.yourFullName")
             }
             value={signatoryName}
             onChange={(e) => setSignatoryName(e.target.value)}
@@ -394,7 +390,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
             }
             label={
               <Typography sx={{ fontSize: 13, color: '#334155' }}>
-                I have read and agree to the rental terms (v{session.terms.version}).
+                {t("signatures.MobileSignPage.iHaveReadAndAgree", { version: session.terms.version })}
               </Typography>
             }
           />
@@ -421,7 +417,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
                   py: 1.25,
                 }}
               >
-                Use my saved signature (one tap)
+                {t("signatures.MobileSignPage.useMySavedSignatureOne")}
               </Button>
             )}
             <Button
@@ -439,7 +435,7 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
                   : { bgcolor: theme.primary }),
               }}
             >
-              {submit.isPending ? 'Submitting…' : 'Submit signature'}
+              {submit.isPending ? t("signatures.MobileSignPage.submitting") : t("signatures.MobileSignPage.submitSignature")}
             </Button>
           </Stack>
         </Paper>
@@ -452,10 +448,10 @@ export function MobileSignPage({ token }: MobileSignPageProps) {
           icon={<CheckCircleIcon />}
           sx={{ mx: 2, mt: 2, borderRadius: 2 }}
         >
-          <strong>{ROLE_LABEL[justSigned]}</strong> signature captured.
+          {t("signatures.MobileSignPage.roleSignatureCaptured", { role: t(ROLE_LABEL[justSigned]) })}
           {session.pending_roles.length > 0
-            ? ` ${session.pending_roles.length} more pending.`
-            : ' Hand the phone back to the operator.'}
+            ? ` ${t("signatures.MobileSignPage.morePending", { count: session.pending_roles.length })}`
+            : ` ${t("signatures.MobileSignPage.handPhoneBack")}`}
         </Alert>
       )}
     </Box>

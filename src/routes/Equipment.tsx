@@ -135,7 +135,7 @@ export default function EquipmentRoute() {
   if (isError) {
     return (
       <Alert severity="error" className="m-4">
-        Failed to load equipment: {error instanceof Error ? error.message : "Unknown error"}
+        {t("pages.Equipment.failedToLoadEquipment")} {error instanceof Error ? error.message : t("pages.Categories.unknownError")}
       </Alert>
     );
   }
@@ -183,11 +183,11 @@ export default function EquipmentRoute() {
       </Box>
 
       {/* KPI Cards */}
-      <ResponsiveKpiStrip mobileLabel="Equipment Overview">
+      <ResponsiveKpiStrip mobileLabel={t("pages.Equipment.equipmentOverview")}>
         <KpiTile
           label={t("equipment.totalAssets")}
           value={`${totalAssetsOwned} ${t("equipment.units")}`}
-          hint={`${totalModelsCount} models · ${rentedUnits} on rent`}
+          hint={t("pages.Equipment.modelsOnRent", { totalModelsCount, rentedUnits })}
           icon={<InventoryIcon />}
           tone="default"
           onClick={clearFilters}
@@ -196,7 +196,7 @@ export default function EquipmentRoute() {
           badge={
             activeFilterCount > 0 || debouncedSearch ? (
               <Chip
-                label={`${totalRowCount} match${totalRowCount === 1 ? "" : "es"}`}
+                label={t("common.matches", { count: totalRowCount })}
                 size="small"
                 sx={{
                   height: 18,
@@ -213,7 +213,7 @@ export default function EquipmentRoute() {
         <KpiTile
           label={t("equipment.availableForRent")}
           value={`${availableUnits} ${t("equipment.units")}`}
-          hint="Warehouse ready stock"
+          hint={t("pages.Equipment.warehouseReadyStock")}
           icon={<CheckCircleIcon />}
           tone="success"
           onClick={() => setAvailability(availability === "in_stock" ? "all" : "in_stock")}
@@ -222,7 +222,7 @@ export default function EquipmentRoute() {
           badge={
             availability === "in_stock" ? (
               <Chip
-                label="Filtered"
+                label={t("pages.Customers.filtered")}
                 size="small"
                 sx={{
                   height: 18,
@@ -239,7 +239,7 @@ export default function EquipmentRoute() {
         <KpiTile
           label={t("equipment.inMaintenance")}
           value={`${maintenanceUnits} ${t("equipment.units")}`}
-          hint="Workshop repair queue"
+          hint={t("pages.Equipment.workshopRepairQueue")}
           icon={<BuildCircleIcon />}
           tone="warning"
           onClick={() => setAvailability(availability === "in_repair" ? "all" : "in_repair")}
@@ -248,7 +248,7 @@ export default function EquipmentRoute() {
           badge={
             availability === "in_repair" ? (
               <Chip
-                label="Filtered"
+                label={t("pages.Customers.filtered")}
                 size="small"
                 sx={{
                   height: 18,
@@ -265,7 +265,7 @@ export default function EquipmentRoute() {
         <KpiTile
           label={t("equipment.rented")}
           value={`${rentedUnits} ${t("equipment.units")}`}
-          hint="Active on customer hire"
+          hint={t("pages.Equipment.activeOnCustomerHire")}
           icon={<InventoryIcon />}
           tone="info"
           onClick={() => setAvailability(availability === "rented" ? "all" : "rented")}
@@ -274,7 +274,7 @@ export default function EquipmentRoute() {
           badge={
             availability === "rented" ? (
               <Chip
-                label="Filtered"
+                label={t("pages.Customers.filtered")}
                 size="small"
                 sx={{
                   height: 18,
@@ -323,7 +323,7 @@ export default function EquipmentRoute() {
                 ),
                 endAdornment: searchInput ? (
                   <InputAdornment position="end">
-                    <Tooltip title="Clear">
+                    <Tooltip title={t("common.clear")}>
                       <ClearOutlinedIcon
                         onClick={() => setSearchInput("")}
                         sx={{ fontSize: 16, color: theme.palette.text.disabled, cursor: "pointer" }}
@@ -433,13 +433,13 @@ export default function EquipmentRoute() {
               onClick={clearFilters}
               sx={{ textTransform: "none", fontWeight: 700, ml: { sm: "auto" } }}
             >
-              Clear filters
+              {t("superAdmin.InquiryListPanel.clearFilters")}
             </Button>
           )}
         </Box>
 
         <Typography variant="caption" sx={{ color: theme.palette.text.secondary, whiteSpace: "nowrap", flexShrink: 0 }}>
-          {isLoading ? "Loading…" : `${totalRowCount.toLocaleString()} match${totalRowCount === 1 ? "" : "es"}`}
+          {isLoading ? t("common.loading") : t("common.matchesFormatted", { count: totalRowCount })}
         </Typography>
       </Card>
 
@@ -459,7 +459,7 @@ export default function EquipmentRoute() {
         }}
       >
         {isLoading && equipmentList.length === 0 ? (
-          <GearGridLoader centered size="lg" label="Loading Fleet Inventory..." sublabel="Synchronizing asset specifications & telemetry" />
+          <GearGridLoader centered size="lg" label={t("pages.Equipment.loadingFleetInventory")} sublabel={t("pages.Equipment.synchronizingAssetSpecificationsTelemetr")} />
         ) : (
           <EquipmentTable
             data={equipmentList}
@@ -512,7 +512,7 @@ export default function EquipmentRoute() {
               }}
             />
             <Typography variant="body2" sx={{ fontWeight: 600, color: "#fff" }}>
-              item{selectedIds.length === 1 ? "" : "s"} selected
+              {t("pages.Equipment.itemsSelected", { count: selectedIds.length })}
             </Typography>
           </Box>
 
@@ -533,7 +533,7 @@ export default function EquipmentRoute() {
                 px: 2,
               }}
             >
-              Bulk Edit
+              {t("pages.Customers.bulkEdit")}
             </Button>
           </Can>
 
@@ -549,7 +549,7 @@ export default function EquipmentRoute() {
               borderRadius: 9999,
             }}
           >
-            Deselect All
+            {t("pages.Customers.deselectAll")}
           </Button>
         </Box>
       )}

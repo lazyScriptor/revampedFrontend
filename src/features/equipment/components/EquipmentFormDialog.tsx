@@ -37,6 +37,7 @@ import {
   FormSection,
   ToggleRow,
 } from "@/components/forms/FormDialogShell";
+import { useTranslation } from "react-i18next";
 
 interface EquipmentFormDialogProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function EquipmentFormDialog({
   onClose,
   initialData,
 }: EquipmentFormDialogProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const createMutation = useCreateEquipment();
   const updateMutation = useUpdateEquipment();
@@ -144,7 +146,7 @@ export function EquipmentFormDialog({
     if (payload.end_of_warranty_date === "") payload.end_of_warranty_date = null;
     if (payload.image_url === "") payload.image_url = null;
 
-    const onErr = (err: any) => setMutationError(err?.message || "Save failed.");
+    const onErr = (err: any) => setMutationError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
     if (isEditing && initialData) {
       updateMutation.mutate(
         { id: initialData.equipment_id, data: payload },
@@ -162,28 +164,28 @@ export function EquipmentFormDialog({
       open={open}
       onClose={onClose}
       maxWidth="md"
-      eyebrow={isEditing ? "Edit Equipment" : "New Equipment"}
+      eyebrow={isEditing ? t("equipment.editEquipment") : t("equipment.EquipmentFormDialog.newEquipment")}
       title={
         isEditing
-          ? initialData?.equipment_name || "Equipment"
-          : "Register equipment"
+          ? initialData?.equipment_name || t("nav.equipment")
+          : t("equipment.EquipmentFormDialog.registerEquipment")
       }
-      subtitle="Specifications, pricing, and live stock equation."
+      subtitle={t("equipment.EquipmentFormDialog.specificationsPricingAndLiveStock")}
       avatarText={(initialData?.equipment_name || "+")[0].toUpperCase()}
       footer={
         <>
           <FormFooterMeta>
             {errorCount > 0
-              ? `Fix ${errorCount} issue${errorCount > 1 ? "s" : ""} before saving`
+              ? t("forms.fixIssuesBeforeSaving", { count: errorCount })
               : mutationError
                 ? mutationError
                 : isDirty && !isPending
-                  ? "Unsaved changes"
+                  ? t("common.unsavedChanges")
                   : ""}
           </FormFooterMeta>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={onClose} disabled={isPending} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -192,7 +194,7 @@ export function EquipmentFormDialog({
               disabled={isPending}
               startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
             >
-              {isPending ? "Saving…" : isEditing ? "Save changes" : "Create equipment"}
+              {isPending ? t("common.saving") : isEditing ? t("common.saveChanges") : t("equipment.EquipmentFormDialog.createEquipment")}
             </Button>
           </Box>
         </>
@@ -212,14 +214,14 @@ export function EquipmentFormDialog({
 
         <FormSection
           icon={<InfoOutlinedIcon />}
-          title="General information"
-          hint="What the asset is, where it lives, and its identifier."
+          title={t("equipment.EquipmentFormDialog.generalInformation")}
+          hint={t("equipment.EquipmentFormDialog.whatTheAssetIsWhere")}
         >
           <TextField
             fullWidth
             size="small"
-            label="Equipment name"
-            placeholder="e.g. Bosch Hammer Drill 800W"
+            label={t("equipment.equipmentName")}
+            placeholder={t("equipment.EquipmentFormDialog.eGBoschHammerDrill")}
             {...register("equipment_name")}
             error={!!errors.equipment_name}
             helperText={errors.equipment_name?.message}
@@ -228,7 +230,7 @@ export function EquipmentFormDialog({
             <TextField
               fullWidth
               size="small"
-              label="SKU / Serial number"
+              label={t("equipment.EquipmentFormDialog.skuSerialNumber")}
               {...register("serial_number")}
               error={!!errors.serial_number}
               helperText={errors.serial_number?.message}
@@ -236,7 +238,7 @@ export function EquipmentFormDialog({
             <TextField
               fullWidth
               size="small"
-              label="Image URL (optional)"
+              label={t("equipment.EquipmentFormDialog.imageUrlOptional")}
               placeholder="https://…"
               {...register("image_url")}
               error={!!errors.image_url}
@@ -252,7 +254,7 @@ export function EquipmentFormDialog({
                   select
                   fullWidth
                   size="small"
-                  label="Category"
+                  label={t("common.category")}
                   {...field}
                   value={field.value ?? ""}
                   disabled={isLoadingCategories}
@@ -261,7 +263,7 @@ export function EquipmentFormDialog({
                 >
                   {isLoadingCategories ? (
                     <MenuItem value="" disabled>
-                      Loading…
+                      {t("common.loading")}
                     </MenuItem>
                   ) : (
                     categories.map((c) => (
@@ -281,7 +283,7 @@ export function EquipmentFormDialog({
                   select
                   fullWidth
                   size="small"
-                  label="Warehouse"
+                  label={t("equipment.warehouse")}
                   {...field}
                   value={field.value ?? ""}
                   disabled={isLoadingWarehouses}
@@ -290,7 +292,7 @@ export function EquipmentFormDialog({
                 >
                   {isLoadingWarehouses ? (
                     <MenuItem value="" disabled>
-                      Loading…
+                      {t("common.loading")}
                     </MenuItem>
                   ) : (
                     warehouses.map((w) => (
@@ -307,14 +309,14 @@ export function EquipmentFormDialog({
 
         <FormSection
           icon={<AttachMoneyIcon />}
-          title="Rental & pricing"
-          hint="Daily rates, minimum duration, and the original purchase cost for ROI tracking."
+          title={t("equipment.EquipmentFormDialog.rentalPricing")}
+          hint={t("equipment.EquipmentFormDialog.dailyRatesMinimumDurationAnd")}
         >
           <FieldGrid>
             <TextField
               fullWidth
               size="small"
-              label="Base daily rate"
+              label={t("equipment.EquipmentFormDialog.baseDailyRate")}
               type="number"
               slotProps={{
                 htmlInput: { step: "0.01", min: "0" },
@@ -327,7 +329,7 @@ export function EquipmentFormDialog({
             <TextField
               fullWidth
               size="small"
-              label="Overdue / extra daily rate"
+              label={t("equipment.EquipmentFormDialog.overdueExtraDailyRate")}
               type="number"
               slotProps={{
                 htmlInput: { step: "0.01", min: "0" },
@@ -335,14 +337,14 @@ export function EquipmentFormDialog({
               }}
               {...register("extra_daily_rate", { valueAsNumber: true })}
               error={!!errors.extra_daily_rate}
-              helperText={errors.extra_daily_rate?.message || "Applied if returned late"}
+              helperText={errors.extra_daily_rate?.message || t("equipment.EquipmentFormDialog.appliedIfReturnedLate")}
             />
           </FieldGrid>
           <FieldGrid>
             <TextField
               fullWidth
               size="small"
-              label="Minimum rental days"
+              label={t("equipment.EquipmentFormDialog.minimumRentalDays")}
               type="number"
               slotProps={{ htmlInput: { min: "1" } }}
               {...register("minimum_rental_days", { valueAsNumber: true })}
@@ -352,7 +354,7 @@ export function EquipmentFormDialog({
             <TextField
               fullWidth
               size="small"
-              label="Original purchase cost"
+              label={t("equipment.EquipmentFormDialog.originalPurchaseCost")}
               type="number"
               slotProps={{
                 htmlInput: { step: "0.01", min: "0" },
@@ -360,15 +362,15 @@ export function EquipmentFormDialog({
               }}
               {...register("purchase_cost", { valueAsNumber: true })}
               error={!!errors.purchase_cost}
-              helperText={errors.purchase_cost?.message || "For internal ROI tracking"}
+              helperText={errors.purchase_cost?.message || t("equipment.EquipmentFormDialog.forInternalRoiTracking")}
             />
           </FieldGrid>
         </FormSection>
 
         <FormSection
           icon={<Inventory2OutlinedIcon />}
-          title="Inventory management"
-          hint="Bulk asset toggle and the live availability equation."
+          title={t("equipment.EquipmentFormDialog.inventoryManagement")}
+          hint={t("equipment.EquipmentFormDialog.bulkAssetToggleAndThe")}
         >
           <Controller
             name="is_bulk_item"
@@ -376,11 +378,11 @@ export function EquipmentFormDialog({
             render={({ field: { onChange, value } }) => (
               <ToggleRow
                 icon={<LayersOutlinedIcon />}
-                title="Bulk asset"
+                title={t("equipment.EquipmentFormDialog.bulkAsset")}
                 hint={
                   value
-                    ? "Multiple identical units share one record."
-                    : "One serialised unit — total owned locked at 1."
+                    ? t("equipment.EquipmentFormDialog.multipleIdenticalUnitsShareOne")
+                    : t("equipment.EquipmentFormDialog.oneSerialisedUnitTotalOwned")
                 }
                 checked={!!value}
                 onChange={onChange}
@@ -405,7 +407,7 @@ export function EquipmentFormDialog({
               <TextField
                 fullWidth
                 size="small"
-                label="Total owned"
+                label={t("equipment.totalOwned")}
                 type="number"
                 {...register("total_owned_qty", { valueAsNumber: true })}
                 disabled={!isBulkItem}
@@ -413,7 +415,7 @@ export function EquipmentFormDialog({
                   htmlInput: { min: isEditing ? rentedQty + defectiveQty : 1 },
                 }}
                 error={!!errors.total_owned_qty}
-                helperText={!isBulkItem ? "Locked at 1 — serialised" : " "}
+                helperText={!isBulkItem ? t("equipment.EquipmentFormDialog.lockedAt1Serialised") : " "}
               />
             </Box>
             <Equation sign="−" />
@@ -421,11 +423,11 @@ export function EquipmentFormDialog({
               <TextField
                 fullWidth
                 size="small"
-                label="On rent"
+                label={t("equipment.EquipmentFormDialog.onRent")}
                 type="number"
                 {...register("rented_qty")}
                 slotProps={{ input: { readOnly: true } }}
-                helperText="by POS"
+                helperText={t("equipment.EquipmentFormDialog.byPos")}
               />
             </Box>
             <Equation sign="−" />
@@ -433,11 +435,11 @@ export function EquipmentFormDialog({
               <TextField
                 fullWidth
                 size="small"
-                label="Workshop"
+                label={t("equipment.EquipmentFormDialog.workshop")}
                 type="number"
                 {...register("defective_qty")}
                 slotProps={{ input: { readOnly: true } }}
-                helperText="by logs"
+                helperText={t("equipment.EquipmentFormDialog.byLogs")}
               />
             </Box>
             <Box
@@ -463,14 +465,14 @@ export function EquipmentFormDialog({
 
         <FormSection
           icon={<VerifiedOutlinedIcon />}
-          title="Warranty"
-          hint="Optional. Helps the maintenance team plan replacements."
+          title={t("equipment.EquipmentFormDialog.warranty")}
+          hint={t("equipment.EquipmentFormDialog.optionalHelpsTheMaintenanceTeam")}
         >
           <FieldGrid>
             <TextField
               fullWidth
               size="small"
-              label="Warranty period (months)"
+              label={t("equipment.EquipmentFormDialog.warrantyPeriodMonths")}
               type="number"
               slotProps={{ htmlInput: { min: "0" } }}
               {...register("warranty_period_months", { valueAsNumber: true })}
@@ -480,7 +482,7 @@ export function EquipmentFormDialog({
             <TextField
               fullWidth
               size="small"
-              label="Warranty expiry date"
+              label={t("equipment.EquipmentFormDialog.warrantyExpiryDate")}
               type="date"
               slotProps={{ inputLabel: { shrink: true } }}
               {...register("end_of_warranty_date")}

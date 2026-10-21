@@ -27,6 +27,7 @@ import RentalHistoryReport from "@/features/reports/invoices/RentalHistoryReport
 import ProfitLossReport from "@/features/reports/financials/ProfitLossReport";
 import CashFlowReport from "@/features/reports/financials/CashFlowReport";
 import { InvoicePrintLogsView } from "@/features/invoices/components/InvoicePrintLogsView";
+import { tk } from "@/i18n/marker";
 
 type CategoryKey = "customers" | "equipment" | "invoices" | "financials" | "audit";
 
@@ -45,51 +46,51 @@ const CATEGORIES: {
 }[] = [
   {
     key: "customers",
-    label: "Customers",
-    subtitle: "Roster health, ratings, and balances",
+    label: tk("nav.customers"),
+    subtitle: tk("pages.Reports.rosterHealthRatingsAndBalances"),
     icon: <PeopleIcon fontSize="small" />,
     reports: [
-      { key: "all", label: "All Customers", component: AllCustomersReport },
-      { key: "outstanding", label: "Outstanding Balances", component: OutstandingBalancesReport },
+      { key: "all", label: tk("reports.allCustomers"), component: AllCustomersReport },
+      { key: "outstanding", label: tk("reports.outstandingBalances"), component: OutstandingBalancesReport },
     ],
   },
   {
     key: "equipment",
-    label: "Equipment",
-    subtitle: "Utilization, maintenance and asset performance",
+    label: tk("nav.equipment"),
+    subtitle: tk("pages.Reports.utilizationMaintenanceAndAssetPerformanc"),
     icon: <ConstructionIcon fontSize="small" />,
     reports: [
-      { key: "utilization", label: "Utilization", component: UtilizationReport },
-      { key: "maintenance", label: "Maintenance by Unit", component: MaintenanceReport },
+      { key: "utilization", label: tk("reports.utilization"), component: UtilizationReport },
+      { key: "maintenance", label: tk("reports.MaintenanceReport.maintenanceByUnit"), component: MaintenanceReport },
     ],
   },
   {
     key: "invoices",
-    label: "Invoices",
-    subtitle: "Aging, dispatched and returned orders",
+    label: tk("nav.invoices"),
+    subtitle: tk("pages.Reports.agingDispatchedAndReturnedOrders"),
     icon: <ReceiptLongIcon fontSize="small" />,
     reports: [
-      { key: "aging", label: "Aging", component: AgingReport },
-      { key: "history", label: "Rental History", component: RentalHistoryReport },
+      { key: "aging", label: tk("reports.aging"), component: AgingReport },
+      { key: "history", label: tk("reports.rentalHistory"), component: RentalHistoryReport },
     ],
   },
   {
     key: "financials",
-    label: "Financials",
-    subtitle: "Profit, loss and cash flow",
+    label: tk("nav.financials"),
+    subtitle: tk("pages.Reports.profitLossAndCashFlow"),
     icon: <AccountBalanceIcon fontSize="small" />,
     reports: [
-      { key: "profit-loss", label: "Profit & Loss", component: ProfitLossReport },
-      { key: "cash-flow", label: "Cash Flow", component: CashFlowReport },
+      { key: "profit-loss", label: tk("accounting.profitAndLoss"), component: ProfitLossReport },
+      { key: "cash-flow", label: tk("accounting.cashFlow"), component: CashFlowReport },
     ],
   },
   {
     key: "audit",
-    label: "Print Audit",
-    subtitle: "Complete immutable log of all thermal receipts printed, operator attribution, and point-in-time bill snapshots",
+    label: tk("pages._authenticated.printAudit"),
+    subtitle: tk("pages.Reports.completeImmutableLogOfAll"),
     icon: <PrintIcon fontSize="small" />,
     reports: [
-      { key: "logs", label: "Print Audit Logs", component: InvoicePrintLogsView },
+      { key: "logs", label: tk("pages.Reports.printAuditLogs"), component: InvoicePrintLogsView },
     ],
   },
 ];
@@ -156,7 +157,7 @@ export default function ReportsRoute() {
               fontSize: "0.72rem",
             }}
           >
-            {t("nav.reports")} / {category.label}
+            {t("nav.reports")} / {t(category.label)}
           </Typography>
           <Typography
             variant="h4"
@@ -168,7 +169,7 @@ export default function ReportsRoute() {
               fontSize: { xs: "1.5rem", sm: "1.875rem" },
             }}
           >
-            {category.label}
+            {t(category.label)}
           </Typography>
           <Typography
             variant="body2"
@@ -178,7 +179,7 @@ export default function ReportsRoute() {
               fontSize: { xs: "0.8125rem", sm: "0.875rem" },
             }}
           >
-            {category.subtitle}
+            {t(category.subtitle)}
           </Typography>
         </Box>
 
@@ -222,7 +223,7 @@ export default function ReportsRoute() {
             >
               {category.reports.map((r) => (
                 <ToggleButton key={r.key} value={r.key}>
-                  {r.label}
+                  {t(r.label)}
                 </ToggleButton>
               ))}
             </ToggleButtonGroup>
@@ -265,13 +266,13 @@ export default function ReportsRoute() {
             fontSize: { xs: "1.5rem", sm: "1.875rem" },
           }}
         >
-          Reports & Analytics
+          {t("pages.Reports.reportsAnalytics")}
         </Typography>
         <Typography
           variant="body2"
           sx={{ color: isDark ? "#94a3b8" : "text.secondary", fontSize: { xs: "0.8125rem", sm: "0.875rem" } }}
         >
-          Unified analytical surface — customers, equipment, invoices, financials, and print audits.
+          {t("pages.Reports.unifiedAnalyticalSurfaceCustomersEquipme")}
         </Typography>
       </Box>
 
@@ -317,7 +318,7 @@ export default function ReportsRoute() {
           }}
         >
           {CATEGORIES.map((c) => (
-            <Tab key={c.key} icon={c.icon as any} iconPosition="start" label={c.label} />
+            <Tab key={c.key} icon={c.icon as any} iconPosition="start" label={t(c.label)} />
           ))}
         </Tabs>
       </Box>
@@ -362,7 +363,7 @@ export default function ReportsRoute() {
           >
             {category.reports.map((r) => (
               <ToggleButton key={r.key} value={r.key}>
-                {r.label}
+                {t(r.label)}
               </ToggleButton>
             ))}
           </ToggleButtonGroup>

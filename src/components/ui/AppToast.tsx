@@ -6,6 +6,8 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmberOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 type Severity = "success" | "error" | "warning" | "info";
 
@@ -40,10 +42,10 @@ const SEVERITY_ICONS: Record<Severity, React.ReactNode> = {
 };
 
 const DEFAULT_TITLES: Record<Severity, string> = {
-  success: "Success",
-  error: "Error",
-  warning: "Warning",
-  info: "Info",
+  success: tk("toast.success"),
+  error: tk("toast.error"),
+  warning: tk("toast.warning"),
+  info: tk("toast.info"),
 };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -105,6 +107,7 @@ const ToastSurface: React.FC<{
   onClose: () => void;
   current: ToastOptions;
 }> = ({ open, onClose, current }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const sev = current.severity || "info";
 
@@ -171,7 +174,7 @@ const ToastSurface: React.FC<{
               lineHeight: 1.3,
             }}
           >
-            {current.title || DEFAULT_TITLES[sev]}
+            {current.title || t(DEFAULT_TITLES[sev])}
           </Typography>
           <Typography
             sx={{

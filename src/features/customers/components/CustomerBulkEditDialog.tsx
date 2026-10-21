@@ -35,6 +35,7 @@ import {
   FormSection,
 } from "@/components/forms/FormDialogShell";
 import { useToast } from "@/components/ui/AppToast";
+import { useTranslation } from "react-i18next";
 
 interface CustomerBulkEditDialogProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function CustomerBulkEditDialog({
   selectedIds,
   onSuccess,
 }: CustomerBulkEditDialogProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { showSuccess, showError } = useToast();
   const bulkUpdateMutation = useBulkUpdateCustomers();
@@ -108,12 +110,12 @@ export function CustomerBulkEditDialog({
     setLocalError(null);
 
     if (selectedIds.length === 0) {
-      setLocalError("No customer accounts selected.");
+      setLocalError(t("customers.CustomerBulkEditDialog.noCustomerAccountsSelected"));
       return;
     }
 
     if (!hasAnyFieldSelected) {
-      setLocalError("Please enable and configure at least one field to bulk update.");
+      setLocalError(t("customers.CustomerBulkEditDialog.pleaseEnableAndConfigureAt"));
       return;
     }
 
@@ -137,7 +139,7 @@ export function CustomerBulkEditDialog({
       } else if (parentId !== "") {
         const numId = Number(parentId);
         if (selectedIds.includes(numId)) {
-          setLocalError("Cannot set a customer as their own parent company.");
+          setLocalError(t("customers.CustomerBulkEditDialog.cannotSetACustomerAs"));
           return;
         }
         updates.parent_customer_id = numId;
@@ -147,7 +149,7 @@ export function CustomerBulkEditDialog({
     if (enableDeposit) {
       const amt = Number(depositAmount);
       if (depositAmount === "" || isNaN(amt) || amt < 0) {
-        setLocalError("Please enter a valid deposit amount (0 or greater).");
+        setLocalError(t("customers.CustomerBulkEditDialog.pleaseEnterAValidDeposit"));
         return;
       }
       updates.deposit_balance_adjustment = {
@@ -163,16 +165,16 @@ export function CustomerBulkEditDialog({
       });
 
       showSuccess(
-        `Successfully updated ${result.data?.updatedCount || selectedIds.length} customer records.`,
-        "Bulk Update Complete"
+        t("customers.CustomerBulkEditDialog.successfullyUpdatedCustomerRecords", { value: result.data?.updatedCount || selectedIds.length }),
+        t("customers.CustomerBulkEditDialog.bulkUpdateComplete")
       );
       resetForm();
       onClose();
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "Failed to bulk update customers.";
+      const msg = err.response?.data?.message || err.message || t("customers.CustomerBulkEditDialog.failedToBulkUpdateCustomers");
       setLocalError(msg);
-      showError(msg, "Bulk Update Failed");
+      showError(msg, t("customers.CustomerBulkEditDialog.bulkUpdateFailed"));
     }
   };
 
@@ -183,15 +185,15 @@ export function CustomerBulkEditDialog({
       open={open}
       onClose={handleClose}
       maxWidth="md"
-      eyebrow="BATCH CRM OPERATIONS"
-      title={`Bulk Edit Customers (${selectedCount} Client${selectedCount === 1 ? "" : "s"})`}
-      subtitle="Selectively update customer properties across all chosen accounts. Untoggled attributes remain unchanged."
+      eyebrow={t("customers.CustomerBulkEditDialog.batchCrmOperations")}
+      title={t("customers.CustomerBulkEditDialog.bulkEditTitle", { count: selectedCount })}
+      subtitle={t("customers.CustomerBulkEditDialog.selectivelyUpdateCustomerPropertiesAcros")}
       avatarIcon={<EditNoteIcon sx={{ fontSize: 28 }} />}
       headerChips={
         <>
           <Chip
             size="small"
-            label={`${selectedCount} Selected`}
+            label={t("customers.CustomerBulkEditDialog.selected", { selectedCount })}
             color="primary"
             variant="filled"
             sx={{ fontWeight: 700, bgcolor: "rgba(255, 255, 255, 0.2)", color: "#fff" }}
@@ -199,7 +201,7 @@ export function CustomerBulkEditDialog({
           <Chip
             size="small"
             icon={<CheckCircleOutlinedIcon sx={{ color: "#fff !important", fontSize: "14px !important" }} />}
-            label="Safe Transactional Update"
+            label={t("customers.CustomerBulkEditDialog.safeTransactionalUpdate")}
             sx={{ fontWeight: 600, bgcolor: "rgba(255, 255, 255, 0.12)", color: "#fff" }}
           />
         </>
@@ -207,7 +209,7 @@ export function CustomerBulkEditDialog({
       footer={
         <>
           <Button onClick={handleClose} color="inherit" disabled={bulkUpdateMutation.isPending}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -221,8 +223,8 @@ export function CustomerBulkEditDialog({
             sx={{ fontWeight: 700, px: 3 }}
           >
             {bulkUpdateMutation.isPending
-              ? "Applying Updates..."
-              : `Apply to ${selectedCount} Client${selectedCount === 1 ? "" : "s"}`}
+              ? t("customers.CustomerBulkEditDialog.applyingUpdates")
+              : t("customers.CustomerBulkEditDialog.applyToClients", { count: selectedCount })}
           </Button>
         </>
       }
@@ -236,8 +238,8 @@ export function CustomerBulkEditDialog({
       {/* ── 1. Status & Classification ── */}
       <FormSection
         icon={<PersonOutlinedIcon />}
-        title="Status & Account Classification"
-        hint="Modify access status, customer categorization, or VIP credibility rating."
+        title={t("customers.CustomerBulkEditDialog.statusAccountClassification")}
+        hint={t("customers.CustomerBulkEditDialog.modifyAccessStatusCustomerCategorization")}
       >
         {/* Status Toggle */}
         <Box
@@ -259,7 +261,7 @@ export function CustomerBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Account Status
+                {t("customers.CustomerBulkEditDialog.updateAccountStatus")}
               </Typography>
             }
           />
@@ -276,7 +278,7 @@ export function CustomerBulkEditDialog({
                   label={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <VerifiedUserIcon sx={{ fontSize: 16, color: "success.main" }} />
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Active (In Good Standing)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{t("customers.CustomerBulkEditDialog.activeInGoodStanding")}</Typography>
                     </Box>
                   }
                 />
@@ -286,7 +288,7 @@ export function CustomerBulkEditDialog({
                   label={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <WarningAmberIcon sx={{ fontSize: 16, color: "error.main" }} />
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "error.main" }}>Blacklisted (Blocked)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "error.main" }}>{t("customers.CustomerBulkEditDialog.blacklistedBlocked")}</Typography>
                     </Box>
                   }
                 />
@@ -315,7 +317,7 @@ export function CustomerBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Customer Type
+                {t("customers.CustomerBulkEditDialog.updateCustomerType")}
               </Typography>
             }
           />
@@ -329,12 +331,12 @@ export function CustomerBulkEditDialog({
                 <FormControlLabel
                   value="Individual"
                   control={<Radio size="small" />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Individual Renter</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{t("customers.CustomerBulkEditDialog.individualRenter")}</Typography>}
                 />
                 <FormControlLabel
                   value="Business"
                   control={<Radio size="small" />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Corporate / Business Entity</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{t("customers.CustomerBulkEditDialog.corporateBusinessEntity")}</Typography>}
                 />
               </RadioGroup>
             </Box>
@@ -361,7 +363,7 @@ export function CustomerBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Rating / Trust Score
+                {t("customers.CustomerBulkEditDialog.updateRatingTrustScore")}
               </Typography>
             }
           />
@@ -374,7 +376,7 @@ export function CustomerBulkEditDialog({
                 size="medium"
               />
               <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-                {rating} / 5 Stars
+                {t("customers.CustomerBulkEditDialog.5Stars", { rating })}
               </Typography>
             </Box>
           )}
@@ -384,8 +386,8 @@ export function CustomerBulkEditDialog({
       {/* ── 2. Corporate Hierarchy (Parent Company) ── */}
       <FormSection
         icon={<BusinessIcon />}
-        title="Corporate Hierarchy & Delegation"
-        hint="Link selected customer profiles under an umbrella parent company or clear parent linkage."
+        title={t("customers.CustomerBulkEditDialog.corporateHierarchyDelegation")}
+        hint={t("customers.CustomerBulkEditDialog.linkSelectedCustomerProfilesUnder")}
       >
         <Box
           sx={{
@@ -406,7 +408,7 @@ export function CustomerBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Assign or Clear Parent Company
+                {t("customers.CustomerBulkEditDialog.assignOrClearParentCompany")}
               </Typography>
             }
           />
@@ -416,17 +418,17 @@ export function CustomerBulkEditDialog({
                 select
                 fullWidth
                 size="small"
-                label="Parent Business Entity"
+                label={t("customers.CustomerBulkEditDialog.parentBusinessEntity")}
                 value={parentId}
                 onChange={(e) => setParentId(e.target.value as any)}
                 disabled={isLoadingParents}
               >
                 <MenuItem value="none">
-                  <em>— No Parent Company (Independent Account) —</em>
+                  <em>{t("customers.CustomerBulkEditDialog.noParentCompanyIndependentAccount")}</em>
                 </MenuItem>
                 {parentOptions.map((opt) => (
                   <MenuItem key={opt.customer_id} value={opt.customer_id}>
-                    {opt.company_name || `${opt.first_name} ${opt.last_name}`} ({opt.phone_number || opt.nic_number || "No contact"})
+                    {opt.company_name || `${opt.first_name} ${opt.last_name}`} ({opt.phone_number || opt.nic_number || t("customers.CustomerBulkEditDialog.noContact")})
                   </MenuItem>
                 ))}
               </TextField>
@@ -438,8 +440,8 @@ export function CustomerBulkEditDialog({
       {/* ── 3. Deposit / Advance Balance ── */}
       <FormSection
         icon={<AccountBalanceWalletIcon />}
-        title="Advance Security Deposit Balance"
-        hint="Set or credit advance deposit balances held on behalf of selected clients."
+        title={t("customers.CustomerBulkEditDialog.advanceSecurityDepositBalance")}
+        hint={t("customers.CustomerBulkEditDialog.setOrCreditAdvanceDeposit")}
       >
         <Box
           sx={{
@@ -460,7 +462,7 @@ export function CustomerBulkEditDialog({
             }
             label={
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Update Deposit / Advance Held
+                {t("customers.CustomerBulkEditDialog.updateDepositAdvanceHeld")}
               </Typography>
             }
           />
@@ -475,19 +477,19 @@ export function CustomerBulkEditDialog({
                 <FormControlLabel
                   value="set"
                   control={<Radio size="small" />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Set Fixed Amount (Override)</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{t("customers.CustomerBulkEditDialog.setFixedAmountOverride")}</Typography>}
                 />
                 <FormControlLabel
                   value="add"
                   control={<Radio size="small" />}
-                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Add Credit to Current Balance (Top-up)</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{t("customers.CustomerBulkEditDialog.addCreditToCurrentBalance")}</Typography>}
                 />
               </RadioGroup>
 
               <TextField
                 type="number"
                 size="small"
-                label={depositMode === "set" ? "New Advance Balance (Rs.)" : "Credit Amount to Add (Rs.)"}
+                label={depositMode === "set" ? t("customers.CustomerBulkEditDialog.newAdvanceBalanceRs") : t("customers.CustomerBulkEditDialog.creditAmountToAddRs")}
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value === "" ? "" : Number(e.target.value))}
                 slotProps={{

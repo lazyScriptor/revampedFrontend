@@ -109,7 +109,7 @@ const UtilizationSparkline: React.FC = () => {
             </Typography>
             <Chip
               size="small"
-              label={rate >= 75 ? "Healthy" : rate >= 40 ? "Watch" : "Low"}
+              label={rate >= 75 ? t("dashboard.UtilizationSparkline.healthy") : rate >= 40 ? t("dashboard.UtilizationSparkline.watch") : t("dashboard.widgets.low")}
               sx={{
                 mt: 0.35,
                 height: 19,

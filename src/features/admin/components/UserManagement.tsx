@@ -37,6 +37,7 @@ import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ListPageShell } from "@/components/layout/ListPageShell";
 import { StatTable } from "@/components/reports/StatTable";
+import { useTranslation } from "react-i18next";
 
 dayjs.extend(relativeTime);
 
@@ -134,6 +135,7 @@ function KpiTile({ icon, label, value, tone }: KpiTileProps) {
 }
 
 export default function UserManagement() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
@@ -159,7 +161,7 @@ export default function UserManagement() {
       const response = await userApi.getUsers(showInactive);
       setUsers(response.data.users || []);
     } catch (error: any) {
-      showError(error.message || "Failed to fetch users.");
+      showError(error.message || t("admin.UserManagement.failedToFetchUsers"));
     }
     setLoading(false);
   };
@@ -169,7 +171,7 @@ export default function UserManagement() {
       const response = await roleApi.getRoles(false);
       setRoles(response.data.roles || []);
     } catch (error: any) {
-      showError(error.message || "Failed to fetch roles.");
+      showError(error.message || t("admin.RoleManagement.failedToFetchRoles"));
     }
   };
 
@@ -192,18 +194,18 @@ export default function UserManagement() {
 
   const handleDelete = async (id: number, username: string) => {
     const confirmed = await confirm({
-      title: "Deactivate User",
-      message: `Are you sure you want to deactivate "${username}"? They will no longer be able to log in.`,
-      confirmLabel: "Deactivate",
+      title: t("admin.UserManagement.deactivateUser"),
+      message: t("admin.UserManagement.areYouSureYouWant", { username }),
+      confirmLabel: t("common.deactivate"),
       severity: "error",
     });
     if (!confirmed) return;
     try {
       await userApi.deleteUser(id);
-      showSuccess(`User "${username}" has been deactivated.`);
+      showSuccess(t("admin.UserManagement.userHasBeenDeactivated", { username }));
       fetchUsers();
     } catch (error: any) {
-      showError(error.message || "Failed to deactivate user.");
+      showError(error.message || t("admin.UserManagement.failedToDeactivateUser"));
     }
   };
 
@@ -215,17 +217,17 @@ export default function UserManagement() {
       }
       setBulkAssignOpen(false);
       setSelectedRowIds([]);
-      showSuccess(`Role assigned to ${selectedRowIds.length} user(s) successfully.`);
+      showSuccess(t("admin.UserManagement.roleAssignedToUserS", { selectedRowIdsCount: selectedRowIds.length }));
       fetchUsers();
     } catch (error: any) {
-      showError(error.message || "Bulk assignment failed.");
+      showError(error.message || t("admin.UserManagement.bulkAssignmentFailed"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleFileUpload = (file: File) => {
-    showInfo(`File "${file.name}" selected. CSV Bulk Import will be wired up to the backend parser.`);
+    showInfo(t("admin.UserManagement.fileSelectedCsvBulkImport", { name: file.name }));
     setCsvUploadOpen(false);
   };
 
@@ -258,7 +260,7 @@ export default function UserManagement() {
     () => [
       {
         field: "_person",
-        headerName: "Person",
+        headerName: t("admin.users.person"),
         flex: 1.6,
         minWidth: 220,
         sortable: false,
@@ -311,7 +313,7 @@ export default function UserManagement() {
       },
       {
         field: "email",
-        headerName: "Email",
+        headerName: t("common.email"),
         flex: 1.2,
         minWidth: 200,
         renderCell: (params) => (
@@ -322,7 +324,7 @@ export default function UserManagement() {
       },
       {
         field: "Roles",
-        headerName: "Roles",
+        headerName: t("nav.roles"),
         flex: 1.4,
         minWidth: 220,
         sortable: false,
@@ -331,7 +333,7 @@ export default function UserManagement() {
           if (list.length === 0) {
             return (
               <Typography variant="caption" sx={{ color: theme.palette.text.disabled, fontStyle: "italic" }}>
-                No roles
+                {t("admin.users.noRoles")}
               </Typography>
             );
           }
@@ -373,14 +375,14 @@ export default function UserManagement() {
       },
       {
         field: "last_login_at",
-        headerName: "Last Login",
+        headerName: t("admin.users.lastLogin"),
         flex: 0.9,
         minWidth: 130,
         renderCell: (params) => {
           if (!params.value) {
             return (
               <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>
-                Never
+                {t("admin.users.never")}
               </Typography>
             );
           }
@@ -396,11 +398,11 @@ export default function UserManagement() {
       },
       {
         field: "is_active",
-        headerName: "Status",
+        headerName: t("common.status"),
         width: 110,
         renderCell: (params) => (
           <Chip
-            label={params.value ? "Active" : "Inactive"}
+            label={params.value ? t("common.active") : t("common.inactive")}
             size="small"
             sx={{
               height: 22,
@@ -429,7 +431,7 @@ export default function UserManagement() {
         headerAlign: "right",
         renderCell: (params) => (
           <Box sx={{ display: "flex", gap: 0.25 }}>
-            <Tooltip title="Manage roles">
+            <Tooltip title={t("admin.users.manageRoles")}>
               <IconButton
                 size="small"
                 onClick={() => setRoleAssignUser(params.row)}
@@ -444,7 +446,7 @@ export default function UserManagement() {
                 <ManageAccountsOutlinedIcon sx={{ fontSize: 17 }} />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Edit user">
+            <Tooltip title={t("admin.users.editUser")}>
               <IconButton
                 size="small"
                 onClick={() => handleEdit(params.row)}
@@ -460,7 +462,7 @@ export default function UserManagement() {
               </IconButton>
             </Tooltip>
             {params.row.is_active && (
-              <Tooltip title="Deactivate user">
+              <Tooltip title={t("admin.users.deactivateUser")}>
                 <IconButton
                   size="small"
                   onClick={() => handleDelete(params.row.user_id, params.row.username)}
@@ -481,15 +483,15 @@ export default function UserManagement() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [theme],
+    [theme, t],
   );
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <ListPageShell
         icon={<PeopleAltOutlinedIcon sx={{ fontSize: 22 }} />}
-        title="User Management"
-        subtitle="Identities, role assignments, and account status across the workspace."
+        title={t("admin.users.title")}
+        subtitle={t("admin.users.subtitle")}
         actions={
           <>
             {selectedRowIds.length > 0 && (
@@ -499,7 +501,7 @@ export default function UserManagement() {
                 startIcon={<GroupAddOutlinedIcon />}
                 onClick={() => setBulkAssignOpen(true)}
               >
-                Bulk assign ({selectedRowIds.length})
+                {t("admin.UserManagement.bulkAssign", { selectedRowIdsCount: selectedRowIds.length })}
               </Button>
             )}
             <Button
@@ -508,7 +510,7 @@ export default function UserManagement() {
               startIcon={<UploadFileOutlinedIcon />}
               onClick={() => setCsvUploadOpen((v) => !v)}
             >
-              {csvUploadOpen ? "Close import" : "Bulk import"}
+              {csvUploadOpen ? t("admin.users.closeImport") : t("admin.users.bulkImport")}
             </Button>
             <Button
               variant="contained"
@@ -518,7 +520,7 @@ export default function UserManagement() {
                 setDrawerOpen(true);
               }}
             >
-              Create user
+              {t("admin.users.createUser")}
             </Button>
           </>
         }
@@ -526,25 +528,25 @@ export default function UserManagement() {
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             <KpiTile
               icon={<PeopleAltOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="Total Users"
+              label={t("admin.users.totalUsers")}
               value={kpis.total}
               tone="primary"
             />
             <KpiTile
               icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="Active"
+              label={t("common.active")}
               value={kpis.active}
               tone="success"
             />
             <KpiTile
               icon={<BlockOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="Inactive"
+              label={t("common.inactive")}
               value={kpis.inactive}
               tone="danger"
             />
             <KpiTile
               icon={<ShieldOutlinedIcon sx={{ fontSize: 20 }} />}
-              label="With Roles"
+              label={t("admin.users.withRoles")}
               value={kpis.withRoles}
               tone="accent"
             />
@@ -554,7 +556,7 @@ export default function UserManagement() {
           <>
             <TextField
               size="small"
-              placeholder="Search name, username or email"
+              placeholder={t("admin.users.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               sx={{ minWidth: { xs: "100%", sm: 280 } }}
@@ -574,7 +576,7 @@ export default function UserManagement() {
                 return (
                   <Chip
                     key={s}
-                    label={s === "all" ? "All" : s === "active" ? "Active" : "Inactive"}
+                    label={s === "all" ? t("common.all") : s === "active" ? t("common.active") : t("common.inactive")}
                     onClick={() => setStatusFilter(s)}
                     size="small"
                     sx={{
@@ -598,7 +600,7 @@ export default function UserManagement() {
             </Box>
             <Box sx={{ flex: 1 }} />
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              {filteredRows.length} of {users.length}
+              {t("admin.UserManagement.of", { filteredRowsCount: filteredRows.length, usersCount: users.length })}
             </Typography>
           </>
         }

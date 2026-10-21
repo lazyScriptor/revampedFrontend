@@ -14,16 +14,19 @@ import {
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import { useStartExport } from "../hooks/useBulkJobs";
+import { Trans, useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 type ExportEntity = "equipment" | "customers" | "invoices";
 
 const ENTITIES: { key: ExportEntity; label: string; formats: ("xlsx" | "csv")[]; description: string }[] = [
-  { key: "equipment", label: "Equipment", formats: ["xlsx", "csv"], description: "All non-deleted equipment with category and warehouse." },
-  { key: "customers", label: "Customers", formats: ["xlsx", "csv"], description: "All non-deleted customer records." },
-  { key: "invoices", label: "Invoices", formats: ["xlsx"], description: "Invoices with customer + totals; filter by date and status." },
+  { key: "equipment", label: tk("nav.equipment"), formats: ["xlsx", "csv"], description: tk("dataArena.ExportPanel.allNonDeletedEquipmentWith") },
+  { key: "customers", label: tk("nav.customers"), formats: ["xlsx", "csv"], description: tk("dataArena.ExportPanel.allNonDeletedCustomerRecords") },
+  { key: "invoices", label: tk("nav.invoices"), formats: ["xlsx"], description: tk("dataArena.ExportPanel.invoicesWithCustomerTotalsFilter") },
 ];
 
 export function ExportPanel() {
+  const { t } = useTranslation();
   const [entity, setEntity] = useState<ExportEntity>("equipment");
   const [format, setFormat] = useState<"xlsx" | "csv">("xlsx");
   const [status, setStatus] = useState<string>("");
@@ -48,7 +51,7 @@ export function ExportPanel() {
       const job = await startExport.mutateAsync({ entity, format, filters });
       setSuccessJobId(job.job_id);
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Export failed to start.");
+      setError(e?.response?.data?.message || e?.message || t("dataArena.ExportPanel.exportFailedToStart"));
     }
   };
 
@@ -67,19 +70,19 @@ export function ExportPanel() {
     >
       <Box>
         <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          GENERATE FILE
+          {t("dataArena.ExportPanel.generateFile")}
         </Typography>
         <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a" }}>
-          Export {current.label}
+          {t("dataArena.ExportPanel.export", { label: current.label })}
         </Typography>
         <Typography variant="caption" sx={{ color: "#475569" }}>
-          {current.description}
+          {t(current.description)}
         </Typography>
       </Box>
 
       <Box>
         <Typography variant="caption" sx={{ display: "block", mb: 0.5, color: "#475569" }}>
-          Entity
+          {t("dataArena.ExportPanel.entity")}
         </Typography>
         <ToggleButtonGroup
           exclusive
@@ -105,7 +108,7 @@ export function ExportPanel() {
         >
           {ENTITIES.map((e) => (
             <ToggleButton key={e.key} value={e.key}>
-              {e.label}
+              {t(e.label)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
@@ -115,7 +118,7 @@ export function ExportPanel() {
         <TextField
           select
           size="small"
-          label="Format"
+          label={t("dataArena.ExportPanel.format")}
           value={format}
           onChange={(e) => setFormat(e.target.value as any)}
           sx={{ minWidth: 140 }}
@@ -129,7 +132,7 @@ export function ExportPanel() {
 
         <TextField
           size="small"
-          label="Status (optional)"
+          label={t("dataArena.ExportPanel.statusOptional")}
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           sx={{ minWidth: 160 }}
@@ -140,7 +143,7 @@ export function ExportPanel() {
             <TextField
               type="date"
               size="small"
-              label="From"
+              label={t("common.dateFrom")}
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               sx={{ minWidth: 160 }}
@@ -149,7 +152,7 @@ export function ExportPanel() {
             <TextField
               type="date"
               size="small"
-              label="To"
+              label={t("common.dateTo")}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               sx={{ minWidth: 160 }}
@@ -162,8 +165,7 @@ export function ExportPanel() {
       {error && <Alert severity="error">{error}</Alert>}
       {successJobId && (
         <Alert severity="success">
-          Export job <strong>#{successJobId}</strong> queued. The file will appear in{" "}
-          <strong>Downloads</strong> when it's ready.
+          <Trans i18nKey="dataArena.ExportPanel.jobQueued" values={{ id: successJobId, downloads: t("nav.downloads") }} components={{ strong: <strong /> }} />
         </Alert>
       )}
 
@@ -182,7 +184,7 @@ export function ExportPanel() {
           }
           sx={{ fontWeight: 800 }}
         >
-          {startExport.isPending ? "Queueing…" : "Queue export"}
+          {startExport.isPending ? t("dataArena.ExportPanel.queueing") : t("dataArena.ExportPanel.queueExport")}
         </Button>
       </Stack>
     </Paper>

@@ -1,21 +1,19 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import InvoicesRoute from "../Invoices";
+
+const renderRoute = () =>
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <InvoicesRoute />
+    </QueryClientProvider>,
+  );
 
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
   useSearch: () => ({ mode: "dispatch" }),
 }));
-
-vi.mock("react-i18next", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-i18next")>();
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (key: string) => key,
-    }),
-  };
-});
 
 vi.mock("@/features/invoices/hooks/useInvoiceHooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/invoices/hooks/useInvoiceHooks")>();
@@ -48,7 +46,7 @@ vi.mock("@/features/invoices/components/ManageInvoiceViews", () => ({
 
 describe("InvoicesRoute Component Tests", () => {
   it("renders InvoicesRoute in dispatch mode with Chip and panels without throwing reference errors", () => {
-    render(<InvoicesRoute />);
+    renderRoute();
 
     // Step 1 Chip is rendered in Pane 1
     expect(screen.getByText("Step 1")).toBeInTheDocument();
@@ -58,9 +56,9 @@ describe("InvoicesRoute Component Tests", () => {
   });
 
   it("switches to manage mode and renders Index Chip and management panels", async () => {
-    render(<InvoicesRoute />);
+    renderRoute();
 
-    const manageBtn = screen.getByRole("button", { name: /manageOrders/i });
+    const manageBtn = screen.getByRole("button", { name: /manage orders/i });
     fireEvent.click(manageBtn);
 
     expect(await screen.findByText("Index")).toBeInTheDocument();

@@ -137,7 +137,7 @@ export function AppBarUserMenu() {
           <ListItemIcon>
             <LockResetIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t("forms.unsavedChanges") === "Unsaved changes" ? "Change password" : "මුරපදය වෙනස් කරන්න"}</ListItemText>
+          <ListItemText>{t("profile.changePasswordCta")}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => go("/profile", { tab: "preferences" })}>
           <ListItemIcon>

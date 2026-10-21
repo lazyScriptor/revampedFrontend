@@ -56,6 +56,8 @@ import {
 } from "@/features/inventory/hooks/useDefectHooks";
 import { formatDisplayDate } from "@/lib/dates";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
+import { Trans, useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 
 // ─────────────────────────────────────────────
 // Shared helpers
@@ -68,10 +70,10 @@ const getWorkloadColor = (active: number, isDeactivated: boolean) => {
 };
 
 const getWorkloadLabel = (active: number, isDeactivated: boolean) => {
-  if (isDeactivated) return "Inactive";
-  if (active > 5) return "Overloaded";
-  if (active > 2) return "Busy";
-  return "Available";
+  if (isDeactivated) return tk("pages.Workforce.workloadInactive");
+  if (active > 5) return tk("pages.Workforce.workloadOverloaded");
+  if (active > 2) return tk("pages.Workforce.workloadBusy");
+  return tk("pages.Workforce.workloadAvailable");
 };
 
 const getStatusColor = (status: string) => {
@@ -111,49 +113,50 @@ function ResolveDialog({
   onSuccess: (msg: string) => void;
   onError: (msg: string) => void;
 }) {
+  const { t } = useTranslation();
   const [qty, setQty] = useState("1");
   const resolveMutation = useResolveDefect();
 
   const handleResolve = () => {
     const quantity = parseInt(qty);
     if (!quantity || quantity < 1 || quantity > ticket?.pending_quantity) {
-      onError(`Enter a quantity between 1 and ${ticket?.pending_quantity}`);
+      onError(t("pages.Workforce.enterQuantityBetween", { max: ticket?.pending_quantity }));
       return;
     }
     resolveMutation.mutate(
       { defectId: ticket.defect_log_id, quantity },
       {
         onSuccess: () => {
-          onSuccess(`${quantity} item(s) marked as repaired.`);
+          onSuccess(t("pages.Workforce.itemsMarkedRepaired", { count: quantity }));
           onClose();
         },
         onError: (err: any) =>
-          onError(err.response?.data?.message || "Failed to resolve ticket."),
+          onError(err.response?.data?.message || t("pages.Workforce.failedToResolveTicket")),
       }
     );
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontWeight: "bold" }}>Mark Items as Repaired</DialogTitle>
+      <DialogTitle sx={{ fontWeight: "bold" }}>{t("pages.Workforce.markItemsAsRepaired")}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Equipment: <strong>{ticket?.Equipment?.equipment_name}</strong>
+          {t("pages.Invoices.equipment")} <strong>{ticket?.Equipment?.equipment_name}</strong>
           <br />
-          Pending: <strong>{ticket?.pending_quantity}</strong> item(s)
+          <Trans i18nKey="pages.Workforce.pendingItems" values={{ qty: ticket?.pending_quantity }} components={{ strong: <strong /> }} />
         </Typography>
         <TextField
           fullWidth
-          label="Quantity Repaired"
+          label={t("pages.Workforce.quantityRepaired")}
           type="number"
           value={qty}
           onChange={(e) => setQty(e.target.value)}
           slotProps={{ htmlInput: { min: 1, max: ticket?.pending_quantity } }}
-          helperText={`Max: ${ticket?.pending_quantity}`}
+          helperText={t("pages.Workforce.max", { pending_quantity: ticket?.pending_quantity })}
         />
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 1 }}>
-        <Button onClick={onClose} color="inherit">Cancel</Button>
+        <Button onClick={onClose} color="inherit">{t("common.cancel")}</Button>
         <Button
           onClick={handleResolve}
           variant="contained"
@@ -161,7 +164,7 @@ function ResolveDialog({
           disabled={resolveMutation.isPending}
           startIcon={<DoneAllIcon />}
         >
-          Confirm Repair
+          {t("pages.Workforce.confirmRepair")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -172,6 +175,7 @@ function ResolveDialog({
 // TECHNICIAN VIEW — personal work dashboard
 // ─────────────────────────────────────────────
 function TechnicianDashboard() {
+  const { t } = useTranslation();
   const { data: tickets = [], isLoading } = useMyTickets();
   const { toast, show, close } = useToast();
   const [resolveTarget, setResolveTarget] = useState<any>(null);
@@ -183,13 +187,13 @@ function TechnicianDashboard() {
 
   if (isLoading)
     return (
-      <GearGridLoader centered size="lg" label="Loading Technical Roster..." sublabel="Calculating active technician assignments and repair workloads" sx={{ pt: 10 }} />
+      <GearGridLoader centered size="lg" label={t("pages.Workforce.loadingTechnicalRoster")} sublabel={t("pages.Workforce.calculatingActiveTechnicianAssignmentsAn")} sx={{ pt: 10 }} />
     );
 
   const statCards = [
-    { label: "Active Tickets", value: activeTickets.length, icon: <AssignmentIcon />, color: "#3b82f6" },
-    { label: "Items Pending Repair", value: pendingItems, icon: <ConstructionIcon />, color: "#f59e0b" },
-    { label: "In Repair Now", value: inRepairCount, icon: <BuildIcon />, color: "#8b5cf6" },
+    { label: t("pages.Workforce.activeTickets"), value: activeTickets.length, icon: <AssignmentIcon />, color: "#3b82f6" },
+    { label: t("pages.Workforce.itemsPendingRepair"), value: pendingItems, icon: <ConstructionIcon />, color: "#f59e0b" },
+    { label: t("pages.Workforce.inRepairNow"), value: inRepairCount, icon: <BuildIcon />, color: "#8b5cf6" },
   ];
 
   return (
@@ -202,10 +206,10 @@ function TechnicianDashboard() {
           </Avatar>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 800 }} color="text.primary">
-              My Workspace
+              {t("pages.Workforce.myWorkspace")}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Welcome back, {user?.username} — here's your current workload.
+              {t("pages.Workforce.welcomeBackHereSYour", { username: user?.username })}
             </Typography>
           </Box>
         </Box>
@@ -258,7 +262,7 @@ function TechnicianDashboard() {
         <Box sx={{ p: 3, display: "flex", alignItems: "center", gap: 1 }}>
           <PendingActionsIcon color="primary" />
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            My Active Repair Tickets
+            {t("pages.Workforce.myActiveRepairTickets")}
           </Typography>
         </Box>
         <Divider />
@@ -266,7 +270,7 @@ function TechnicianDashboard() {
           <Box sx={{ p: 6, textAlign: "center" }}>
             <VerifiedIcon sx={{ fontSize: 56, color: "success.light", mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
-              All clear! No active tickets assigned to you.
+              {t("pages.Workforce.allClearNoActiveTickets")}
             </Typography>
           </Box>
         ) : (
@@ -274,16 +278,16 @@ function TechnicianDashboard() {
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                  <TableCell sx={{ fontWeight: 700 }}>Equipment</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Serial No.</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{t("nav.equipment")}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{t("pages.Workforce.serialNo")}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{t("common.status")}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">
-                    Pending
+                    {t("common.pending")}
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Reported</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{t("common.description")}</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>{t("maintenance.reportedDate")}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">
-                    Action
+                    {t("invoices.InvoicePrintHistoryDialog.action")}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -325,7 +329,7 @@ function TechnicianDashboard() {
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      <Tooltip title="Mark items as repaired">
+                      <Tooltip title={t("pages.Workforce.markItemsAsRepaired2")}>
                         <Button
                           size="small"
                           variant="contained"
@@ -334,7 +338,7 @@ function TechnicianDashboard() {
                           onClick={() => setResolveTarget(ticket)}
                           sx={{ textTransform: "none", borderRadius: 2 }}
                         >
-                          Resolve
+                          {t("pages.Workforce.resolve")}
                         </Button>
                       </Tooltip>
                     </TableCell>
@@ -379,6 +383,7 @@ const EMPTY_FORM = {
 };
 
 function AdminRosterView() {
+  const { t } = useTranslation();
   const { data: roster = [], isLoading } = useTechnicianRoster();
   const addMutation = useAddTechnician();
   const updateMutation = useUpdateTechnician();
@@ -424,24 +429,24 @@ function AdminRosterView() {
 
   const handleSubmit = () => {
     if (!formData.first_name || !formData.email)
-      return show("Name and email are required.", "error");
+      return show(t("pages.Workforce.nameAndEmailAreRequired"), "error");
     if (!isEditMode && !formData.password)
-      return show("Password is required.", "error");
+      return show(t("pages.Workforce.passwordIsRequired"), "error");
     if (!isEditMode && formData.password.length < 8)
-      return show("Password must be at least 8 characters.", "error");
+      return show(t("forms.passwordTooShort"), "error");
 
     if (isEditMode && selectedTechId) {
       updateMutation.mutate(
         { id: selectedTechId, data: formData },
         {
-          onSuccess: () => { show("Technician updated."); setIsModalOpen(false); },
-          onError: (err: any) => show(err.response?.data?.message || "Update failed.", "error"),
+          onSuccess: () => { show(t("pages.Workforce.technicianUpdated")); setIsModalOpen(false); },
+          onError: (err: any) => show(err.response?.data?.message || t("pages.Workforce.updateFailed"), "error"),
         }
       );
     } else {
       addMutation.mutate(formData, {
-        onSuccess: () => { show("Technician registered successfully!"); setIsModalOpen(false); },
-        onError: (err: any) => show(err.response?.data?.message || "Registration failed.", "error"),
+        onSuccess: () => { show(t("pages.Workforce.technicianRegisteredSuccessfully")); setIsModalOpen(false); },
+        onError: (err: any) => show(err.response?.data?.message || t("pages.Workforce.registrationFailed"), "error"),
       });
     }
   };
@@ -452,8 +457,8 @@ function AdminRosterView() {
     toggleMutation.mutate(
       { id: techId, isActive: newStatus },
       {
-        onSuccess: () => show(`Technician ${newStatus ? "activated" : "deactivated"}.`),
-        onError: (err: any) => show(err.response?.data?.message || "Status change failed.", "error"),
+        onSuccess: () => show(t(newStatus ? "pages.Workforce.technicianActivated" : "pages.Workforce.technicianDeactivated")),
+        onError: (err: any) => show(err.response?.data?.message || t("pages.Workforce.statusChangeFailed"), "error"),
       }
     );
     setAnchorEl((prev) => ({ ...prev, [techId]: null }));
@@ -467,10 +472,10 @@ function AdminRosterView() {
     );
 
   const summaryCards = [
-    { label: "Total Technicians", value: roster.length, color: "#3b82f6", icon: <EngineeringIcon /> },
-    { label: "Available", value: availableCount, color: "#10b981", icon: <CheckCircleIcon /> },
-    { label: "Busy", value: busyCount, color: "#f59e0b", icon: <SpeedIcon /> },
-    { label: "Overloaded", value: overloadedCount, color: "#ef4444", icon: <BuildIcon /> },
+    { label: t("pages.Workforce.totalTechnicians"), value: roster.length, color: "#3b82f6", icon: <EngineeringIcon /> },
+    { label: t("common.available"), value: availableCount, color: "#10b981", icon: <CheckCircleIcon /> },
+    { label: t("pages.Workforce.busy"), value: busyCount, color: "#f59e0b", icon: <SpeedIcon /> },
+    { label: t("pages.Workforce.overloaded"), value: overloadedCount, color: "#ef4444", icon: <BuildIcon /> },
   ];
 
   return (
@@ -479,14 +484,14 @@ function AdminRosterView() {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 4 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800 }} color="text.primary" gutterBottom>
-            Workforce Management
+            {t("pages.Workforce.workforceManagement")}
           </Typography>
           <Typography color="text.secondary" variant="body1">
-            Monitor technician availability and manage your repair team.
+            {t("pages.Workforce.monitorTechnicianAvailabilityAndManage")}
           </Typography>
         </Box>
         <Button variant="contained" disableElevation startIcon={<GroupAddIcon />} onClick={handleOpenAdd}>
-          Add Technician
+          {t("pages.Workforce.addTechnician")}
         </Button>
       </Box>
 
@@ -539,9 +544,9 @@ function AdminRosterView() {
           sx={{ p: 8, textAlign: "center", border: "1px solid #e2e8f0", borderRadius: 3 }}
         >
           <EngineeringIcon sx={{ fontSize: 64, color: "action.disabled", mb: 2 }} />
-          <Typography variant="h6" color="text.secondary">No technicians registered yet.</Typography>
+          <Typography variant="h6" color="text.secondary">{t("pages.Workforce.noTechniciansRegisteredYet")}</Typography>
           <Button variant="contained" disableElevation sx={{ mt: 3 }} onClick={handleOpenAdd}>
-            Register First Technician
+            {t("pages.Workforce.registerFirstTechnician")}
           </Button>
         </Paper>
       ) : (
@@ -596,7 +601,7 @@ function AdminRosterView() {
 
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <Chip
-                        label={workloadLabel}
+                        label={t(workloadLabel)}
                         color={workloadColor as any}
                         size="small"
                         variant="outlined"
@@ -614,7 +619,7 @@ function AdminRosterView() {
                         onClose={() => setAnchorEl((prev) => ({ ...prev, [techId]: null }))}
                       >
                         <MenuItem onClick={() => handleOpenEdit(tech)}>
-                          <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit Details
+                          <EditIcon fontSize="small" sx={{ mr: 1 }} /> {t("pages.Workforce.editDetails")}
                         </MenuItem>
                         <Divider />
                         <MenuItem
@@ -626,7 +631,7 @@ function AdminRosterView() {
                           ) : (
                             <BlockIcon fontSize="small" sx={{ mr: 1 }} />
                           )}
-                          {isDeactivated ? "Reactivate" : "Deactivate"}
+                          {isDeactivated ? t("pages.Workforce.reactivate") : t("pages.Workforce.deactivate")}
                         </MenuItem>
                       </Menu>
                     </Box>
@@ -635,7 +640,7 @@ function AdminRosterView() {
                   <Box sx={{ bgcolor: "#f8fafc", p: 2, borderRadius: 2 }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                       <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <EngineeringIcon sx={{ fontSize: 15 }} /> Active Tickets
+                        <EngineeringIcon sx={{ fontSize: 15 }} /> {t("pages.Workforce.activeTickets")}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>
                         {tech.active_tickets}
@@ -643,7 +648,7 @@ function AdminRosterView() {
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
                       <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <SpeedIcon sx={{ fontSize: 15 }} /> Items Pending
+                        <SpeedIcon sx={{ fontSize: 15 }} /> {t("pages.Workforce.itemsPending")}
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>
                         {tech.total_items_pending}
@@ -656,7 +661,7 @@ function AdminRosterView() {
                       sx={{ height: 6, borderRadius: 3, bgcolor: "#e2e8f0" }}
                     />
                     <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block", textAlign: "right" }}>
-                      Capacity: {tech.active_tickets}/8 tickets
+                      {t("pages.Workforce.capacity")} {t("pages.Workforce.8Tickets", { active_tickets: tech.active_tickets })}
                     </Typography>
                   </Box>
                 </Paper>
@@ -669,20 +674,20 @@ function AdminRosterView() {
       {/* Add / Edit Dialog */}
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: "bold" }}>
-          {isEditMode ? "Edit Technician Details" : "Register New Technician"}
+          {isEditMode ? t("pages.Workforce.editTechnicianDetails") : t("pages.Workforce.registerNewTechnician")}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
                 fullWidth
-                label="First Name"
+                label={t("pages.Workforce.firstName")}
                 value={formData.first_name}
                 onChange={(e) => setFormData((f) => ({ ...f, first_name: e.target.value }))}
               />
               <TextField
                 fullWidth
-                label="Last Name"
+                label={t("pages.Workforce.lastName")}
                 value={formData.last_name}
                 onChange={(e) => setFormData((f) => ({ ...f, last_name: e.target.value }))}
               />
@@ -693,24 +698,24 @@ function AdminRosterView() {
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <TextField
                     fullWidth
-                    label="Username"
+                    label={t("common.username")}
                     value={formData.username}
                     onChange={(e) => setFormData((f) => ({ ...f, username: e.target.value }))}
                   />
                   <TextField
                     fullWidth
-                    label="NIC Number"
+                    label={t("pages.Workforce.nicNumber")}
                     value={formData.nic_no}
                     onChange={(e) => setFormData((f) => ({ ...f, nic_no: e.target.value }))}
                   />
                 </Box>
                 <TextField
                   fullWidth
-                  label="Password"
+                  label={t("common.password")}
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => setFormData((f) => ({ ...f, password: e.target.value }))}
-                  helperText="Minimum 8 characters"
+                  helperText={t("pages.Workforce.minimum8Characters")}
                   slotProps={{
                     input: {
                       endAdornment: (
@@ -728,28 +733,28 @@ function AdminRosterView() {
 
             <TextField
               fullWidth
-              label="Email Address"
+              label={t("pages.Workforce.emailAddress")}
               type="email"
               value={formData.email}
               onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
             />
             <TextField
               fullWidth
-              label="Phone Number"
+              label={t("pages.Workforce.phoneNumber")}
               value={formData.phone_number}
               onChange={(e) => setFormData((f) => ({ ...f, phone_number: e.target.value }))}
             />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 1 }}>
-          <Button onClick={() => setIsModalOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={() => setIsModalOpen(false)} color="inherit">{t("common.cancel")}</Button>
           <Button
             onClick={handleSubmit}
             variant="contained"
             disableElevation
             disabled={updateMutation.isPending || addMutation.isPending}
           >
-            {isEditMode ? "Save Changes" : "Register Technician"}
+            {isEditMode ? t("equipment.EquipmentFormDrawer.saveChanges") : t("pages.Workforce.registerTechnician")}
           </Button>
         </DialogActions>
       </Dialog>

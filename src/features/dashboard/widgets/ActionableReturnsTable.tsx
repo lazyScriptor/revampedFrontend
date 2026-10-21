@@ -186,7 +186,7 @@ const ActionableReturnsTable: React.FC = () => {
               <EventAvailableOutlinedIcon sx={{ fontSize: 22 }} />
             </Box>
             <Typography variant="body2" sx={{ color: dt.color.foreground, fontWeight: 700, fontSize: "0.82rem" }}>
-              All clear
+              {t("dashboard.ActionableReturnsTable.allClear")}
             </Typography>
             <Typography variant="caption" sx={{ color: dt.color.foregroundFaint, fontSize: "0.72rem" }}>
               {t("dashboard.widgets.noReturns", "No returns due today")}
@@ -246,15 +246,15 @@ const ActionableReturnsTable: React.FC = () => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {item.equipment_name} · qty {item.borrow_quantity}
+                    {t("dashboard.ActionableReturnsTable.qty", { equipment_name: item.equipment_name, borrow_quantity: item.borrow_quantity })}
                   </Typography>
                   <Typography variant="caption" sx={{ color: dt.color.foregroundFaint, fontSize: "0.68rem" }}>
-                    Expected {dayjs(item.expected_return_date).format("D MMM YYYY")}
+                    {t("dashboard.ActionableReturnsTable.expected", { value: dayjs(item.expected_return_date).format("D MMM YYYY") })}
                   </Typography>
                 </Stack>
 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
-                  <Tooltip title="View Invoice">
+                  <Tooltip title={t("dashboard.ActionableReturnsTable.viewInvoice")}>
                     <Box
                       onClick={() => navigate({ to: "/invoices", search: { id: item.invoice_id } as any })}
                       sx={{
@@ -280,7 +280,7 @@ const ActionableReturnsTable: React.FC = () => {
                   </Tooltip>
 
                   {item.phone_number && (
-                    <Tooltip title={`Call ${item.phone_number}`}>
+                    <Tooltip title={t("dashboard.ActionableReturnsTable.call", { phone_number: item.phone_number })}>
                       <Box
                         component="a"
                         href={`tel:${item.phone_number}`}

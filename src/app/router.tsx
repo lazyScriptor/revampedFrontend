@@ -26,6 +26,7 @@ import { PairDevicePage } from "@/features/signatures/components/PairDevicePage"
 import { DeviceHomePage } from "@/features/signatures/components/DeviceHomePage";
 import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedSignPage";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
+import { useTranslation } from "react-i18next";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -292,18 +293,18 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 // --- 4. Global 404 Component ---
-const NotFoundComponent = () => (
+const NotFoundComponent = () => { const { t } = useTranslation(); return (
   <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-slate-300">
     <h1 className="text-6xl font-bold text-white mb-4">404</h1>
-    <p className="text-xl mb-8">Oops! We couldn't find that page.</p>
+    <p className="text-xl mb-8">{t("app.router.oopsWeCouldnTFind")}</p>
     <button
       onClick={() => window.history.back()}
       className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
     >
-      Go Back
+      {t("app.router.goBack")}
     </button>
   </div>
-);
+); };
 
 // --- 5. Export Router ---
 export const router = createRouter({

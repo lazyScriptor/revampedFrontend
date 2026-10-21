@@ -247,7 +247,7 @@ const DashboardEngine: React.FC = () => {
                     e.stopPropagation();
                     setWidgetWidth(item.i, size);
                   }}
-                  title={`${size} col`}
+                  title={t("dashboard.DashboardEngine.colSize", { size })}
                   sx={{
                     width: 22,
                     height: 22,
@@ -281,7 +281,7 @@ const DashboardEngine: React.FC = () => {
                 e.stopPropagation();
                 handleRemoveWidget(item.i);
               }}
-              title="Remove widget"
+              title={t("dashboard.DashboardEngine.removeWidget")}
               sx={{
                 width: 24,
                 height: 24,

@@ -45,6 +45,7 @@ import {
   ParentCustomerOption,
 } from "../hooks/useCustomerHooks";
 import { useDebounce } from "@/features/invoices/hooks/usePosSearch";
+import { Trans, useTranslation } from "react-i18next";
 
 interface CustomerFormDialogProps {
   open: boolean;
@@ -62,6 +63,7 @@ export function CustomerFormDialog({
   onClose,
   initialData,
 }: CustomerFormDialogProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isEditing = !!initialData;
@@ -185,16 +187,16 @@ export function CustomerFormDialog({
     {
       value: "Individual" as const,
       icon: <PersonIcon sx={{ fontSize: 28 }} />,
-      title: "Individual",
-      subtitle: "Walk-in customer or sole renter",
+      title: t("customers.individual"),
+      subtitle: t("customers.CustomerFormDialog.walkInCustomerOrSole"),
       accent: "#2563eb",
       bg: "#eff6ff",
     },
     {
       value: "Business" as const,
       icon: <BusinessIcon sx={{ fontSize: 28 }} />,
-      title: "Business",
-      subtitle: "Company or contractor account",
+      title: t("customers.business"),
+      subtitle: t("customers.CustomerFormDialog.companyOrContractorAccount"),
       accent: "#7c3aed",
       bg: "#f5f3ff",
     },
@@ -286,17 +288,17 @@ export function CustomerFormDialog({
             </Avatar>
             <Box>
               <Typography variant="overline" sx={{ opacity: 0.7, letterSpacing: 2, fontWeight: 700 }}>
-                {isEditing ? "Edit Customer" : "New Customer"}
+                {isEditing ? t("customers.editCustomer") : t("customers.CustomerFormDialog.newCustomer")}
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.25 }}>
                 {isEditing
                   ? initialData?.customer_type === "Business"
                     ? initialData?.company_name
                     : `${initialData?.first_name} ${initialData?.last_name}`
-                  : "Register a renter"}
+                  : t("customers.CustomerFormDialog.registerARenter")}
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.25 }}>
-                Capture identity, link family or company, and set collateral terms.
+                {t("customers.CustomerFormDialog.captureIdentityLinkFamilyOr")}
               </Typography>
             </Box>
           </Box>
@@ -330,7 +332,7 @@ export function CustomerFormDialog({
               <Chip
                 size="small"
                 icon={<AccountTreeIcon sx={{ fontSize: 14 }} />}
-                label={`Linked to ${initialData.ParentCompany.company_name || `${initialData.ParentCompany.first_name} ${initialData.ParentCompany.last_name}`}`}
+                label={t("customers.CustomerFormDialog.linkedToName", { name: initialData.ParentCompany.company_name || `${initialData.ParentCompany.first_name} ${initialData.ParentCompany.last_name}` })}
                 sx={{
                   bgcolor: "rgba(255,255,255,0.12)",
                   color: "white",
@@ -343,7 +345,7 @@ export function CustomerFormDialog({
               <Chip
                 size="small"
                 icon={<VerifiedUserIcon sx={{ fontSize: 14 }} />}
-                label="ID in Vault"
+                label={t("customers.CustomerFormDialog.idInVault")}
                 sx={{
                   bgcolor: "rgba(239,68,68,0.18)",
                   color: "#fecaca",
@@ -383,8 +385,8 @@ export function CustomerFormDialog({
           <Box>
             <SectionLabel
               icon={<BusinessIcon fontSize="small" />}
-              title="Customer Type"
-              hint="How is this renter classified?"
+              title={t("customers.CustomerFormDialog.customerType")}
+              hint={t("customers.CustomerFormDialog.howIsThisRenterClassified")}
             />
             <Box
               sx={{
@@ -451,8 +453,8 @@ export function CustomerFormDialog({
               <TextField
                 fullWidth
                 size="small"
-                label="Company / Business Name"
-                placeholder="e.g. Apex Construction Ltd."
+                label={t("customers.CustomerFormDialog.companyBusinessName")}
+                placeholder={t("customers.CustomerFormDialog.eGApexConstructionLtd")}
                 {...register("company_name")}
                 error={!!errors.company_name}
                 helperText={errors.company_name?.message}
@@ -490,10 +492,10 @@ export function CustomerFormDialog({
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="body2" sx={{ fontWeight: 800, color: "#0f172a" }}>
-                  Link to a parent customer
+                  {t("customers.CustomerFormDialog.linkToAParentCustomer")}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Use when a child rents on behalf of a parent, or a worker on behalf of their company. Both keep their own rental history.
+                  {t("customers.CustomerFormDialog.useWhenAChildRents")}
                 </Typography>
               </Box>
               <Controller
@@ -531,8 +533,8 @@ export function CustomerFormDialog({
                       filterOptions={(x) => x}
                       noOptionsText={
                         debouncedParentSearch.length === 0
-                          ? "Start typing to search…"
-                          : "No customers match that search"
+                          ? t("customers.CustomerFormDialog.startTypingToSearch")
+                          : t("customers.CustomerFormDialog.noCustomersMatchThatSearch")
                       }
                       getOptionLabel={parentLabel}
                       isOptionEqualToValue={(o, v) => o.customer_id === v.customer_id}
@@ -575,8 +577,8 @@ export function CustomerFormDialog({
                         <TextField
                           {...(params as any)}
                           size="small"
-                          label="Parent customer"
-                          placeholder="Search by name, phone, or NIC…"
+                          label={t("customers.CustomerFormDialog.parentCustomer")}
+                          placeholder={t("customers.CustomerFormDialog.searchByNamePhoneOr")}
                           error={!!errors.parent_customer_id}
                           helperText={errors.parent_customer_id?.message}
                           slotProps={{
@@ -603,7 +605,7 @@ export function CustomerFormDialog({
                     icon={<AccountTreeIcon />}
                     sx={{ mt: 1.5, borderRadius: 2, fontSize: "0.78rem" }}
                   >
-                    Linked to <b>{parentLabel(selectedParent)}</b>. On checkout you can choose to rent for self or on behalf of this parent.
+                    <Trans i18nKey="customers.CustomerFormDialog.linkedToParent" values={{ parent: parentLabel(selectedParent) }} components={{ b: <b /> }} />
                   </Alert>
                 )}
               </Box>
@@ -614,8 +616,8 @@ export function CustomerFormDialog({
           <Box>
             <SectionLabel
               icon={<PersonOutlineIcon fontSize="small" />}
-              title="Identity"
-              hint="Required for collateral and rental history"
+              title={t("admin.RoleFormDrawer.identity")}
+              hint={t("customers.CustomerFormDialog.requiredForCollateralAndRental")}
             />
             <Box
               sx={{
@@ -627,24 +629,24 @@ export function CustomerFormDialog({
             >
               <TextField
                 size="small"
-                label="First name"
+                label={t("common.firstName")}
                 {...register("first_name")}
                 error={!!errors.first_name}
                 helperText={errors.first_name?.message}
               />
               <TextField
                 size="small"
-                label="Last name"
+                label={t("common.lastName")}
                 {...register("last_name")}
                 error={!!errors.last_name}
                 helperText={errors.last_name?.message}
               />
               <TextField
                 size="small"
-                label="NIC / Passport"
+                label={t("customers.CustomerFormDialog.nicPassport")}
                 {...register("nic_number")}
                 error={!!errors.nic_number}
-                helperText={errors.nic_number?.message || "Unique across all customers"}
+                helperText={errors.nic_number?.message || t("customers.CustomerFormDialog.uniqueAcrossAllCustomers")}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -657,7 +659,7 @@ export function CustomerFormDialog({
               />
               <TextField
                 size="small"
-                label="Phone"
+                label={t("common.phone")}
                 {...register("phone_number")}
                 error={!!errors.phone_number}
                 helperText={errors.phone_number?.message}
@@ -669,20 +671,20 @@ export function CustomerFormDialog({
           <Box>
             <SectionLabel
               icon={<HomeOutlinedIcon fontSize="small" />}
-              title="Address"
-              hint="Optional — useful for deliveries"
+              title={t("common.address")}
+              hint={t("customers.CustomerFormDialog.optionalUsefulForDeliveries")}
             />
             <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
               <TextField
                 size="small"
-                label="Address line 1"
+                label={t("profile.ProfileForm.addressLine1")}
                 {...register("address_line1")}
                 error={!!errors.address_line1}
                 helperText={errors.address_line1?.message}
               />
               <TextField
                 size="small"
-                label="Address line 2 (optional)"
+                label={t("customers.CustomerFormDialog.addressLine2Optional")}
                 {...register("address_line2")}
                 error={!!errors.address_line2}
                 helperText={errors.address_line2?.message}
@@ -694,8 +696,8 @@ export function CustomerFormDialog({
           <Box>
             <SectionLabel
               icon={<AccountBalanceWalletOutlinedIcon fontSize="small" />}
-              title="Accounting & Security"
-              hint="Wallet balance, status, and collateral"
+              title={t("customers.CustomerFormDialog.accountingSecurity")}
+              hint={t("customers.CustomerFormDialog.walletBalanceStatusAndCollateral")}
             />
 
             <Box
@@ -709,7 +711,7 @@ export function CustomerFormDialog({
               <TextField
                 size="small"
                 select
-                label="Account status"
+                label={t("customers.CustomerFormDialog.accountStatus")}
                 value={status || "Active"}
                 onChange={(e) => setValue("status", e.target.value as "Active" | "Blacklisted", { shouldDirty: true })}
                 error={!!errors.status}
@@ -718,25 +720,25 @@ export function CustomerFormDialog({
                 <MenuItem value="Active">
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "success.main" }} />
-                    Active (Good standing)
+                    {t("customers.CustomerFormDialog.activeGoodStanding")}
                   </Box>
                 </MenuItem>
                 <MenuItem value="Blacklisted">
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "error.main" }} />
-                    Blacklisted (Do not rent)
+                    {t("customers.CustomerFormDialog.blacklistedDoNotRent")}
                   </Box>
                 </MenuItem>
               </TextField>
 
               <TextField
                 size="small"
-                label="Deposit / Advance balance"
+                label={t("customers.CustomerFormDialog.depositAdvanceBalance")}
                 type="number"
                 inputProps={{ step: "0.01", min: 0 }}
                 {...register("deposit_balance", { valueAsNumber: true })}
                 error={!!errors.deposit_balance}
-                helperText={errors.deposit_balance?.message || "Floating cash held"}
+                helperText={errors.deposit_balance?.message || t("customers.CustomerFormDialog.floatingCashHeld")}
                 slotProps={{
                   input: {
                     startAdornment: <InputAdornment position="start">Rs.</InputAdornment>,
@@ -775,10 +777,10 @@ export function CustomerFormDialog({
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="body2" sx={{ fontWeight: 800, color: idInVault ? "#991b1b" : "#0f172a" }}>
-                  Physical NIC retained in vault
+                  {t("customers.CustomerFormDialog.physicalNicRetainedInVault")}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Toggle on if the shop is currently holding their physical ID as collateral.
+                  {t("customers.CustomerFormDialog.toggleOnIfTheShop")}
                 </Typography>
               </Box>
               <Controller
@@ -811,16 +813,16 @@ export function CustomerFormDialog({
         <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}>
           {Object.keys(errors).length > 0 ? (
             <Typography variant="caption" color="error" sx={{ fontWeight: 600 }}>
-              Fix highlighted errors before saving.
+              {t("customers.CustomerFormDialog.fixHighlightedErrorsBeforeSaving")}
             </Typography>
           ) : isDirty ? (
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-              Unsaved changes
+              {t("common.unsavedChanges")}
             </Typography>
           ) : null}
         </Box>
         <Button onClick={onClose} disabled={isPending} sx={{ borderRadius: 2, textTransform: "none" }}>
-          Cancel
+          {t("common.cancel")}
         </Button>
         <Button
           type="submit"
@@ -831,7 +833,7 @@ export function CustomerFormDialog({
           startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : null}
           sx={{ borderRadius: 2, textTransform: "none", px: 3, fontWeight: 700 }}
         >
-          {isPending ? "Saving…" : isEditing ? "Save changes" : "Create customer"}
+          {isPending ? t("common.saving") : isEditing ? t("common.saveChanges") : t("customers.CustomerFormDialog.createCustomer")}
         </Button>
       </DialogActions>
     </Dialog>

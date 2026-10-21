@@ -26,12 +26,14 @@ import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import type { SignatureCheckpoint, SignatureRole } from '@geargrid/contracts';
 import { connectSocket, getSocket } from '@/lib/socket';
+import { ROLE_LABEL, CHECKPOINT_LABEL } from '../lib/labels';
 import {
   useCreateSignatureRequest,
   useCancelSignatureRequest,
   useSignatureSocketEvents,
   useSignatureSession,
 } from '../hooks/useSignatures';
+import { useTranslation } from "react-i18next";
 
 interface SignatureCaptureDialogProps {
   open: boolean;
@@ -43,21 +45,6 @@ interface SignatureCaptureDialogProps {
   title?: string;
 }
 
-const ROLE_LABEL: Record<SignatureRole, string> = {
-  CUSTOMER: 'Customer',
-  OPERATOR: 'Operator',
-  GUARANTOR: 'Guarantor',
-  WITNESS: 'Witness',
-};
-
-const CHECKPOINT_LABEL: Record<SignatureCheckpoint, string> = {
-  DEPOSIT_COLLECTED: 'Deposit collected',
-  EQUIPMENT_DISPATCHED: 'Equipment dispatched',
-  EQUIPMENT_RETURNED: 'Equipment returned',
-  PAYMENT_RECEIVED: 'Payment received',
-  OTHER: 'Signature',
-};
-
 export function SignatureCaptureDialog({
   open,
   onClose,
@@ -67,6 +54,7 @@ export function SignatureCaptureDialog({
   onCompleted,
   title,
 }: SignatureCaptureDialogProps) {
+  const { t } = useTranslation();
   const createMut = useCreateSignatureRequest();
   const cancelMut = useCancelSignatureRequest();
 
@@ -110,7 +98,7 @@ export function SignatureCaptureDialog({
         // event — see "capture-triggered id capture" below.
       } catch (err: any) {
         if (cancelled) return;
-        setError(err?.message || 'Could not start the signature request.');
+        setError(err?.message || t("signatures.SignatureCaptureDialog.couldNotStartTheSignature"));
       }
     })();
 
@@ -146,7 +134,7 @@ export function SignatureCaptureDialog({
       onCompleted?.();
     },
     onCancelled: () => {
-      setError('This session was cancelled.');
+      setError(t("signatures.SignatureCaptureDialog.thisSessionWasCancelled"));
     },
   });
 
@@ -252,7 +240,7 @@ export function SignatureCaptureDialog({
           fontSize: 16,
         }}
       >
-        <span>{title || `Capture signature · ${CHECKPOINT_LABEL[checkpoint]}`}</span>
+        <span>{title || t("signatures.SignatureCaptureDialog.captureSignature", { checkpoint: t(CHECKPOINT_LABEL[checkpoint]) })}</span>
         <IconButton size="small" onClick={handleCancel} sx={{ color: '#f8fafc' }}>
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -268,14 +256,14 @@ export function SignatureCaptureDialog({
         {!session && !error && (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6 }}>
             <CircularProgress />
-            <Typography sx={{ mt: 2, color: '#64748b' }}>Preparing session…</Typography>
+            <Typography sx={{ mt: 2, color: '#64748b' }}>{t("signatures.SignatureCaptureDialog.preparingSession")}</Typography>
           </Box>
         )}
 
         {session && !allDone && qrUrl && (
           <>
             <Typography sx={{ fontSize: 13, color: '#64748b', textAlign: 'center', mb: 1.5 }}>
-              Scan the QR code with any phone to sign.
+              {t("signatures.SignatureCaptureDialog.scanTheQrCodeWith")}
             </Typography>
 
             <Box
@@ -300,7 +288,7 @@ export function SignatureCaptureDialog({
               <Chip
                 size="small"
                 icon={<HourglassTopIcon fontSize="small" />}
-                label={`Expires in ${minutes}:${String(seconds).padStart(2, '0')}`}
+                label={t("signatures.SignatureCaptureDialog.expiresIn", { minutes, value: String(seconds).padStart(2, '0') })}
                 sx={{
                   bgcolor: secondsLeft < 60 ? '#fef3c7' : '#f1f5f9',
                   color: '#334155',
@@ -314,13 +302,13 @@ export function SignatureCaptureDialog({
                 onClick={copyLink}
                 sx={{ textTransform: 'none', color: '#64748b' }}
               >
-                Copy link
+                {t("signatures.SignatureCaptureDialog.copyLink")}
               </Button>
             </Stack>
 
             <Box sx={{ mt: 2 }}>
               <Typography sx={{ fontSize: 12, color: '#64748b', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', mb: 1 }}>
-                Signatures
+                {t("signatures.SignatureCaptureDialog.signatures")}
               </Typography>
               <Stack spacing={1}>
                 {required_roles.map((role) => {
@@ -344,10 +332,10 @@ export function SignatureCaptureDialog({
                         <HourglassTopIcon sx={{ color: '#64748b', fontSize: 20 }} />
                       )}
                       <Typography sx={{ fontSize: 14, color: '#0f172a', flex: 1, fontWeight: done ? 600 : 400 }}>
-                        {ROLE_LABEL[role]}
+                        {t(ROLE_LABEL[role])}
                       </Typography>
                       <Typography sx={{ fontSize: 12, color: done ? '#166534' : '#64748b' }}>
-                        {done ? 'Signed' : 'Waiting…'}
+                        {done ? t("signatures.SignatureCaptureDialog.signed") : t("signatures.SignatureCaptureDialog.waiting")}
                       </Typography>
                     </Stack>
                   );
@@ -361,10 +349,10 @@ export function SignatureCaptureDialog({
           <Box sx={{ textAlign: 'center', py: 2 }}>
             <CheckCircleOutlinedIcon sx={{ color: '#16a34a', fontSize: 56, mb: 1 }} />
             <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 0.5 }}>
-              All signatures captured
+              {t("signatures.SignatureCaptureDialog.allSignaturesCaptured")}
             </Typography>
             <Typography sx={{ color: '#64748b', fontSize: 13 }}>
-              Closing automatically…
+              {t("signatures.SignatureCaptureDialog.closingAutomatically")}
             </Typography>
           </Box>
         )}
@@ -373,7 +361,7 @@ export function SignatureCaptureDialog({
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
         {!allDone ? (
           <Button onClick={handleCancel} sx={{ textTransform: 'none', color: '#64748b' }}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         ) : (
           <Button
@@ -381,7 +369,7 @@ export function SignatureCaptureDialog({
             onClick={onClose}
             sx={{ textTransform: 'none', fontWeight: 700 }}
           >
-            Close now
+            {t("signatures.SignatureCaptureDialog.closeNow")}
           </Button>
         )}
       </DialogActions>

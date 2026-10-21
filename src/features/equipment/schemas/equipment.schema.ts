@@ -1,22 +1,23 @@
 import { z } from 'zod';
+import { zt } from '@/i18n/zod';
 
 export const equipmentSchema = z.object({
   // --- General Info ---
-  equipment_name: z.string().min(2, 'Name must be at least 2 characters'),
-  serial_number: z.string().min(1, 'SKU / Serial Number is required'),
-  category_id: z.coerce.number().min(1, 'Category is required'),
-  warehouse_id: z.coerce.number().min(1, 'Warehouse location is required'),
-  image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  equipment_name: z.string().min(2, zt("validation.nameMin2")),
+  serial_number: z.string().min(1, zt("validation.serialRequired")),
+  category_id: z.coerce.number().min(1, zt("validation.categoryRequired")),
+  warehouse_id: z.coerce.number().min(1, zt("validation.warehouseRequired")),
+  image_url: z.string().url(zt("validation.invalidUrl")).optional().or(z.literal('')),
 
   // --- Pricing & Rental Scenarios ---
-  base_rental_price: z.coerce.number().min(0, 'Rate cannot be negative'),
+  base_rental_price: z.coerce.number().min(0, zt("validation.rateNonNegative")),
   extra_daily_rate: z.coerce.number().min(0).optional(),
-  minimum_rental_days: z.coerce.number().min(1, 'Must be at least 1 day').default(1),
+  minimum_rental_days: z.coerce.number().min(1, zt("validation.minOneDay")).default(1),
   purchase_cost: z.coerce.number().min(0).optional(),
 
   // --- Inventory & Warranty ---
   is_bulk_item: z.boolean().default(false),
-  total_owned_qty: z.coerce.number().min(1, 'Must own at least 1').default(1),
+  total_owned_qty: z.coerce.number().min(1, zt("validation.ownAtLeastOne")).default(1),
   rented_qty: z.coerce.number().min(0).default(0),
   defective_qty: z.coerce.number().min(0).default(0),
   available_qty: z.coerce.number().min(0).default(0),

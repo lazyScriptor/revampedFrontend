@@ -5,6 +5,7 @@ import AddIcon from "@mui/icons-material/Add";
 import BuildCircleIcon from "@mui/icons-material/BuildCircle";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useTranslation } from "react-i18next";
 
 // Primary control: how many units are coming back this time (partial return).
 // Collapsible: defective qty + actual return date — neither is mandatory.
@@ -114,6 +115,7 @@ export function QuantityReturnSplitter({
   actualReturnDate,
   onChange,
 }: Props) {
+  const { t } = useTranslation();
   const today = new Date().toISOString().split("T")[0];
 
   // Auto-open the secondary tray if either field has a non-default value, so a
@@ -166,10 +168,10 @@ export function QuantityReturnSplitter({
       <Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
           <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }}>
-            How many are coming back?
+            {t("invoices.QuantityReturnSplitter.howManyAreComingBack")}
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-            of {remaining} still out
+            {t("invoices.QuantityReturnSplitter.ofStillOut", { remaining })}
           </Typography>
         </Box>
 
@@ -183,8 +185,8 @@ export function QuantityReturnSplitter({
           />
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
             {stillOut > 0
-              ? `${stillOut} unit${stillOut !== 1 ? "s" : ""} will remain out on rental`
-              : "All units accounted for"}
+              ? t("invoices.QuantityReturnSplitter.willRemainOut", { count: stillOut })
+              : t("invoices.QuantityReturnSplitter.allUnitsAccountedFor")}
           </Typography>
         </Box>
       </Box>
@@ -216,7 +218,7 @@ export function QuantityReturnSplitter({
             sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, color: "success.dark", fontWeight: 700 }}
           >
             <CheckCircleOutlineIcon sx={{ fontSize: 13 }} />
-            {goodQty} good
+            {t("invoices.QuantityReturnSplitter.good", { goodQty })}
           </Typography>
           {defectiveQty > 0 && (
             <Typography
@@ -224,12 +226,12 @@ export function QuantityReturnSplitter({
               sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, color: "error.dark", fontWeight: 700 }}
             >
               <BuildCircleIcon sx={{ fontSize: 13 }} />
-              {defectiveQty} defective
+              {t("invoices.QuantityReturnSplitter.defective", { defectiveQty })}
             </Typography>
           )}
           {stillOut > 0 && (
             <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 700 }}>
-              {stillOut} still out
+              {t("invoices.QuantityReturnSplitter.stillOut", { stillOut })}
             </Typography>
           )}
         </Box>
@@ -242,7 +244,7 @@ export function QuantityReturnSplitter({
           icon={<BuildCircleIcon sx={{ fontSize: 18 }} />}
           sx={{ py: 0.5, "& .MuiAlert-message": { fontSize: "0.78rem", fontWeight: 600 } }}
         >
-          {defectiveQty} unit{defectiveQty !== 1 ? "s" : ""} auto-routed to Defect Desk for repair.
+          {t("invoices.QuantityReturnSplitter.autoRoutedToDefectDesk", { count: defectiveQty })}
         </Alert>
       )}
 
@@ -270,13 +272,13 @@ export function QuantityReturnSplitter({
             "&:hover": { bgcolor: "transparent", color: "primary.main" },
           }}
         >
-          {extrasOpen ? "Hide details" : "Mark defective or set return date"}
+          {extrasOpen ? t("invoices.QuantityReturnSplitter.hideDetails") : t("invoices.QuantityReturnSplitter.markDefectiveOrSetReturn")}
         </Button>
         <Collapse in={extrasOpen}>
           <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 2 }}>
             <Box>
               <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontWeight: 600, mb: 0.5 }}>
-                Actual return date
+                {t("invoices.QuantityReturnSplitter.actualReturnDate")}
               </Typography>
               <TextField
                 type="date"
@@ -289,7 +291,7 @@ export function QuantityReturnSplitter({
             </Box>
             <Box>
               <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontWeight: 600, mb: 0.5 }}>
-                Of those returning, how many are broken or defective?
+                {t("invoices.QuantityReturnSplitter.ofThoseReturningHowMany")}
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
                 <Stepper
@@ -302,8 +304,8 @@ export function QuantityReturnSplitter({
                 />
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   {defectiveQty === 0
-                    ? "All units returning are in good condition"
-                    : `${goodQty} good · ${defectiveQty} defective`}
+                    ? t("invoices.QuantityReturnSplitter.allUnitsReturningAreIn")
+                    : t("invoices.QuantityReturnSplitter.goodDefective", { goodQty, defectiveQty })}
                 </Typography>
               </Box>
             </Box>

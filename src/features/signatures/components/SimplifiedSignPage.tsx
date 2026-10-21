@@ -34,13 +34,8 @@ import { useNavigate } from '@tanstack/react-router';
 import type { SignatureRole } from '@geargrid/contracts';
 import { SignatureCanvas, type SignatureCanvasHandle } from './SignatureCanvas';
 import { useSignatureSession, useSubmitSignature } from '../hooks/useSignatures';
-
-const ROLE_LABEL: Record<SignatureRole, string> = {
-  CUSTOMER: 'Customer',
-  OPERATOR: 'Operator',
-  GUARANTOR: 'Guarantor',
-  WITNESS: 'Witness',
-};
+import { ROLE_LABEL } from '../lib/labels';
+import { useTranslation } from "react-i18next";
 
 const ROLE_ICON: Record<SignatureRole, React.ReactElement> = {
   CUSTOMER: <PersonIcon sx={{ fontSize: 32 }} />,
@@ -61,6 +56,7 @@ interface SimplifiedSignPageProps {
 }
 
 export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
+  const { t } = useTranslation();
   // ── ALL hooks declared at the top, before any early return.
   //    (Trap 17 — React error #310: calling a hook below an early-return
   //    branch means the first render has fewer hooks than the second.)
@@ -101,9 +97,9 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
     return (
       <FullBleedCentered>
         <Alert severity="error" sx={{ mb: 2 }}>
-          {(session.error as Error)?.message || 'Could not load the signature request.'}
+          {(session.error as Error)?.message || t("signatures.SimplifiedSignPage.couldNotLoadTheSignature")}
         </Alert>
-        <Button variant="outlined" onClick={() => navigate({ to: '/device' })}>Back</Button>
+        <Button variant="outlined" onClick={() => navigate({ to: '/device' })}>{t("common.back")}</Button>
       </FullBleedCentered>
     );
   }
@@ -123,14 +119,14 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
           <CheckCircleOutlinedIcon sx={{ fontSize: 44 }} />
         </Avatar>
         <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 1, textAlign: 'center' }}>
-          {data.status === 'COMPLETED' ? 'All signatures captured' : 'Session ended'}
+          {data.status === 'COMPLETED' ? t("signatures.SignatureCaptureDialog.allSignaturesCaptured") : t("signatures.SimplifiedSignPage.sessionEnded")}
         </Typography>
         <Button
           variant="contained"
           sx={{ mt: 2, textTransform: 'none' }}
           onClick={() => navigate({ to: '/device', replace: true })}
         >
-          Back to home
+          {t("signatures.SimplifiedSignPage.backToHome")}
         </Button>
       </FullBleedCentered>
     );
@@ -147,7 +143,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
     if (!useStored) {
       imageDataUrl = canvasRef.current?.toDataUrl('image/png') ?? null;
       if (!imageDataUrl) {
-        setSubmitError('Please draw your signature in the box above.');
+        setSubmitError(t("signatures.SimplifiedSignPage.pleaseDrawYourSignatureIn"));
         return;
       }
     }
@@ -165,7 +161,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
       setSelectedRole(null);
       session.refetch();
     } catch (err: any) {
-      setSubmitError(err?.message || 'Submission failed.');
+      setSubmitError(err?.message || t("signatures.SimplifiedSignPage.submissionFailed"));
     }
   };
 
@@ -193,7 +189,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
             {data.invoice.invoice_number} · {data.checkpoint.replace(/_/g, ' ').toLowerCase()}
           </Typography>
           <Typography sx={{ fontSize: 17, fontWeight: 700, lineHeight: 1.1 }}>
-            {data.invoice.customer_name || 'Walk-in customer'}
+            {data.invoice.customer_name || t("signatures.MobileSignPage.walkInCustomer")}
           </Typography>
         </Box>
         <Typography sx={{ fontSize: 20, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
@@ -209,7 +205,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
               key={r.role}
               size="small"
               icon={<CheckCircleOutlinedIcon />}
-              label={`${ROLE_LABEL[r.role]} signed`}
+              label={t("signatures.roleSigned", { role: t(ROLE_LABEL[r.role]) })}
               sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 600 }}
             />
           ))}
@@ -238,7 +234,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
             >
               {ROLE_ICON[role]}
               <Typography sx={{ mt: 0.5, fontSize: 14, fontWeight: 700 }}>
-                {ROLE_LABEL[role]}
+                {t(ROLE_LABEL[role])}
               </Typography>
             </Paper>
           ))}
@@ -269,7 +265,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
         >
           <GavelIcon sx={{ color: '#64748b', fontSize: 20 }} />
           <Typography sx={{ fontSize: 13, color: '#0f172a', fontWeight: 600, flex: 1 }}>
-            Rental terms (v{data.terms.version})
+            {t("signatures.MobileSignPage.rentalTermsV", { version: data.terms.version })}
           </Typography>
           <IconButton size="small" sx={{ p: 0 }}>
             {showTerms ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
@@ -315,10 +311,10 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
             {ROLE_ICON[activeRole]}
             <Box>
               <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {ROLE_LABEL[activeRole]} signature
+                {t("signatures.SimplifiedSignPage.signature", { role: t(ROLE_LABEL[activeRole]) })}
               </Typography>
               <Typography sx={{ fontSize: 12, color: '#64748b' }}>
-                Signing as {signatoryName}
+                {t("signatures.SimplifiedSignPage.signingAs", { signatoryName })}
               </Typography>
             </Box>
           </Stack>
@@ -349,7 +345,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
                   fontSize: 16,
                 }}
               >
-                Use my saved signature
+                {t("signatures.SimplifiedSignPage.useMySavedSignature")}
               </Button>
             )}
             <Button
@@ -366,7 +362,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
                 ...(canUseStoredOperatorSig ? {} : { bgcolor: theme.primary }),
               }}
             >
-              {submit.isPending ? 'Submitting…' : `Submit ${ROLE_LABEL[activeRole].toLowerCase()} signature`}
+              {submit.isPending ? t("signatures.MobileSignPage.submitting") : t("signatures.SimplifiedSignPage.submitSignature", { role: t(ROLE_LABEL[activeRole]).toLowerCase() })}
             </Button>
           </Stack>
         </Paper>

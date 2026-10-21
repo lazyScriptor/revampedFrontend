@@ -21,6 +21,7 @@ import {
   FormSection,
 } from "@/components/forms/FormDialogShell";
 import { userApi, roleApi } from "../api/admin.api";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export default function AssignUsersModal({ open, onClose, role, onSuccess }: Props) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(new Set());
@@ -54,7 +56,7 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
         setSelectedUserIds(currentIds);
         setInitialIds(currentIds);
       } catch (err: any) {
-        setError(err.message || "Failed to load users.");
+        setError(err.message || t("admin.AssignUsersModal.failedToLoadUsers"));
       } finally {
         setLoading(false);
       }
@@ -86,7 +88,7 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
       await roleApi.assignUsers(role.role_id, Array.from(selectedUserIds));
       onSuccess();
     } catch (err: any) {
-      setError(err.message || "Failed to assign users.");
+      setError(err.message || t("admin.AssignUsersModal.failedToAssignUsers"));
     } finally {
       setSaving(false);
     }
@@ -112,20 +114,20 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      eyebrow="Assign Users"
-      title={role?.role_name || "Role"}
-      subtitle="Toggle users in or out of this role."
+      eyebrow={t("admin.AssignUsersModal.assignUsers")}
+      title={role?.role_name || t("superAdmin.TenantUserDialog.role")}
+      subtitle={t("admin.AssignUsersModal.toggleUsersInOrOut")}
       avatarText={(role?.role_name || "R")[0]?.toUpperCase()}
       footer={
         <>
           <FormFooterMeta>
             {dirty && !saving
-              ? `${selectedUserIds.size} of ${allUsers.length} users selected`
+              ? t("admin.AssignUsersModal.ofUsersSelected", { size: selectedUserIds.size, allUsersCount: allUsers.length })
               : `${selectedUserIds.size} assigned`}
           </FormFooterMeta>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button onClick={onClose} disabled={saving} color="inherit">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="contained"
@@ -133,7 +135,7 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
               disabled={saving || loading || !dirty}
               startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
             >
-              {saving ? "Saving…" : "Save users"}
+              {saving ? t("common.saving") : t("admin.AssignUsersModal.saveUsers")}
             </Button>
           </Box>
         </>
@@ -147,12 +149,12 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
 
       <FormSection
         icon={<PeopleOutlineIcon />}
-        title="Team members"
-        hint={`${selectedUserIds.size} of ${allUsers.length} users selected.`}
+        title={t("admin.AssignUsersModal.teamMembers")}
+        hint={t("admin.AssignUsersModal.ofUsersSelected2", { size: selectedUserIds.size, allUsersCount: allUsers.length })}
       >
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
           <TextField
-            placeholder="Search by name, username or email"
+            placeholder={t("admin.AssignUsersModal.searchByNameUsernameOr")}
             size="small"
             fullWidth
             value={filter}
@@ -171,7 +173,7 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
             onClick={handleSelectAll}
             sx={{ flexShrink: 0, fontSize: "0.78rem", fontWeight: 700 }}
           >
-            {selectedUserIds.size === allUsers.length ? "Deselect all" : "Select all"}
+            {selectedUserIds.size === allUsers.length ? t("common.deselectAll") : t("common.selectAll")}
           </Link>
         </Box>
 
@@ -192,7 +194,7 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
           >
             {filteredUsers.length === 0 ? (
               <Typography variant="body2" sx={{ color: theme.palette.text.disabled, py: 2, textAlign: "center" }}>
-                No users match "{filter}"
+                {t("admin.AssignUsersModal.noUsersMatch", { filter })}
               </Typography>
             ) : (
               filteredUsers.map((u) => {
@@ -242,7 +244,7 @@ export default function AssignUsersModal({ open, onClose, role, onSuccess }: Pro
                       </Typography>
                     </Box>
                     {!u.is_active && (
-                      <Chip label="Inactive" size="small" sx={{ height: 20, fontSize: 10 }} />
+                      <Chip label={t("common.inactive")} size="small" sx={{ height: 20, fontSize: 10 }} />
                     )}
                   </Box>
                 );

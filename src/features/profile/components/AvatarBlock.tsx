@@ -4,8 +4,10 @@ import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import { MyProfile, resolveAvatarUrl } from "../api/me.api";
 import { useDeleteAvatar, useUploadAvatar } from "../hooks/useMe";
+import { useTranslation } from "react-i18next";
 
 export function AvatarBlock({ profile }: { profile: MyProfile }) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +26,7 @@ export function AvatarBlock({ profile }: { profile: MyProfile }) {
     try {
       await upload.mutateAsync(file);
     } catch (err: any) {
-      setError(err?.message || "Avatar upload failed.");
+      setError(err?.message || t("profile.AvatarBlock.avatarUploadFailed"));
     } finally {
       if (inputRef.current) inputRef.current.value = "";
     }
@@ -35,7 +37,7 @@ export function AvatarBlock({ profile }: { profile: MyProfile }) {
     try {
       await remove.mutateAsync();
     } catch (err: any) {
-      setError(err?.message || "Failed to remove avatar.");
+      setError(err?.message || t("profile.AvatarBlock.failedToRemoveAvatar"));
     }
   };
 
@@ -58,7 +60,7 @@ export function AvatarBlock({ profile }: { profile: MyProfile }) {
         >
           {initials}
         </Avatar>
-        <Tooltip title="Change photo">
+        <Tooltip title={t("profile.AvatarBlock.changePhoto")}>
           <IconButton
             size="small"
             onClick={() => inputRef.current?.click()}
@@ -108,7 +110,7 @@ export function AvatarBlock({ profile }: { profile: MyProfile }) {
             disabled={busy}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Upload photo
+            {t("profile.AvatarBlock.uploadPhoto")}
           </Button>
           {profile.avatar_url && (
             <Button
@@ -120,7 +122,7 @@ export function AvatarBlock({ profile }: { profile: MyProfile }) {
               disabled={busy}
               sx={{ textTransform: "none", fontWeight: 700 }}
             >
-              Remove
+              {t("common.remove")}
             </Button>
           )}
         </Box>

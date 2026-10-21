@@ -47,6 +47,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { InvoiceReceipt, buildSnapshotReceiptProps } from "./InvoiceReceipt";
 import { handlePrintInvoice } from "../utils/thermalPrint";
+import { useTranslation } from "react-i18next";
 
 interface PrintLogItem {
   log_id: number;
@@ -86,6 +87,7 @@ interface PrintLogItem {
 }
 
 export function InvoicePrintLogsView() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [page, setPage] = useState(0);
@@ -157,13 +159,13 @@ export function InvoicePrintLogsView() {
   const getDocTypeBadge = (type: string) => {
     switch (type) {
       case "DISPATCH":
-        return <Chip label="Dispatch" size="small" sx={{ bgcolor: "#ecfdf5", color: "#047857", fontWeight: 800, fontSize: "0.72rem" }} />;
+        return <Chip label={t("invoices.dispatch")} size="small" sx={{ bgcolor: "#ecfdf5", color: "#047857", fontWeight: 800, fontSize: "0.72rem" }} />;
       case "COMPLETED":
-        return <Chip label="Completed" size="small" sx={{ bgcolor: "#eff6ff", color: "#1d4ed8", fontWeight: 800, fontSize: "0.72rem" }} />;
+        return <Chip label={t("invoices.completed")} size="small" sx={{ bgcolor: "#eff6ff", color: "#1d4ed8", fontWeight: 800, fontSize: "0.72rem" }} />;
       case "DRAFT":
-        return <Chip label="Draft / Quote" size="small" sx={{ bgcolor: "#fffbeb", color: "#b45309", fontWeight: 800, fontSize: "0.72rem" }} />;
+        return <Chip label={t("invoices.InvoicePrintLogsView.draftQuote")} size="small" sx={{ bgcolor: "#fffbeb", color: "#b45309", fontWeight: 800, fontSize: "0.72rem" }} />;
       case "RETURN_SETTLEMENT":
-        return <Chip label="Return Settlement" size="small" sx={{ bgcolor: "#f5f3ff", color: "#6d28d9", fontWeight: 800, fontSize: "0.72rem" }} />;
+        return <Chip label={t("invoices.InvoicePrintLogsView.returnSettlement")} size="small" sx={{ bgcolor: "#f5f3ff", color: "#6d28d9", fontWeight: 800, fontSize: "0.72rem" }} />;
       default:
         return <Chip label={type} size="small" />;
     }
@@ -175,7 +177,7 @@ export function InvoicePrintLogsView() {
     try {
       await handlePrintInvoice("snapshot-reprint-dom", {
         paperWidth: (selectedLog.paper_width as any) || "80mm",
-        title: `Reprint ${selectedLog.doc_number}`,
+        title: t("invoices.InvoicePrintHistoryDialog.reprint", { doc_number: selectedLog.doc_number }),
         invoiceId: selectedLog.invoice_id,
         docNumber: selectedLog.doc_number,
         docType: selectedLog.doc_type,
@@ -207,17 +209,17 @@ export function InvoicePrintLogsView() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <ReceiptLongIcon sx={{ color: "#0f172a", fontSize: 26 }} />
             <Typography variant="h5" sx={{ fontWeight: 800, color: "#0f172a", letterSpacing: "-0.5px" }}>
-              Bill Printing Audit Logs
+              {t("invoices.InvoicePrintLogsView.billPrintingAuditLogs")}
             </Typography>
             <Chip
               icon={<ShieldOutlinedIcon sx={{ fontSize: "14px !important" }} />}
-              label="Privilege Protected"
+              label={t("invoices.InvoicePrintLogsView.privilegeProtected")}
               size="small"
               sx={{ bgcolor: "#f1f5f9", color: "#475569", fontWeight: 700, fontSize: "0.72rem" }}
             />
           </Box>
           <Typography variant="body2" sx={{ color: "#64748b", mt: 0.3 }}>
-            Full immutable log of all thermal receipts printed, operator attribution, and point-in-time bill snapshots.
+            {t("invoices.InvoicePrintLogsView.fullImmutableLogOfAll")}
           </Typography>
         </Box>
 
@@ -228,7 +230,7 @@ export function InvoicePrintLogsView() {
           onClick={() => refetch()}
           sx={{ fontWeight: 700, borderColor: "#cbd5e1", color: "#334155", alignSelf: { xs: "flex-start", sm: "center" } }}
         >
-          Refresh Logs
+          {t("invoices.InvoicePrintLogsView.refreshLogs")}
         </Button>
       </Box>
 
@@ -238,13 +240,13 @@ export function InvoicePrintLogsView() {
           severity="error"
           action={
             <Button color="inherit" size="small" onClick={() => refetch()}>
-              Retry
+              {t("common.retry")}
             </Button>
           }
           sx={{ borderRadius: 2 }}
         >
-          <AlertTitle sx={{ fontWeight: 700 }}>Failed to Load Print Logs</AlertTitle>
-          {(error as any)?.response?.data?.message || (error as any)?.message || "An unexpected error occurred while fetching bill printing audit records."}
+          <AlertTitle sx={{ fontWeight: 700 }}>{t("invoices.InvoicePrintLogsView.failedToLoadPrintLogs")}</AlertTitle>
+          {(error as any)?.response?.data?.message || (error as any)?.message || t("invoices.InvoicePrintLogsView.anUnexpectedErrorOccurredWhile")}
         </Alert>
       )}
 
@@ -252,20 +254,20 @@ export function InvoicePrintLogsView() {
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2 }}>
         <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: isDark ? "#1e293b" : "white", border: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0" }}>
           <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontWeight: 700, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-            Total Prints (All Time)
+            {t("invoices.InvoicePrintLogsView.totalPrintsAllTime")}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", mt: 0.5, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
             {stats.totalPrintsAllTime ?? totalItems}
           </Typography>
           <Typography variant="caption" sx={{ color: "#10b981", fontWeight: 600 }}>
-            Audit trail active
+            {t("invoices.InvoicePrintLogsView.auditTrailActive")}
           </Typography>
         </Paper>
 
         <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: isDark ? "#1e293b" : "white", border: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0" }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontWeight: 700, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-              Printed Today
+              {t("invoices.InvoicePrintLogsView.printedToday")}
             </Typography>
             <TodayIcon sx={{ color: "#0ea5e9", fontSize: 18 }} />
           </Box>
@@ -273,14 +275,14 @@ export function InvoicePrintLogsView() {
             {stats.totalPrintsToday ?? 0}
           </Typography>
           <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b" }}>
-            Current business day
+            {t("invoices.InvoicePrintLogsView.currentBusinessDay")}
           </Typography>
         </Paper>
 
         <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: isDark ? "#1e293b" : "white", border: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0" }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontWeight: 700, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-              Direct Thermal Agent
+              {t("invoices.InvoicePrintLogsView.directThermalAgent")}
             </Typography>
             <DevicesIcon sx={{ color: "#10b981", fontSize: 18 }} />
           </Box>
@@ -288,19 +290,19 @@ export function InvoicePrintLogsView() {
             {stats.totalDirectPrints ?? 0}
           </Typography>
           <Typography variant="caption" sx={{ color: "#10b981", fontWeight: 600 }}>
-            Exact-cut continuous roll
+            {t("invoices.InvoicePrintLogsView.exactCutContinuousRoll")}
           </Typography>
         </Paper>
 
         <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: isDark ? "#1e293b" : "white", border: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0" }}>
           <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontWeight: 700, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-            Browser Print Fallback
+            {t("invoices.InvoicePrintLogsView.browserPrintFallback")}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 800, color: isDark ? "#94a3b8" : "#64748b", mt: 0.5, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
             {stats.totalDialogPrints ?? 0}
           </Typography>
           <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b" }}>
-            Dialog prints
+            {t("invoices.InvoicePrintLogsView.dialogPrints")}
           </Typography>
         </Paper>
       </Box>
@@ -309,7 +311,7 @@ export function InvoicePrintLogsView() {
       <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: isDark ? "#1e293b" : "white", border: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0", display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
         <TextField
           size="small"
-          placeholder="Search by Bill #, Customer Name, Staff…"
+          placeholder={t("invoices.InvoicePrintLogsView.searchByBillCustomerName")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -342,10 +344,10 @@ export function InvoicePrintLogsView() {
         />
 
         <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel sx={{ color: isDark ? "#94a3b8" : "#475569" }}>Document Type</InputLabel>
+          <InputLabel sx={{ color: isDark ? "#94a3b8" : "#475569" }}>{t("invoices.InvoicePrintLogsView.documentType")}</InputLabel>
           <Select
             value={docTypeFilter}
-            label="Document Type"
+            label={t("invoices.InvoicePrintLogsView.documentType")}
             onChange={(e) => {
               setDocTypeFilter(e.target.value);
               setPage(0);
@@ -358,19 +360,19 @@ export function InvoicePrintLogsView() {
               },
             }}
           >
-            <MenuItem value="ALL">All Documents</MenuItem>
-            <MenuItem value="DISPATCH">Dispatch</MenuItem>
-            <MenuItem value="COMPLETED">Completed</MenuItem>
-            <MenuItem value="DRAFT">Draft / Quote</MenuItem>
-            <MenuItem value="RETURN_SETTLEMENT">Return Settlement</MenuItem>
+            <MenuItem value="ALL">{t("invoices.InvoicePrintLogsView.allDocuments")}</MenuItem>
+            <MenuItem value="DISPATCH">{t("invoices.dispatch")}</MenuItem>
+            <MenuItem value="COMPLETED">{t("invoices.completed")}</MenuItem>
+            <MenuItem value="DRAFT">{t("invoices.InvoicePrintLogsView.draftQuote")}</MenuItem>
+            <MenuItem value="RETURN_SETTLEMENT">{t("invoices.InvoicePrintLogsView.returnSettlement")}</MenuItem>
           </Select>
         </FormControl>
 
         <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel sx={{ color: isDark ? "#94a3b8" : "#475569" }}>Print Method</InputLabel>
+          <InputLabel sx={{ color: isDark ? "#94a3b8" : "#475569" }}>{t("invoices.InvoicePrintLogsView.printMethod")}</InputLabel>
           <Select
             value={printMethodFilter}
-            label="Print Method"
+            label={t("invoices.InvoicePrintLogsView.printMethod")}
             onChange={(e) => {
               setPrintMethodFilter(e.target.value);
               setPage(0);
@@ -383,9 +385,9 @@ export function InvoicePrintLogsView() {
               },
             }}
           >
-            <MenuItem value="ALL">All Methods</MenuItem>
-            <MenuItem value="direct_agent">Direct Agent (Auto)</MenuItem>
-            <MenuItem value="browser_dialog">Browser Dialog</MenuItem>
+            <MenuItem value="ALL">{t("accounting.AccountingFilterBar.allMethods")}</MenuItem>
+            <MenuItem value="direct_agent">{t("invoices.InvoicePrintLogsView.directAgentAuto")}</MenuItem>
+            <MenuItem value="browser_dialog">{t("invoices.InvoicePrintLogsView.browserDialog")}</MenuItem>
           </Select>
         </FormControl>
       </Paper>
@@ -396,13 +398,13 @@ export function InvoicePrintLogsView() {
           <Table size="medium" stickyHeader>
             <TableHead>
               <TableRow sx={{ "& th": { bgcolor: isDark ? "#1e293b" : "#f8fafc", color: isDark ? "#94a3b8" : "#475569", fontWeight: 700, fontSize: "0.75rem", letterSpacing: "0.05em", borderBottom: isDark ? "1px solid #334155" : "1px solid #e2e8f0" } }}>
-                <TableCell>PRINTED AT</TableCell>
-                <TableCell>BILL / DOC #</TableCell>
-                <TableCell>OPERATOR (STAFF)</TableCell>
+                <TableCell>{t("invoices.InvoicePrintLogsView.printedAt")}</TableCell>
+                <TableCell>{t("invoices.InvoicePrintLogsView.billDoc")}</TableCell>
+                <TableCell>{t("invoices.InvoicePrintLogsView.operatorStaff")}</TableCell>
                 <TableCell>CUSTOMER</TableCell>
-                <TableCell sx={{ textAlign: "right" }}>GRAND TOTAL</TableCell>
-                <TableCell sx={{ textAlign: "right" }}>BALANCE DUE</TableCell>
-                <TableCell>HARDWARE & METHOD</TableCell>
+                <TableCell sx={{ textAlign: "right" }}>{t("invoices.InvoicePrintLogsView.grandTotal")}</TableCell>
+                <TableCell sx={{ textAlign: "right" }}>{t("invoices.InvoicePrintLogsView.balanceDue")}</TableCell>
+                <TableCell>{t("invoices.InvoicePrintLogsView.hardwareMethod")}</TableCell>
                 <TableCell sx={{ textAlign: "center" }}>ACTION</TableCell>
               </TableRow>
             </TableHead>
@@ -413,7 +415,7 @@ export function InvoicePrintLogsView() {
                   <TableCell colSpan={8} sx={{ textAlign: "center", py: 6 }}>
                     <CircularProgress size={30} sx={{ color: "#0f172a" }} />
                     <Typography variant="body2" sx={{ color: "#64748b", mt: 1 }}>
-                      Loading bill printing audit logs…
+                      {t("invoices.InvoicePrintLogsView.loadingBillPrintingAuditLogs")}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -421,10 +423,10 @@ export function InvoicePrintLogsView() {
                 <TableRow>
                   <TableCell colSpan={8} sx={{ textAlign: "center", py: 6 }}>
                     <Typography variant="body1" sx={{ fontWeight: 700, color: "#dc2626" }}>
-                      Unable to load print audit records
+                      {t("invoices.InvoicePrintLogsView.unableToLoadPrintAudit")}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#64748b", mt: 0.5, maxWidth: 450, mx: "auto" }}>
-                      {(error as any)?.response?.data?.message || "Please check your network or user permissions."}
+                      {(error as any)?.response?.data?.message || t("invoices.InvoicePrintLogsView.pleaseCheckYourNetworkOr")}
                     </Typography>
                     <Button
                       variant="outlined"
@@ -433,7 +435,7 @@ export function InvoicePrintLogsView() {
                       onClick={() => refetch()}
                       sx={{ mt: 2, fontWeight: 700 }}
                     >
-                      Retry Loading
+                      {t("invoices.InvoicePrintLogsView.retryLoading")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -442,10 +444,10 @@ export function InvoicePrintLogsView() {
                   <TableCell colSpan={8} sx={{ textAlign: "center", py: 6 }}>
                     <ReceiptLongIcon sx={{ color: "#cbd5e1", fontSize: 44, mb: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 700, color: "#475569" }}>
-                      No print audit records found
+                      {t("invoices.InvoicePrintLogsView.noPrintAuditRecordsFound")}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#94a3b8" }}>
-                      Print events will automatically appear here whenever a POS receipt or bill is generated.
+                      {t("invoices.InvoicePrintLogsView.printEventsWillAutomaticallyAppear")}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -471,7 +473,7 @@ export function InvoicePrintLogsView() {
                       </Typography>
                       {log.ip_address && (
                         <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", display: "block", fontSize: "0.68rem" }}>
-                          IP: {log.ip_address}
+                          {t("invoices.InvoicePrintLogsView.ip")} {log.ip_address}
                         </Typography>
                       )}
                     </TableCell>
@@ -518,7 +520,7 @@ export function InvoicePrintLogsView() {
                     {/* Customer */}
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#334155" }}>
-                        {log.customer_name || "Walk-in Customer"}
+                        {log.customer_name || t("invoices.InvoicePrintLogsView.walkInCustomer")}
                       </Typography>
                       {log.customer_phone && (
                         <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", display: "block" }}>
@@ -533,7 +535,7 @@ export function InvoicePrintLogsView() {
                         {formatCurrency(log.grand_total)}
                       </Typography>
                       <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b" }}>
-                        {log.total_items} item{log.total_items === 1 ? "" : "s"} ({log.total_machines} units)
+                        {t("invoices.InvoicePrintLogsView.itemsCount", { count: log.total_items })} ({t("invoices.InvoicePrintLogsView.unitsCount", { count: log.total_machines })})
                       </Typography>
                     </TableCell>
 
@@ -548,7 +550,7 @@ export function InvoicePrintLogsView() {
                           color: Number(log.balance_due) > 0 ? "#ef4444" : "#10b981",
                         }}
                       >
-                        {Number(log.balance_due) === 0 ? "PAID IN FULL" : formatCurrency(log.balance_due)}
+                        {Number(log.balance_due) === 0 ? t("invoices.InvoicePrintLogsView.paidInFull") : formatCurrency(log.balance_due)}
                       </Typography>
                     </TableCell>
 
@@ -557,7 +559,7 @@ export function InvoicePrintLogsView() {
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
                         <Chip
                           size="small"
-                          label={log.print_method === "direct_agent" ? "Direct Agent" : "Browser Dialog"}
+                          label={log.print_method === "direct_agent" ? t("invoices.InvoicePrintLogsView.directAgent") : t("invoices.InvoicePrintLogsView.browserDialog")}
                           sx={{
                             bgcolor: log.print_method === "direct_agent" ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#f0fdf4") : (isDark ? "rgba(148, 163, 184, 0.15)" : "#f8fafc"),
                             color: log.print_method === "direct_agent" ? (isDark ? "#34d399" : "#166534") : (isDark ? "#cbd5e1" : "#475569"),
@@ -566,7 +568,7 @@ export function InvoicePrintLogsView() {
                           }}
                         />
                         <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "0.72rem", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
-                          {log.printer_name || "POS Printer"} · {log.paper_width}
+                          {log.printer_name || t("invoices.InvoicePrintLogsView.posPrinter")} · {log.paper_width}
                           {log.height_mm ? ` (${log.height_mm}mm)` : ""}
                         </Typography>
                       </Box>
@@ -574,7 +576,7 @@ export function InvoicePrintLogsView() {
 
                     {/* Action */}
                     <TableCell sx={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-                      <Tooltip title="View Point-in-Time Bill Snapshot">
+                      <Tooltip title={t("invoices.InvoicePrintLogsView.viewPointInTimeBill")}>
                         <IconButton
                           size="small"
                           onClick={() => setSelectedLog(log)}
@@ -651,10 +653,10 @@ export function InvoicePrintLogsView() {
             <ReceiptLongIcon sx={{ color: "#38bdf8" }} />
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "white" }}>
-                Bill Print Snapshot · {selectedLog?.doc_number}
+                {t("invoices.InvoicePrintLogsView.billPrintSnapshot", { doc_number: selectedLog?.doc_number })}
               </Typography>
               <Typography variant="caption" sx={{ color: "#94a3b8" }}>
-                Logged on {selectedLog ? formatDateTime(selectedLog.printed_at) : ""}
+                {t("invoices.InvoicePrintLogsView.loggedOn", { date: selectedLog ? formatDateTime(selectedLog.printed_at) : "" })}
               </Typography>
             </Box>
           </Box>
@@ -679,12 +681,12 @@ export function InvoicePrintLogsView() {
                   }}
                 >
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", mb: 1.5, display: "flex", alignItems: "center", gap: 0.8 }}>
-                    <PersonOutlineIcon sx={{ fontSize: 18, color: "#2563eb" }} /> Staff Attribution
+                    <PersonOutlineIcon sx={{ fontSize: 18, color: "#2563eb" }} /> {t("invoices.InvoicePrintLogsView.staffAttribution")}
                   </Typography>
 
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1, fontSize: "0.85rem" }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Printed By:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.printedBy")}</span>
                       <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>
                         {selectedLog.PrintedBy?.first_name
                           ? `${selectedLog.PrintedBy.first_name} ${selectedLog.PrintedBy.last_name || ""}`.trim() +
@@ -693,7 +695,7 @@ export function InvoicePrintLogsView() {
                       </strong>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Role:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.role")}</span>
                       <Chip
                         label={selectedLog.printed_by_role}
                         size="small"
@@ -707,12 +709,12 @@ export function InvoicePrintLogsView() {
                       />
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>User ID:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.userId")}</span>
                       <span style={{ color: isDark ? "#f8fafc" : "#0f172a", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>#{selectedLog.printed_by_user_id}</span>
                     </Box>
                     {selectedLog.ip_address && (
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>IP Address:</span>
+                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintHistoryDialog.ipAddress")}</span>
                         <span style={{ fontFamily: "'JetBrains Mono', monospace", color: isDark ? "#cbd5e1" : "#0f172a" }}>{selectedLog.ip_address}</span>
                       </Box>
                     )}
@@ -730,36 +732,36 @@ export function InvoicePrintLogsView() {
                   }}
                 >
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", mb: 1.5, display: "flex", alignItems: "center", gap: 0.8 }}>
-                    <DevicesIcon sx={{ fontSize: 18, color: "#10b981" }} /> Hardware & Output Details
+                    <DevicesIcon sx={{ fontSize: 18, color: "#10b981" }} /> {t("invoices.InvoicePrintLogsView.hardwareOutputDetails")}
                   </Typography>
 
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1, fontSize: "0.85rem" }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Print Method:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintHistoryDialog.printMethod")}</span>
                       <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>
-                        {selectedLog.print_method === "direct_agent" ? "Direct Agent (CUPS)" : "Browser Dialog"}
+                        {selectedLog.print_method === "direct_agent" ? t("invoices.InvoicePrintHistoryDialog.directAgentCups") : t("invoices.InvoicePrintLogsView.browserDialog")}
                       </strong>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Target Printer:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintHistoryDialog.targetPrinter")}</span>
                       <span style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>{selectedLog.printer_name}</span>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Roll Width:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.rollWidth")}</span>
                       <span style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>{selectedLog.paper_width}</span>
                     </Box>
                     {selectedLog.height_mm && (
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Exact Paper Feed:</span>
-                        <span style={{ color: isDark ? "#f8fafc" : "#0f172a", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>{selectedLog.height_mm} mm</span>
+                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.exactPaperFeed")}</span>
+                        <span style={{ color: isDark ? "#f8fafc" : "#0f172a", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>{t("invoices.InvoicePrintLogsView.mm", { height_mm: selectedLog.height_mm })}</span>
                       </Box>
                     )}
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Copies:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.copies")}</span>
                       <span style={{ color: isDark ? "#f8fafc" : "#0f172a", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>{selectedLog.copies}</span>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Language:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintHistoryDialog.language")}</span>
                       <span style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>{selectedLog.language === "si" ? "Sinhala (සිංහල)" : "English"}</span>
                     </Box>
                   </Box>
@@ -776,36 +778,36 @@ export function InvoicePrintLogsView() {
                   }}
                 >
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", mb: 1.5 }}>
-                    Financial State When Printed
+                    {t("invoices.InvoicePrintLogsView.financialStateWhenPrinted")}
                   </Typography>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8, fontSize: "0.85rem" }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Customer:</span>
-                      <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>{selectedLog.customer_name || "Walk-in"}</strong>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.customer")}</span>
+                      <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>{selectedLog.customer_name || t("invoices.InvoicePrintLogsView.walkIn")}</strong>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Subtotal:</span>
+                      <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.subtotal")}</span>
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums", color: isDark ? "#f8fafc" : "#0f172a" }}>{formatCurrency(selectedLog.subtotal)}</span>
                     </Box>
                     {Number(selectedLog.transport_fee) > 0 && (
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Transport:</span>
+                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.transport")}</span>
                         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums", color: "#10b981" }}>+{formatCurrency(selectedLog.transport_fee)}</span>
                       </Box>
                     )}
                     {Number(selectedLog.discount_amount) > 0 && (
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Discount:</span>
+                        <span style={{ color: isDark ? "#94a3b8" : "#64748b" }}>{t("invoices.InvoicePrintLogsView.discount")}</span>
                         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums", color: "#ef4444" }}>-{formatCurrency(selectedLog.discount_amount)}</span>
                       </Box>
                     )}
                     <Divider sx={{ my: 0.5, borderColor: isDark ? "#334155" : "#e2e8f0" }} />
                     <Box sx={{ display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
-                      <span style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>Grand Total:</span>
+                      <span style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>{t("invoices.InvoicePrintLogsView.grandTotal2")}</span>
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums", color: isDark ? "#f8fafc" : "#0f172a" }}>{formatCurrency(selectedLog.grand_total)}</span>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", color: "#10b981" }}>
-                      <span>Total Paid:</span>
+                      <span>{t("invoices.InvoicePrintLogsView.totalPaid")}</span>
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(selectedLog.total_paid)}</span>
                     </Box>
                     <Box
@@ -816,9 +818,9 @@ export function InvoicePrintLogsView() {
                         color: Number(selectedLog.balance_due) > 0 ? "#ef4444" : "#10b981",
                       }}
                     >
-                      <span>Balance Due:</span>
+                      <span>{t("invoices.InvoicePrintLogsView.balanceDue2")}</span>
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
-                        {Number(selectedLog.balance_due) === 0 ? "PAID IN FULL" : formatCurrency(selectedLog.balance_due)}
+                        {Number(selectedLog.balance_due) === 0 ? t("invoices.InvoicePrintLogsView.paidInFull") : formatCurrency(selectedLog.balance_due)}
                       </span>
                     </Box>
                   </Box>
@@ -828,7 +830,7 @@ export function InvoicePrintLogsView() {
               {/* Right Column: Exact Thermal Receipt Preview */}
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: isDark ? "#94a3b8" : "#64748b", mb: 1, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Physical Bill Preview (Point-in-Time Snapshot)
+                  {t("invoices.InvoicePrintLogsView.physicalBillPreviewPointIn")}
                 </Typography>
                 <Box
                   sx={{
@@ -857,7 +859,7 @@ export function InvoicePrintLogsView() {
 
         <DialogActions sx={{ p: 2.5, bgcolor: isDark ? "#0f172a" : "white", borderTop: "1px solid", borderColor: isDark ? "#334155" : "#e2e8f0", justifyContent: "space-between" }}>
           <Button onClick={() => setSelectedLog(null)} color="inherit" sx={{ fontWeight: 600, color: isDark ? "#94a3b8" : "inherit" }}>
-            Close
+            {t("common.close")}
           </Button>
 
           <Button
@@ -872,7 +874,7 @@ export function InvoicePrintLogsView() {
               "&:hover": { bgcolor: isDark ? "#d97706" : "#1e293b" },
             }}
           >
-            Re-print Exact Copy
+            {t("invoices.InvoicePrintLogsView.rePrintExactCopy")}
           </Button>
         </DialogActions>
       </Dialog>
