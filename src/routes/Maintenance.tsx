@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Box,
@@ -15,8 +15,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Tabs,
-  Tab,
   TextField,
   InputAdornment,
   LinearProgress,
@@ -44,58 +42,61 @@ import {
   useTechnicianRoster,
 } from "@/features/inventory/hooks/useDefectHooks";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
+import { ResponsiveKpiStrip } from "@/components/ui/ResponsiveKpiStrip";
 
-// --- KPI WIDGET ---
-const KpiCard = ({
+// --- STAGE TILE (doubles as the tab switcher: Queue -> Workshop -> History) ---
+const StageTile = ({
   title,
   value,
   icon,
   color,
+  active,
+  onClick,
 }: {
   title: string;
-  value: string | number;
-  icon: any;
+  value: number;
+  icon: React.ReactNode;
   color: string;
+  active: boolean;
+  onClick: () => void;
 }) => (
-  <Paper
-    elevation={0}
+  <Box
+    component="button"
+    type="button"
+    onClick={onClick}
+    aria-pressed={active}
     sx={{
-      p: 3,
-      flex: 1,
-      border: "1px solid #e2e8f0",
-      borderRadius: 2,
+      all: "unset",
+      boxSizing: "border-box",
+      cursor: "pointer",
       display: "flex",
       alignItems: "center",
-      gap: 2,
+      gap: 1.5,
+      minHeight: 64,
+      px: 2,
+      py: 1.25,
+      borderRadius: 2.5,
       bgcolor: "#ffffff",
+      border: "1px solid",
+      borderColor: active ? color : "#e2e8f0",
+      boxShadow: active ? `0 0 0 3px ${color}22` : "none",
+      transition: "border-color 0.2s, box-shadow 0.2s",
+      "&:hover": { borderColor: color },
+      "&:focus-visible": { outline: `3px solid ${color}66`, outlineOffset: 2 },
     }}
   >
-    <Box
-      sx={{
-        p: 1.5,
-        borderRadius: 2,
-        bgcolor: `${color}15`,
-        color: color,
-        display: "flex",
-      }}
-    >
+    <Box sx={{ p: 1, borderRadius: 2, bgcolor: `${color}1a`, color, display: "flex", flexShrink: 0 }}>
       {icon}
     </Box>
-    <Box>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        fontWeight="600"
-        textTransform="uppercase"
-        letterSpacing={0.5}
-      >
-        {title}
-      </Typography>
-      <Typography variant="h5" fontWeight="bold" color="text.primary">
+    <Box sx={{ minWidth: 0 }}>
+      <Typography sx={{ color: "#0f172a", fontWeight: 800, fontSize: "1.5rem", lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>
         {value}
       </Typography>
+      <Typography noWrap sx={{ color: "#475569", fontWeight: 600, fontSize: "0.78rem" }}>
+        {title}
+      </Typography>
     </Box>
-  </Paper>
+  </Box>
 );
 
 export default function MaintenanceRoute() {
@@ -241,330 +242,281 @@ export default function MaintenanceRoute() {
       <GearGridLoader centered size="lg" label={t("pages.Maintenance.loadingFleetDiagnostics")} sublabel={t("pages.Maintenance.fetchingActiveMaintenanceTicketsAnd")} sx={{ py: 10 }} />
     );
 
+  const rows = getFilteredData();
+  const stageTitle = [
+    t("pages.Maintenance.queue", { queueDefectsCount: queueDefects.length }),
+    t("pages.Maintenance.workshop", { workshopDefectsCount: workshopDefects.length }),
+    t("pages.Maintenance.history", { historyDefectsCount: historyDefects.length }),
+  ][currentTab];
+
+  const progressOf = (row: any) =>
+    Math.round((row.repaired_quantity / row.defective_quantity) * 100) || 0;
+
+  const statusColor = (row: any): "error" | "success" | "warning" =>
+    row.repair_status === "Pending Assignment"
+      ? "error"
+      : row.repair_status === "Resolved"
+        ? "success"
+        : "warning";
+
+  const itemName = (row: any) =>
+    row.Equipment?.equipment_name || t("pages.Maintenance.item2", { equipment_id: row.equipment_id });
+
+  const renderProgress = (row: any) => {
+    const progress = progressOf(row);
+    return (
+      <Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5, gap: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "#475569", fontVariantNumeric: "tabular-nums" }}>
+            {t("pages.Maintenance.totalBroken")} {row.defective_quantity}
+          </Typography>
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "success.dark", fontVariantNumeric: "tabular-nums" }}>
+            {t("pages.Maintenance.fixed", { repaired_quantity: row.repaired_quantity })}
+          </Typography>
+        </Box>
+        <LinearProgress
+          variant="determinate"
+          value={progress}
+          color={progress === 100 ? "success" : "warning"}
+          aria-label={`${progress}%`}
+          sx={{ height: 8, borderRadius: 4, bgcolor: "#e2e8f0" }}
+        />
+        {row.pending_quantity > 0 && (
+          <Typography variant="caption" sx={{ mt: 0.5, display: "block", color: "warning.dark", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+            {t("pages.Maintenance.itemsRemainingInShop", { pending_quantity: row.pending_quantity })}
+          </Typography>
+        )}
+      </Box>
+    );
+  };
+
+  const renderTech = (row: any) =>
+    row.Technician ? (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main", fontSize: "0.8rem" }}>
+          {row.Technician.first_name[0]}
+        </Avatar>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a" }}>
+          {row.Technician.first_name} {row.Technician.last_name}
+        </Typography>
+      </Box>
+    ) : (
+      <Typography variant="body2" sx={{ color: "#64748b", fontStyle: "italic" }}>
+        {t("pages.Maintenance.unassigned")}
+      </Typography>
+    );
+
+  const renderAction = (row: any, fullWidth = false) => (
+    <>
+      {(row.repair_status === "Pending Assignment" ||
+        row.repair_status === "Reported" ||
+        row.repair_status === "Pending") && (
+        <Button
+          variant="contained"
+          color="primary"
+          disableElevation
+          fullWidth={fullWidth}
+          onClick={() => setAssignModal({ open: true, defect: row })}
+          sx={{ minHeight: 40, fontWeight: 700, textTransform: "none", whiteSpace: "nowrap" }}
+        >
+          {t("pages.Maintenance.assignTech")}
+        </Button>
+      )}
+      {(row.repair_status === "In Repair" || row.repair_status === "Partially Resolved") && (
+        <Button
+          variant="contained"
+          color="success"
+          disableElevation
+          fullWidth={fullWidth}
+          onClick={() => setResolveModal({ open: true, defect: row })}
+          sx={{ minHeight: 40, fontWeight: 700, textTransform: "none", whiteSpace: "nowrap" }}
+        >
+          {t("pages.Maintenance.logRepair")}
+        </Button>
+      )}
+    </>
+  );
+
+  const renderMeta = (row: any) => (
+    <Typography variant="caption" sx={{ color: "#64748b", fontVariantNumeric: "tabular-nums" }}>
+      {t("pages.Maintenance.ticketReportedOn", { log_id: row.log_id, value: formatDisplayDate(row.reported_date) })}
+      {row.reported_on_invoice_id ? ` · INV-${row.reported_on_invoice_id}` : ""}
+    </Typography>
+  );
+
+  const headCell = { fontWeight: 700, bgcolor: "#f1f5f9", color: "#334155", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: 0.4 } as const;
+
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 4 },
+        p: { xs: 2, md: 3 },
         maxWidth: 1400,
         mx: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: 4,
+        gap: { xs: 2, md: 2.5 },
       }}
     >
-      {/* HEADER & KPIs */}
+      {/* HEADER */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: { xs: "stretch", sm: "flex-start" },
+          alignItems: { xs: "stretch", sm: "center" },
           flexDirection: { xs: "column", sm: "row" },
-          gap: 2,
+          gap: 1.5,
         }}
       >
         <Box>
           <Typography
-            variant="h4"
-            fontWeight="800"
-            color="text.primary"
-            gutterBottom
-            sx={{ fontSize: { xs: "1.5rem", md: "2.125rem" } }}
+            component="h1"
+            sx={{ fontWeight: 800, color: "#0f172a", fontSize: { xs: "1.5rem", md: "1.9rem" }, lineHeight: 1.2 }}
           >
             {t("maintenance.title")}
           </Typography>
-          <Typography color="text.secondary" variant="body1">
+          <Typography sx={{ color: "#475569", fontSize: "0.92rem", mt: 0.25 }}>
             {t("maintenance.subtitle")}
           </Typography>
         </Box>
         <Button
           variant="outlined"
           startIcon={<AssessmentIcon />}
-          sx={{ bgcolor: "white", alignSelf: { xs: "flex-start", sm: "auto" } }}
+          sx={{ bgcolor: "white", alignSelf: { xs: "flex-start", sm: "auto" }, minHeight: 40, textTransform: "none", fontWeight: 700 }}
         >
           {t("reports.exportPdf")}
         </Button>
       </Box>
 
-      <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-        <KpiCard
+      {/* WORKFLOW STAGES — click to switch the list below */}
+      <ResponsiveKpiStrip columns={3} collapsibleOnMobile={false}>
+        <StageTile
           title={t("pages.Maintenance.awaitingAssignment")}
           value={queueDefects.length}
-          icon={<HandymanIcon fontSize="large" />}
-          color="#f43f5e"
+          icon={<HandymanIcon />}
+          color="#e11d48"
+          active={currentTab === 0}
+          onClick={() => setCurrentTab(0)}
         />
-        <KpiCard
+        <StageTile
           title={t("pages.Maintenance.activeInWorkshop")}
           value={workshopDefects.length}
-          icon={<EngineeringIcon fontSize="large" />}
-          color="#f59e0b"
+          icon={<EngineeringIcon />}
+          color="#d97706"
+          active={currentTab === 1}
+          onClick={() => setCurrentTab(1)}
         />
-        <KpiCard
+        <StageTile
           title={t("pages.Maintenance.fullyRestored")}
           value={historyDefects.length}
-          icon={<CheckCircleIcon fontSize="large" />}
-          color="#10b981"
+          icon={<CheckCircleIcon />}
+          color="#059669"
+          active={currentTab === 2}
+          onClick={() => setCurrentTab(2)}
         />
-      </Box>
+      </ResponsiveKpiStrip>
 
-      {/* MASTER DATA TABLE */}
-      <Paper
-        elevation={0}
-        sx={{
-          border: "1px solid #e2e8f0",
-          borderRadius: 3,
-          overflow: "hidden",
-          bgcolor: "white",
-        }}
-      >
+      {/* LIST */}
+      <Paper elevation={0} sx={{ border: "1px solid #e2e8f0", borderRadius: 3, overflow: "hidden", bgcolor: "white" }}>
         <Box
           sx={{
-            borderBottom: "1px solid #e2e8f0",
             px: 2,
-            pt: 2,
+            py: 1.5,
             display: "flex",
             justifyContent: "space-between",
-            alignItems: { xs: "stretch", md: "flex-end" },
+            alignItems: { xs: "stretch", md: "center" },
             flexDirection: { xs: "column", md: "row" },
-            gap: 1,
+            gap: 1.5,
             bgcolor: "#f8fafc",
+            borderBottom: "1px solid #e2e8f0",
           }}
         >
-          <Tabs
-            value={currentTab}
-            onChange={(e, v) => setCurrentTab(v)}
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            sx={{
-              "& .MuiTab-root": {
-                fontWeight: 600,
-                textTransform: "none",
-                fontSize: { xs: "0.85rem", md: "1rem" },
-                minWidth: { xs: 0, md: 90 },
-              },
-            }}
-          >
-            <Tab label={t("pages.Maintenance.queue", { queueDefectsCount: queueDefects.length })} />
-            <Tab label={t("pages.Maintenance.workshop", { workshopDefectsCount: workshopDefects.length })} />
-            <Tab label={t("pages.Maintenance.history", { historyDefectsCount: historyDefects.length })} />
-          </Tabs>
-          <Box sx={{ pb: 1.5, width: { xs: "100%", md: 300 } }}>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder={t("pages.Maintenance.searchItemOrInvoice")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
+          <Typography component="h2" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1rem" }}>
+            {stageTitle}
+          </Typography>
+          <TextField
+            size="small"
+            placeholder={t("pages.Maintenance.searchItemOrInvoice")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ width: { xs: "100%", md: 320 }, "& .MuiOutlinedInput-root": { bgcolor: "white", borderRadius: 2 }, "& input": { color: "#0f172a" } }}
+            slotProps={{
+              input: {
                 startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon fontSize="small" />
                   </InputAdornment>
                 ),
-                sx: { bgcolor: "white", borderRadius: 2 },
-              }}
-            />
-          </Box>
+              },
+            }}
+          />
         </Box>
 
-        <TableContainer sx={{ maxHeight: { xs: 420, md: 600 }, overflow: "auto" }}>
-          <Table stickyHeader sx={{ minWidth: 720 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "25%" }}
-                >
-                  {t("pages.Maintenance.equipmentDefect")}
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "25%" }}
-                >
-                  {t("pages.Maintenance.repairProgress")}
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "20%" }}
-                >
-                  {t("maintenance.technician")}
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "15%" }}
-                >
-                  {t("common.status")}
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{ fontWeight: "bold", bgcolor: "#f1f5f9", width: "15%" }}
-                >
-                  {t("invoices.InvoicePrintHistoryDialog.action")}
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {getFilteredData().length === 0 && (
+        {rows.length === 0 && (
+          <Box sx={{ py: 7, textAlign: "center" }}>
+            <Typography sx={{ color: "#475569" }}>{t("pages.Maintenance.noRecordsFoundInThis")}</Typography>
+          </Box>
+        )}
+
+        {/* Desktop / tablet: table */}
+        {rows.length > 0 && (
+          <TableContainer sx={{ display: { xs: "none", md: "block" } }}>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                    <Typography color="text.secondary">
-                      {t("pages.Maintenance.noRecordsFoundInThis")}
-                    </Typography>
+                  <TableCell sx={{ ...headCell, width: "34%" }}>{t("pages.Maintenance.equipmentDefect")}</TableCell>
+                  <TableCell sx={{ ...headCell, width: "24%" }}>{t("pages.Maintenance.repairProgress")}</TableCell>
+                  <TableCell sx={{ ...headCell, width: "16%" }}>{t("maintenance.technician")}</TableCell>
+                  <TableCell sx={{ ...headCell, width: "12%" }}>{t("common.status")}</TableCell>
+                  <TableCell align="right" sx={{ ...headCell, width: "14%" }}>
+                    {t("invoices.InvoicePrintHistoryDialog.action")}
                   </TableCell>
                 </TableRow>
-              )}
-              {getFilteredData().map((row: any) => {
-                // Calculate progress percentage
-                const progress =
-                  Math.round(
-                    (row.repaired_quantity / row.defective_quantity) * 100,
-                  ) || 0;
-
-                return (
-                  <TableRow key={row.log_id} hover>
-                    {/* Column 1: Info */}
+              </TableHead>
+              <TableBody>
+                {rows.map((row: any) => (
+                  <TableRow key={row.log_id} hover sx={{ "& td": { verticalAlign: "top", py: 2 } }}>
                     <TableCell>
-                      <Typography fontWeight="700" color="primary.main">
-                        {row.Equipment?.equipment_name ||
-                          t("pages.Maintenance.item2", { equipment_id: row.equipment_id })}
+                      <Typography sx={{ fontWeight: 800, color: "#0f172a" }}>{itemName(row)}</Typography>
+                      <Typography variant="body2" sx={{ color: "#b91c1c", my: 0.5 }}>
+                        {row.defect_description}
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        color="error.main"
-                        sx={{ mt: 0.5, mb: 0.5 }}
-                      >
-                        "{row.defect_description}"
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {t("pages.Maintenance.ticketReportedOn", { log_id: row.log_id, value: formatDisplayDate(row.reported_date) })}
-                      </Typography>
+                      {renderMeta(row)}
                     </TableCell>
-
-                    {/* Column 2: Progress Math */}
+                    <TableCell>{renderProgress(row)}</TableCell>
+                    <TableCell>{renderTech(row)}</TableCell>
                     <TableCell>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          fontWeight="bold"
-                          color="text.secondary"
-                        >
-                          {t("pages.Maintenance.totalBroken")} {row.defective_quantity}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          fontWeight="bold"
-                          color="success.main"
-                        >
-                          {t("pages.Maintenance.fixed", { repaired_quantity: row.repaired_quantity })}
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={progress}
-                        color={progress === 100 ? "success" : "warning"}
-                        sx={{ height: 8, borderRadius: 4, bgcolor: "#e2e8f0" }}
-                      />
-                      {row.pending_quantity > 0 && (
-                        <Typography
-                          variant="caption"
-                          color="warning.dark"
-                          sx={{ mt: 0.5, display: "block" }}
-                        >
-                          {t("pages.Maintenance.itemsRemainingInShop", { pending_quantity: row.pending_quantity })}
-                        </Typography>
-                      )}
+                      <Chip label={row.repair_status} color={statusColor(row)} size="small" sx={{ fontWeight: 700 }} />
                     </TableCell>
-
-                    {/* Column 3: Tech Assignment */}
-                    <TableCell>
-                      {row.Technician ? (
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                        >
-                          <Avatar
-                            sx={{
-                              width: 28,
-                              height: 28,
-                              bgcolor: "primary.light",
-                              fontSize: "0.8rem",
-                            }}
-                          >
-                            {row.Technician.first_name[0]}
-                          </Avatar>
-                          <Typography variant="body2" fontWeight="500">
-                            {row.Technician.first_name}{" "}
-                            {row.Technician.last_name}
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          color="text.disabled"
-                          fontStyle="italic"
-                        >
-                          {t("pages.Maintenance.unassigned")}
-                        </Typography>
-                      )}
-                    </TableCell>
-
-                    {/* Column 4: Status */}
-                    <TableCell>
-                      <Chip
-                        label={row.repair_status}
-                        color={
-                          row.repair_status === "Pending Assignment"
-                            ? "error"
-                            : row.repair_status === "Resolved"
-                              ? "success"
-                              : "warning"
-                        }
-                        size="small"
-                        sx={{ fontWeight: "bold" }}
-                      />
-                    </TableCell>
-
-                    {/* Column 5: Actions */}
-                    <TableCell align="right">
-                      {/* Render Assign button for ANY queue status */}
-                      {(row.repair_status === "Pending Assignment" ||
-                        row.repair_status === "Reported" ||
-                        row.repair_status === "Pending") && (
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          size="small"
-                          onClick={() =>
-                            setAssignModal({ open: true, defect: row })
-                          }
-                        >
-                          {t("pages.Maintenance.assignTech")}
-                        </Button>
-                      )}
-
-                      {/* Render Repair button for ANY workshop status */}
-                      {(row.repair_status === "In Repair" ||
-                        row.repair_status === "Partially Resolved") && (
-                        <Button
-                          variant="contained"
-                          color="success"
-                          size="small"
-                          disableElevation
-                          onClick={() =>
-                            setResolveModal({ open: true, defect: row })
-                          }
-                        >
-                          {t("pages.Maintenance.logRepair")}
-                        </Button>
-                      )}
-                    </TableCell>
+                    <TableCell align="right">{renderAction(row)}</TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Mobile: one card per ticket — no sideways scrolling */}
+        {rows.length > 0 && (
+          <Box sx={{ display: { xs: "flex", md: "none" }, flexDirection: "column" }}>
+            {rows.map((row: any) => (
+              <Box key={row.log_id} sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.25, borderBottom: "1px solid #e2e8f0", "&:last-of-type": { borderBottom: "none" } }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
+                  <Typography sx={{ fontWeight: 800, color: "#0f172a" }}>{itemName(row)}</Typography>
+                  <Chip label={row.repair_status} color={statusColor(row)} size="small" sx={{ fontWeight: 700, flexShrink: 0 }} />
+                </Box>
+                <Typography variant="body2" sx={{ color: "#b91c1c" }}>
+                  {row.defect_description}
+                </Typography>
+                {renderMeta(row)}
+                {renderProgress(row)}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, flexWrap: "wrap" }}>
+                  {renderTech(row)}
+                </Box>
+                {renderAction(row, true)}
+              </Box>
+            ))}
+          </Box>
+        )}
       </Paper>
 
       {/* --- MODAL 1: COMPREHENSIVE ASSIGN TECHNICIAN --- */}
@@ -685,8 +637,8 @@ export default function MaintenanceRoute() {
             value={assignQty}
             onChange={(e) => setAssignQty(e.target.value)}
             helperText={t("pages.Maintenance.youCanAssignBetween1", { pending_quantity: assignModal.defect?.pending_quantity })}
-            InputProps={{
-              inputProps: { min: 1, max: assignModal.defect?.pending_quantity },
+            slotProps={{
+              htmlInput: { min: 1, max: assignModal.defect?.pending_quantity },
             }}
           />
         </DialogContent>
@@ -736,8 +688,8 @@ export default function MaintenanceRoute() {
             value={resolveQty}
             onChange={(e) => setResolveQty(e.target.value)}
             helperText={t("pages.Maintenance.enterANumberBetween1", { pending_quantity: resolveModal.defect?.pending_quantity })}
-            InputProps={{
-              inputProps: {
+            slotProps={{
+              htmlInput: {
                 min: 1,
                 max: resolveModal.defect?.pending_quantity,
               },
