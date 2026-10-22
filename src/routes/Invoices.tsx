@@ -19,6 +19,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import PersonIcon from "@mui/icons-material/Person";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -54,6 +55,7 @@ export default function InvoicesRoute() {
   const { t } = useTranslation();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" };
 
   const [posMode, setPosMode] = useState<"dispatch" | "manage">(
@@ -68,7 +70,16 @@ export default function InvoicesRoute() {
     if (search.mode === "dispatch" && posMode !== "dispatch") setPosMode("dispatch");
   }, [search.mode]);
 
+  const refreshInvoiceData = () => {
+    queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    queryClient.invalidateQueries({ queryKey: ["invoice-search"] });
+    queryClient.invalidateQueries({ queryKey: ["customer-invoices"] });
+    queryClient.invalidateQueries({ queryKey: ["customers"] });
+    queryClient.invalidateQueries({ queryKey: ["equipment"] });
+  };
+
   const switchPosMode = (next: "dispatch" | "manage") => {
+    if (next === "manage") refreshInvoiceData();
     setPosMode(next);
     navigate({ to: "/invoices", search: { mode: next } as any, replace: true });
   };
@@ -179,6 +190,7 @@ export default function InvoicesRoute() {
             : [],
       };
 
+      refreshInvoiceData();
       setLastDispatchedInvoice(hydratedInvoice);
       showToast(t("pages.Invoices.invoiceCreatedSuccessfully"), "success");
       setIsConfirmDispatchOpen(false);
