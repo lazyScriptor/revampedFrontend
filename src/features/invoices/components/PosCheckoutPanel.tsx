@@ -130,8 +130,8 @@ export function PosCheckoutPanel({
       <Box
         sx={{
           flexShrink: 0,
-          px: 3,
-          py: 2,
+          px: 2,
+          py: 0.75,
           borderBottom: "1px solid #1e293b",
           display: "flex",
           justifyContent: "space-between",
@@ -164,10 +164,10 @@ export function PosCheckoutPanel({
           minHeight: 0,
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
-          p: 3,
+          p: 2,
           display: "flex",
           flexDirection: "column",
-          gap: 2.5,
+          gap: 1.75,
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}

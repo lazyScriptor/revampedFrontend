@@ -11,9 +11,7 @@ import {
   CircularProgress,
   FormControlLabel,
   Switch,
-  Rating,
   Alert,
-  Divider,
   TextField,
   useMediaQuery,
   useTheme,
@@ -60,7 +58,6 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const returnMutation = useProcessReturn();
   const [releaseId, setReleaseId] = useState(true);
-  const [customerRating, setCustomerRating] = useState<number | null>(5);
   const [finalPaymentAmount, setFinalPaymentAmount] = useState<number | string>("");
   const [returnLines, setReturnLines] = useState<any[]>([]);
 
@@ -124,7 +121,6 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
       final_payment_amount: Number(finalPaymentAmount) || 0,
       release_id_card: releaseId,
       lines_returned: returnLines,
-      customer_rating: customerRating,
     };
     returnMutation.mutate(
       { id: invoice.invoice_id, data: payload },
@@ -187,8 +183,8 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+      <DialogContent dividers sx={{ p: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
 
           {/* Late fee warning banner */}
           {hasLateFees && (
@@ -199,9 +195,6 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
             >
               <Typography variant="body2" sx={{ fontWeight: 700 }}>
                 {t("invoices.ReturnSettlementDialog.estimatedLateFeesRs", { totalLateFees: totalLateFees.toLocaleString() })}
-              </Typography>
-              <Typography variant="caption">
-                {t("invoices.ReturnSettlementDialog.thisWillBeAddedTo")}
               </Typography>
             </Alert>
           )}
@@ -229,8 +222,8 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                 {/* Line header */}
                 <Box
                   sx={{
-                    px: 2.5,
-                    py: 1.5,
+                    px: 2,
+                    py: 1,
                     bgcolor: "#fafafa",
                     borderBottom: "1px solid #f1f5f9",
                     display: "flex",
@@ -312,7 +305,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
 
                 {/* Due date context */}
                 {overdueTracked && line.expected_return && (
-                  <Box sx={{ px: 2.5, pt: 1.5, pb: 0.5 }}>
+                  <Box sx={{ px: 2, pt: 1, pb: 0 }}>
                     <Typography variant="caption" color={isLate ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
                       {t("invoices.ReturnSettlementDialog.expectedReturn")} {formatDisplayDate(line.expected_return)}
                       {isLate && ` · ${t("invoices.ReturnSettlementDialog.daysOverdue", { count: daysLate })}`}
@@ -322,7 +315,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
 
                 {/* Splitter handles returning qty (primary), plus a collapsible
                     section for actual return date + defective qty. */}
-                <Box sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+                <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
                   <QuantityReturnSplitter
                     remaining={line.remaining_qty}
                     returningQty={(line.good_qty || 0) + (line.defective_qty || 0)}
@@ -341,22 +334,17 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
             );
           })}
 
-          <Divider />
-
           {/* Final Settlement Collection */}
           <Box
             sx={{
               bgcolor: "white",
               border: "1px solid #e2e8f0",
               borderRadius: 2.5,
-              p: 2.5,
+              p: 2,
             }}
           >
-            <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
               {t("invoices.ReturnSettlementDialog.collectFinalSettlementPayment")}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-              {t("invoices.ReturnSettlementDialog.collectOutstandingRentalDuesOr")}
             </Typography>
             <TextField
               label={t("invoices.ReturnSettlementDialog.paymentAmountRs")}
@@ -369,28 +357,6 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
               slotProps={{
                 input: { inputProps: { min: 0 } },
               }}
-            />
-          </Box>
-
-          {/* Customer rating */}
-          <Box
-            sx={{
-              bgcolor: "white",
-              border: "1px solid #e2e8f0",
-              borderRadius: 2.5,
-              p: 2.5,
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-              {t("invoices.ReturnSettlementDialog.clientTrustRating")}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-              {t("invoices.ReturnSettlementDialog.rateTheClientSReturn")}
-            </Typography>
-            <Rating
-              value={customerRating}
-              onChange={(_, newValue) => setCustomerRating(newValue)}
-              size="large"
             />
           </Box>
 

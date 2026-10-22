@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NumberField } from "@/components/ui/NumberField";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -313,54 +314,50 @@ export function EquipmentFormDialog({
           hint={t("equipment.EquipmentFormDialog.dailyRatesMinimumDurationAnd")}
         >
           <FieldGrid>
-            <TextField
+            <NumberField
               fullWidth
               size="small"
               label={t("equipment.EquipmentFormDialog.baseDailyRate")}
-              type="number"
               slotProps={{
                 htmlInput: { step: "0.01", min: "0" },
                 input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> },
               }}
-              {...register("base_rental_price", { valueAsNumber: true })}
+              control={control} name="base_rental_price"
               error={!!errors.base_rental_price}
               helperText={errors.base_rental_price?.message}
             />
-            <TextField
+            <NumberField
               fullWidth
               size="small"
               label={t("equipment.EquipmentFormDialog.overdueExtraDailyRate")}
-              type="number"
               slotProps={{
                 htmlInput: { step: "0.01", min: "0" },
                 input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> },
               }}
-              {...register("extra_daily_rate", { valueAsNumber: true })}
+              control={control} name="extra_daily_rate"
               error={!!errors.extra_daily_rate}
               helperText={errors.extra_daily_rate?.message || t("equipment.EquipmentFormDialog.appliedIfReturnedLate")}
             />
           </FieldGrid>
           <FieldGrid>
-            <TextField
+            <NumberField
               fullWidth
               size="small"
               label={t("equipment.EquipmentFormDialog.minimumRentalDays")}
-              type="number"
               slotProps={{ htmlInput: { min: "1" } }}
-              {...register("minimum_rental_days", { valueAsNumber: true })}
+              control={control} name="minimum_rental_days"
               error={!!errors.minimum_rental_days}
               helperText={errors.minimum_rental_days?.message}
             />
-            <TextField
+            <NumberField
               fullWidth
               size="small"
               label={t("equipment.EquipmentFormDialog.originalPurchaseCost")}
-              type="number"
               slotProps={{
                 htmlInput: { step: "0.01", min: "0" },
                 input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> },
               }}
-              {...register("purchase_cost", { valueAsNumber: true })}
+              control={control} name="purchase_cost"
               error={!!errors.purchase_cost}
               helperText={errors.purchase_cost?.message || t("equipment.EquipmentFormDialog.forInternalRoiTracking")}
             />
@@ -404,12 +401,11 @@ export function EquipmentFormDialog({
             }}
           >
             <Box sx={{ gridColumn: { md: "span 2" } }}>
-              <TextField
+              <NumberField
                 fullWidth
                 size="small"
                 label={t("equipment.totalOwned")}
-                type="number"
-                {...register("total_owned_qty", { valueAsNumber: true })}
+                control={control} name="total_owned_qty"
                 disabled={!isBulkItem}
                 slotProps={{
                   htmlInput: { min: isEditing ? rentedQty + defectiveQty : 1 },
@@ -469,13 +465,12 @@ export function EquipmentFormDialog({
           hint={t("equipment.EquipmentFormDialog.optionalHelpsTheMaintenanceTeam")}
         >
           <FieldGrid>
-            <TextField
+            <NumberField
               fullWidth
               size="small"
               label={t("equipment.EquipmentFormDialog.warrantyPeriodMonths")}
-              type="number"
               slotProps={{ htmlInput: { min: "0" } }}
-              {...register("warranty_period_months", { valueAsNumber: true })}
+              control={control} name="warranty_period_months"
               error={!!errors.warranty_period_months}
               helperText={errors.warranty_period_months?.message}
             />

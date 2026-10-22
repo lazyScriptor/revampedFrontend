@@ -44,7 +44,7 @@ describe("ReturnSettlementDialog Component Tests", () => {
     expect(screen.getByText(/Angle Grinder/i)).toBeInTheDocument();
   });
 
-  it("captures customer rating and release ID toggle on return submission", () => {
+  it("captures release ID toggle on return submission", () => {
     render(
       <ReturnSettlementDialog
         open={true}
@@ -63,7 +63,7 @@ describe("ReturnSettlementDialog Component Tests", () => {
 
     expect(callArgs.id).toBe(88);
     expect(callArgs.data.invoice_id).toBe(88);
-    expect(callArgs.data.customer_rating).toBe(5); // Default rating
+    expect(callArgs.data.customer_rating).toBeUndefined(); // rating step removed
     expect(callArgs.data.release_id_card).toBe(true);
   });
 });

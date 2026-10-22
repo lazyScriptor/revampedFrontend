@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { NumberField } from "@/components/ui/NumberField";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -333,10 +334,9 @@ export function EquipmentFormDrawer({
         <CustomTabPanel value={tabIndex} index={1}>
           <Box className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
-              <TextField
+              <NumberField
                 fullWidth
                 label={t("equipment.EquipmentFormDrawer.baseDailyRate")}
-                type="number"
                 slotProps={{
                   htmlInput: { step: "0.01", min: "0" },
                   input: {
@@ -345,14 +345,13 @@ export function EquipmentFormDrawer({
                     ),
                   },
                 }}
-                {...register("base_rental_price", { valueAsNumber: true })}
+                control={control} name="base_rental_price"
                 error={!!errors.base_rental_price}
                 helperText={errors.base_rental_price?.message}
               />
-              <TextField
+              <NumberField
                 fullWidth
                 label={t("equipment.EquipmentFormDrawer.overdueExtraDailyRate")}
-                type="number"
                 slotProps={{
                   htmlInput: { step: "0.01", min: "0" },
                   input: {
@@ -361,7 +360,7 @@ export function EquipmentFormDrawer({
                     ),
                   },
                 }}
-                {...register("extra_daily_rate", { valueAsNumber: true })}
+                control={control} name="extra_daily_rate"
                 error={!!errors.extra_daily_rate}
                 helperText={
                   errors.extra_daily_rate?.message || t("equipment.EquipmentFormDialog.appliedIfReturnedLate")
@@ -370,19 +369,17 @@ export function EquipmentFormDrawer({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <TextField
+              <NumberField
                 fullWidth
                 label={t("equipment.EquipmentBulkEditDialog.minimumRentalDays")}
-                type="number"
                 slotProps={{ htmlInput: { min: "1" } }}
-                {...register("minimum_rental_days", { valueAsNumber: true })}
+                control={control} name="minimum_rental_days"
                 error={!!errors.minimum_rental_days}
                 helperText={errors.minimum_rental_days?.message}
               />
-              <TextField
+              <NumberField
                 fullWidth
                 label={t("equipment.EquipmentFormDrawer.originalPurchaseCost")}
-                type="number"
                 slotProps={{
                   htmlInput: { step: "0.01", min: "0" },
                   input: {
@@ -391,7 +388,7 @@ export function EquipmentFormDrawer({
                     ),
                   },
                 }}
-                {...register("purchase_cost", { valueAsNumber: true })}
+                control={control} name="purchase_cost"
                 error={!!errors.purchase_cost}
                 helperText={
                   errors.purchase_cost?.message || t("equipment.EquipmentFormDialog.forInternalRoiTracking")
@@ -468,11 +465,10 @@ export function EquipmentFormDrawer({
               <Grid container spacing={2} sx={{ alignItems: "center" }}>
                 {/* TOTAL OWNED */}
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
+                  <NumberField
                     fullWidth
                     label={t("equipment.EquipmentFormDrawer.totalOwned")}
-                    type="number"
-                    {...register("total_owned_qty", { valueAsNumber: true })}
+                    control={control} name="total_owned_qty"
                     disabled={!isBulkItem}
                     slotProps={{
                       htmlInput: {
@@ -562,12 +558,11 @@ export function EquipmentFormDrawer({
             <Divider />
 
             <div className="grid grid-cols-2 gap-4">
-              <TextField
+              <NumberField
                 fullWidth
                 label={t("equipment.EquipmentFormDrawer.warrantyPeriodMonths")}
-                type="number"
                 slotProps={{ htmlInput: { min: "0" } }}
-                {...register("warranty_period_months", { valueAsNumber: true })}
+                control={control} name="warranty_period_months"
                 error={!!errors.warranty_period_months}
                 helperText={errors.warranty_period_months?.message}
               />

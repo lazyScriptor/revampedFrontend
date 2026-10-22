@@ -750,8 +750,8 @@ export function ManageFinancialPanel({
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [isEditingFees, setIsEditingFees] = useState(false);
-  const [receiptExpanded, setReceiptExpanded] = useState(true);
-  const [timelineExpanded, setTimelineExpanded] = useState(true);
+  const [receiptExpanded, setReceiptExpanded] = useState(false);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [isPrintHistoryOpen, setIsPrintHistoryOpen] = useState(false);
 
@@ -938,8 +938,8 @@ export function ManageFinancialPanel({
       <Box
         sx={{
           flexShrink: 0,
-          px: 3,
-          py: 2,
+          px: 2,
+          py: 0.75,
           borderBottom: "1px solid #1e293b",
           display: "flex",
           justifyContent: "space-between",
@@ -987,11 +987,11 @@ export function ManageFinancialPanel({
           minHeight: 0,
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
-          p: 2.5,
-          pb: 4,
+          p: 1.5,
+          pb: 3,
           display: "flex",
           flexDirection: "column",
-          gap: 2.5,
+          gap: 1.5,
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
@@ -1000,8 +1000,8 @@ export function ManageFinancialPanel({
         <Box
           sx={{
             bgcolor: "#1e293b",
-            borderRadius: 3,
-            p: 3,
+            borderRadius: 2,
+            p: 1.5,
             textAlign: "center",
             border: "1px solid #334155",
           }}
@@ -1014,8 +1014,8 @@ export function ManageFinancialPanel({
             sx={{
               fontWeight: 900,
               color: balance > 0 ? "#f87171" : "#4ade80",
-              my: 1,
-              fontSize: { xs: "2rem", md: "2.5rem" },
+              my: 0.25,
+              fontSize: { xs: "1.6rem", md: "1.9rem" },
               fontFamily: "'JetBrains Mono', monospace",
               fontVariantNumeric: "tabular-nums",
               letterSpacing: -1,
@@ -1041,13 +1041,13 @@ export function ManageFinancialPanel({
             startIcon={<PrintIcon />}
             onClick={() => setIsPrintDialogOpen(true)}
             sx={{
-              mt: 2,
+              mt: 1,
               bgcolor: "#2563eb",
               "&:hover": { bgcolor: "#1d4ed8" },
               fontWeight: 800,
               fontSize: "0.82rem",
               borderRadius: 2,
-              py: 0.9,
+              py: 0.5,
               textTransform: "none",
             }}
           >
@@ -1061,14 +1061,14 @@ export function ManageFinancialPanel({
               startIcon={<HistoryIcon />}
               onClick={() => setIsPrintHistoryOpen(true)}
               sx={{
-                mt: 1,
+                mt: 0.75,
                 borderColor: "#334155",
                 color: "#94a3b8",
                 "&:hover": { borderColor: "#475569", color: "#f8fafc", bgcolor: "rgba(255,255,255,0.03)" },
                 fontWeight: 700,
                 fontSize: "0.78rem",
                 borderRadius: 2,
-                py: 0.7,
+                py: 0.4,
                 textTransform: "none",
                 fontVariantNumeric: "tabular-nums",
               }}
@@ -1152,7 +1152,7 @@ export function ManageFinancialPanel({
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
-            sx={{ px: 2.5, py: 1, borderBottom: receiptExpanded ? "1px solid #f1f5f9" : "none" }}
+            sx={{ px: 2, minHeight: 38, "&.Mui-expanded": { minHeight: 38 }, "& .MuiAccordionSummary-content": { my: 0.75, "&.Mui-expanded": { my: 0.75 } }, borderBottom: receiptExpanded ? "1px solid #f1f5f9" : "none" }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
               <ReceiptLongIcon fontSize="small" /> {t("orders.receiptBreakdown")}
@@ -1165,8 +1165,6 @@ export function ManageFinancialPanel({
               display: "flex",
               flexDirection: "column",
               gap: 1,
-              maxHeight: 280,
-              overflowY: "auto",
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "thin",
               scrollbarColor: "#cbd5e1 transparent",
@@ -1303,7 +1301,7 @@ export function ManageFinancialPanel({
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
-            sx={{ px: 2.5, py: 1, borderBottom: timelineExpanded ? "1px solid #f1f5f9" : "none" }}
+            sx={{ px: 2, minHeight: 38, "&.Mui-expanded": { minHeight: 38 }, "& .MuiAccordionSummary-content": { my: 0.75, "&.Mui-expanded": { my: 0.75 } }, borderBottom: timelineExpanded ? "1px solid #f1f5f9" : "none" }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
               <HistoryIcon fontSize="small" /> {t("orders.transactionLedger")}
@@ -1312,8 +1310,6 @@ export function ManageFinancialPanel({
           <AccordionDetails
             sx={{
               p: 0,
-              maxHeight: 320,
-              overflowY: "auto",
               WebkitOverflowScrolling: "touch",
               "&::-webkit-scrollbar": { width: "4px" },
               "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "4px" },
