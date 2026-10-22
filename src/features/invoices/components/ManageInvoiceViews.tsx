@@ -750,8 +750,8 @@ export function ManageFinancialPanel({
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [isEditingFees, setIsEditingFees] = useState(false);
-  const [receiptExpanded, setReceiptExpanded] = useState(false);
-  const [timelineExpanded, setTimelineExpanded] = useState(false);
+  const [receiptExpanded, setReceiptExpanded] = useState(true);
+  const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [isPrintHistoryOpen, setIsPrintHistoryOpen] = useState(false);
 
@@ -948,7 +948,7 @@ export function ManageFinancialPanel({
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: balance > 0 ? "#f87171" : "#4ade80", boxShadow: `0 0 6px ${balance > 0 ? "#f87171" : "#4ade80"}` }} />
-          <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 2 }}>
+          <Typography variant="overline" noWrap sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, fontSize: "0.68rem", lineHeight: 1.4 }}>
             {t("orders.financialTerminal").toUpperCase()}
           </Typography>
         </Box>
@@ -964,6 +964,8 @@ export function ManageFinancialPanel({
               fontSize: "0.72rem",
               fontWeight: 700,
               textTransform: "none",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
               py: 0.35,
               px: 1.2,
               borderRadius: 1.5,
@@ -992,6 +994,7 @@ export function ManageFinancialPanel({
           display: "flex",
           flexDirection: "column",
           gap: 1.5,
+          "& > *": { flexShrink: 0 },
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
@@ -1152,9 +1155,9 @@ export function ManageFinancialPanel({
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
-            sx={{ px: 2, minHeight: 38, "&.Mui-expanded": { minHeight: 38 }, "& .MuiAccordionSummary-content": { my: 0.75, "&.Mui-expanded": { my: 0.75 } }, borderBottom: receiptExpanded ? "1px solid #f1f5f9" : "none" }}
+            sx={{ px: 2, minHeight: 34, "&.Mui-expanded": { minHeight: 34 }, "& .MuiAccordionSummary-content": { my: 0.75, "&.Mui-expanded": { my: 0.75 } }, borderBottom: receiptExpanded ? "1px solid #f1f5f9" : "none" }}
           >
-            <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.82rem", display: "flex", alignItems: "center", gap: 1 }}>
               <ReceiptLongIcon fontSize="small" /> {t("orders.receiptBreakdown")}
             </Typography>
           </AccordionSummary>
@@ -1301,7 +1304,7 @@ export function ManageFinancialPanel({
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
-            sx={{ px: 2, minHeight: 38, "&.Mui-expanded": { minHeight: 38 }, "& .MuiAccordionSummary-content": { my: 0.75, "&.Mui-expanded": { my: 0.75 } }, borderBottom: timelineExpanded ? "1px solid #f1f5f9" : "none" }}
+            sx={{ px: 2, minHeight: 34, "&.Mui-expanded": { minHeight: 34 }, "& .MuiAccordionSummary-content": { my: 0.75, "&.Mui-expanded": { my: 0.75 } }, borderBottom: timelineExpanded ? "1px solid #f1f5f9" : "none" }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
               <HistoryIcon fontSize="small" /> {t("orders.transactionLedger")}

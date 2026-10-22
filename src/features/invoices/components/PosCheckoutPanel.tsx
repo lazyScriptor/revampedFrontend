@@ -148,7 +148,7 @@ export function PosCheckoutPanel({
               boxShadow: "0 0 6px #4ade80",
             }}
           />
-          <Typography variant="overline" sx={{ color: "#94a3b8", fontWeight: 700, letterSpacing: 2 }}>
+          <Typography variant="overline" noWrap sx={{ color: "#94a3b8", fontWeight: 700, letterSpacing: 1.2, fontSize: "0.68rem" }}>
             CHECKOUT
           </Typography>
         </Box>
@@ -168,6 +168,7 @@ export function PosCheckoutPanel({
           display: "flex",
           flexDirection: "column",
           gap: 1.75,
+          "& > *": { flexShrink: 0 },
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
