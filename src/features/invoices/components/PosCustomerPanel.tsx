@@ -11,6 +11,7 @@ import {
   IconButton,
   Tooltip,
   MenuItem,
+  Button,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -25,6 +26,8 @@ import BadgeIcon from "@mui/icons-material/Badge";
 import PhoneIcon from "@mui/icons-material/Phone";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
 
 import { usePosCustomerSearch } from "../hooks/usePosSearch";
 import { useCustomerDetails, useCustomerInvoices } from "@/features/customers/hooks/useCustomerHooks";
@@ -46,6 +49,7 @@ export function PosCustomerPanel({
 }: PosCustomerPanelProps) {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [selectedPreviewInvoice, setSelectedPreviewInvoice] = useState<any | null>(null);
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
 
@@ -122,11 +126,22 @@ export function PosCustomerPanel({
 
   const theme = useTheme();
 
+  // Turn whatever the cashier already typed into form pre-fill: phone, NIC or name.
+  const prefill = useMemo(() => {
+    const q = inputValue.trim();
+    if (!q) return undefined;
+    if (/^\+?\d{9,12}$/.test(q) && !/^\d{12}$/.test(q)) return { phone_number: q };
+    if (/^\d{9}[vVxX]$|^\d{12}$/.test(q)) return { nic_number: q.toUpperCase() };
+    const [first, ...rest] = q.split(/\s+/);
+    return { first_name: first, last_name: rest.join(" ") };
+  }, [inputValue]);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
       {/* Search */}
-      <Box sx={{ position: "relative" }}>
+      <Box sx={{ position: "relative", display: "flex", gap: 1, alignItems: "stretch" }}>
         <Autocomplete
+          sx={{ flexGrow: 1, minWidth: 0 }}
           options={searchResults}
           getOptionLabel={(option: any) => displayName(option) || ""}
           filterOptions={(x) => x}
@@ -134,7 +149,25 @@ export function PosCustomerPanel({
           includeInputInList
           filterSelectedOptions
           value={selectedCustomer}
-          noOptionsText={inputValue.length < 2 ? t("invoices.PosCustomerPanel.typeToSearch") : t("invoices.PosCustomerPanel.noClientsFound")}
+          noOptionsText={
+            inputValue.length < 2 ? (
+              t("invoices.PosCustomerPanel.typeToSearch")
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
+                <span>{t("invoices.PosCustomerPanel.noClientsFound")}</span>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<PersonAddAlt1Icon />}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setNewCustomerOpen(true)}
+                  sx={{ textTransform: "none", fontWeight: 700, alignSelf: "flex-start" }}
+                >
+                  {t("invoices.PosCustomerPanel.addAsNew", { query: inputValue })}
+                </Button>
+              </Box>
+            )
+          }
           onChange={(_, newValue) => onSelectCustomer(newValue)}
           onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
           renderInput={(params) => (
@@ -239,7 +272,38 @@ export function PosCustomerPanel({
             );
           }}
         />
+        <Tooltip title={t("invoices.PosCustomerPanel.newCustomerHint")}>
+          <Button
+            variant="outlined"
+            onClick={() => setNewCustomerOpen(true)}
+            startIcon={<PersonAddAlt1Icon />}
+            sx={{
+              flexShrink: 0,
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: 2,
+              whiteSpace: "nowrap",
+              "& .MuiButton-startIcon": { mr: { xs: 0, sm: 1 } },
+            }}
+          >
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              {t("invoices.PosCustomerPanel.newCustomer")}
+            </Box>
+          </Button>
+        </Tooltip>
       </Box>
+
+      <CustomerFormDialog
+        open={newCustomerOpen}
+        onClose={() => setNewCustomerOpen(false)}
+        prefill={prefill}
+        onCreated={(c) => {
+          if (c?.customer_id) {
+            onSelectCustomer(c);
+            setInputValue("");
+          }
+        }}
+      />
 
       {/* Client card */}
       {selectedCustomer ? (

@@ -786,7 +786,10 @@
             "noClientsFound": "පාරිභෝගිකයන් හමු නොවීය.",
             "noNic": "ජා.හැ.අ. නැත",
             "more": " +තවත් {{moreEquipCount}}",
-            "asset": "උපකරණය"
+            "asset": "උපකරණය",
+            "addAsNew": "\"{{query}}\" නව පාරිභෝගිකයෙකු ලෙස එක් කරන්න",
+            "newCustomer": "නව පාරිභෝගිකයා",
+            "newCustomerHint": "මෙම බිල්පතෙන් ඉවත් නොවී නව පාරිභෝගිකයෙකු ලියාපදිංචි කරන්න"
         },
         "PosLedgerPanel": {
             "addEquipmentByNameOr": "නම හෝ SKU අනුව උපකරණ එක් කරන්න…",

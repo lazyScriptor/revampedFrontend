@@ -51,6 +51,10 @@ interface CustomerFormDialogProps {
   open: boolean;
   onClose: () => void;
   initialData?: Customer | null;
+  /** Called with the saved customer after a successful create (not edit). */
+  onCreated?: (customer: any) => void;
+  /** Pre-fill fields when opening the dialog to create a customer. */
+  prefill?: Partial<Pick<CustomerFormData, "first_name" | "last_name" | "phone_number" | "nic_number">>;
 }
 
 const parentLabel = (p: ParentCustomerOption) =>
@@ -62,6 +66,8 @@ export function CustomerFormDialog({
   open,
   onClose,
   initialData,
+  onCreated,
+  prefill,
 }: CustomerFormDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -156,9 +162,11 @@ export function CustomerFormDialog({
           status: "Active",
           deposit_balance: 0,
           parent_customer_id: null,
+          ...prefill,
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData, reset]);
 
   const onSubmit = (data: CustomerFormData) => {
@@ -173,7 +181,12 @@ export function CustomerFormDialog({
         { onSuccess: () => onClose() },
       );
     } else {
-      createMutation.mutate(payload, { onSuccess: () => onClose() });
+      createMutation.mutate(payload, {
+        onSuccess: (created: any) => {
+          onCreated?.(created?.customer_id ? created : created?.data ?? created);
+          onClose();
+        },
+      });
     }
   };
 

@@ -786,7 +786,10 @@
             "noClientsFound": "No clients found.",
             "noNic": "No NIC",
             "more": " +{{moreEquipCount}} more",
-            "asset": "Asset"
+            "asset": "Asset",
+            "addAsNew": "Add \"{{query}}\" as a new customer",
+            "newCustomer": "New customer",
+            "newCustomerHint": "Register a new customer without leaving this bill"
         },
         "PosLedgerPanel": {
             "addEquipmentByNameOr": "Add equipment by name or SKU…",
