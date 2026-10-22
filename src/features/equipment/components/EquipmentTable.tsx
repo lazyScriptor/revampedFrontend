@@ -223,6 +223,18 @@ export function EquipmentTable({
       ),
     },
     {
+      field: "defective_qty",
+      headerName: t("equipment.defectiveQty"),
+      width: 110,
+      align: "right",
+      headerAlign: "right",
+      renderCell: (params) => (
+        <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: Number(params.value) > 0 ? "#b91c1c" : undefined }}>
+          {params.value ?? 0}
+        </span>
+      ),
+    },
+    {
       field: "is_bulk_item",
       headerName: t("equipment.isBulkItem"),
       width: 100,
@@ -372,21 +384,13 @@ export function EquipmentTable({
           disableRowSelectionOnClick
           getRowHeight={() => "auto"}
           getEstimatedRowHeight={() => 56}
-          // 🚀 HIDE NON-ESSENTIAL COLUMNS BY DEFAULT
+          // Everything is visible by default (scroll sideways); only the internal ID and
+          // created-at stay tucked away in the Columns menu.
           initialState={{
             columns: {
               columnVisibilityModel: {
                 equipment_id: false,
-                image_url: false,
-                extra_daily_rate: false,
-                minimum_rental_days: false,
-                purchase_cost: false,
-                is_bulk_item: false,
-                warranty_period_months: false,
-                end_of_warranty_date: false,
                 createdAt: false,
-                total_owned_qty: false,
-                rented_qty: false,
               },
             },
           }}

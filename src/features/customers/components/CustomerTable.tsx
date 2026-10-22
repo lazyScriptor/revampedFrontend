@@ -141,6 +141,47 @@ export function CustomerTable({
         </Typography>
       ),
     },
+    {
+      field: "address",
+      headerName: t("common.address"),
+      flex: 1,
+      minWidth: 220,
+      valueGetter: (_v: unknown, row: any) =>
+        [row?.address_line1, row?.address_line2].filter(Boolean).join(", "),
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography
+          variant="body2"
+          sx={{ color: "text.primary", whiteSpace: "normal", wordBreak: "break-word", lineHeight: 1.4, py: 0.5 }}
+        >
+          {params.value || "-"}
+        </Typography>
+      ),
+    },
+    {
+      field: "customer_type",
+      headerName: t("customers.customerType"),
+      width: 120,
+      renderCell: (params: GridRenderCellParams) => (
+        <Chip
+          size="small"
+          variant="outlined"
+          label={params.value === "Business" ? t("customers.business") : t("customers.individual")}
+          sx={{ fontWeight: 600 }}
+        />
+      ),
+    },
+    {
+      field: "rating",
+      headerName: t("customers.rating"),
+      width: 100,
+      align: "right",
+      headerAlign: "right",
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "text.primary" }}>
+          {params.value != null && params.value !== "" ? `★ ${Number(params.value).toFixed(1)}` : "-"}
+        </Typography>
+      ),
+    },
 
     // --- COLLATERAL & FINANCE COLUMNS ---
     {
