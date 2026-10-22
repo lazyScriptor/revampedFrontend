@@ -139,9 +139,14 @@ export function PosCustomerPanel({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
       {/* Search */}
-      <Box sx={{ position: "relative", display: "flex", gap: 1, alignItems: "stretch" }}>
+      <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 1 }}>
         <Autocomplete
-          sx={{ flexGrow: 1, minWidth: 0 }}
+          sx={{ width: "100%" }}
+          slotProps={{
+            popper: { placement: "bottom-start", style: { minWidth: 340 } },
+            paper: { sx: { maxHeight: 420 } },
+            listbox: { sx: { maxHeight: 380 } },
+          }}
           options={searchResults}
           getOptionLabel={(option: any) => displayName(option) || ""}
           filterOptions={(x) => x}
@@ -174,7 +179,7 @@ export function PosCustomerPanel({
             <TextField
               {...(params as any)}
               placeholder={t("invoices.PosCustomerPanel.scanNicPhoneOrName")}
-              size="small"
+              size="medium"
               fullWidth
               slotProps={{
                 ...((params as any).slotProps),
@@ -195,7 +200,7 @@ export function PosCustomerPanel({
                     "& .MuiInputBase-input": {
                       color: theme.palette.mode === "dark" ? "#f8fafc" : "#0f172a",
                       fontWeight: 500,
-                      fontSize: "0.875rem",
+                      fontSize: "0.95rem",
                     },
                     "& fieldset": { borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0" },
                     "&:hover fieldset": { borderColor: theme.palette.mode === "dark" ? "#475569" : "#cbd5e1" },
@@ -275,20 +280,12 @@ export function PosCustomerPanel({
         <Tooltip title={t("invoices.PosCustomerPanel.newCustomerHint")}>
           <Button
             variant="outlined"
+            fullWidth
             onClick={() => setNewCustomerOpen(true)}
             startIcon={<PersonAddAlt1Icon />}
-            sx={{
-              flexShrink: 0,
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: 2,
-              whiteSpace: "nowrap",
-              "& .MuiButton-startIcon": { mr: { xs: 0, sm: 1 } },
-            }}
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
           >
-            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-              {t("invoices.PosCustomerPanel.newCustomer")}
-            </Box>
+            {t("invoices.PosCustomerPanel.newCustomer")}
           </Button>
         </Tooltip>
       </Box>
