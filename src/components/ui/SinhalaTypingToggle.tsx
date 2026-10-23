@@ -9,44 +9,35 @@ import {
 } from "@/lib/singlishInput";
 import { CONSONANTS, VOWELS } from "@/lib/singlish";
 
-const EXAMPLES: Array<[string, string]> = [
-  ["mama", "මම"],
-  ["amma", "අම්ම"],
-  ["thaaththaa", "තාත්තා"],
-  ["oyaata", "ඔයාට"],
-  ["shrii", "ශ්‍රී"],
-  ["laxkaa", "ලංකා"],
-];
-
 const Key = ({ roman, sinhala }: { roman: string; sinhala: string }) => (
   <Box
     sx={{
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 1,
-      px: 1,
-      py: 0.4,
+      gap: 0.5,
+      px: 0.75,
+      py: 0.25,
       borderRadius: 1,
       bgcolor: "rgba(255,255,255,0.08)",
       fontVariantNumeric: "tabular-nums",
     }}
   >
-    <Box component="span" sx={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.78rem", color: "#fbbf24", fontWeight: 700 }}>
+    <Box component="span" sx={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: "#fbbf24", fontWeight: 700 }}>
       {roman}
     </Box>
-    <Box component="span" sx={{ fontSize: "0.95rem", color: "#f8fafc", fontWeight: 600 }}>
+    <Box component="span" sx={{ fontSize: "0.88rem", color: "#f8fafc", fontWeight: 600 }}>
       {sinhala}
     </Box>
   </Box>
 );
 
-const Section = ({ title, children, cols = 4 }: { title: string; children: React.ReactNode; cols?: number }) => (
-  <Box sx={{ mb: 1.25 }}>
+const Section = ({ title, children, cols = { xs: 4, sm: 4 } }: { title: string; children: React.ReactNode; cols?: Record<string, number> | number }) => (
+  <Box sx={{ mb: 0.9 }}>
     <Typography sx={{ color: "#94a3b8", fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", mb: 0.5 }}>
       {title}
     </Typography>
-    <Box sx={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 0.5 }}>{children}</Box>
+    <Box sx={{ display: "grid", gridTemplateColumns: typeof cols === "number" ? `repeat(${cols}, minmax(0, 1fr))` : Object.fromEntries(Object.entries(cols).map(([k, n]) => [k, `repeat(${n}, minmax(0, 1fr))`])), gap: 0.4 }}>{children}</Box>
   </Box>
 );
 
@@ -56,33 +47,28 @@ function TypingChart({ on }: { on: boolean }) {
   // De-duplicate vowels that share a sign (ii/ee, uu/oo): show the letter once with its sign.
   const vowels = VOWELS.filter(([roman]) => roman !== "A");
   return (
-    <Box sx={{ width: { xs: 300, sm: 460 }, maxHeight: "70vh", overflowY: "auto", p: 0.5 }}>
-      <Typography sx={{ color: "#f8fafc", fontWeight: 800, fontSize: "0.9rem" }}>
+    <Box sx={{ width: { xs: "min(92vw, 340px)", sm: 520 }, p: 0.25 }}>
+      <Typography sx={{ color: "#f8fafc", fontWeight: 800, fontSize: "0.88rem", lineHeight: 1.3 }}>
         {t(on ? "sinhalaTyping.titleOn" : "sinhalaTyping.titleOff")}
       </Typography>
-      <Typography sx={{ color: "#cbd5e1", fontSize: "0.76rem", mb: 1.25 }}>{t("sinhalaTyping.howTo")}</Typography>
+      <Typography sx={{ color: "#cbd5e1", fontSize: "0.72rem", lineHeight: 1.35, mb: 1 }}>{t("sinhalaTyping.howTo")}</Typography>
 
-      <Section title={t("sinhalaTyping.examples")} cols={3}>
-        {EXAMPLES.map(([r, s]) => (
-          <Key key={r} roman={r} sinhala={s} />
-        ))}
-      </Section>
       <Section title={t("sinhalaTyping.vowels")}>
         {vowels.map(([roman, letter, sign]) => (
           <Key key={roman} roman={roman} sinhala={sign ? `${letter} ${sign}` : `${letter}  –`} />
         ))}
       </Section>
-      <Section title={t("sinhalaTyping.consonants")}>
+      <Section title={t("sinhalaTyping.consonants")} cols={{ xs: 5, sm: 6 }}>
         {CONSONANTS.map(([roman, letter]) => (
           <Key key={roman} roman={roman} sinhala={letter} />
         ))}
       </Section>
-      <Section title={t("sinhalaTyping.special")} cols={3}>
+      <Section title={t("sinhalaTyping.special")} cols={{ xs: 2, sm: 3 }}>
         <Key roman="x" sinhala="ං" />
         <Key roman="H" sinhala="ඃ" />
         <Key roman="kra / dya" sinhala="ක්‍ර ද්‍ය" />
       </Section>
-      <Typography sx={{ color: "#94a3b8", fontSize: "0.7rem" }}>{t("sinhalaTyping.skipNote")}</Typography>
+      <Typography sx={{ color: "#94a3b8", fontSize: "0.66rem", lineHeight: 1.3 }}>{t("sinhalaTyping.skipNote")}</Typography>
     </Box>
   );
 }
@@ -102,7 +88,7 @@ export function SinhalaTypingToggle() {
       enterTouchDelay={400}
       leaveTouchDelay={8000}
       slotProps={{
-        tooltip: { sx: { bgcolor: "#0f172a", border: "1px solid #334155", maxWidth: "none", p: 1.5, borderRadius: 2, boxShadow: "0 12px 32px rgba(0,0,0,0.35)" } },
+        tooltip: { sx: { bgcolor: "#0f172a", border: "1px solid #334155", maxWidth: "none", p: 1.25, borderRadius: 2, boxShadow: "0 12px 32px rgba(0,0,0,0.35)" } },
         arrow: { sx: { color: "#0f172a" } },
         popper: { modifiers: [{ name: "offset", options: { offset: [0, 6] } }] },
       }}
