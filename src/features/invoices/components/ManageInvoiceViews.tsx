@@ -32,6 +32,8 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PrintIcon from "@mui/icons-material/Print";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
+import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
 import { Can } from "@/components/auth/Can";
 import {
@@ -736,11 +738,13 @@ export function ManageFinancialPanel({
   showToast,
   isCollapsed,
   onToggleCollapse,
+  onInvoiceDeleted,
 }: {
   invoice: any;
   showToast: any;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  onInvoiceDeleted?: () => void;
 }) {
   const { t } = useTranslation();
   const paymentMutation = useAddPayment();
@@ -754,6 +758,7 @@ export function ManageFinancialPanel({
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [isPrintHistoryOpen, setIsPrintHistoryOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const initialTransport = Number(invoice?.transport_fee) || 0;
   const initialDiscount = Number(invoice?.discount_amount) || 0;
@@ -1077,6 +1082,27 @@ export function ManageFinancialPanel({
               }}
             >
               {t("invoices.ManageInvoiceViews.viewBillPrintHistory")}{printCount > 0 ? ` (${printCount})` : ""}
+            </Button>
+          </Can>
+
+          <Can perform={["invoice:delete", "invoice:delete:any"]}>
+            <Button
+              fullWidth
+              variant="text"
+              startIcon={<DeleteOutlinedIcon />}
+              onClick={() => setIsDeleteOpen(true)}
+              sx={{
+                mt: 0.75,
+                color: "#f87171",
+                "&:hover": { color: "#fecaca", bgcolor: "rgba(248,113,113,0.1)" },
+                fontWeight: 700,
+                fontSize: "0.78rem",
+                borderRadius: 2,
+                py: 0.4,
+                textTransform: "none",
+              }}
+            >
+              {t("invoices.delete.button")}
             </Button>
           </Can>
         </Box>
@@ -1407,6 +1433,13 @@ export function ManageFinancialPanel({
         onClose={() => setIsPrintHistoryOpen(false)}
         invoiceId={invoice.invoice_id}
         invoiceNumber={invoice.invoice_number || `INV-${invoice.invoice_id}`}
+      />
+
+      <DeleteInvoiceDialog
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        invoice={invoice}
+        onDeleted={onInvoiceDeleted}
       />
     </Box>
   );

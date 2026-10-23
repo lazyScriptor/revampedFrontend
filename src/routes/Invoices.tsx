@@ -451,6 +451,7 @@ export default function InvoicesRoute() {
           showToast={showToast}
           isCollapsed={!isTerminalOpen}
           onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
+          onInvoiceDeleted={() => setSelectedManageInvoiceId(null)}
         />
       )}
     </Paper>

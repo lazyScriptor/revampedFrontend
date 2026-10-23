@@ -24,6 +24,7 @@ import UtilizationReport from "@/features/reports/equipment/UtilizationReport";
 import MaintenanceReport from "@/features/reports/equipment/MaintenanceReport";
 import AgingReport from "@/features/reports/invoices/AgingReport";
 import RentalHistoryReport from "@/features/reports/invoices/RentalHistoryReport";
+import DeletedInvoicesReport from "@/features/reports/invoices/DeletedInvoicesReport";
 import ProfitLossReport from "@/features/reports/financials/ProfitLossReport";
 import CashFlowReport from "@/features/reports/financials/CashFlowReport";
 import { InvoicePrintLogsView } from "@/features/invoices/components/InvoicePrintLogsView";
@@ -72,6 +73,7 @@ const CATEGORIES: {
     reports: [
       { key: "aging", label: tk("reports.aging"), component: AgingReport },
       { key: "history", label: tk("reports.rentalHistory"), component: RentalHistoryReport },
+      { key: "deleted", label: tk("invoices.delete.reportTitle"), component: DeletedInvoicesReport },
     ],
   },
   {
