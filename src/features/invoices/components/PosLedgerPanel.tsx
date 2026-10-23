@@ -36,6 +36,7 @@ export interface CartItem {
   cart_id: string;
   equipment_id: number;
   equipment_name: string;
+  equipment_name_si?: string | null;
   available_qty: number;
   is_bulk_item: boolean;
   borrow_quantity: number;
@@ -158,6 +159,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
         typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : fallbackId,
       equipment_id: equipment.equipment_id,
       equipment_name: equipment.equipment_name,
+      equipment_name_si: equipment.equipment_name_si,
       available_qty: equipment.available_qty || 1,
       is_bulk_item: equipment.is_bulk_item,
       borrow_quantity: 1,
@@ -311,6 +313,11 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                   <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }} noWrap>
                     {option.equipment_name}
                   </Typography>
+                  {option.equipment_name_si && (
+                    <Typography variant="caption" sx={{ display: "block", color: "#334155", fontWeight: 600 }} noWrap>
+                      {option.equipment_name_si}
+                    </Typography>
+                  )}
                   <Typography variant="caption" color="text.secondary">
                     {isDaily ? (
                       <>
@@ -470,6 +477,11 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     noWrap
                   >
                     {item.equipment_name}
+                    {item.equipment_name_si && (
+                      <Box component="span" sx={{ ml: 1, fontWeight: 600, color: "#475569" }}>
+                        {item.equipment_name_si}
+                      </Box>
+                    )}
                   </Typography>
                   <Chip
                     size="small"

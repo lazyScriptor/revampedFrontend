@@ -127,6 +127,7 @@ export function EquipmentFormDrawer({
       if (initialData) {
         reset({
           equipment_name: initialData.equipment_name,
+          equipment_name_si: initialData.equipment_name_si || "",
           serial_number: initialData.serial_number,
           category_id: initialData.category_id,
           warehouse_id: initialData.warehouse_id,
@@ -264,6 +265,14 @@ export function EquipmentFormDrawer({
               error={!!errors.equipment_name}
               helperText={errors.equipment_name?.message}
               placeholder={t("equipment.EquipmentFormDialog.eGBoschHammerDrill")}
+            />
+            <TextField
+              fullWidth
+              label={t("equipment.equipmentNameSi")}
+              {...register("equipment_name_si")}
+              error={!!errors.equipment_name_si}
+              helperText={errors.equipment_name_si?.message || t("equipment.equipmentNameSiHelp")}
+              placeholder={t("equipment.equipmentNameSiHint")}
             />
             <TextField
               fullWidth

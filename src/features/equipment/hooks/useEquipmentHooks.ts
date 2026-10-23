@@ -68,6 +68,26 @@ export const useBulkUpdateEquipment = () => {
   });
 };
 
+export interface ConvertNamesResult {
+  converted: number;
+  skipped: number;
+  total: number;
+}
+
+/** One-click: translate English equipment names to Sinhala (selected ids, or every machine still missing one). */
+export const useConvertEquipmentNamesToSinhala = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { ids?: number[]; overwrite?: boolean }): Promise<ConvertNamesResult> => {
+      const res: any = await api.post('/equipment/convert-names-si', payload);
+      return res?.data ?? res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+    },
+  });
+};
+
 export interface EquipmentStats {
   totalModels: number;
   totalUnitsOwned: number;

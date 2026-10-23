@@ -93,6 +93,17 @@ export function EquipmentTable({
       flex: 1,
       minWidth: 200,
     },
+    {
+      field: "equipment_name_si",
+      headerName: t("equipment.equipmentNameSi"),
+      flex: 1,
+      minWidth: 200,
+      renderCell: (params) => (
+        <span style={{ whiteSpace: "normal", lineHeight: 1.4, color: params.value ? undefined : "#94a3b8" }}>
+          {params.value || "-"}
+        </span>
+      ),
+    },
 
     // --- Relationships ---
     {

@@ -436,7 +436,16 @@
             "days_one": "දින {{count}}ක්",
             "days_other": "දින {{count}}ක්",
             "rs": "Rs. {{value}}"
-        }
+        },
+        "equipmentNameSi": "උපකරණයේ නම (සිංහල)",
+        "equipmentNameSiHint": "උදා: හැමර් ඩ්‍රිල් Bosch 800W",
+        "equipmentNameSiHelp": "විකල්ප. ඉංග්‍රීසි නම අසල පෙන්වන අතර සෙවීමටද භාවිතා වේ. ටයිප් කිරීමට සිංහල ටයිප් කිරීම (EN/සිං බොත්තම) ක්‍රියාත්මක කරන්න.",
+        "convertAllToSinhala": "නම් සිංහලට හරවන්න",
+        "convertSelectedToSinhala": "සිංහලට හරවන්න",
+        "converting": "හරවමින්…",
+        "convertDone": "නම් {{total}}න් {{converted}}ක් සිංහලට හරවන ලදී.",
+        "convertNothing": "සියලු උපකරණවලට දැනටමත් සිංහල නමක් ඇත.",
+        "convertFailed": "නම් සිංහලට හැරවීමට නොහැකි විය."
     },
     "customers": {
         "title": "පාරිභෝගික කළමනාකරණය",

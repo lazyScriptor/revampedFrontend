@@ -4,6 +4,7 @@ import { zt } from '@/i18n/zod';
 export const equipmentSchema = z.object({
   // --- General Info ---
   equipment_name: z.string().min(2, zt("validation.nameMin2")),
+  equipment_name_si: z.string().max(255).optional().or(z.literal("")),
   serial_number: z.string().min(1, zt("validation.serialRequired")),
   category_id: z.coerce.number().min(1, zt("validation.categoryRequired")),
   warehouse_id: z.coerce.number().min(1, zt("validation.warehouseRequired")),
@@ -31,6 +32,7 @@ export type EquipmentFormData = z.infer<typeof equipmentSchema>;
 export interface Equipment {
   equipment_id: number;
   equipment_name: string;
+  equipment_name_si?: string | null;
   serial_number: string;
   category_id: number;
   warehouse_id: number;

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
-import { useEquipmentList, useEquipmentStats } from "@/features/equipment/hooks/useEquipmentHooks";
+import { useEquipmentList, useEquipmentStats, useConvertEquipmentNamesToSinhala } from "@/features/equipment/hooks/useEquipmentHooks";
 import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
 import type { EquipmentFilters } from "@/features/equipment/api/equipment.api";
 
@@ -11,6 +11,7 @@ import { EquipmentFormDialog } from "@/features/equipment/components/EquipmentFo
 import { EquipmentBulkEditDialog } from "@/features/equipment/components/EquipmentBulkEditDialog";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import { Can } from "@/components/auth/Can";
+import { useToast } from "@/components/ui/AppToast";
 import { ResponsiveKpiStrip } from "@/components/ui/ResponsiveKpiStrip";
 import { KpiTile } from "@/components/reports/KpiTile";
 
@@ -41,6 +42,7 @@ import ClearOutlinedIcon from "@mui/icons-material/ClearOutlined";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import EditNoteIcon from "@mui/icons-material/EditNote";
+import TranslateIcon from "@mui/icons-material/Translate";
 
 // Debounce search input so we don't pound the API on every keystroke.
 function useDebounced<T>(value: T, delay = 300): T {
@@ -57,6 +59,19 @@ type AvailabilityKey = "all" | "in_stock" | "rented" | "in_repair";
 export default function EquipmentRoute() {
   const theme = useTheme();
   const { t } = useTranslation();
+  const toast = useToast();
+  const convertNames = useConvertEquipmentNamesToSinhala();
+  const runConvert = (ids?: number[]) =>
+    convertNames.mutate(
+      { ids },
+      {
+        onSuccess: (r) =>
+          r.total === 0
+            ? toast.showInfo(t("equipment.convertNothing"))
+            : toast.showSuccess(t("equipment.convertDone", { converted: r.converted, total: r.total })),
+        onError: (e: any) => toast.showError(e?.message || t("equipment.convertFailed")),
+      },
+    );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
@@ -171,15 +186,28 @@ export default function EquipmentRoute() {
             {t("equipment.subtitle")}
           </Typography>
         </div>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAdd}
-          disableElevation
-          sx={{ py: 1.25, px: 2.5, borderRadius: 2 }}
-        >
-          {t("equipment.addEquipment")}
-        </Button>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Can perform="equipment:edit">
+            <Button
+              variant="outlined"
+              startIcon={convertNames.isPending ? <CircularProgress size={16} /> : <TranslateIcon />}
+              onClick={() => runConvert()}
+              disabled={convertNames.isPending}
+              sx={{ py: 1.25, px: 2, borderRadius: 2, textTransform: "none", fontWeight: 700 }}
+            >
+              {convertNames.isPending ? t("equipment.converting") : t("equipment.convertAllToSinhala")}
+            </Button>
+          </Can>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAdd}
+            disableElevation
+            sx={{ py: 1.25, px: 2.5, borderRadius: 2 }}
+          >
+            {t("equipment.addEquipment")}
+          </Button>
+        </Box>
       </Box>
 
       {/* KPI Cards */}
@@ -534,6 +562,19 @@ export default function EquipmentRoute() {
               }}
             >
               {t("pages.Customers.bulkEdit")}
+            </Button>
+          </Can>
+
+          <Can perform="equipment:edit">
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={convertNames.isPending ? <CircularProgress size={14} color="inherit" /> : <TranslateIcon />}
+              onClick={() => runConvert(selectedIds)}
+              disabled={convertNames.isPending}
+              sx={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)", fontWeight: 700, borderRadius: 9999, textTransform: "none", px: 2, "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,0.08)" } }}
+            >
+              {t("equipment.convertSelectedToSinhala")}
             </Button>
           </Can>
 

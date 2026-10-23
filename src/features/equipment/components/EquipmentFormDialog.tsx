@@ -109,6 +109,7 @@ export function EquipmentFormDialog({
       if (initialData) {
         reset({
           ...initialData,
+          equipment_name_si: initialData.equipment_name_si || "",
           base_rental_price: Number(initialData.base_rental_price),
           extra_daily_rate: initialData.extra_daily_rate
             ? Number(initialData.extra_daily_rate)
@@ -226,6 +227,15 @@ export function EquipmentFormDialog({
             {...register("equipment_name")}
             error={!!errors.equipment_name}
             helperText={errors.equipment_name?.message}
+          />
+          <TextField
+            fullWidth
+            size="small"
+            label={t("equipment.equipmentNameSi")}
+            placeholder={t("equipment.equipmentNameSiHint")}
+            {...register("equipment_name_si")}
+            error={!!errors.equipment_name_si}
+            helperText={errors.equipment_name_si?.message || t("equipment.equipmentNameSiHelp")}
           />
           <FieldGrid>
             <TextField

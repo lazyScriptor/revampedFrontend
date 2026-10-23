@@ -436,7 +436,16 @@
             "days_one": "{{count}} day",
             "days_other": "{{count}} days",
             "rs": "Rs. {{value}}"
-        }
+        },
+        "equipmentNameSi": "Equipment name (Sinhala)",
+        "equipmentNameSiHint": "e.g. හැමර් ඩ්‍රිල් Bosch 800W",
+        "equipmentNameSiHelp": "Optional. Shown beside the English name and searchable. Turn on Sinhala typing (EN/සිං button) to type it.",
+        "convertAllToSinhala": "Convert names to Sinhala",
+        "convertSelectedToSinhala": "Convert to Sinhala",
+        "converting": "Converting…",
+        "convertDone": "{{converted}} of {{total}} names converted to Sinhala.",
+        "convertNothing": "Every machine already has a Sinhala name.",
+        "convertFailed": "Could not convert names to Sinhala."
     },
     "customers": {
         "title": "Client CRM",
