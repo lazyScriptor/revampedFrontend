@@ -5,5 +5,5 @@
 /* You can add custom global CSS here later if needed, but Tailwind should handle 99% of it */
 body {
   margin: 0;
-  font-family: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Noto Sans Sinhala", system-ui, Avenir, Helvetica, Arial, sans-serif;
 }

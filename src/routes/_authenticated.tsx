@@ -53,6 +53,7 @@ import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
 import HistoryIcon from "@mui/icons-material/History";
 import { NotificationBellSafe } from "@/components/notifications/NotificationBellSafe";
+import { SinhalaTypingToggle } from "@/components/ui/SinhalaTypingToggle";
 import { AppBarUserMenu } from "@/components/profile/AppBarUserMenu";
 import PaidIcon from "@mui/icons-material/Paid";
 import MoneyOffIcon from "@mui/icons-material/MoneyOff";
@@ -604,6 +605,7 @@ function AuthenticatedLayout() {
           )}
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <SinhalaTypingToggle />
             <NotificationBellSafe />
             <Typography
               variant="body2"

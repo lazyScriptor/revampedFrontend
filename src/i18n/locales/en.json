@@ -2594,5 +2594,10 @@
         "error": "Error",
         "warning": "Warning",
         "info": "Info"
+    },
+    "sinhalaTyping": {
+        "label": "Sinhala typing",
+        "tipOn": "Sinhala typing ON — type phonetically: mama → මම. Click or press Ctrl+Alt+S to switch to English.",
+        "tipOff": "Sinhala typing OFF. Click or press Ctrl+Alt+S to type Sinhala phonetically (mama → මම)."
     }
 }
