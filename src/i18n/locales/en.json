@@ -2597,7 +2597,13 @@
     },
     "sinhalaTyping": {
         "label": "Sinhala typing",
-        "tipOn": "Sinhala typing ON — type phonetically: mama → මම. Click or press Ctrl+Alt+S to switch to English.",
-        "tipOff": "Sinhala typing OFF. Click or press Ctrl+Alt+S to type Sinhala phonetically (mama → මම)."
+        "titleOn": "Sinhala typing is ON",
+        "titleOff": "Sinhala typing is OFF",
+        "howTo": "Click the button or press Ctrl+Alt+S to switch. Type English letters by sound and they turn into Sinhala.",
+        "examples": "Examples",
+        "vowels": "Vowels (letter · sign)",
+        "consonants": "Consonants",
+        "special": "Special",
+        "skipNote": "Phone, NIC, email, password, serial, price and date fields always stay English."
     }
 }

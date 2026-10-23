@@ -11,14 +11,14 @@ const HAL = "්"; // ්
 const ZWJ = "‍";
 
 // [roman, independent vowel, vowel sign]
-const VOWELS: Array<[string, string, string]> = [
+export const VOWELS: Array<[string, string, string]> = [
   ["aae", "ඈ", "ෑ"], ["aa", "ආ", "ා"], ["ae", "ඇ", "ැ"], ["ai", "ඓ", "ෛ"], ["au", "ඖ", "ෞ"],
   ["ii", "ඊ", "ී"], ["ee", "ඊ", "ී"], ["uu", "ඌ", "ූ"], ["oo", "ඌ", "ූ"],
   ["ea", "ඒ", "ේ"], ["oe", "ඕ", "ෝ"],
   ["a", "අ", ""], ["A", "ආ", "ා"], ["i", "ඉ", "ි"], ["u", "උ", "ු"], ["e", "එ", "ෙ"], ["o", "ඔ", "ො"],
 ];
 
-const CONSONANTS: Array<[string, string]> = [
+export const CONSONANTS: Array<[string, string]> = [
   ["chh", "ඡ"], ["ch", "ච"], ["c", "ච"], ["kh", "ඛ"], ["k", "ක"], ["gh", "ඝ"], ["g", "ග"],
   ["jh", "ඣ"], ["jn", "ඥ"], ["j", "ජ"], ["ny", "ඤ"],
   ["Th", "ඨ"], ["th", "ත"], ["T", "ට"], ["t", "ට"],
@@ -28,7 +28,7 @@ const CONSONANTS: Array<[string, string]> = [
   ["Sh", "ෂ"], ["sh", "ශ"], ["S", "ශ"], ["s", "ස"], ["h", "හ"], ["f", "ෆ"],
 ];
 
-const SPECIAL: Record<string, string> = { x: "ං", H: "ඃ" };
+export const SPECIAL: Record<string, string> = { x: "ං", H: "ඃ" };
 
 type Token = { roman: string; kind: "v" | "c" | "s"; a: string; b?: string };
 const TOKENS: Token[] = [
