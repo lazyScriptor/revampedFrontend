@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -31,6 +31,12 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PrintIcon from "@mui/icons-material/Print";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import AssignmentReturnedOutlinedIcon from "@mui/icons-material/AssignmentReturnedOutlined";
+import HourglassTopOutlinedIcon from "@mui/icons-material/HourglassTopOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
 import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -345,6 +351,71 @@ export function ManageSearchPanel({
 const money = (n: number) =>
   Number(n.toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
+/** One icon + value + short label — keeps mixed Sinhala/English/number details scannable. */
+function InfoTile({
+  icon,
+  tone,
+  value,
+  label,
+  note,
+  muted = false,
+}: {
+  icon: React.ReactNode;
+  tone: string; // accent colour of the icon circle
+  value: React.ReactNode;
+  label: string;
+  note?: React.ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        p: 1.1,
+        bgcolor: "white",
+        border: "1px solid #e2e8f0",
+        borderRadius: 2,
+        minWidth: 0,
+      }}
+    >
+      <Box
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: "50%",
+          bgcolor: `${tone}1f`,
+          color: tone,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          "& svg": { fontSize: 19 },
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontWeight: 800,
+            fontSize: "0.92rem",
+            lineHeight: 1.25,
+            color: muted ? "#64748b" : "#0f172a",
+            fontStyle: muted ? "italic" : "normal",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {value}
+        </Typography>
+        <Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: "#475569", lineHeight: 1.3 }}>{label}</Typography>
+        {note && <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, color: "#b45309", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>{note}</Typography>}
+      </Box>
+    </Box>
+  );
+}
+
 function LedgerLineRow({
   line,
   info,
@@ -487,17 +558,33 @@ function LedgerLineRow({
       </Box>
 
       {open && (
-        <Box sx={{ px: 2, py: 1.5, bgcolor: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 1 }}>
-          <Typography variant="caption" sx={{ color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.74rem" }}>
-            {formula}
-          </Typography>
-          <Typography variant="caption" sx={{ color: "#334155", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-            {t("orders.ledger.qtyDetail", { qty: info.qty, returned: info.returned, pending: info.pending })}
-            {" · "}
-            {t("orders.ledger.outOn", { date: formatDisplayDate(info.outDate) })}
-            {" · "}
-            {info.tracked && info.dueDate ? t("orders.ledger.dueOn", { date: formatDisplayDate(info.dueDate) }) : t("orders.ledger.noReturnDate")}
-          </Typography>
+        <Box sx={{ px: 2, py: 1.5, bgcolor: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 1.25 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 1 }}>
+            <InfoTile icon={<Inventory2OutlinedIcon />} tone="#2563eb" value={info.qty} label={t("orders.ledger.tileRented")} />
+            <InfoTile icon={<AssignmentReturnedOutlinedIcon />} tone="#059669" value={info.returned} label={t("orders.ledger.tileReturned")} />
+            <InfoTile icon={<HourglassTopOutlinedIcon />} tone="#d97706" value={info.pending} label={t("orders.ledger.tileStillOut")} />
+            <InfoTile icon={<LocalShippingOutlinedIcon />} tone="#475569" value={info.outDate ? formatDisplayDate(info.outDate) : "—"} label={t("orders.ledger.tileOutOn")} />
+            <InfoTile
+              icon={<EventAvailableOutlinedIcon />}
+              tone={info.isOverdue ? "#dc2626" : "#7c3aed"}
+              value={info.tracked && info.dueDate ? formatDisplayDate(info.dueDate) : t("orders.ledger.notSet")}
+              muted={!(info.tracked && info.dueDate)}
+              label={t("orders.ledger.tileReturnBy")}
+              note={info.isOverdue ? t("orders.ledger.lateBy", { count: info.daysLate }) : undefined}
+            />
+            <InfoTile
+              icon={<SellOutlinedIcon />}
+              tone="#0f766e"
+              value={`Rs. ${money(info.costToday)}`}
+              label={!info.isActive ? t("orders.ledger.finalPrice") : t("orders.ledger.agreedAtDispatch")}
+              note={info.isOverdue ? t("orders.ledger.includesLateFee", { fee: money(info.lateFee) }) : undefined}
+            />
+          </Box>
+          {info.isOverdue && (
+            <Typography variant="caption" sx={{ color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.74rem", fontVariantNumeric: "tabular-nums" }}>
+              {formula}
+            </Typography>
+          )}
           {lineIterations.length > 0 && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#475569", fontSize: "0.66rem" }}>

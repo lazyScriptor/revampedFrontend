@@ -307,7 +307,17 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     flexShrink: 0,
                   }}
                 >
-                  <ConstructionIcon sx={{ fontSize: 16, color: inStock ? "primary.main" : "action.disabled" }} />
+                  {option.image_url ? (
+                    <Box
+                      component="img"
+                      src={option.image_url}
+                      alt=""
+                      loading="lazy"
+                      sx={{ width: 28, height: 28, objectFit: "contain" }}
+                    />
+                  ) : (
+                    <ConstructionIcon sx={{ fontSize: 16, color: inStock ? "primary.main" : "action.disabled" }} />
+                  )}
                 </Box>
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }} noWrap>

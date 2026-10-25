@@ -1063,7 +1063,16 @@
             "noReturnDate": "No return date",
             "lockedAtDispatch": "Price agreed at dispatch: Rs. {{base}}",
             "lateFormula": "Rs. {{base}} + {{days}} day(s) late × Rs. {{rate}} × {{pending}} still out",
-            "qtyDetail": "Rented {{qty}} · Returned {{returned}} · Still out {{pending}}"
+            "qtyDetail": "Rented {{qty}} · Returned {{returned}} · Still out {{pending}}",
+            "tileRented": "Rented",
+            "tileReturned": "Returned",
+            "tileStillOut": "Still out",
+            "tileOutOn": "Out on",
+            "tileReturnBy": "Return by",
+            "notSet": "Not set",
+            "agreedAtDispatch": "Price agreed at dispatch",
+            "finalPrice": "Final price",
+            "includesLateFee": "incl. Rs. {{fee}} late fee"
         }
     },
     "accounting": {

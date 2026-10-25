@@ -1063,7 +1063,16 @@
             "noReturnDate": "ආපසු භාර දීමේ දිනයක් නැත",
             "lockedAtDispatch": "නිකුත් කිරීමේදී එකඟ වූ මිල: Rs. {{base}}",
             "lateFormula": "Rs. {{base}} + ප්‍රමාද දින {{days}} × Rs. {{rate}} × තවමත් පිටත {{pending}}",
-            "qtyDetail": "කුලියට දුන්: {{qty}} · ආපසු ලැබුණු: {{returned}} · තවමත් පිටත: {{pending}}"
+            "qtyDetail": "කුලියට දුන්: {{qty}} · ආපසු ලැබුණු: {{returned}} · තවමත් පිටත: {{pending}}",
+            "tileRented": "කුලියට දුන්",
+            "tileReturned": "ආපසු ලැබුණු",
+            "tileStillOut": "තවමත් පිටත",
+            "tileOutOn": "පිටත් වූ දිනය",
+            "tileReturnBy": "ආපසු දිය යුතු දිනය",
+            "notSet": "නියම කර නැත",
+            "agreedAtDispatch": "නිකුත් කිරීමේදී එකඟ වූ මිල",
+            "finalPrice": "අවසන් මිල",
+            "includesLateFee": "ප්‍රමාද ගාස්තු Rs. {{fee}} ඇතුළුව"
         }
     },
     "accounting": {
