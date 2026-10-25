@@ -1,0 +1,25 @@
+Equipment photos are cut-outs of photos from Pexels (https://www.pexels.com), used under the Pexels licence.
+
+air-compressor.webp: photo by Pham Huynh  Tuan Vy (https://www.pexels.com/@pham-huynh-tuan-vy-903011268) - https://www.pexels.com/photo/an-empty-plastic-cup-standing-next-to-a-compressor-unit-20114436/
+bar-cutter.webp: photo by Alex Urezkov (https://www.pexels.com/@instasky) - https://www.pexels.com/photo/industrial-table-saw-with-a-support-for-cutting-pipes-12951632/
+battery-drill.webp: photo by Jonathan Cooper (https://www.pexels.com/@theshuttervision) - https://www.pexels.com/photo/close-up-shot-of-a-cordless-hand-drill-8811529/
+excavator.webp: photo by Jean-Paul Wettstein (https://www.pexels.com/@jean-paul-wettstein-677916508) - https://www.pexels.com/photo/red-mini-excavator-on-grassy-hill-37093541/
+hilti-bit.webp: photo by 凱閔 楊 (https://www.pexels.com/@209547642) - https://www.pexels.com/photo/drill-in-close-up-11820640/
+impact-driver.webp: photo by Caleb Oquendo (https://www.pexels.com/@caleboquendo) - https://www.pexels.com/photo/yellow-and-black-cordless-hand-drill-3877525/
+lawn-mower.webp: photo by Vanda Bakó (https://www.pexels.com/@vanda-bako-595755871) - https://www.pexels.com/photo/a-lawn-mower-in-the-garden-17151642/
+miter-saw.webp: photo by Yudi Ding (https://www.pexels.com/@yudi-ding-2155130552) - https://www.pexels.com/photo/precision-circular-saw-in-a-workshop-setting-39885415/
+power-drill.webp: photo by Caleb Oquendo (https://www.pexels.com/@caleboquendo) - https://www.pexels.com/photo/yellow-and-black-cordless-hand-drill-3877525/
+safety-barrier.webp: photo by Markus Spiske (https://www.pexels.com/@markusspiske) - https://www.pexels.com/photo/red-and-white-road-barriers-on-the-street-12081659/
+safety-helmet.webp: photo by Khwanchai Phanthong (https://www.pexels.com/@khwanchai) - https://www.pexels.com/photo/a-stack-of-hardhats-on-a-concrete-surface-4161604/
+sander.webp: photo by Jonathan Cooper (https://www.pexels.com/@theshuttervision) - https://www.pexels.com/photo/close-up-of-electric-sander-on-stairs-37391887/
+scaffold-frame.webp: photo by Jef KoeleWijn (https://www.pexels.com/@jef-koelewijn-2150678531) - https://www.pexels.com/photo/scaffolding-structure-with-ladder-under-blue-sky-31745718/
+scaffold-wheel.webp: photo by Erik Mclean (https://www.pexels.com/@introspectivedsgn) - https://www.pexels.com/photo/close-up-of-industrial-caster-wheel-with-reflections-28452554/
+scaffolding.webp: photo by Jef KoeleWijn (https://www.pexels.com/@jef-koelewijn-2150678531) - https://www.pexels.com/photo/scaffolding-structure-with-ladder-under-blue-sky-31745718/
+shovel.webp: photo by Erik Mclean (https://www.pexels.com/@introspectivedsgn) - https://www.pexels.com/photo/clean-steel-shovel-16195410/
+spray-gun.webp: photo by Renee Razumov (https://www.pexels.com/@renee-razumov-2155050841) - https://www.pexels.com/photo/close-up-of-spray-guns-on-wall-mounts-in-workshop-33814682/
+step-ladder.webp: photo by Sofia Guzeva (https://www.pexels.com/@sofia-guzeva-116278630) - https://www.pexels.com/photo/ladder-in-a-studio-19370267/
+straight-ladder.webp: photo by Jan van der Wolf (https://www.pexels.com/@jan-van-der-wolf-11680885) - https://www.pexels.com/photo/a-wooden-ladder-leaning-on-a-concrete-wall-9092290/
+tiller.webp: photo by light wizzi (https://www.pexels.com/@light-wizzi-3837958) - https://www.pexels.com/photo/two-wheeled-tractor-agria-2500-hydro-in-the-field-5715872/
+traffic-cone.webp: photo by cnrdmroglu (https://www.pexels.com/@entero) - https://www.pexels.com/photo/orange-traffic-cone-on-urban-street-30544238/
+vacuum-cleaner.webp: photo by La Miko (https://www.pexels.com/@lamiko) - https://www.pexels.com/photo/cleaning-supplies-3616735/
+wheelbarrow.webp: photo by hans middendorp (https://www.pexels.com/@hansmiddendorp) - https://www.pexels.com/photo/a-dirty-wheelbarrow-9465375/
