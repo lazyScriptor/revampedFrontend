@@ -1126,7 +1126,8 @@
             "maxAmount": "Max Amount",
             "resetFilters": "Reset Filters",
             "thisWeek": "This Week",
-            "allTime": "All Time"
+            "allTime": "All Time",
+            "refundsOnly": "Refunds Only"
         },
         "AccountsReceivableTable": {
             "noOutstandingReceivables": "No outstanding receivables 🎉",
@@ -1140,7 +1141,8 @@
             "netCashFlow": "Net Cash Flow",
             "transactions": "Transactions",
             "noTransactionsFor": "No transactions recorded for {{date}}.",
-            "today": "today"
+            "today": "today",
+            "walletNote": "{{wallet}} of this was paid from customers' wallet deposits (not cash taken today). Cash, card and bank received: {{cash}}."
         },
         "ExpensesTab": {
             "deleteExpense": "Delete Expense",
@@ -1156,7 +1158,13 @@
             "editExpense": "Edit Expense",
             "recordNewExpense": "Record New Expense",
             "saving": "Saving...",
-            "confirmDelete": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+            "confirmDelete": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+            "salaries": "Salaries",
+            "rent": "Rent",
+            "utilities": "Utilities",
+            "fuelTransport": "Fuel & Transport",
+            "marketing": "Marketing",
+            "taxesFees": "Taxes & Fees"
         },
         "InvoicesTab": {
             "days": "Days",
@@ -1164,7 +1172,10 @@
         },
         "JournalTab": {
             "ref": "Ref",
-            "categoryMethod": "Category/Method"
+            "categoryMethod": "Category/Method",
+            "income": "INCOME",
+            "refund": "REFUND",
+            "expense": "EXPENSE"
         },
         "MaintenanceCostChart": {
             "noDefectDataForThe": "No defect data for the selected period.",
@@ -1178,7 +1189,8 @@
         },
         "PaymentsTab": {
             "payment": "Payment #",
-            "invoiceRef": "Invoice Ref"
+            "invoiceRef": "Invoice Ref",
+            "receivedBy": "Received by"
         },
         "ProfitLossTable": {
             "selectADateRangeAnd": "Select a date range and generate the report.",
@@ -1191,7 +1203,8 @@
             "equipmentDepreciationStraightLine60": "Equipment Depreciation (Straight-Line / 60 mo.)",
             "netProfitLoss": "NET PROFIT / (LOSS)",
             "entries_one": "{{count}} entry",
-            "entries_other": "{{count}} entries"
+            "entries_other": "{{count}} entries",
+            "capitalPurchasesMemo": "Memo: asset purchases this period (not deducted — covered by depreciation)"
         },
         "RevenueTrendChart": {
             "last30DaysDailyCollection": "Last 30 days — daily collection",
@@ -1208,6 +1221,17 @@
         },
         "ReportBuilder": {
             "generating": "Generating..."
+        },
+        "OverviewTab": {
+            "definitions": "Net revenue = payments received − refunds. Expenses = operating costs (asset purchases are not deducted; they are covered by depreciation). Net profit = net revenue − expenses − depreciation. Owed = invoice total − net payments, for invoices still active or awaiting payment."
+        },
+        "subtitles": {
+            "overview": "Money in, money out, profit and what customers owe — for the selected period.",
+            "invoices": "Every invoice with how much was paid and how much is still owed.",
+            "payments": "Every payment and refund received, and who took it.",
+            "expenses": "Business costs. Every change is logged.",
+            "receivables": "Customers who owe you money, grouped by how late they are.",
+            "journal": "Payments, refunds and expenses in one date-ordered list."
         }
     },
     "reports": {

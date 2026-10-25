@@ -83,6 +83,13 @@ export default function PaymentsTab() {
       ),
     },
     {
+      field: "received_by",
+      headerName: t("accounting.PaymentsTab.receivedBy"),
+      width: 150,
+      sortable: false,
+      valueGetter: (_value: any, row: any) => row.User?.username || "—",
+    },
+    {
       field: "method",
       headerName: t("accounting.method"),
       width: 140,

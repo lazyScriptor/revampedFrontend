@@ -29,10 +29,11 @@ export default function JournalTab() {
       width: 120,
       renderCell: (p) => {
         const isIncome = p.value === "income";
+        const isRefund = p.value === "refund";
         return (
           <Chip
-            label={isIncome ? "INCOME" : "EXPENSE"}
-            color={isIncome ? "success" : "error"}
+            label={isIncome ? t("accounting.JournalTab.income") : isRefund ? t("accounting.JournalTab.refund") : t("accounting.JournalTab.expense")}
+            color={isIncome ? "success" : isRefund ? "warning" : "error"}
             size="small"
             icon={isIncome ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />}
             sx={{ fontSize: "0.65rem", fontWeight: 700, height: 24, ".MuiChip-icon": { fontSize: 14 } }}
@@ -70,8 +71,9 @@ export default function JournalTab() {
       headerAlign: "right",
       renderCell: (p) => {
         const isIncome = p.row.type === "income";
+        const isRefund = p.row.type === "refund";
         return (
-          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: isIncome ? "#16a34a" : "#dc2626" }}>
+          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: isIncome ? "#16a34a" : isRefund ? "#d97706" : "#dc2626" }}>
             {isIncome ? "+" : "-"}{format(p.value)}
           </span>
         );

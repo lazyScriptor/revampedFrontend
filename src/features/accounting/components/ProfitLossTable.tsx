@@ -6,6 +6,7 @@ interface PnLData {
     totalRefunds: number;
     netRevenue: number;
     expenses: { category: string; count: string | number; total: string | number }[];
+    capitalPurchases?: number;
     periodDepreciation: number;
     totalExpenses: number;
     netProfit: number;
@@ -95,6 +96,9 @@ export default function ProfitLossTable({ data, isLoading, currency = 'Rs.' }: P
             </Box>
             <Box sx={{ px: 1, py: 1 }}>
                 <LineItem label={t("accounting.ProfitLossTable.equipmentDepreciationStraightLine60")} value={fmt(data.periodDepreciation, currency)} color="#7c3aed" />
+                {Number(data.capitalPurchases) > 0 && (
+                    <LineItem label={t("accounting.ProfitLossTable.capitalPurchasesMemo")} value={fmt(Number(data.capitalPurchases), currency)} color="#64748b" />
+                )}
             </Box>
 
             {/* Net Profit */}

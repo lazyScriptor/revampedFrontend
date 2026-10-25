@@ -17,12 +17,19 @@ import { useCurrencyFormatter } from "../utils/currency";
 import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useTranslation } from "react-i18next";
+import { Can } from "@/components/auth/Can";
 import { tk } from "@/i18n/marker";
 
 const EXPENSE_CATEGORIES = [
   { value: "Operational", label: tk("accounting.ExpensesTab.operational") },
   { value: "Repair", label: tk("accounting.ExpensesTab.repair") },
   { value: "Asset Purchase", label: tk("accounting.ExpensesTab.assetPurchase") },
+  { value: "Salaries", label: tk("accounting.ExpensesTab.salaries") },
+  { value: "Rent", label: tk("accounting.ExpensesTab.rent") },
+  { value: "Utilities", label: tk("accounting.ExpensesTab.utilities") },
+  { value: "Fuel & Transport", label: tk("accounting.ExpensesTab.fuelTransport") },
+  { value: "Marketing", label: tk("accounting.ExpensesTab.marketing") },
+  { value: "Taxes & Fees", label: tk("accounting.ExpensesTab.taxesFees") },
   { value: "Other", label: tk("common.other") },
 ];
 
@@ -184,6 +191,7 @@ export default function ExpensesTab() {
       sortable: false,
       filterable: false,
       renderCell: (p) => (
+        <Can perform="accounting:manage_expenses">
         <Box>
           <Tooltip title={t("common.edit")}>
             <IconButton size="small" onClick={() => openEdit(p.row)} sx={{ color: "#2563eb" }}>
@@ -200,6 +208,7 @@ export default function ExpensesTab() {
             </IconButton>
           </Tooltip>
         </Box>
+        </Can>
       ),
     },
   ];
@@ -217,16 +226,18 @@ export default function ExpensesTab() {
             categoryOptions={EXPENSE_CATEGORIES}
           />
         </Box>
-        <Button
-          variant="contained"
-          size="small"
-          disableElevation
-          startIcon={<AddOutlinedIcon sx={{ fontSize: 16 }} />}
-          onClick={openCreate}
-          sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.78rem", whiteSpace: "nowrap", mt: 0.5, px: 2.5 }}
-        >
-          {t("accounting.addExpense")}
-        </Button>
+        <Can perform="accounting:manage_expenses">
+          <Button
+            variant="contained"
+            size="small"
+            disableElevation
+            startIcon={<AddOutlinedIcon sx={{ fontSize: 16 }} />}
+            onClick={openCreate}
+            sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.78rem", whiteSpace: "nowrap", mt: 0.5, px: 2.5 }}
+          >
+            {t("accounting.addExpense")}
+          </Button>
+        </Can>
       </Box>
 
       <Box sx={{ bgcolor: "white", borderRadius: 2.5, border: "1px solid #e2e8f0", overflow: "hidden" }}>

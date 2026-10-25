@@ -16,6 +16,8 @@ interface CashFlowData {
         totalIncome: number;
         totalRefunds: number;
         totalNet: number;
+        walletUsed?: number;
+        totalCashIn?: number;
         totalTransactions: number;
     };
 }
@@ -90,6 +92,11 @@ export default function CashFlowSummary({ data, isLoading, currency = 'Rs.' }: P
                     <Typography variant="h6" fontWeight={800}>{data.totals.totalTransactions}</Typography>
                 </Paper>
             </Box>
+            {Number(data.totals.walletUsed) > 0 && (
+                <Typography variant="caption" sx={{ display: 'block', color: '#92400e', bgcolor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 1.5, px: 1.5, py: 0.75 }}>
+                    {t("accounting.CashFlowSummary.walletNote", { wallet: fmt(Number(data.totals.walletUsed), currency), cash: fmt(Number(data.totals.totalCashIn), currency) })}
+                </Typography>
+            )}
 
             {/* Method breakdown */}
             <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2.5, overflow: 'hidden' }}>

@@ -28,7 +28,8 @@ interface FilterBarProps {
   methodOptions?: { value: string; label: string }[];
 }
 
-const DATE_PRESETS = [
+// Built per render (not at module load) so "Today/This month" stay correct if the tab is left open past midnight.
+const buildDatePresets = () => [
   { label: tk("common.today"), from: dayjs().format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
   { label: tk("accounting.AccountingFilterBar.thisWeek"), from: dayjs().startOf("week").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
   { label: tk("accounting.thisMonth"), from: dayjs().startOf("month").format("YYYY-MM-DD"), to: dayjs().format("YYYY-MM-DD") },
@@ -49,6 +50,7 @@ export default function AccountingFilterBar({
   methodOptions = [],
 }: FilterBarProps) {
   const { t } = useTranslation();
+  const DATE_PRESETS = buildDatePresets();
   const {
     search = false,
     dateRange = true,
@@ -184,6 +186,7 @@ export default function AccountingFilterBar({
           >
             <MenuItem value="">{t("common.all")}</MenuItem>
             <MenuItem value="income">{t("accounting.AccountingFilterBar.incomeOnly")}</MenuItem>
+            <MenuItem value="refund">{t("accounting.AccountingFilterBar.refundsOnly")}</MenuItem>
             <MenuItem value="expense">{t("accounting.AccountingFilterBar.expensesOnly")}</MenuItem>
           </TextField>
         )}
