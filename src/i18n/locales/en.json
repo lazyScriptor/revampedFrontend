@@ -1046,7 +1046,25 @@
         "addLineItem": "Add line item",
         "removeLineItem": "Remove",
         "pricingDetails": "Pricing details",
-        "refunds": "Refunds"
+        "refunds": "Refunds",
+        "ledger": {
+            "costToday": "Cost for today",
+            "outSince": "Out since {{date}}",
+            "machinesOut": "{{count}} out",
+            "machinesReturned": "{{count}} returned",
+            "overdueCount": "{{count}} overdue",
+            "lateFeeNote": "Rs. {{amount}} late fees are included — they apply because these machines passed their return date.",
+            "statusOut": "Out",
+            "outPartial": "Out: {{pending}} of {{qty}}",
+            "lateBy_one": "{{count}} day late",
+            "lateBy_other": "{{count}} days late",
+            "dueOn": "Due {{date}}",
+            "outOn": "Out {{date}}",
+            "noReturnDate": "No return date",
+            "lockedAtDispatch": "Price agreed at dispatch: Rs. {{base}}",
+            "lateFormula": "Rs. {{base}} + {{days}} day(s) late × Rs. {{rate}} × {{pending}} still out",
+            "qtyDetail": "Rented {{qty}} · Returned {{returned}} · Still out {{pending}}"
+        }
     },
     "accounting": {
         "title": "Accounting",

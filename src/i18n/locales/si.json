@@ -1046,7 +1046,25 @@
         "addLineItem": "අයිතමයක් එක් කරන්න",
         "removeLineItem": "ඉවත් කරන්න",
         "pricingDetails": "මිල විස්තර",
-        "refunds": "ආපසු ගෙවීම්"
+        "refunds": "ආපසු ගෙවීම්",
+        "ledger": {
+            "costToday": "අද දක්වා වටිනාකම",
+            "outSince": "{{date}} සිට පිටත ඇත",
+            "machinesOut": "{{count}}ක් පිටත",
+            "machinesReturned": "{{count}}ක් ආපසු ලැබුණි",
+            "overdueCount": "{{count}}ක් කල් ඉකුත්",
+            "lateFeeNote": "ප්‍රමාද ගාස්තු Rs. {{amount}}ක් ඇතුළත් වේ — මෙම උපකරණ ආපසු භාර දිය යුතු දිනය පසු කර ඇති බැවිනි.",
+            "statusOut": "පිටත",
+            "outPartial": "පිටත: {{qty}}න් {{pending}}",
+            "lateBy_one": "දින {{count}}ක් ප්‍රමාදයි",
+            "lateBy_other": "දින {{count}}ක් ප්‍රමාදයි",
+            "dueOn": "{{date}} දක්වා",
+            "outOn": "{{date}} දින පිටත",
+            "noReturnDate": "ආපසු භාර දීමේ දිනයක් නැත",
+            "lockedAtDispatch": "නිකුත් කිරීමේදී එකඟ වූ මිල: Rs. {{base}}",
+            "lateFormula": "Rs. {{base}} + ප්‍රමාද දින {{days}} × Rs. {{rate}} × තවමත් පිටත {{pending}}",
+            "qtyDetail": "කුලියට දුන්: {{qty}} · ආපසු ලැබුණු: {{returned}} · තවමත් පිටත: {{pending}}"
+        }
     },
     "accounting": {
         "title": "ගිණුම්කරණය",

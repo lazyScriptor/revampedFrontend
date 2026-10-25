@@ -49,6 +49,7 @@ import { ReviewThread } from "@/features/reviews/components/ReviewThread";
 import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
 import { useTranslation } from "react-i18next";
 import { relativeDay } from "@/lib/relativeTime";
+import { summariseInvoice, type LineToday } from "../lib/lineCost";
 
 const scroll = {
   "&::-webkit-scrollbar": { width: "5px" },
@@ -337,7 +338,193 @@ export function ManageSearchPanel({
 
 // ============================================================================
 // PANE 2: ASSET TRACKING BOARD
+//  • "Cost for today" summary on top (what the customer would owe for the machines right now)
+//  • one compact row per machine; out/due dates only appear when they add information
+//    (a return date is shown — and can go overdue — ONLY if it is tracked on that line)
 // ============================================================================
+const money = (n: number) =>
+  Number(n.toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+function LedgerLineRow({
+  line,
+  info,
+  commonOutDate,
+  returnTraces,
+}: {
+  line: any;
+  info: LineToday;
+  commonOutDate: string;
+  returnTraces: any[];
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const equipName = line.Equipment?.equipment_name || t("invoices.ManageInvoiceViews.unknownAsset");
+  const equipNameSi = line.Equipment?.equipment_name_si;
+
+  const dotColor = !info.isActive ? "#10b981" : info.isOverdue ? "#ef4444" : "#f59e0b";
+  const statusChip = !info.isActive
+    ? { label: t("invoices.returned"), color: "success" as const, variant: "outlined" as const }
+    : info.isOverdue
+      ? { label: t("orders.ledger.lateBy", { count: info.daysLate }), color: "error" as const, variant: "filled" as const }
+      : {
+          label: info.returned > 0 ? t("orders.ledger.outPartial", { pending: info.pending, qty: info.qty }) : t("orders.ledger.statusOut"),
+          color: "warning" as const,
+          variant: "filled" as const,
+        };
+
+  const formula = !info.isActive
+    ? t("invoices.ManageInvoiceViews.finalCostLocked")
+    : info.isOverdue
+      ? t("orders.ledger.lateFormula", {
+          base: money(info.lockedCost),
+          days: info.daysLate,
+          rate: money(Number(line.locked_extra_daily_rate) || 0),
+          pending: info.pending,
+        })
+      : t("orders.ledger.lockedAtDispatch", { base: money(info.lockedCost) });
+
+  const lineIterations = returnTraces
+    .map((trace: any) => {
+      let payload = trace.state_payload || {};
+      if (typeof payload === "string") {
+        try { payload = JSON.parse(payload); } catch { payload = {}; }
+      }
+      const rl = (payload.lines_returned || []).find((l: any) => l.line_id === line.line_id);
+      if (rl && (Number(rl.good_qty) > 0 || Number(rl.defective_qty) > 0)) {
+        return { date: trace.occurred_at || trace.createdAt, good: Number(rl.good_qty) || 0, defective: Number(rl.defective_qty) || 0 };
+      }
+      return null;
+    })
+    .filter(Boolean) as { date: string; good: number; defective: number }[];
+
+  const showOwnOutDate = info.outDate && info.outDate !== commonOutDate;
+
+  return (
+    <Box
+      sx={{
+        bgcolor: "white",
+        border: "1px solid",
+        borderColor: info.isOverdue ? "#fca5a5" : "#e2e8f0",
+        borderRadius: 2,
+        overflow: "hidden",
+        flexShrink: 0,
+      }}
+    >
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((v) => !v);
+          }
+        }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          px: 2,
+          py: 1.25,
+          minHeight: 56,
+          cursor: "pointer",
+          "&:hover": { bgcolor: "#f8fafc" },
+          "&:focus-visible": { outline: "2px solid #2563eb", outlineOffset: -2 },
+        }}
+      >
+        <StatusDot color={dotColor} />
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}>
+            <Typography variant="body2" sx={{ fontWeight: 800, color: "#0f172a" }}>
+              {equipName}
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: "#475569", fontVariantNumeric: "tabular-nums" }}>
+              ×{info.qty}
+            </Typography>
+            {equipNameSi && (
+              <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600 }}>
+                {equipNameSi}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", mt: 0.5 }}>
+            <Chip
+              size="small"
+              label={statusChip.label}
+              color={statusChip.color}
+              variant={statusChip.variant}
+              sx={{ fontWeight: 800, fontSize: "0.68rem", height: 20, fontVariantNumeric: "tabular-nums" }}
+            />
+            {info.isActive && info.tracked && info.dueDate && (
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 700, color: info.isOverdue ? "#b91c1c" : "#475569", display: "inline-flex", alignItems: "center", gap: 0.4, fontVariantNumeric: "tabular-nums" }}
+              >
+                {info.isOverdue && <AccessTimeIcon sx={{ fontSize: 13 }} />}
+                {t("orders.ledger.dueOn", { date: formatDisplayDate(info.dueDate) })}
+              </Typography>
+            )}
+            {showOwnOutDate && (
+              <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                {t("orders.ledger.outOn", { date: formatDisplayDate(info.outDate) })}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+        <Typography
+          sx={{
+            fontWeight: 900,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: "tabular-nums",
+            color: info.isActive ? "primary.main" : "#0f172a",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Rs. {money(info.costToday)}
+        </Typography>
+        <ExpandMoreIcon sx={{ color: "#64748b", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+      </Box>
+
+      {open && (
+        <Box sx={{ px: 2, py: 1.5, bgcolor: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 1 }}>
+          <Typography variant="caption" sx={{ color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.74rem" }}>
+            {formula}
+          </Typography>
+          <Typography variant="caption" sx={{ color: "#334155", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+            {t("orders.ledger.qtyDetail", { qty: info.qty, returned: info.returned, pending: info.pending })}
+            {" · "}
+            {t("orders.ledger.outOn", { date: formatDisplayDate(info.outDate) })}
+            {" · "}
+            {info.tracked && info.dueDate ? t("orders.ledger.dueOn", { date: formatDisplayDate(info.dueDate) }) : t("orders.ledger.noReturnDate")}
+          </Typography>
+          {lineIterations.length > 0 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#475569", fontSize: "0.66rem" }}>
+                {t("orders.handoverHistory")}
+              </Typography>
+              {lineIterations.map((iter, i) => (
+                <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                  <SubdirectoryArrowRightIcon sx={{ color: "#94a3b8", fontSize: 15 }} />
+                  <Typography variant="caption" sx={{ color: "#475569", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                    {new Date(iter.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                  </Typography>
+                  {iter.good > 0 && (
+                    <Chip size="small" label={t("invoices.ManageInvoiceViews.good", { good: iter.good })} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
+                  )}
+                  {iter.defective > 0 && (
+                    <Chip size="small" label={t("invoices.ManageInvoiceViews.broken", { defective: iter.defective })} color="error" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
+                  )}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export function ManageLedgerPanel({
   invoice,
   onOpenReturn,
@@ -348,17 +535,7 @@ export function ManageLedgerPanel({
   const { t } = useTranslation();
   if (!invoice)
     return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          gap: 1.5,
-          color: "#94a3b8",
-        }}
-      >
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 1.5, color: "#94a3b8" }}>
         <DescriptionIcon sx={{ fontSize: 48, opacity: 0.3 }} />
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
           {t("invoices.ManageInvoiceViews.selectAnInvoiceFromThe")}
@@ -367,308 +544,62 @@ export function ManageLedgerPanel({
     );
 
   const rawLines = invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
-  const rawTraces =
-    invoice.InvoiceTraces ||
-    invoice.InvoiceTrace ||
-    invoice.invoice_traces ||
-    invoice.traces ||
-    [];
-  const returnTraces = rawTraces.filter((t: any) => t.event_action === "RETURN_PROCESSED");
+  const rawTraces = invoice.InvoiceTraces || invoice.InvoiceTrace || invoice.invoice_traces || invoice.traces || [];
+  const returnTraces = rawTraces.filter((tr: any) => tr.event_action === "RETURN_PROCESSED");
+  const summary = summariseInvoice(rawLines);
+  // When every machine went out the same day, say it once instead of on every row.
+  const commonOutDate = summary.lines.length > 0 && summary.lines.every((l) => l.outDate === summary.lines[0].outDate) ? summary.lines[0].outDate : "";
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
       {/* Board header */}
-      <Box
-        sx={{
-          flexShrink: 0,
-          px: 3,
-          py: 2,
-          bgcolor: "white",
-          borderBottom: "1px solid #e2e8f0",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <Box sx={{ flexShrink: 0, px: 3, py: 2, bgcolor: "white", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
             {t("orders.assetTrackingBoard")}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
             {t("invoices.lineItem", { count: rawLines.length })} · INV-{invoice.invoice_id}
           </Typography>
         </Box>
         {invoice.status === "Active" && (
-          <Button
-            variant="contained"
-            color="primary"
-            size="small"
-            startIcon={<AssignmentReturnedIcon />}
-            disableElevation
-            onClick={onOpenReturn}
-            sx={{ fontWeight: 700, borderRadius: 2 }}
-          >
+          <Button variant="contained" color="primary" size="small" startIcon={<AssignmentReturnedIcon />} disableElevation onClick={onOpenReturn} sx={{ fontWeight: 700, borderRadius: 2 }}>
             {t("invoices.ManageInvoiceViews.processHandover")}
           </Button>
         )}
       </Box>
 
-      {/* Line cards */}
-      <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2.5, display: "flex", flexDirection: "column", gap: 2, ...scroll }}>
-        {rawLines.map((line: any) => {
-          const isActive = line.line_status === "Active" || line.status === "Active";
-          const equipName = line.Equipment?.equipment_name || t("invoices.ManageInvoiceViews.unknownAsset");
-          const alreadyReturned = (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
-          const pending = line.borrow_quantity - alreadyReturned;
+      <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: "auto", p: 2.5, display: "flex", flexDirection: "column", gap: 1.5, ...scroll, "& > *": { flexShrink: 0 } }}>
+        {/* Cost for today */}
+        <Box sx={{ bgcolor: "#0f172a", borderRadius: 2.5, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Box>
+            <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", fontSize: "0.68rem" }}>
+              {t("orders.ledger.costToday")}
+            </Typography>
+            <Typography sx={{ color: "#f8fafc", fontWeight: 900, fontSize: { xs: "1.6rem", md: "1.9rem" }, lineHeight: 1.15, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+              Rs. {money(summary.costToday)}
+            </Typography>
+            {summary.earliestOut && (
+              <Typography variant="caption" sx={{ color: "#cbd5e1", fontVariantNumeric: "tabular-nums" }}>
+                {t("orders.ledger.outSince", { date: formatDisplayDate(summary.earliestOut) })}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {summary.outCount > 0 && <Chip size="small" label={t("orders.ledger.machinesOut", { count: summary.outCount })} sx={{ bgcolor: "#f59e0b", color: "#0f172a", fontWeight: 800 }} />}
+            {summary.returnedCount > 0 && <Chip size="small" label={t("orders.ledger.machinesReturned", { count: summary.returnedCount })} sx={{ bgcolor: "#10b981", color: "#0f172a", fontWeight: 800 }} />}
+            {summary.overdueCount > 0 && <Chip size="small" label={t("orders.ledger.overdueCount", { count: summary.overdueCount })} sx={{ bgcolor: "#ef4444", color: "#ffffff", fontWeight: 800 }} />}
+          </Box>
+        </Box>
+        {summary.lateFeeToday > 0 && (
+          <Typography variant="caption" sx={{ color: "#92400e", bgcolor: "#fffbeb", border: "1px solid #fde68a", borderRadius: 1.5, px: 1.5, py: 0.75, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+            {t("orders.ledger.lateFeeNote", { amount: money(summary.lateFeeToday) })}
+          </Typography>
+        )}
 
-          const start = new Date(line.borrow_date).getTime();
-          const today = Date.now();
-          let daysOut = Math.ceil((today - start) / (1000 * 60 * 60 * 24));
-          if (daysOut < 1) daysOut = 1;
-
-          const lockedBase = Number(line.locked_base_price) || 0;
-          const lockedExtra = Number(line.locked_extra_daily_rate) || 0;
-          const lockedMinDays = Number(line.locked_minimum_days) || 1;
-          const borrowQty = Number(line.borrow_quantity) || 1;
-
-          let accruedCost = 0;
-          if (!isActive) {
-            accruedCost = Number(line.line_total_amount) || 0;
-          } else if (daysOut <= lockedMinDays) {
-            accruedCost = lockedBase * borrowQty;
-          } else {
-            accruedCost = (lockedBase + (daysOut - lockedMinDays) * lockedExtra) * borrowQty;
-          }
-
-          const isDailyMode = lockedMinDays <= 1 && lockedBase === lockedExtra;
-          const isOverdue = isActive && daysOut > lockedMinDays;
-
-          let breakdownBadge = "";
-          let breakdownFormula = "";
-          if (!isActive) {
-            breakdownBadge = t("invoices.ManageInvoiceViews.settled");
-            breakdownFormula = t("invoices.ManageInvoiceViews.finalCostLocked");
-          } else if (isDailyMode) {
-            breakdownBadge = t("invoices.ManageInvoiceViews.flatDaily");
-              breakdownFormula = t("invoices.ManageInvoiceViews.flatDailyFormula", { base: lockedBase.toLocaleString(), days: daysOut, count: borrowQty });
-          } else {
-            breakdownBadge = t("invoices.ManageInvoiceViews.tieredBadge", { days: lockedMinDays });
-            if (daysOut <= lockedMinDays) {
-              breakdownFormula = t("invoices.ManageInvoiceViews.tieredBaseFormula", { base: lockedBase.toLocaleString(), days: lockedMinDays, count: borrowQty });
-            } else {
-              const extraDays = daysOut - lockedMinDays;
-              breakdownFormula = `[Rs.${lockedBase.toLocaleString()} + ${extraDays}d × Rs.${lockedExtra.toLocaleString()}] × ${borrowQty}`;
-            }
-          }
-
-          const formattedCost = Number(accruedCost.toFixed(2)).toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-          });
-
-          const lineIterations = returnTraces
-            .map((trace: any) => {
-              let payload = trace.state_payload || {};
-              if (typeof payload === "string") {
-                try { payload = JSON.parse(payload); } catch { payload = {}; }
-              }
-              const rl = (payload.lines_returned || []).find((l: any) => l.line_id === line.line_id);
-              if (rl && (Number(rl.good_qty) > 0 || Number(rl.defective_qty) > 0)) {
-                return {
-                  date: trace.occurred_at || trace.createdAt,
-                  good: Number(rl.good_qty) || 0,
-                  defective: Number(rl.defective_qty) || 0,
-                };
-              }
-              return null;
-            })
-            .filter(Boolean);
-
-          return (
-            <Box
-              key={line.line_id}
-              sx={{
-                bgcolor: "white",
-                border: "1px solid",
-                borderColor: isOverdue ? "#fca5a5" : isActive ? "#fde68a" : "#e2e8f0",
-                borderRadius: 2.5,
-                overflow: "hidden",
-                flexShrink: 0,
-                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-              }}
-            >
-              {/* Line header */}
-              <Box
-                sx={{
-                  px: 2.5,
-                  py: 1.5,
-                  bgcolor: "#f8fafc",
-                  borderBottom: "1px solid #f1f5f9",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <StatusDot color={isActive ? (isOverdue ? "#ef4444" : "#f59e0b") : "#10b981"} />
-                  <Typography variant="body2" sx={{ fontWeight: 800, color: "#0f172a" }}>
-                    {equipName}
-                  </Typography>
-                </Box>
-                <Chip
-                  size="small"
-                  label={isActive ? (isOverdue ? t("invoices.overdue") : t("equipment.EquipmentFormDrawer.outOnRent")) : t("invoices.returned")}
-                  color={isActive ? (isOverdue ? "error" : "warning") : "success"}
-                  variant={isActive ? "filled" : "outlined"}
-                  sx={{ fontWeight: 800, fontSize: "0.7rem", height: 22 }}
-                />
-              </Box>
-
-              {/* Data grid */}
-              <Box sx={{ p: 2, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 2fr" }, gap: 2 }}>
-                {/* Timeline */}
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", display: "block", mb: 0.5, letterSpacing: 0.5, fontSize: "0.68rem" }}>
-                    {t("orders.timeline")}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontVariantNumeric: "tabular-nums" }}>
-                    {t("orders.out")}: {formatDisplayDate(line.borrow_date)}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: isOverdue ? "error.main" : "#0f172a",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {isOverdue && <AccessTimeIcon sx={{ fontSize: 13 }} />}
-                    {t("orders.due")}: {formatDisplayDate(line.expected_return_date)}
-                  </Typography>
-                  {isActive && (
-                    <Typography
-                      variant="caption"
-                      color={isOverdue ? "error.main" : "text.secondary"}
-                      sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {t("orders.daysOverdue", { count: daysOut })}
-                    </Typography>
-                  )}
-                </Box>
-
-                {/* Qty stats */}
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", display: "block", mb: 0.5, letterSpacing: 0.5, fontSize: "0.68rem" }}>
-                    {t("orders.quantities")}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontVariantNumeric: "tabular-nums" }}>
-                    {t("orders.borrowed")}: <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{borrowQty}</span>
-                  </Typography>
-                  {alreadyReturned > 0 && (
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "success.main", fontVariantNumeric: "tabular-nums" }}>
-                      {t("orders.returned")}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{alreadyReturned}</span>
-                    </Typography>
-                  )}
-                  {isActive && (
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "warning.dark", fontVariantNumeric: "tabular-nums" }}>
-                      {t("orders.pending")}: <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{pending}</span>
-                    </Typography>
-                  )}
-                </Box>
-
-                {/* Financial */}
-                <Box
-                  sx={{
-                    bgcolor: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 2,
-                    p: 1.5,
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.68rem" }}>
-                      {t("orders.costFinal")}
-                    </Typography>
-                    <Chip
-                      size="small"
-                      label={breakdownBadge}
-                      color={isActive ? "primary" : "default"}
-                      variant={isActive ? "outlined" : "filled"}
-                      sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
-                    />
-                  </Box>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontWeight: 900,
-                      color: isActive ? "primary.main" : "#0f172a",
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    Rs. {formattedCost}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      display: "block",
-                      borderTop: "1px dashed #cbd5e1",
-                      pt: 0.5,
-                      mt: 0.5,
-                      lineHeight: 1.3,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: "0.72rem",
-                    }}
-                  >
-                    {breakdownFormula}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Return iterations */}
-              {lineIterations.length > 0 && (
-                <Box sx={{ bgcolor: "#f8fafc", borderTop: "1px dashed #e2e8f0", p: 2 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: "uppercase", display: "block", mb: 1, letterSpacing: 0.5, fontSize: "0.68rem" }}>
-                    {t("orders.handoverHistory")}
-                  </Typography>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-                    {lineIterations.map((iter: any, i: number) => (
-                      <Box
-                        key={i}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1.5,
-                          p: 1,
-                          bgcolor: "white",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: 1.5,
-                        }}
-                      >
-                        <SubdirectoryArrowRightIcon sx={{ color: "#94a3b8", fontSize: 15 }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ width: 130, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
-                          {new Date(iter.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
-                        </Typography>
-                        {iter.good > 0 && (
-                          <Chip size="small" label={t("invoices.ManageInvoiceViews.good", { good: iter.good })} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
-                        )}
-                        {iter.defective > 0 && (
-                          <Chip size="small" label={t("invoices.ManageInvoiceViews.broken", { defective: iter.defective })} color="error" variant="filled" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }} />
-                        )}
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          );
-        })}
+        {rawLines.map((line: any, i: number) => (
+          <LedgerLineRow key={line.line_id} line={line} info={summary.lines[i]} commonOutDate={commonOutDate} returnTraces={returnTraces} />
+        ))}
 
         {/* Reviews thread — staff-only ratings + comments for this invoice */}
         <InvoiceReviewsSection invoiceId={invoice.invoice_id} />

@@ -322,8 +322,9 @@ export function ReadOnlyInvoiceModal({
                         <TableCell sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.78rem" }}>
                           <Typography variant="caption" sx={{ display: "block", color: "#0f172a", fontWeight: 600 }}>
                             {line.borrow_date ? new Date(line.borrow_date).toLocaleDateString() : "—"}
-                            {" → "}
-                            {line.expected_return_date ? new Date(line.expected_return_date).toLocaleDateString() : "—"}
+                            {line.track_overdue !== false && line.track_overdue !== 0 && line.expected_return_date
+                              ? ` → ${new Date(line.expected_return_date).toLocaleDateString()}`
+                              : ""}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {t("invoices.ReadOnlyInvoiceModal.minDaySExtraRs", { value: line.locked_minimum_days || 1, value2: Number(line.locked_extra_daily_rate || 0).toLocaleString() })}
