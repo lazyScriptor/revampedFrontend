@@ -13,6 +13,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import GridViewRoundedIcon from "@mui/icons-material/GridViewRounded";
+import { EquipmentNumberBadge } from "@/features/equipment/components/EquipmentNumberBadge";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
@@ -37,6 +38,7 @@ export interface CartItem {
   equipment_name: string;
   equipment_name_si?: string | null;
   image_url?: string | null;
+  serial_number?: string | null;
   available_qty: number;
   is_bulk_item: boolean;
   borrow_quantity: number;
@@ -168,6 +170,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
       equipment_name: equipment.equipment_name,
       equipment_name_si: equipment.equipment_name_si,
       image_url: equipment.image_url ?? null,
+      serial_number: equipment.serial_number ?? null,
       available_qty: equipment.available_qty || 1,
       is_bulk_item: equipment.is_bulk_item,
       borrow_quantity: 1,
@@ -414,10 +417,21 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     ) : (
                       <ConstructionIcon sx={{ fontSize: 16, color: "primary.main", flexShrink: 0 }} />
                     )}
+                    {item.serial_number && <EquipmentNumberBadge value={item.serial_number} size="sm" />}
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: 800, flexGrow: 1, color: "#0f172a" }}
-                      noWrap
+                      sx={{
+                        fontWeight: 800,
+                        flexGrow: 1,
+                        minWidth: 0,
+                        color: "#0f172a",
+                        lineHeight: 1.25,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        wordBreak: "break-word",
+                      }}
                     >
                       {item.equipment_name}
                       {item.equipment_name_si && (
@@ -430,6 +444,9 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                       size="small"
                       label={isDailyMode ? t("invoices.PosLedgerPanel.dailyMode") : t("invoices.PosLedgerPanel.tieredMode")}
                       sx={{
+                        // the mode is also shown by the "Switch to …" button below, so phones
+                        // drop the chip to give the machine name the room
+                        display: { xs: "none", sm: "inline-flex" },
                         height: 20,
                         fontSize: "0.65rem",
                         fontWeight: 800,

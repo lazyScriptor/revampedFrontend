@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { EquipmentCard } from "../EquipmentCard";
 import { EquipmentCatalog, EquipmentSearchBar } from "../EquipmentCatalog";
 import type { CatalogEquipment } from "../../hooks/usePosEquipmentCatalog";
-import { equipmentIcon, stockLevel } from "../../lib/equipmentVisual";
+import { equipmentIcon, stockLevel } from "@/features/equipment/lib/equipmentVisual";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import HandymanIcon from "@mui/icons-material/Handyman";
 import StairsIcon from "@mui/icons-material/Stairs";
@@ -12,6 +12,7 @@ const make = (over: Partial<CatalogEquipment> = {}): CatalogEquipment => ({
   equipment_id: 1,
   equipment_name: "Angle Grinder 100mm",
   equipment_name_si: null,
+  serial_number: "EQ-0001",
   image_url: null,
   available_qty: 5,
   is_bulk_item: true,
@@ -29,6 +30,11 @@ const renderCard = (item: CatalogEquipment, inCartQty = 0) => {
 };
 
 describe("EquipmentCard", () => {
+  it("shows the equipment number prominently", () => {
+    renderCard(make({ serial_number: "EQ-0042" }));
+    expect(screen.getByTestId("equipment-number")).toHaveTextContent("EQ-0042");
+  });
+
   it("shows name, price per day and stock", () => {
     renderCard(make());
     expect(screen.getByText("Angle Grinder 100mm")).toBeInTheDocument();

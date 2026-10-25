@@ -7,6 +7,14 @@ import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
 import type { EquipmentFilters } from "@/features/equipment/api/equipment.api";
 
 import { EquipmentTable } from "@/features/equipment/components/EquipmentTable";
+import { EquipmentCardGrid } from "@/features/equipment/components/EquipmentCardGrid";
+import { EquipmentCardSettings } from "@/features/equipment/components/EquipmentCardSettings";
+import {
+  readEquipmentView,
+  saveEquipmentView,
+  useEquipmentCardConfig,
+  type EquipmentView,
+} from "@/features/equipment/lib/equipmentCardFields";
 import { EquipmentFormDialog } from "@/features/equipment/components/EquipmentFormDialog";
 import { EquipmentBulkEditDialog } from "@/features/equipment/components/EquipmentBulkEditDialog";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
@@ -28,6 +36,8 @@ import {
   InputAdornment,
   MenuItem,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
   useTheme,
@@ -43,6 +53,8 @@ import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import TranslateIcon from "@mui/icons-material/Translate";
+import ViewListRoundedIcon from "@mui/icons-material/ViewListRounded";
+import GridViewRoundedIcon from "@mui/icons-material/GridViewRounded";
 
 // Debounce search input so we don't pound the API on every keystroke.
 function useDebounced<T>(value: T, delay = 300): T {
@@ -77,6 +89,15 @@ export default function EquipmentRoute() {
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
+
+  // Table or card view (remembered per browser); the card view's details are configurable.
+  const [view, setView] = useState<EquipmentView>(readEquipmentView);
+  const cardConfig = useEquipmentCardConfig();
+  const changeView = (next: EquipmentView | null) => {
+    if (!next || next === view) return;
+    setView(next);
+    saveEquipmentView(next);
+  };
 
   // ─── Filter state ──────────────────────────────────────────────────────
   const [searchInput, setSearchInput] = useState("");
@@ -469,6 +490,28 @@ export default function EquipmentRoute() {
         <Typography variant="caption" sx={{ color: theme.palette.text.secondary, whiteSpace: "nowrap", flexShrink: 0 }}>
           {isLoading ? t("common.loading") : t("common.matchesFormatted", { count: totalRowCount })}
         </Typography>
+
+        {/* View mode: table ⇄ cards */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, justifyContent: { xs: "space-between", sm: "flex-end" } }}>
+          {view === "cards" && (
+            <EquipmentCardSettings config={cardConfig.config} onToggle={cardConfig.toggle} onReset={cardConfig.reset} />
+          )}
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={view}
+            onChange={(_, next) => changeView(next)}
+            aria-label={t("equipment.cards.viewMode")}
+            sx={{ "& .MuiToggleButton-root": { height: 32, px: 1.25, borderColor: theme.palette.border.subtle } }}
+          >
+            <ToggleButton value="table" aria-label={t("equipment.cards.tableView")} title={t("equipment.cards.tableView")}>
+              <ViewListRoundedIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="cards" aria-label={t("equipment.cards.cardView")} title={t("equipment.cards.cardView")}>
+              <GridViewRoundedIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Card>
 
       {/* Data Table */}
@@ -488,6 +531,21 @@ export default function EquipmentRoute() {
       >
         {isLoading && equipmentList.length === 0 ? (
           <GearGridLoader centered size="lg" label={t("pages.Equipment.loadingFleetInventory")} sublabel={t("pages.Equipment.synchronizingAssetSpecificationsTelemetr")} />
+        ) : view === "cards" ? (
+          <EquipmentCardGrid
+            data={equipmentList}
+            isLoading={isLoading}
+            rowCount={totalRowCount}
+            paginationModel={paginationModel}
+            onPaginationModelChange={(model) => {
+              setPaginationModel(model);
+              setSelectedIds([]);
+            }}
+            onEdit={handleOpenEdit}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            config={cardConfig.config}
+          />
         ) : (
           <EquipmentTable
             data={equipmentList}

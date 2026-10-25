@@ -445,7 +445,31 @@
         "converting": "හරවමින්…",
         "convertDone": "නම් {{total}}න් {{converted}}ක් සිංහලට හරවන ලදී.",
         "convertNothing": "සියලු උපකරණවලට දැනටමත් සිංහල නමක් ඇත.",
-        "convertFailed": "නම් සිංහලට හැරවීමට නොහැකි විය."
+        "convertFailed": "නම් සිංහලට හැරවීමට නොහැකි විය.",
+        "equipmentNo": "උපකරණ අංකය",
+        "internalId": "අභ්‍යන්තර අංකය",
+        "cards": {
+            "viewMode": "දසුන",
+            "tableView": "වගු දසුන",
+            "cardView": "කාඩ්පත් දසුන",
+            "details": "කාඩ්පත් විස්තර",
+            "reset": "යළි සකසන්න",
+            "alwaysShown": "උපකරණ අංකය, ඡායාරූපය, නම සහ තත්ත්වය සැමවිටම පෙන්වයි.",
+            "groupIdentity": "හඳුනාගැනීම",
+            "groupPricing": "මිල ගණන්",
+            "groupStock": "තොගය",
+            "groupOther": "වෙනත්",
+            "select": "තෝරන්න",
+            "selectAll": "මෙම පිටුවේ සියල්ල තෝරන්න",
+            "perDay": "/දිනට",
+            "daysShort": "දින {{count}}",
+            "monthsShort": "මාස {{count}}",
+            "bulk": "තොග",
+            "single": "තනි",
+            "empty": "ඔබගේ පෙරහන් වලට ගැළපෙන උපකරණ නැත.",
+            "perPage": "පිටුවකට කාඩ්පත්",
+            "selectedCount": "{{count}}ක් තෝරා ඇත"
+        }
     },
     "customers": {
         "title": "පාරිභෝගික කළමනාකරණය",

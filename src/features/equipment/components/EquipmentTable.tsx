@@ -11,20 +11,15 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Avatar,
   Typography,
-  alpha,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ImageIcon from "@mui/icons-material/Image";
 
-import { useDeleteEquipment } from "../hooks/useEquipmentHooks";
+import { EquipmentDeleteDialog } from "./EquipmentDeleteDialog";
+import { EquipmentNumberBadge } from "./EquipmentNumberBadge";
 import { formatDisplayDate } from "@/lib/dates";
 import { useTranslation } from "react-i18next";
 
@@ -50,20 +45,19 @@ export function EquipmentTable({
   onSelectionChange,
 }: EquipmentTableProps) {
   const { t } = useTranslation();
-  const deleteMutation = useDeleteEquipment();
   const [deleteId, setDeleteId] = useState<number | null>(null);
-
-  const handleDeleteConfirm = () => {
-    if (deleteId) {
-      deleteMutation.mutate(deleteId);
-      setDeleteId(null);
-    }
-  };
 
   // 🚀 THE COMPREHENSIVE COLUMN LIST
   const columns: GridColDef[] = [
     // --- Identifiers & Media ---
-    { field: "equipment_id", headerName: t("invoices.invoiceId"), width: 70 },
+    { field: "equipment_id", headerName: t("equipment.internalId"), width: 70 },
+    // The machine's own number comes first: it is what staff look for.
+    {
+      field: "serial_number",
+      headerName: t("equipment.equipmentNo"),
+      width: 150,
+      renderCell: (params) => <EquipmentNumberBadge value={params.value} size="md" />,
+    },
     {
       field: "image_url",
       headerName: t("equipment.image"),
@@ -80,12 +74,6 @@ export function EquipmentTable({
           )}
         </Avatar>
       ),
-    },
-    {
-      field: "serial_number",
-      headerName: t("equipment.sku"),
-      width: 140,
-      fontWeight: "bold",
     },
     {
       field: "equipment_name",
@@ -463,29 +451,7 @@ export function EquipmentTable({
         />
       </Box>
 
-      {/* Delete Dialog */}
-      <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
-        <DialogTitle className="font-bold text-slate-800">
-          {t("equipment.EquipmentTable.confirmDeletion")}
-        </DialogTitle>
-        <DialogContent>
-          {t("equipment.EquipmentTable.areYouSureYouWant")}
-        </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setDeleteId(null)} color="inherit">
-            {t("common.cancel")}
-          </Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            color="error"
-            variant="contained"
-            disabled={deleteMutation.isPending}
-            disableElevation
-          >
-            {deleteMutation.isPending ? t("customers.CustomerTable.deleting") : t("common.delete")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <EquipmentDeleteDialog equipmentId={deleteId} onClose={() => setDeleteId(null)} />
     </>
   );
 }

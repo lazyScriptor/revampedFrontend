@@ -445,7 +445,31 @@
         "converting": "Converting…",
         "convertDone": "{{converted}} of {{total}} names converted to Sinhala.",
         "convertNothing": "Every machine already has a Sinhala name.",
-        "convertFailed": "Could not convert names to Sinhala."
+        "convertFailed": "Could not convert names to Sinhala.",
+        "equipmentNo": "Equipment No.",
+        "internalId": "Internal ID",
+        "cards": {
+            "viewMode": "View",
+            "tableView": "Table view",
+            "cardView": "Card view",
+            "details": "Card details",
+            "reset": "Reset",
+            "alwaysShown": "Equipment number, photo, name and status are always shown.",
+            "groupIdentity": "Identity",
+            "groupPricing": "Pricing",
+            "groupStock": "Stock",
+            "groupOther": "Other",
+            "select": "Select",
+            "selectAll": "Select all on this page",
+            "perDay": "/day",
+            "daysShort": "{{count}}d",
+            "monthsShort": "{{count}} mo",
+            "bulk": "Bulk",
+            "single": "Single",
+            "empty": "No equipment matches your filters.",
+            "perPage": "Cards per page",
+            "selectedCount": "{{count}} selected"
+        }
     },
     "customers": {
         "title": "Client CRM",

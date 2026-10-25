@@ -11,7 +11,8 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 
 import type { CatalogEquipment } from "../hooks/usePosEquipmentCatalog";
-import { equipmentIcon, equipmentTint, stockLevel } from "../lib/equipmentVisual";
+import { equipmentIcon, equipmentTint, stockLevel } from "@/features/equipment/lib/equipmentVisual";
+import { EquipmentNumberBadge } from "@/features/equipment/components/EquipmentNumberBadge";
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -106,6 +107,47 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
         "&:focus-visible": { boxShadow: `0 0 0 3px ${theme.palette.primary.light}` },
       }}
     >
+      {/* ── Equipment number (top priority) + stock ── */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 0.75,
+          px: 1,
+          py: 0.75,
+          bgcolor: dark ? "rgba(29, 78, 216, 0.2)" : "#eff6ff",
+          borderBottom: "1px solid",
+          borderColor: dark ? "#334155" : "#dbeafe",
+        }}
+      >
+        <Box sx={{ minWidth: 0, display: "flex" }}>
+          <EquipmentNumberBadge value={item.serial_number} size="md" title={t("equipment.equipmentNo")} />
+        </Box>
+        {/* stock: icon + number */}
+        <Box
+          title={level === "out" ? t("equipment.outOfStock") : t("invoices.EquipmentCatalog.stockAria", { count: available })}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+            height: 22,
+            px: 0.875,
+            borderRadius: 11,
+            flexShrink: 0,
+            bgcolor: STOCK_COLORS[level].bg,
+            color: STOCK_COLORS[level].fg,
+            fontSize: "0.72rem",
+            fontWeight: 800,
+            fontFamily: MONO,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {level === "out" ? <BlockIcon sx={{ fontSize: 13 }} /> : <Inventory2OutlinedIcon sx={{ fontSize: 13 }} />}
+          {available}
+        </Box>
+      </Box>
+
       {/* ── Photo tile ── */}
       <Box
         sx={{
@@ -126,6 +168,8 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
             draggable={false}
             onError={() => setImgFailed(true)}
             sx={{
+              position: "absolute",
+              inset: 0,
               width: "100%",
               height: "100%",
               objectFit: "contain",
@@ -138,31 +182,6 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
         ) : (
           <Icon sx={{ fontSize: 44, color: tintFg, opacity: level === "out" ? 0.35 : 0.9 }} />
         )}
-
-        {/* stock: icon + number */}
-        <Box
-          title={level === "out" ? t("equipment.outOfStock") : t("invoices.EquipmentCatalog.stockAria", { count: available })}
-          sx={{
-            position: "absolute",
-            top: 8,
-            left: 8,
-            display: "flex",
-            alignItems: "center",
-            gap: 0.5,
-            height: 22,
-            px: 0.875,
-            borderRadius: 11,
-            bgcolor: STOCK_COLORS[level].bg,
-            color: STOCK_COLORS[level].fg,
-            fontSize: "0.72rem",
-            fontWeight: 800,
-            fontFamily: MONO,
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {level === "out" ? <BlockIcon sx={{ fontSize: 13 }} /> : <Inventory2OutlinedIcon sx={{ fontSize: 13 }} />}
-          {available}
-        </Box>
 
         {level === "out" && (
           <Box

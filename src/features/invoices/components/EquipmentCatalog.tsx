@@ -16,7 +16,7 @@ import SearchOffIcon from "@mui/icons-material/SearchOff";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 
 import type { CatalogEquipment } from "../hooks/usePosEquipmentCatalog";
-import { equipmentIcon } from "../lib/equipmentVisual";
+import { equipmentIcon } from "@/features/equipment/lib/equipmentVisual";
 import { EquipmentCard } from "./EquipmentCard";
 
 const MONO = "'JetBrains Mono', monospace";
