@@ -168,6 +168,8 @@ export function EquipmentCatalog(props: EquipmentCatalogProps) {
   const chipSx = (selected: boolean, accent: "primary" | "success" = "primary") => {
     const on = accent === "success" ? "#16a34a" : "primary.main";
     const onHover = accent === "success" ? "#15803d" : "primary.dark";
+    // white on green, the theme's own on-colour on the brand colour (dark text on amber)
+    const onText = accent === "success" ? "#ffffff" : "primary.contrastText";
     return {
       flexShrink: 0,
       height: 34,
@@ -175,10 +177,10 @@ export function EquipmentCatalog(props: EquipmentCatalogProps) {
       fontWeight: 700,
       fontSize: "0.8rem",
       bgcolor: selected ? on : k.card,
-      color: selected ? "#ffffff" : k.text,
+      color: selected ? onText : k.text,
       border: "1px solid",
       borderColor: selected ? on : k.border,
-      "& .MuiChip-icon": { color: selected ? "#ffffff" : k.muted, fontSize: 18 },
+      "& .MuiChip-icon": { color: selected ? onText : k.muted, fontSize: 18 },
       "&:hover": { bgcolor: selected ? onHover : k.dark ? "#273449" : "#f1f5f9" },
       "&.Mui-disabled": { opacity: 0.45 },
     };
@@ -261,7 +263,7 @@ export function EquipmentCatalog(props: EquipmentCatalogProps) {
             "&::-webkit-scrollbar-thumb": { background: k.dark ? "#475569" : "#cbd5e1", borderRadius: "10px" },
           }}
         >
-          {isLoading ? (
+          {isLoading || (isFetching && items.length === 0 && !isError) ? (
             <Grid>
               {Array.from({ length: 6 }).map((_, i) => (
                 <Box key={i} sx={{ borderRadius: 3, overflow: "hidden", bgcolor: k.card, border: "1px solid", borderColor: k.border }}>

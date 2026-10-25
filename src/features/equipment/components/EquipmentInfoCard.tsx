@@ -161,7 +161,7 @@ export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, on
           pl: 1.25,
           pr: 0.5,
           py: 0.75,
-          bgcolor: dark ? alpha("#1d4ed8", 0.18) : "#eff6ff",
+          bgcolor: alpha(theme.palette.primary.main, dark ? 0.16 : 0.1),
           borderBottom: "1px solid",
           borderColor: border,
         }}

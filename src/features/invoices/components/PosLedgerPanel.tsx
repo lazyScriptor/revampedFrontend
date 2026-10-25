@@ -200,7 +200,9 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
 
   // Enter (or a barcode scanner's trailing Enter) adds the match when it is unambiguous.
   const handleSearchSubmit = () => {
-    if (catalog.isSettling || catalog.items.length !== 1) return;
+    // wait until the list really is the answer to what was typed — while a newer search is
+    // in flight the old (placeholder) list is still on screen and must not be acted on
+    if (catalog.isSettling || catalog.isFetching || catalog.isPlaceholderData || catalog.items.length !== 1) return;
     handleAddEquipment(catalog.items[0]);
     setInputValue("");
   };

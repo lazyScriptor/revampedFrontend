@@ -20,6 +20,11 @@ export interface CatalogEquipment {
   extra_daily_rate: number | string;
 }
 
+export const dedupeById = <T extends { equipment_id: number }>(rows: T[]): T[] => {
+  const seen = new Set<number>();
+  return rows.filter((r) => (seen.has(r.equipment_id) ? false : (seen.add(r.equipment_id), true)));
+};
+
 interface CatalogOptions {
   search: string;
   categoryId: number | null;
@@ -63,7 +68,9 @@ export const usePosEquipmentCatalog = ({ search, categoryId, inStockOnly, enable
     staleTime: 30 * 1000,
   });
 
-  const items = query.data?.pages.flatMap((p) => p.equipment) ?? [];
+  // A machine must never show twice. Pages are fetched separately, so if the list shifts
+  // between requests (a dispatch, an edit, an import) one machine can land on two pages.
+  const items = dedupeById(query.data?.pages.flatMap((p) => p.equipment) ?? []);
   return {
     ...query,
     items,

@@ -13,9 +13,9 @@ const SIZES = {
   lg: { h: 30, px: 1.125, font: "0.95rem", icon: 17 },
 } as const;
 
-// The machine's own number (its unique SKU / serial). Deliberately the loudest
-// element wherever it appears: solid brand-blue chip, white monospace digits.
-// Fixed colours (not theme tokens) so it reads identically on light and dark surfaces.
+// The machine's own number (its unique SKU / serial). Deliberately the loudest element
+// wherever it appears: a solid chip in the tenant's brand colour (amber by default) with
+// the theme's matching on-colour text, so it follows branding changes automatically.
 export function EquipmentNumberBadge({ value, size = "md", title }: EquipmentNumberBadgeProps) {
   const s = SIZES[size];
   const has = !!value && String(value).trim() !== "";
@@ -33,9 +33,10 @@ export function EquipmentNumberBadge({ value, size = "md", title }: EquipmentNum
         maxWidth: "100%",
         minWidth: 0,
         borderRadius: 1.5,
-        bgcolor: has ? "#1d4ed8" : "transparent",
-        color: has ? "#ffffff" : "#94a3b8",
-        border: has ? "none" : "1px dashed #94a3b8",
+        bgcolor: has ? "primary.main" : "transparent",
+        color: has ? "primary.contrastText" : "text.disabled",
+        border: has ? "none" : "1px dashed",
+        borderColor: has ? undefined : "text.disabled",
         fontFamily: "'JetBrains Mono', monospace",
         fontVariantNumeric: "tabular-nums",
         fontWeight: 800,

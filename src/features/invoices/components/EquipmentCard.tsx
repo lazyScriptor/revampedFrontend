@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Tooltip, Typography } from "@mui/material";
+import { alpha, Box, Tooltip, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -74,18 +74,13 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
 
   return (
     <Box
-      role="button"
-      tabIndex={0}
+      // A whole-card tap adds the machine (fast for touch and mouse). Keyboard and screen-reader
+      // users reach the same actions through the real buttons inside, so the card itself is a
+      // labelled group rather than a button that would nest buttons.
+      role="group"
       aria-label={item.equipment_name}
       aria-disabled={level === "out" || undefined}
       onClick={() => onAdd(item)}
-      onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onAdd(item);
-        }
-      }}
       sx={{
         position: "relative",
         display: "flex",
@@ -99,12 +94,11 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
         borderColor: inCart ? "primary.main" : dark ? "#334155" : "#e2e8f0",
         boxShadow: inCart ? `0 0 0 2px ${theme.palette.primary.main}` : "0 1px 2px rgba(15, 23, 42, 0.06)",
         transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
-        outline: "none",
         "@media (hover: hover)": {
           "&:hover": { transform: level === "out" ? "none" : "translateY(-2px)", boxShadow: "0 8px 20px rgba(15, 23, 42, 0.14)" },
         },
         "&:active": { transform: level === "out" ? "none" : "scale(0.985)" },
-        "&:focus-visible": { boxShadow: `0 0 0 3px ${theme.palette.primary.light}` },
+        "&:focus-within": { boxShadow: inCart ? `0 0 0 2px ${theme.palette.primary.main}` : `0 0 0 2px ${theme.palette.primary.light}` },
       }}
     >
       {/* ── Equipment number (top priority) + stock ── */}
@@ -116,9 +110,9 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
           gap: 0.75,
           px: 1,
           py: 0.75,
-          bgcolor: dark ? "rgba(29, 78, 216, 0.2)" : "#eff6ff",
+          bgcolor: alpha(theme.palette.primary.main, dark ? 0.16 : 0.1),
           borderBottom: "1px solid",
-          borderColor: dark ? "#334155" : "#dbeafe",
+          borderColor: alpha(theme.palette.primary.main, 0.25),
         }}
       >
         <Box sx={{ minWidth: 0, display: "flex" }}>
@@ -228,7 +222,7 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
                 type="button"
                 aria-label={t("invoices.EquipmentCatalog.add")}
                 onClick={stop(() => onAdd(item))}
-                sx={{ ...roundBtn, bgcolor: "primary.main", color: "#fff" }}
+                sx={{ ...roundBtn, bgcolor: "primary.main", color: "primary.contrastText" }}
               >
                 <AddRoundedIcon sx={{ fontSize: 22 }} />
               </Box>
@@ -241,7 +235,7 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
                   height: 36,
                   borderRadius: 18,
                   bgcolor: "primary.main",
-                  color: "#fff",
+                  color: "primary.contrastText",
                   boxShadow: "0 4px 10px rgba(15, 23, 42, 0.25)",
                 }}
               >
@@ -331,8 +325,8 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
                   height: 20,
                   px: 0.75,
                   borderRadius: 10,
-                  bgcolor: dark ? "#334155" : "#eff6ff",
-                  color: dark ? "#bfdbfe" : "#1d4ed8",
+                  bgcolor: alpha(theme.palette.primary.main, dark ? 0.2 : 0.14),
+                  color: dark ? "primary.light" : "primary.dark",
                   fontSize: "0.68rem",
                   fontWeight: 800,
                   fontFamily: MONO,

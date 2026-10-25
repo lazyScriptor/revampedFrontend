@@ -52,7 +52,7 @@ describe("EquipmentCard", () => {
 
   it("adds one unit when the card or its + button is tapped", () => {
     const { onAdd } = renderCard(make());
-    fireEvent.click(screen.getByRole("button", { name: "Angle Grinder 100mm" }));
+    fireEvent.click(screen.getByRole("group", { name: "Angle Grinder 100mm" }));
     expect(onAdd).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
     expect(onAdd).toHaveBeenCalledTimes(2);
