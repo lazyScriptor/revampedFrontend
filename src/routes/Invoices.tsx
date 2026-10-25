@@ -76,6 +76,7 @@ export default function InvoicesRoute() {
     queryClient.invalidateQueries({ queryKey: ["customer-invoices"] });
     queryClient.invalidateQueries({ queryKey: ["customers"] });
     queryClient.invalidateQueries({ queryKey: ["equipment"] });
+    queryClient.invalidateQueries({ queryKey: ["pos-equipment-catalog"] });
   };
 
   const switchPosMode = (next: "dispatch" | "manage") => {

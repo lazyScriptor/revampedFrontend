@@ -830,6 +830,23 @@
             "calcBasePlusExtra_one": "මූලික + අමතර දින {{count}}ක්",
             "calcBasePlusExtra_other": "මූලික + අමතර දින {{count}}ක්"
         },
+        "EquipmentCatalog": {
+            "browse": "උපකරණ බලන්න",
+            "inStock": "තොගයේ ඇත",
+            "done": "අවසන්",
+            "noResults": "උපකරණ හමු නොවීය",
+            "couldNotLoad": "උපකරණ පූරණය කළ නොහැකි විය.",
+            "clearFilters": "පෙරහන් ඉවත් කරන්න",
+            "loadMore": "තවත් පෙන්වන්න",
+            "add": "එක් කරන්න",
+            "remove": "ඉවත් කරන්න",
+            "increase": "එකක් එක් කරන්න",
+            "decrease": "එකක් අඩු කරන්න",
+            "inOrder": "ඇණවුමේ ඇත",
+            "stockAria": "තොගයේ {{count}}ක් ඇත",
+            "perDay": "/දිනට",
+            "daysShort": "දින {{count}}"
+        },
         "QuantityReturnSplitter": {
             "howManyAreComingBack": "කීයක් ආපසු ලැබෙනවාද?",
             "actualReturnDate": "ආපසු ලැබුණු සැබෑ දිනය",

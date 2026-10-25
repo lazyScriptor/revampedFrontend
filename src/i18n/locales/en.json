@@ -830,6 +830,23 @@
             "calcBasePlusExtra_one": "Base + {{count}} extra day",
             "calcBasePlusExtra_other": "Base + {{count}} extra days"
         },
+        "EquipmentCatalog": {
+            "browse": "Browse equipment",
+            "inStock": "In stock",
+            "done": "Done",
+            "noResults": "No equipment found",
+            "couldNotLoad": "Couldn't load equipment.",
+            "clearFilters": "Clear filters",
+            "loadMore": "Load more",
+            "add": "Add",
+            "remove": "Remove",
+            "increase": "One more",
+            "decrease": "One less",
+            "inOrder": "In order",
+            "stockAria": "{{count}} in stock",
+            "perDay": "/day",
+            "daysShort": "{{count}}d"
+        },
         "QuantityReturnSplitter": {
             "howManyAreComingBack": "How many are coming back?",
             "actualReturnDate": "Actual return date",
