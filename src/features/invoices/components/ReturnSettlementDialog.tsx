@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -7,7 +7,6 @@ import {
   Box,
   Typography,
   Button,
-  Chip,
   CircularProgress,
   FormControlLabel,
   Switch,
@@ -16,111 +15,100 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import AssignmentReturnedOutlinedIcon from "@mui/icons-material/AssignmentReturnedOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
-import BuildCircleIcon from "@mui/icons-material/BuildCircle";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import MoneyOffIcon from "@mui/icons-material/MoneyOff";
-import RestoreIcon from "@mui/icons-material/Restore";
 import { useProcessReturn } from "../hooks/useInvoiceHooks";
-import { QuantityReturnSplitter } from "./QuantityReturnSplitter";
-import { formatDisplayDate } from "@/lib/dates";
+import { HandoverLine, HandoverLineCard } from "./HandoverLineCard";
+import { NumberInput } from "@/components/ui/NumberInput";
+import { todayLocalStr } from "@/lib/dates";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
-// ─── Live late fee engine (mirrors backend logic exactly) ──────────────────────
-// `track_overdue === false` is the explicit opt-out: skip late fees entirely.
-// Using `=== false` (not falsy) so legacy lines without the field — `undefined`
-// — still flow through the date-based check.
-const calcLineLF = (line: any): number => {
-  if (line.track_overdue === false) return 0;
-  if (!line.actual_return_date || !line.expected_return) return 0;
+// ─── Late fee engine (mirrors backend `processReturn`) ─────────────────────────
+// Late fees exist only for lines whose return date is tracked, and only AFTER the due date.
+const DAY = 1000 * 60 * 60 * 24;
+
+export const calcDaysLate = (line: Pick<HandoverLine, "track_overdue" | "expected_return">, handoverDate: string): number => {
+  if (line.track_overdue === false || !line.expected_return || !handoverDate) return 0;
   const expected = new Date(line.expected_return).getTime();
-  const actual = new Date(line.actual_return_date).getTime();
-  const daysLate = Math.max(0, Math.ceil((actual - expected) / (1000 * 60 * 60 * 24)));
-  const totalReturning = (line.good_qty || 0) + (line.defective_qty || 0);
-  return daysLate * (line.locked_extra_rate || 0) * totalReturning;
+  const actual = new Date(handoverDate).getTime();
+  return Math.max(0, Math.ceil((actual - expected) / DAY));
 };
 
-const calcDaysLate = (line: any): number => {
-  if (line.track_overdue === false) return 0;
-  if (!line.actual_return_date || !line.expected_return) return 0;
-  const expected = new Date(line.expected_return).getTime();
-  const actual = new Date(line.actual_return_date).getTime();
-  return Math.max(0, Math.ceil((actual - expected) / (1000 * 60 * 60 * 24)));
-};
+export const calcLateFee = (line: HandoverLine, handoverDate: string): number =>
+  calcDaysLate(line, handoverDate) * (line.locked_extra_rate || 0) * (line.good_qty + line.defective_qty);
 // ──────────────────────────────────────────────────────────────────────────────
+
+const money = (n: number) => Number(n.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: any) {
   const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const returnMutation = useProcessReturn();
+
   const [releaseId, setReleaseId] = useState(true);
-  const [finalPaymentAmount, setFinalPaymentAmount] = useState<number | string>("");
-  const [returnLines, setReturnLines] = useState<any[]>([]);
+  const [payment, setPayment] = useState<number | "">("");
+  const [handoverDate, setHandoverDate] = useState(todayLocalStr());
+  const [lines, setLines] = useState<HandoverLine[]>([]);
 
-  useMemo(() => {
-    if (invoice && open) {
-      const rawLines =
-        invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
-      const activeRawLines = rawLines.filter(
-        (l: any) =>
-          l.line_status === "Active" ||
-          l.status === "Active" ||
-          (!l.line_status && l.status !== "Returned")
-      );
-
-      setReturnLines(
-        activeRawLines.map((line: any) => {
-          const alreadyReturned =
-            (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
-          const remainingToReturn = line.borrow_quantity - alreadyReturned;
-          // Legacy lines without the field default to tracked — preserves
-          // pre-existing behavior. Explicit `false` from a new line opts out.
-          const wasTracked = line.track_overdue !== false;
-          // Local-time today so users east of UTC don't get yesterday's date
-          // pre-filled in the actual-return field.
-          const today = new Date();
-          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-          return {
-            line_id: line.line_id,
-            equipment_name: line.Equipment?.equipment_name || i18n.t("invoices.ReturnSettlementDialog.unknownItem"),
-            borrow_qty: line.borrow_quantity,
-            remaining_qty: remainingToReturn,
-            locked_extra_rate: Number(line.locked_extra_daily_rate),
-            expected_return: line.expected_return_date,
-            track_overdue: wasTracked,
-            // Frozen flag: was this line tracked when the return started? Used
-            // to decide whether to show the "Waive late fees" affordance —
-            // never gate on the live track_overdue value, otherwise once you
-            // waive you'd lose the way to un-waive.
-            _orig_tracked: wasTracked,
-            good_qty: remainingToReturn,
-            defective_qty: 0,
-            actual_return_date: todayStr,
-          };
-        })
-      );
-    }
-  }, [invoice, open]);
-
-  const handleUpdateLineBatch = (id: number, updates: Record<string, any>) => {
-    setReturnLines((prev) =>
-      prev.map((line) => (line.line_id === id ? { ...line, ...updates } : line))
+  // Start fresh every time the dialog opens (and only then — a background refetch must not wipe what was typed).
+  useEffect(() => {
+    if (!open || !invoice) return;
+    const rawLines = invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
+    const active = rawLines.filter(
+      (l: any) => l.line_status === "Active" || l.status === "Active" || (!l.line_status && l.status !== "Returned"),
     );
-  };
+    setLines(
+      active.map((line: any) => {
+        const alreadyReturned = (line.good_returned_qty || 0) + (line.defective_returned_qty || 0);
+        const remaining = line.borrow_quantity - alreadyReturned;
+        const wasTracked = line.track_overdue !== false;
+        return {
+          line_id: line.line_id,
+          equipment_name: line.Equipment?.equipment_name || i18n.t("invoices.ReturnSettlementDialog.unknownItem"),
+          borrow_qty: line.borrow_quantity,
+          remaining_qty: remaining,
+          locked_extra_rate: Number(line.locked_extra_daily_rate) || 0,
+          expected_return: line.expected_return_date,
+          track_overdue: wasTracked,
+          // frozen: was this line tracked when the handover started? (decides whether "waive" can be offered)
+          _orig_tracked: wasTracked,
+          good_qty: remaining, // default = everything comes back in good condition
+          defective_qty: 0,
+        };
+      }),
+    );
+    setPayment("");
+    setReleaseId(true);
+    setHandoverDate(todayLocalStr());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, invoice?.invoice_id]);
 
-  const totalLateFees = returnLines.reduce((sum, line) => sum + calcLineLF(line), 0);
-  const hasLateFees = totalLateFees > 0;
+  const patchLine = (id: number, updates: Partial<HandoverLine>) =>
+    setLines((prev) => prev.map((l) => (l.line_id === id ? { ...l, ...updates } : l)));
+
+  const returnEverything = () => setLines((prev) => prev.map((l) => ({ ...l, good_qty: l.remaining_qty - l.defective_qty })));
+
+  const totalLateFees = useMemo(() => lines.reduce((s, l) => s + calcLateFee(l, handoverDate), 0), [lines, handoverDate]);
+  const totalReturning = lines.reduce((s, l) => s + l.good_qty + l.defective_qty, 0);
+  const totalRemaining = lines.reduce((s, l) => s + l.remaining_qty, 0);
+
+  // What the customer still owes once these late fees are added.
+  const paid = (invoice?.Payments || []).reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0);
+  const balanceAfter = Math.max(0, Number(invoice?.total_amount || 0) + totalLateFees - paid);
+  const paymentNum = Number(payment) || 0;
+  const canConfirm = !returnMutation.isPending && (totalReturning > 0 || paymentNum > 0);
 
   const handleSubmit = () => {
     const payload = {
       invoice_id: invoice.invoice_id,
-      final_payment_amount: Number(finalPaymentAmount) || 0,
+      final_payment_amount: paymentNum,
       release_id_card: releaseId,
-      lines_returned: returnLines,
+      lines_returned: lines.map((l) => ({ ...l, actual_return_date: handoverDate })),
     };
     returnMutation.mutate(
       { id: invoice.invoice_id, data: payload },
@@ -130,8 +118,8 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           onClose();
         },
         onError: (err: any) =>
-          showToast(err.response?.data?.message || t("invoices.ReturnSettlementDialog.returnFailed"), "error"),
-      }
+          showToast(err.response?.data?.message || err?.message || t("invoices.ReturnSettlementDialog.returnFailed"), "error"),
+      },
     );
   };
 
@@ -141,43 +129,22 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="sm"
       fullWidth
       fullScreen={isMobile}
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: { xs: 0, sm: 3 },
-            bgcolor: "#f8fafc",
-            maxHeight: { xs: "100vh", sm: "92dvh" },
-          },
-        },
-      }}
+      slotProps={{ paper: { sx: { borderRadius: { xs: 0, sm: 3 }, bgcolor: "#f8fafc", maxHeight: { xs: "100vh", sm: "92dvh" } } } }}
     >
-      <DialogTitle
-        sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", p: { xs: 2, sm: 3 } }}
-      >
+      <DialogTitle sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", p: { xs: 2, sm: 2.5 } }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              bgcolor: "#eff6ff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <CheckCircleOutlineIcon sx={{ color: "primary.main", fontSize: 20 }} />
+          <Box sx={{ width: 40, height: 40, borderRadius: "50%", bgcolor: "#eff6ff", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <AssignmentReturnedOutlinedIcon />
           </Box>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
               {t("invoices.ReturnSettlementDialog.equipmentHandoverInv", { invoice_id: invoice.invoice_id })}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {t("invoices.ReturnSettlementDialog.logPhysicalReturnsLateFees")}
+            <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600 }}>
+              {t("invoices.handover.subtitle")}
             </Typography>
           </Box>
         </Box>
@@ -185,217 +152,100 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
 
       <DialogContent dividers sx={{ p: { xs: 1.5, sm: 2 } }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          {/* when + shortcut */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <EventOutlinedIcon sx={{ color: "#7c3aed" }} />
+              <Typography sx={{ fontWeight: 800, fontSize: "0.85rem", color: "#0f172a" }}>{t("invoices.handover.handoverDate")}</Typography>
+              <TextField
+                type="date"
+                size="small"
+                value={handoverDate}
+                onChange={(e) => e.target.value && setHandoverDate(e.target.value)}
+                slotProps={{ htmlInput: { "aria-label": t("invoices.handover.handoverDate") } }}
+                sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white" }, "& input": { color: "#0f172a", fontVariantNumeric: "tabular-nums" } }}
+              />
+            </Box>
+            {lines.length > 1 && totalReturning < totalRemaining && (
+              <Button size="small" variant="outlined" onClick={returnEverything} sx={{ textTransform: "none", fontWeight: 800 }}>
+                {t("invoices.handover.returnEverything")}
+              </Button>
+            )}
+          </Box>
 
-          {/* Late fee warning banner */}
-          {hasLateFees && (
-            <Alert
-              severity="warning"
-              icon={<WarningAmberIcon />}
-              sx={{ borderRadius: 2 }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          {totalLateFees > 0 && (
+            <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ borderRadius: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                 {t("invoices.ReturnSettlementDialog.estimatedLateFeesRs", { totalLateFees: totalLateFees.toLocaleString() })}
               </Typography>
             </Alert>
           )}
 
-          {/* Return lines */}
-          {returnLines.map((line) => {
-            const daysLate = calcDaysLate(line);
-            const lineLF = calcLineLF(line);
-            const isLate = daysLate > 0;
-            const overdueTracked = line.track_overdue !== false;
-            const canWaive = line._orig_tracked === true;
-            const isWaived = canWaive && !overdueTracked;
-
-            return (
-              <Box
-                key={line.line_id}
-                sx={{
-                  bgcolor: "white",
-                  border: "1px solid",
-                  borderColor: isLate ? "#fde047" : "#e2e8f0",
-                  borderRadius: 2.5,
-                  overflow: "hidden",
-                }}
-              >
-                {/* Line header */}
-                <Box
-                  sx={{
-                    px: 2,
-                    py: 1,
-                    bgcolor: "#fafafa",
-                    borderBottom: "1px solid #f1f5f9",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 1,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <BuildCircleIcon sx={{ fontSize: 16, color: "primary.main" }} />
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {line.equipment_name}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
-                    <Chip
-                      size="small"
-                      label={t("invoices.ReturnSettlementDialog.pendingOf", { remaining: line.remaining_qty, total: line.borrow_qty })}
-                      color="warning"
-                      variant="outlined"
-                      sx={{ fontWeight: 700, fontSize: "0.7rem" }}
-                    />
-                    {isLate && (
-                      <Chip
-                        size="small"
-                        icon={<AccessTimeIcon sx={{ fontSize: 12 }} />}
-                        label={t("invoices.ReturnSettlementDialog.dLateRs", { daysLate, lineLF: lineLF.toLocaleString() })}
-                        color="error"
-                        variant="filled"
-                        sx={{ fontWeight: 700, fontSize: "0.7rem" }}
-                      />
-                    )}
-                    {isWaived && (
-                      <Chip
-                        size="small"
-                        icon={<MoneyOffIcon sx={{ fontSize: 12 }} />}
-                        label={t("invoices.ReturnSettlementDialog.lateFeesWaived")}
-                        variant="outlined"
-                        sx={{ fontWeight: 700, fontSize: "0.68rem", color: "warning.dark", borderColor: "#fde68a", bgcolor: "#fffbeb" }}
-                      />
-                    )}
-                    {!overdueTracked && !isWaived && (
-                      <Chip
-                        size="small"
-                        label={t("invoices.ReturnSettlementDialog.noOverdueTracking")}
-                        variant="outlined"
-                        sx={{ fontWeight: 600, fontSize: "0.68rem", color: "text.secondary", borderColor: "#cbd5e1" }}
-                      />
-                    )}
-                    {canWaive && (
-                      <Button
-                        size="small"
-                        variant="text"
-                        startIcon={
-                          isWaived ? (
-                            <RestoreIcon sx={{ fontSize: 14 }} />
-                          ) : (
-                            <MoneyOffIcon sx={{ fontSize: 14 }} />
-                          )
-                        }
-                        onClick={() =>
-                          handleUpdateLineBatch(line.line_id, { track_overdue: isWaived })
-                        }
-                        sx={{
-                          textTransform: "none",
-                          fontSize: "0.7rem",
-                          fontWeight: 700,
-                          color: isWaived ? "primary.main" : "warning.dark",
-                          minWidth: 0,
-                          px: 1,
-                        }}
-                      >
-                        {isWaived ? t("invoices.ReturnSettlementDialog.restoreLateFees") : t("invoices.ReturnSettlementDialog.waiveLateFees")}
-                      </Button>
-                    )}
-                  </Box>
-                </Box>
-
-                {/* Due date context */}
-                {overdueTracked && line.expected_return && (
-                  <Box sx={{ px: 2, pt: 1, pb: 0 }}>
-                    <Typography variant="caption" color={isLate ? "error.main" : "text.secondary"} sx={{ fontWeight: 600 }}>
-                      {t("invoices.ReturnSettlementDialog.expectedReturn")} {formatDisplayDate(line.expected_return)}
-                      {isLate && ` · ${t("invoices.ReturnSettlementDialog.daysOverdue", { count: daysLate })}`}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Splitter handles returning qty (primary), plus a collapsible
-                    section for actual return date + defective qty. */}
-                <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-                  <QuantityReturnSplitter
-                    remaining={line.remaining_qty}
-                    returningQty={(line.good_qty || 0) + (line.defective_qty || 0)}
-                    defectiveQty={line.defective_qty || 0}
-                    actualReturnDate={line.actual_return_date}
-                    onChange={({ returningQty, defectiveQty, actualReturnDate }) => {
-                      handleUpdateLineBatch(line.line_id, {
-                        good_qty: Math.max(0, returningQty - defectiveQty),
-                        defective_qty: defectiveQty,
-                        actual_return_date: actualReturnDate,
-                      });
-                    }}
-                  />
-                </Box>
-              </Box>
-            );
-          })}
-
-          {/* Final Settlement Collection */}
-          <Box
-            sx={{
-              bgcolor: "white",
-              border: "1px solid #e2e8f0",
-              borderRadius: 2.5,
-              p: 2,
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
-              {t("invoices.ReturnSettlementDialog.collectFinalSettlementPayment")}
-            </Typography>
-            <TextField
-              label={t("invoices.ReturnSettlementDialog.paymentAmountRs")}
-              type="number"
-              size="small"
-              fullWidth
-              value={finalPaymentAmount}
-              onChange={(e) => setFinalPaymentAmount(e.target.value)}
-              placeholder="0"
-              slotProps={{
-                input: { inputProps: { min: 0 } },
-              }}
+          {lines.map((line) => (
+            <HandoverLineCard
+              key={line.line_id}
+              line={line}
+              daysLate={calcDaysLate(line, handoverDate)}
+              lateFee={calcLateFee(line, handoverDate)}
+              onChange={(u) => patchLine(line.line_id, u)}
             />
+          ))}
+
+          {/* payment */}
+          <Box sx={{ bgcolor: "white", border: "1px solid #e2e8f0", borderRadius: 2.5, p: 2, display: "flex", flexDirection: "column", gap: 1.25 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PaymentsOutlinedIcon sx={{ color: "#0f766e" }} />
+                <Typography sx={{ fontWeight: 800, color: "#0f172a" }}>{t("invoices.handover.paymentTitle")}</Typography>
+              </Box>
+              <Box sx={{ textAlign: "right" }}>
+                <Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: "#475569" }}>{t("invoices.handover.balanceAfter")}</Typography>
+                <Typography sx={{ fontWeight: 900, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums", color: balanceAfter > 0 ? "#b91c1c" : "#15803d" }}>
+                  Rs. {money(balanceAfter)}
+                </Typography>
+                {totalLateFees > 0 && (
+                  <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, color: "#b45309", fontVariantNumeric: "tabular-nums" }}>
+                    {t("invoices.handover.inclLate", { fee: money(totalLateFees) })}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+              <NumberInput
+                value={payment}
+                onChange={setPayment}
+                decimals
+                size="small"
+                label={t("invoices.handover.collectNow")}
+                placeholder="0"
+                sx={{ flex: 1, minWidth: 180, "& .MuiOutlinedInput-root": { bgcolor: "white" }, "& input": { color: "#0f172a", fontWeight: 700, fontVariantNumeric: "tabular-nums" } }}
+              />
+              {balanceAfter > 0 && paymentNum !== balanceAfter && (
+                <Button size="small" variant="outlined" onClick={() => setPayment(Number(balanceAfter.toFixed(2)))} sx={{ textTransform: "none", fontWeight: 800 }}>
+                  {t("invoices.handover.fullBalance")}
+                </Button>
+              )}
+            </Box>
           </Box>
 
-          {/* Vault toggle */}
+          {/* ID in the vault */}
           {invoice.Customer?.is_id_retained_currently && (
-            <Box
-              sx={{
-                bgcolor: "#fffbeb",
-                border: "1px solid #fde047",
-                borderRadius: 2.5,
-                p: 2.5,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 2,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                <VerifiedUserIcon sx={{ color: "#b45309", mt: 0.25 }} />
+            <Box sx={{ bgcolor: "#fffbeb", border: "1px solid #fde68a", borderRadius: 2.5, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                <VerifiedUserOutlinedIcon sx={{ color: "#b45309" }} />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#b45309" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: "#92400e" }}>
                     {t("invoices.ReturnSettlementDialog.securityVaultAction")}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "#b45309" }}>
+                  <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 600 }}>
                     {t("invoices.ReturnSettlementDialog.clientSIdIsCurrently")}
                   </Typography>
                 </Box>
               </Box>
               <FormControlLabel
-                control={
-                  <Switch
-                    checked={releaseId}
-                    onChange={(e) => setReleaseId(e.target.checked)}
-                    color="warning"
-                  />
-                }
+                control={<Switch checked={releaseId} onChange={(e) => setReleaseId(e.target.checked)} color="warning" />}
                 label={
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#b45309" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: "#92400e" }}>
                     {releaseId ? t("orders.releaseId") : t("invoices.ReturnSettlementDialog.keepInVault")}
                   </Typography>
                 }
@@ -405,31 +255,16 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
         </Box>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          p: { xs: 1.5, sm: 3 },
-          bgcolor: "white",
-          borderTop: "1px solid #e2e8f0",
-          gap: 1,
-          flexWrap: "wrap",
-        }}
-      >
-        {hasLateFees && (
-          <Typography variant="caption" sx={{ color: "warning.dark", fontWeight: 700, mr: "auto" }}>
-            {t("invoices.ReturnSettlementDialog.rsInLateFeesWill", { totalLateFees: totalLateFees.toLocaleString() })}
+      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: "white", borderTop: "1px solid #e2e8f0", gap: 1, flexWrap: "wrap" }}>
+        {!canConfirm && !returnMutation.isPending && (
+          <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 700, mr: "auto" }}>
+            {t("invoices.handover.nothingToConfirm")}
           </Typography>
         )}
-        <Button onClick={onClose} disabled={returnMutation.isPending} color="inherit">
+        <Button onClick={onClose} disabled={returnMutation.isPending} color="inherit" sx={{ fontWeight: 700 }}>
           {t("common.cancel")}
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSubmit}
-          disabled={returnMutation.isPending}
-          disableElevation
-          sx={{ fontWeight: 700, px: 3 }}
-        >
+        <Button variant="contained" onClick={handleSubmit} disabled={!canConfirm} disableElevation sx={{ fontWeight: 800, px: 3 }}>
           {returnMutation.isPending ? <CircularProgress size={20} /> : t("invoices.ReturnSettlementDialog.confirmReturn")}
         </Button>
       </DialogActions>

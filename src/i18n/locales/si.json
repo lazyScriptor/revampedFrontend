@@ -973,6 +973,25 @@
             "flagCashier": "අයකැමියා මැකූ",
             "flaggedOnly": "අයකැමියන් මැකූ ඒවා පමණක් පෙන්වන්න",
             "searchPlaceholder": "INV අංකය හෝ හේතුව සොයන්න…"
+        },
+        "handover": {
+            "subtitle": "ආපසු ලැබුණු දේ සලකුණු කරන්න. ප්‍රමාද ගාස්තු ස්වයංක්‍රීයව ගණනය වේ.",
+            "handoverDate": "ආපසු භාර ගත් දිනය",
+            "returnEverything": "සියල්ල ආපසු ලැබුණා",
+            "returning": "දැන් ආපසු ලැබෙන",
+            "damaged": "හානි වූ",
+            "all": "සියල්ල",
+            "ofStillOut": "පිටත ඇති {{count}}න්",
+            "damagedHint": "අලුත්වැඩියා පෝලිමට යයි",
+            "summaryGood": "හොඳ {{count}}",
+            "summaryDamaged": "හානි {{count}}",
+            "summaryStillOut": "තවමත් පිටත {{count}}",
+            "paymentTitle": "ගෙවීම",
+            "balanceAfter": "භාර ගැනීමෙන් පසු ශේෂය",
+            "inclLate": "ප්‍රමාද ගාස්තු Rs. {{fee}} ඇතුළුව",
+            "collectNow": "දැන් අය කරන මුදල (Rs.)",
+            "fullBalance": "සම්පූර්ණ ශේෂය",
+            "nothingToConfirm": "අවම වශයෙන් ආපසු ලැබුණු ඒකකයක් හෝ ගෙවීමක් ඇතුළත් කරන්න."
         }
     },
     "orders": {

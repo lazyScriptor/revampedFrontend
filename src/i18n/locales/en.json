@@ -973,6 +973,25 @@
             "flagCashier": "Cashier deletion",
             "flaggedOnly": "Show cashier deletions only",
             "searchPlaceholder": "Search INV number or reason…"
+        },
+        "handover": {
+            "subtitle": "Mark what came back. Late fees are worked out for you.",
+            "handoverDate": "Returned on",
+            "returnEverything": "Return everything",
+            "returning": "Returning now",
+            "damaged": "Damaged",
+            "all": "All",
+            "ofStillOut": "of {{count}} still out",
+            "damagedHint": "Goes to the repair queue",
+            "summaryGood": "{{count}} good",
+            "summaryDamaged": "{{count}} damaged",
+            "summaryStillOut": "{{count}} still out",
+            "paymentTitle": "Payment",
+            "balanceAfter": "Balance after handover",
+            "inclLate": "incl. Rs. {{fee}} late fees",
+            "collectNow": "Collect now (Rs.)",
+            "fullBalance": "Full balance",
+            "nothingToConfirm": "Enter at least one returned unit or a payment."
         }
     },
     "orders": {
