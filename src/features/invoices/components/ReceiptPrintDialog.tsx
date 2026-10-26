@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
+import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TuneIcon from "@mui/icons-material/Tune";
 import DrawIcon from "@mui/icons-material/Draw";
@@ -563,6 +564,12 @@ export function ReceiptPrintDialog({
                 ? t("invoices.ReceiptPrintDialog.signaturesCaptured", { lng: language })
                 : t("invoices.ReceiptPrintDialog.captureSignaturesPhone", { lng: language })}
             </Button>
+          )}
+
+          {!isDraft && invoiceIdForSigs && (
+            <Box sx={{ ml: 1 }}>
+              <WhatsAppButton variant="button" size="medium" invoiceId={invoiceIdForSigs} templateKey="receipt" />
+            </Box>
           )}
 
           {printStatus && (

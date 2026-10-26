@@ -163,7 +163,8 @@
         "notifications": "දැනුම්දීම්",
         "myProfile": "මගේ පැතිකඩ",
         "changePassword": "මුරපදය වෙනස් කරන්න",
-        "preferences": "මනාප"
+        "preferences": "මනාප",
+        "messages": "පණිවිඩ"
     },
     "dashboard": {
         "title": "ප්‍රධාන පුවරුව",
@@ -2763,5 +2764,124 @@
         "consonants": "ව්‍යංජන",
         "special": "විශේෂ",
         "skipNote": "දුරකථන, ජා.හැ.අ., විද්‍යුත් තැපෑල, මුරපද, අනුක්‍රමික අංක, මිල සහ දින ක්ෂේත්‍ර සැමවිටම ඉංග්‍රීසියෙන් පවතී."
+    },
+    "whatsapp": {
+        "button": {
+            "send": "WhatsApp හරහා යවන්න"
+        },
+        "page": {
+            "title": "පණිවිඩ",
+            "subtitle": "එක් ස්පර්ශයකින් WhatsApp පණිවිඩ. යවන්නේ ඔබ නිසා මුදලක් අය නොවේ.",
+            "tabToday": "අද",
+            "tabTemplates": "වචන",
+            "tabHistory": "ඉතිහාසය"
+        },
+        "today": {
+            "title": "අද",
+            "overdue": "ප්‍රමාද වූ ආපසු භාර දීම්",
+            "overdueHint": "ආපසු භාර දිය යුතු දිනය ඉක්මවා ඇත",
+            "dueToday": "අද භාර දිය යුතු",
+            "dueTodayHint": "වසන වේලාවට පෙර",
+            "dueTomorrow": "හෙට භාර දිය යුතු",
+            "dueTomorrowHint": "කලින් මතක් කිරීම",
+            "payments": "ලැබිය යුතු මුදල්",
+            "loadFailed": "අද ලැයිස්තුව පූරණය කළ නොහැකි විය.",
+            "allClear": "අද සියල්ල පිළිවෙළයි",
+            "allClearHint": "භාර දිය යුතු හෝ ගෙවිය යුතු බිල්පත් නැත.",
+            "sectionEmpty": "මෙහි කිසිවක් නැත.",
+            "messageAll": "සියල්ලන්ට පණිවිඩ යවන්න ({{count}})",
+            "message": "පණිවිඩය",
+            "pickContact": "සම්බන්ධතාව තෝරන්න",
+            "messaged": "පණිවිඩ යවා ඇත",
+            "messagedAgo": "{{when}} පණිවිඩ යවන ලදී",
+            "optedOut": "පණිවිඩ අවශ්‍ය නැත",
+            "due": "{{date}} දිනට",
+            "daysLate_one": "දින {{count}}ක් ප්‍රමාදයි",
+            "daysLate_other": "දින {{count}}ක් ප්‍රමාදයි"
+        },
+        "dialog": {
+            "title": "WhatsApp හරහා යවන්න",
+            "messageType": "පණිවිඩ වර්ගය",
+            "language": "භාෂාව",
+            "message": "පණිවිඩය",
+            "noNumber": "අංකයක් නැත",
+            "editHint": "WhatsApp විවෘත කිරීමට පෙර පණිවිඩය සංස්කරණය කළ හැක.",
+            "editedHint": "සංස්කරණය කර ඇත — මෙම පෙළම භාවිත වේ.",
+            "couldNotCompose": "පණිවිඩය සකස් කළ නොහැකි විය.",
+            "allowAgain": "නැවත ඉඩ දෙන්න",
+            "openWhatsApp": "WhatsApp විවෘත කරන්න",
+            "openPickContact": "WhatsApp විවෘත කරන්න (සම්බන්ධතාව තෝරන්න)",
+            "copy": "පණිවිඩය පිටපත් කරන්න",
+            "copied": "පණිවිඩය පිටපත් කරන ලදී.",
+            "copyFailed": "පිටපත් කළ නොහැකි විය.",
+            "didYouSend": "WhatsApp විවෘත විය. එහි යවන්න ඔබා, ඉන්පසු මෙහි තහවුරු කරන්න.",
+            "yesSent": "ඔව්, යැවුවා",
+            "markedSent": "යැවූ ලෙස සටහන් කරන ලදී.",
+            "popupBlocked": "ඔබේ බ්‍රවුසරය නව ටැබය අවහිර කළා — මෙතැනින් WhatsApp විවෘත කරන්න."
+        },
+        "warnings": {
+            "noPhone": "මෙම පාරිභෝගිකයාට දුරකථන අංකයක් නැත. WhatsApp හි සම්බන්ධතාව ඔබ තෝරාගත යුතුය.",
+            "landline": "මෙය ස්ථාවර දුරකථන අංකයකි; WhatsApp ලැබිය නොහැක. WhatsApp හි සම්බන්ධතාව ඔබ තෝරාගත යුතුය.",
+            "invalidPhone": "මෙම දුරකථන අංකය වලංගු නොවන බව පෙනේ. WhatsApp හි සම්බන්ධතාව ඔබ තෝරාගත යුතුය.",
+            "optedOut": "මෙම පාරිභෝගිකයා WhatsApp පණිවිඩ නොයවන ලෙස ඉල්ලා ඇත.",
+            "noBalance": "මෙම ඉන්වොයිසියේ ඉතිරි මුදලක් නැත.",
+            "nothingToReturn": "මෙම ඉන්වොයිසියේ ආපසු භාර දීමට ඉතිරි දෙයක් නැත.",
+            "messagedRecently": "ඔබ මෙම පණිවිඩය මෑතකදී දැනටමත් යවා ඇත",
+            "tooLong": "මෙම පණිවිඩය ඉතා දිගයි; කොටසක් කැපී යා හැක."
+        },
+        "types": {
+            "receipt": "රිසිට්පත",
+            "payment_received": "ගෙවීම ලැබුණා",
+            "payment_reminder": "ගෙවීම් සිහිකැඳවීම",
+            "return_due_tomorrow": "හෙට භාර දිය යුතු",
+            "return_due_today": "අද භාර දිය යුතු",
+            "overdue_return": "ප්‍රමාද වූ",
+            "thank_you": "ස්තූතියි",
+            "custom": "අභිරුචි පණිවිඩය"
+        },
+        "queue": {
+            "title": "ලැයිස්තුවට පණිවිඩ යවන්න",
+            "progress": "{{total}} න් {{current}}",
+            "skip": "මඟ හරින්න",
+            "openNext": "WhatsApp විවෘත කර ඊළඟට",
+            "allDone": "සියල්ලන්ටම අවසානයි!",
+            "summary": "විවෘත කළ {{opened}} · මඟ හැරි {{skipped}}",
+            "finish": "අවසන් කරන්න"
+        },
+        "templates": {
+            "groupOrder": "ඇණවුම්",
+            "groupReturns": "ආපසු භාර දීම්",
+            "groupPayments": "ගෙවීම්",
+            "groupGeneral": "සාමාන්‍ය",
+            "customised": "අභිරුචි කළ",
+            "editor": "පණිවිඩ වචන",
+            "placeholders": "ස්ථාන සළකුණු",
+            "preview": "පෙරදසුන",
+            "dropLineHint": "සියලු ස්ථාන සළකුණු හිස් නම් ඒ පේළිය ඉවත් වේ.",
+            "readOnly": "ඔබට වචන බැලිය හැකි නමුත් වෙනස් කළ නොහැක.",
+            "unknownPlaceholders": "නොදන්නා ස්ථාන සළකුණු: {{list}}",
+            "reset": "පෙරනිමියට යළි සකසන්න",
+            "resetDone": "පෙරනිමි වචන වෙත නැවත පැමිණියා.",
+            "saved": "වචන සුරකින ලදී.",
+            "saveFailed": "සුරැකිය නොහැකි විය.",
+            "loadFailed": "වචන පූරණය කළ නොහැකි විය."
+        },
+        "settings": {
+            "shopPhone": "පණිවිඩවල වෙළඳසැල් දුරකථනය",
+            "shopPhoneHint": "වෙළඳසැල් දුරකථන ස්ථාන සළකුණට භාවිත වේ. සැඟවීමට හිස්ව තබන්න.",
+            "defaultLanguage": "පෙරනිමි භාෂාව",
+            "saved": "සැකසුම් සුරකින ලදී."
+        },
+        "history": {
+            "filterType": "පණිවිඩ වර්ගය",
+            "allTypes": "සියලු වර්ග",
+            "count_one": "පණිවිඩ {{count}}ක්",
+            "count_other": "පණිවිඩ {{count}}ක්",
+            "empty": "තවම පණිවිඩ නැත.",
+            "loadFailed": "ඉතිහාසය පූරණය කළ නොහැකි විය.",
+            "loadMore": "තවත් පූරණය කරන්න",
+            "sent": "යැවූ",
+            "opened": "විවෘත කළ"
+        }
     }
 }

@@ -32,6 +32,8 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import HistoryIcon from "@mui/icons-material/History";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
+import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
+import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import { useTranslation } from "react-i18next";
 
 export interface ReadOnlyInvoiceModalProps {
@@ -513,21 +515,26 @@ export function ReadOnlyInvoiceModal({
 
         {/* Actions */}
         <DialogActions sx={{ px: 3, py: 2, bgcolor: "#ffffff", borderTop: "1px solid #e2e8f0", justifyContent: "space-between" }}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<PrintIcon />}
-            onClick={() => setIsPrintOpen(true)}
-            sx={{
-              borderRadius: 2,
-              fontWeight: 700,
-              textTransform: "none",
-              borderColor: "#cbd5e1",
-              color: "#334155",
-            }}
-          >
-            {t("invoices.ReadOnlyInvoiceModal.printReceipt")}
-          </Button>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<PrintIcon />}
+              onClick={() => setIsPrintOpen(true)}
+              sx={{
+                borderRadius: 2,
+                fontWeight: 700,
+                textTransform: "none",
+                borderColor: "#cbd5e1",
+                color: "#334155",
+              }}
+            >
+              {t("invoices.ReadOnlyInvoiceModal.printReceipt")}
+            </Button>
+            {invoice?.invoice_id && (
+              <WhatsAppButton variant="button" size="small" invoiceId={Number(invoice.invoice_id)} templateKey={suggestedTemplate(invoice.status)} />
+            )}
+          </Box>
 
           <Button
             variant="contained"

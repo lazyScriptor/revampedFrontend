@@ -14,6 +14,7 @@ import MaintenanceRoute from "@/routes/Maintenance";
 import WorkforceRoute from "@/routes/Workforce";
 import AccountingRoute from "@/routes/Accounting";
 import ReportsRoute from "@/routes/Reports";
+import MessagesRoute, { MESSAGE_TABS } from "@/routes/Messages";
 import ProfileRoute from "@/routes/Profile";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
@@ -176,6 +177,16 @@ const maintenanceRoute = createRoute({
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <MaintenanceRoute />,
 });
+//messages (free WhatsApp hub)
+const messagesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/messages",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (MESSAGE_TABS as readonly string[]).includes(search.tab as string) ? (search.tab as (typeof MESSAGE_TABS)[number]) : undefined,
+  }),
+  beforeLoad: () => requirePermission("whatsapp:send"),
+  component: () => <MessagesRoute />,
+});
 //workforce
 const workforceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -279,6 +290,7 @@ const routeTree = rootRoute.addChildren([
     customersRoute,
     rentalHistoryRoute,
     maintenanceRoute,
+    messagesRoute,
     workforceRoute,
     accountingRoute,
     reportsRoute,

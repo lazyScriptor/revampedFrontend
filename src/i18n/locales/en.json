@@ -163,7 +163,8 @@
         "notifications": "Notifications",
         "myProfile": "My Profile",
         "changePassword": "Change Password",
-        "preferences": "Preferences"
+        "preferences": "Preferences",
+        "messages": "Messages"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -2763,5 +2764,124 @@
         "consonants": "Consonants",
         "special": "Special",
         "skipNote": "Phone, NIC, email, password, serial, price and date fields always stay English."
+    },
+    "whatsapp": {
+        "button": {
+            "send": "Send on WhatsApp"
+        },
+        "page": {
+            "title": "Messages",
+            "subtitle": "WhatsApp messages in one tap. You press Send, so it costs nothing.",
+            "tabToday": "Today",
+            "tabTemplates": "Wording",
+            "tabHistory": "History"
+        },
+        "today": {
+            "title": "Today",
+            "overdue": "Overdue returns",
+            "overdueHint": "Past the return date",
+            "dueToday": "Due today",
+            "dueTodayHint": "Back by closing time",
+            "dueTomorrow": "Due tomorrow",
+            "dueTomorrowHint": "Heads-up reminder",
+            "payments": "Money owed",
+            "loadFailed": "Could not load today's list.",
+            "allClear": "All clear for today",
+            "allClearHint": "No returns due and no unpaid invoices to chase.",
+            "sectionEmpty": "Nothing here.",
+            "messageAll": "Message all ({{count}})",
+            "message": "Message",
+            "pickContact": "Choose contact",
+            "messaged": "Messaged",
+            "messagedAgo": "Messaged {{when}}",
+            "optedOut": "Opted out",
+            "due": "due {{date}}",
+            "daysLate_one": "{{count}} day late",
+            "daysLate_other": "{{count}} days late"
+        },
+        "dialog": {
+            "title": "Send on WhatsApp",
+            "messageType": "Message type",
+            "language": "Language",
+            "message": "Message",
+            "noNumber": "No number",
+            "editHint": "You can edit the message before opening WhatsApp.",
+            "editedHint": "Edited — this exact text will be used.",
+            "couldNotCompose": "Could not prepare the message.",
+            "allowAgain": "Allow again",
+            "openWhatsApp": "Open WhatsApp",
+            "openPickContact": "Open WhatsApp (pick contact)",
+            "copy": "Copy message",
+            "copied": "Message copied.",
+            "copyFailed": "Could not copy.",
+            "didYouSend": "WhatsApp opened. Press Send there, then confirm here.",
+            "yesSent": "Yes, sent",
+            "markedSent": "Marked as sent.",
+            "popupBlocked": "Your browser blocked the new tab — open WhatsApp here."
+        },
+        "warnings": {
+            "noPhone": "This customer has no phone number. You will pick the contact in WhatsApp.",
+            "landline": "This number is a landline and cannot receive WhatsApp. You will pick the contact in WhatsApp.",
+            "invalidPhone": "This phone number does not look valid. You will pick the contact in WhatsApp.",
+            "optedOut": "This customer asked not to be messaged on WhatsApp.",
+            "noBalance": "This invoice has no balance due.",
+            "nothingToReturn": "Nothing is left to return on this invoice.",
+            "messagedRecently": "You already sent this message recently",
+            "tooLong": "This message is very long and may be cut off."
+        },
+        "types": {
+            "receipt": "Receipt",
+            "payment_received": "Payment received",
+            "payment_reminder": "Payment reminder",
+            "return_due_tomorrow": "Due tomorrow",
+            "return_due_today": "Due today",
+            "overdue_return": "Overdue",
+            "thank_you": "Thank you",
+            "custom": "Custom message"
+        },
+        "queue": {
+            "title": "Message the list",
+            "progress": "{{current}} of {{total}}",
+            "skip": "Skip",
+            "openNext": "Open WhatsApp & next",
+            "allDone": "That's everyone!",
+            "summary": "{{opened}} opened · {{skipped}} skipped",
+            "finish": "Finish"
+        },
+        "templates": {
+            "groupOrder": "Orders",
+            "groupReturns": "Returns",
+            "groupPayments": "Payments",
+            "groupGeneral": "General",
+            "customised": "Customised",
+            "editor": "Message wording",
+            "placeholders": "Placeholders",
+            "preview": "Preview",
+            "dropLineHint": "A line is removed when all its placeholders are empty.",
+            "readOnly": "You can view the wording but not change it.",
+            "unknownPlaceholders": "Unknown placeholder(s): {{list}}",
+            "reset": "Reset to default",
+            "resetDone": "Back to the default wording.",
+            "saved": "Wording saved.",
+            "saveFailed": "Could not save.",
+            "loadFailed": "Could not load the wording."
+        },
+        "settings": {
+            "shopPhone": "Shop phone in messages",
+            "shopPhoneHint": "Used for the shop phone placeholder. Leave blank to hide it.",
+            "defaultLanguage": "Default language",
+            "saved": "Settings saved."
+        },
+        "history": {
+            "filterType": "Message type",
+            "allTypes": "All types",
+            "count_one": "{{count}} message",
+            "count_other": "{{count}} messages",
+            "empty": "No messages yet.",
+            "loadFailed": "Could not load history.",
+            "loadMore": "Load more",
+            "sent": "Sent",
+            "opened": "Opened"
+        }
     }
 }

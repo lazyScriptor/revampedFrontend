@@ -38,6 +38,8 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
+import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
+import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
@@ -1079,6 +1081,16 @@ export function ManageFinancialPanel({
           >
             {t("invoices.ManageInvoiceViews.printPosBillInv", { invoice_id: invoice.invoice_id })}
           </Button>
+
+          <Box sx={{ mt: 0.75 }}>
+            <WhatsAppButton
+              variant="button"
+              size="small"
+              fullWidth
+              invoiceId={invoice.invoice_id}
+              templateKey={suggestedTemplate(invoice.status)}
+            />
+          </Box>
 
           <Can perform="invoice:print_log:view">
             <Button

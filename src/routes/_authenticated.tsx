@@ -33,6 +33,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import InventoryIcon from "@mui/icons-material/Inventory2";
 import PeopleIcon from "@mui/icons-material/Group";
 import ReceiptIcon from "@mui/icons-material/ReceiptLong";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import StorageIcon from "@mui/icons-material/Storage";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ExpandLess from "@mui/icons-material/ExpandLess";
@@ -213,6 +214,14 @@ function AuthenticatedLayout() {
       path: "/invoices",
       search: { mode: "manage" },
       requiredPermission: "invoice:view",
+    },
+    {
+      text: "Messages",
+      label: t("nav.messages"),
+      icon: <WhatsAppIcon />,
+      path: "/messages",
+      search: { tab: "today" },
+      requiredPermission: "whatsapp:send",
     },
     {
       text: "Data Arena",

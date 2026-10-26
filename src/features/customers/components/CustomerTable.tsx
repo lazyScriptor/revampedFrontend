@@ -26,6 +26,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import BusinessIcon from "@mui/icons-material/Business";
 
 import { useDeleteCustomer } from "../hooks/useCustomerHooks";
+import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { useTranslation } from "react-i18next";
 
 interface CustomerTableProps {
@@ -128,17 +129,20 @@ export function CustomerTable({
       flex: 0.6,
       minWidth: 130,
       renderCell: (params: GridRenderCellParams) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontVariantNumeric: "tabular-nums",
-            color: "text.secondary",
-            fontSize: "0.82rem",
-          }}
-        >
-          {params.value || "-"}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontVariantNumeric: "tabular-nums",
+              color: "text.secondary",
+              fontSize: "0.82rem",
+            }}
+          >
+            {params.value || "-"}
+          </Typography>
+          {params.value && <WhatsAppButton customerId={params.row.customer_id} templateKey="custom" />}
+        </Box>
       ),
     },
     {
