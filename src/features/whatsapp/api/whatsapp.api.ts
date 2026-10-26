@@ -70,6 +70,8 @@ export type WorklistSection = "overdue_returns" | "returns_due_today" | "returns
 export interface Worklist {
   generated_at: string;
   today: string;
+  /** a section hit the server's cap, so its real size is "this many or more" */
+  truncated?: Record<WorklistSection, boolean>;
   summary: Record<WorklistSection, number> & { balance_pending: number };
   sections: Record<WorklistSection, WorklistItem[]>;
 }

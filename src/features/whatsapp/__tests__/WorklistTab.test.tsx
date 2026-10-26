@@ -176,6 +176,15 @@ describe("WorklistTab", () => {
     });
   });
 
+  it("shows '300+' when the server cut a list short", () => {
+    const w = worklist({ overdue_returns: Array.from({ length: 3 }, (_, i) => item(i + 1)) });
+    w.summary.overdue_returns = 300;
+    w.truncated = { overdue_returns: true, returns_due_today: false, returns_due_tomorrow: false, payments_pending: false };
+    ready(w);
+    render(<WorklistTab />);
+    expect(screen.getByText("300+")).toBeInTheDocument();
+  });
+
   it("celebrates an empty day", () => {
     ready(worklist());
     render(<WorklistTab />);

@@ -86,7 +86,7 @@ export function WorklistTab() {
           <KpiTile
             key={s}
             label={TILES[s].label}
-            value={data ? data.summary[s] : "—"}
+            value={data ? `${data.summary[s]}${data.truncated?.[s] ? "+" : ""}` : "—"}
             hint={TILES[s].hint}
             icon={TILES[s].icon}
             tone={TILES[s].tone}
