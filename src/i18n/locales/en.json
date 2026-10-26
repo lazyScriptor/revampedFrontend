@@ -1034,6 +1034,47 @@
             "collectNow": "Collect now (Rs.)",
             "fullBalance": "Full balance",
             "nothingToConfirm": "Enter at least one returned unit or a payment."
+        },
+        "status": {
+            "active": "Active",
+            "awaitingClose": "Returned · open",
+            "completed": "Completed"
+        },
+        "FinancialPanel": {
+            "customerOwes": "Customer owes",
+            "refundDue": "Refund due to customer",
+            "settled": "Settled",
+            "closed": "Closed",
+            "totalPaidLine": "Total {{total}} · Paid {{paid}}",
+            "collapse": "Collapse panel",
+            "discountHint": "You can give a discount any time before completing the invoice.",
+            "fill": "Fill {{amount}}",
+            "amount": "Amount",
+            "method": {
+                "Cash": "Cash",
+                "Card": "Card",
+                "Transfer": "Bank transfer",
+                "Cheque": "Cheque"
+            },
+            "collectAmount": "Collect {{amount}}",
+            "refundAmount": "Refund {{amount}}",
+            "closeTitle": "Close the invoice",
+            "allReturned": "All items returned",
+            "itemsOut_one": "{{count}} item still out",
+            "itemsOut_other": "{{count}} items still out",
+            "moneySettled": "Money settled",
+            "collectFirst": "Collect {{amount}} or give a discount first",
+            "refundFirst": "Refund {{amount}} to the customer first",
+            "complete": "Complete invoice",
+            "invoiceClosed": "Invoice completed",
+            "reopen": "Reopen",
+            "printBill": "Print bill",
+            "more": "More actions",
+            "confirmTitle": "Complete INV-{{id}}?",
+            "confirmBody": "All items are back and the money is settled. After completing, payments and the discount are locked unless the invoice is reopened.",
+            "releaseIdToo": "Give the customer's ID card back",
+            "completedToast": "Invoice completed.",
+            "reopenedToast": "Invoice reopened."
         }
     },
     "orders": {

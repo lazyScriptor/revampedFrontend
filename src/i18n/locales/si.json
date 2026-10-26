@@ -1034,6 +1034,47 @@
             "collectNow": "දැන් අය කරන මුදල (Rs.)",
             "fullBalance": "සම්පූර්ණ ශේෂය",
             "nothingToConfirm": "අවම වශයෙන් ආපසු ලැබුණු ඒකකයක් හෝ ගෙවීමක් ඇතුළත් කරන්න."
+        },
+        "status": {
+            "active": "සක්‍රිය",
+            "awaitingClose": "ආපසු ලැබුණා · විවෘතයි",
+            "completed": "සම්පූර්ණයි"
+        },
+        "FinancialPanel": {
+            "customerOwes": "පාරිභෝගිකයා ගෙවිය යුතු",
+            "refundDue": "පාරිභෝගිකයාට ආපසු දිය යුතු",
+            "settled": "පියවා ඇත",
+            "closed": "වසා ඇත",
+            "totalPaidLine": "මුළු {{total}} · ගෙවූ {{paid}}",
+            "collapse": "පුවරුව හකුළන්න",
+            "discountHint": "ඉන්වොයිසිය සම්පූර්ණ කිරීමට පෙර ඕනෑම වේලාවක වට්ටමක් දිය හැක.",
+            "fill": "{{amount}} පුරවන්න",
+            "amount": "මුදල",
+            "method": {
+                "Cash": "මුදල්",
+                "Card": "කාඩ්පත",
+                "Transfer": "බැංකු මාරුව",
+                "Cheque": "චෙක්පත"
+            },
+            "collectAmount": "{{amount}} ලබා ගන්න",
+            "refundAmount": "{{amount}} ආපසු දෙන්න",
+            "closeTitle": "ඉන්වොයිසිය වසන්න",
+            "allReturned": "සියලු අයිතම ආපසු ලැබුණා",
+            "itemsOut_one": "අයිතම {{count}}ක් තවම පිටත",
+            "itemsOut_other": "අයිතම {{count}}ක් තවම පිටත",
+            "moneySettled": "මුදල් පියවා ඇත",
+            "collectFirst": "පළමුව {{amount}} ලබා ගන්න හෝ වට්ටමක් දෙන්න",
+            "refundFirst": "පළමුව පාරිභෝගිකයාට {{amount}} ආපසු දෙන්න",
+            "complete": "ඉන්වොයිසිය සම්පූර්ණ කරන්න",
+            "invoiceClosed": "ඉන්වොයිසිය සම්පූර්ණයි",
+            "reopen": "නැවත විවෘත කරන්න",
+            "printBill": "බිල්පත මුද්‍රණය",
+            "more": "තවත් ක්‍රියා",
+            "confirmTitle": "INV-{{id}} සම්පූර්ණ කරන්නද?",
+            "confirmBody": "සියලු අයිතම ආපසු ලැබී මුදල් පියවා ඇත. සම්පූර්ණ කළ පසු, ඉන්වොයිසිය නැවත විවෘත කරන තුරු ගෙවීම් සහ වට්ටම අගුළු වැටේ.",
+            "releaseIdToo": "පාරිභෝගිකයාගේ හැඳුනුම්පත ආපසු දෙන්න",
+            "completedToast": "ඉන්වොයිසිය සම්පූර්ණ කරන ලදී.",
+            "reopenedToast": "ඉන්වොයිසිය නැවත විවෘත කරන ලදී."
         }
     },
     "orders": {

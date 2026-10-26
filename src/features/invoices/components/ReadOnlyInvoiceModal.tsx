@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
   Dialog,
   DialogTitle,
@@ -132,7 +133,7 @@ export function ReadOnlyInvoiceModal({
             </Typography>
             <Chip
               size="small"
-              label={invoice.status || t("invoices.ReadOnlyInvoiceModal.unknown")}
+              label={invoice.status ? t(invoiceStatusLabel(invoice.status)) : t("invoices.ReadOnlyInvoiceModal.unknown")}
               color={isActive ? "warning" : "success"}
               sx={{
                 fontWeight: 700,

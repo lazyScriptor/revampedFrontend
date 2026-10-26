@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
   Box,
   Typography,
@@ -850,7 +851,7 @@ export function PosCustomerPanel({
                           </Typography>
                           <Chip
                             size="small"
-                            label={inv.status}
+                            label={t(invoiceStatusLabel(inv.status))}
                             color={isActive ? "warning" : "success"}
                             sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
                           />

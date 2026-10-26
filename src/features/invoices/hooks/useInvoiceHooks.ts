@@ -150,3 +150,34 @@ export const useUpdateFees = () => {
 // Thermal receipt printing lives in its own module (direct agent + dialog fallback)
 export { handlePrintInvoice, checkPrintAgent } from "../utils/thermalPrint";
 export type { PrintInvoiceOptions, PrintResult } from "../utils/thermalPrint";
+
+// Explicit close: only when every item is back and the money is square (the server enforces it).
+export const useCompleteInvoice = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: { id: number, release_id_card?: boolean }) => {
+            const response: any = await api.post(`/invoices/${payload.id}/complete`, { release_id_card: !!payload.release_id_card });
+            return response?.data || response;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['customer-invoices'] });
+        },
+    });
+};
+
+// Undo a close (e.g. one done too early) so refunds and discounts can be recorded again.
+export const useReopenInvoice = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: number) => {
+            const response: any = await api.post(`/invoices/${id}/reopen`);
+            return response?.data || response;
+        },
+        onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        },
+    });
+};

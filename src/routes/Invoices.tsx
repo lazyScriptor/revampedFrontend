@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
   Box,
   Typography,
@@ -530,7 +531,7 @@ export default function InvoicesRoute() {
             {posMode === "manage" && activeInvoice && (
               <Chip
                 icon={<ReceiptLongIcon sx={{ fontSize: "14px !important" }} />}
-                label={`INV-${activeInvoice.invoice_id} · ${activeInvoice.status}`}
+                label={`INV-${activeInvoice.invoice_id} · ${t(invoiceStatusLabel(activeInvoice.status))}`}
                 size="small"
                 sx={{
                   fontWeight: 800,
