@@ -1174,7 +1174,25 @@
             "notSet": "Not set",
             "agreedAtDispatch": "Price agreed at dispatch",
             "finalPrice": "Final price",
-            "includesLateFee": "incl. Rs. {{fee}} late fee"
+            "includesLateFee": "incl. Rs. {{fee}} late fee",
+            "tableLabel": "Rented items",
+            "colMachine": "Machine",
+            "colDates": "Dates",
+            "colQty": "Qty",
+            "colReturned": "Returned",
+            "colRate": "Rate",
+            "colCost": "Cost",
+            "outShort": "Out",
+            "backShort": "Back",
+            "dueShort": "Due",
+            "perDay": "per day",
+            "forDays_one": "for {{count}} day",
+            "forDays_other": "for {{count}} days",
+            "thenPerDay": "then {{rate}}/day",
+            "inclLate": "incl. late {{fee}}",
+            "damagedCount_one": "{{count}} damaged",
+            "damagedCount_other": "{{count}} damaged",
+            "total": "Total"
         }
     },
     "accounting": {

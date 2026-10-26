@@ -1174,7 +1174,25 @@
             "notSet": "නියම කර නැත",
             "agreedAtDispatch": "නිකුත් කිරීමේදී එකඟ වූ මිල",
             "finalPrice": "අවසන් මිල",
-            "includesLateFee": "ප්‍රමාද ගාස්තු Rs. {{fee}} ඇතුළුව"
+            "includesLateFee": "ප්‍රමාද ගාස්තු Rs. {{fee}} ඇතුළුව",
+            "tableLabel": "කුලියට දුන් අයිතම",
+            "colMachine": "යන්ත්‍රය",
+            "colDates": "දින",
+            "colQty": "ප්‍රමාණය",
+            "colReturned": "ආපසු",
+            "colRate": "ගාස්තුව",
+            "colCost": "මුදල",
+            "outShort": "දුන්",
+            "backShort": "ලැබුණු",
+            "dueShort": "නියමිත",
+            "perDay": "දිනකට",
+            "forDays_one": "දින {{count}}කට",
+            "forDays_other": "දින {{count}}කට",
+            "thenPerDay": "පසුව දිනකට {{rate}}",
+            "inclLate": "ප්‍රමාද {{fee}} ඇතුළුව",
+            "damagedCount_one": "හානි {{count}}",
+            "damagedCount_other": "හානි {{count}}",
+            "total": "එකතුව"
         }
     },
     "accounting": {

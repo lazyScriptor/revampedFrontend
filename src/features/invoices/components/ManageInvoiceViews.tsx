@@ -38,6 +38,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
+import { LedgerTable } from "./LedgerTable";
 import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
@@ -354,267 +355,6 @@ export function ManageSearchPanel({
 const money = (n: number) =>
   Number(n.toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-/** One icon + value + short label — keeps mixed Sinhala/English/number details scannable. */
-function InfoTile({
-  icon,
-  tone,
-  value,
-  label,
-  note,
-  muted = false,
-}: {
-  icon: React.ReactNode;
-  tone: string; // accent colour of the icon circle
-  value: React.ReactNode;
-  label: string;
-  note?: React.ReactNode;
-  muted?: boolean;
-}) {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1.25,
-        p: 1.1,
-        bgcolor: "white",
-        border: "1px solid #e2e8f0",
-        borderRadius: 2,
-        minWidth: 0,
-      }}
-    >
-      <Box
-        sx={{
-          width: 34,
-          height: 34,
-          borderRadius: "50%",
-          bgcolor: `${tone}1f`,
-          color: tone,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          "& svg": { fontSize: 19 },
-        }}
-      >
-        {icon}
-      </Box>
-      <Box sx={{ minWidth: 0 }}>
-        <Typography
-          sx={{
-            fontWeight: 800,
-            fontSize: "0.92rem",
-            lineHeight: 1.25,
-            color: muted ? "#64748b" : "#0f172a",
-            fontStyle: muted ? "italic" : "normal",
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {value}
-        </Typography>
-        <Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: "#475569", lineHeight: 1.3 }}>{label}</Typography>
-        {note && <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, color: "#b45309", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>{note}</Typography>}
-      </Box>
-    </Box>
-  );
-}
-
-function LedgerLineRow({
-  line,
-  info,
-  commonOutDate,
-  returnTraces,
-}: {
-  line: any;
-  info: LineToday;
-  commonOutDate: string;
-  returnTraces: any[];
-}) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const equipName = line.Equipment?.equipment_name || t("invoices.ManageInvoiceViews.unknownAsset");
-  const equipNameSi = line.Equipment?.equipment_name_si;
-
-  const dotColor = !info.isActive ? "#10b981" : info.isOverdue ? "#ef4444" : "#f59e0b";
-  const statusChip = !info.isActive
-    ? { label: t("invoices.returned"), color: "success" as const, variant: "outlined" as const }
-    : info.isOverdue
-      ? { label: t("orders.ledger.lateBy", { count: info.daysLate }), color: "error" as const, variant: "filled" as const }
-      : {
-          label: info.returned > 0 ? t("orders.ledger.outPartial", { pending: info.pending, qty: info.qty }) : t("orders.ledger.statusOut"),
-          color: "warning" as const,
-          variant: "filled" as const,
-        };
-
-  const formula = !info.isActive
-    ? t("invoices.ManageInvoiceViews.finalCostLocked")
-    : info.isOverdue
-      ? t("orders.ledger.lateFormula", {
-          base: money(info.lockedCost),
-          days: info.daysLate,
-          rate: money(Number(line.locked_extra_daily_rate) || 0),
-          pending: info.pending,
-        })
-      : t("orders.ledger.lockedAtDispatch", { base: money(info.lockedCost) });
-
-  const lineIterations = returnTraces
-    .map((trace: any) => {
-      let payload = trace.state_payload || {};
-      if (typeof payload === "string") {
-        try { payload = JSON.parse(payload); } catch { payload = {}; }
-      }
-      const rl = (payload.lines_returned || []).find((l: any) => l.line_id === line.line_id);
-      if (rl && (Number(rl.good_qty) > 0 || Number(rl.defective_qty) > 0)) {
-        return { date: trace.occurred_at || trace.createdAt, good: Number(rl.good_qty) || 0, defective: Number(rl.defective_qty) || 0 };
-      }
-      return null;
-    })
-    .filter(Boolean) as { date: string; good: number; defective: number }[];
-
-  const showOwnOutDate = info.outDate && info.outDate !== commonOutDate;
-
-  return (
-    <Box
-      sx={{
-        bgcolor: "white",
-        border: "1px solid",
-        borderColor: info.isOverdue ? "#fca5a5" : "#e2e8f0",
-        borderRadius: 2,
-        overflow: "hidden",
-        flexShrink: 0,
-      }}
-    >
-      <Box
-        role="button"
-        tabIndex={0}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen((v) => !v);
-          }
-        }}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          px: 2,
-          py: 1.25,
-          minHeight: 56,
-          cursor: "pointer",
-          "&:hover": { bgcolor: "#f8fafc" },
-          "&:focus-visible": { outline: "2px solid #2563eb", outlineOffset: -2 },
-        }}
-      >
-        <StatusDot color={dotColor} />
-        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}>
-            <Typography variant="body2" sx={{ fontWeight: 800, color: "#0f172a" }}>
-              {equipName}
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: "#475569", fontVariantNumeric: "tabular-nums" }}>
-              ×{info.qty}
-            </Typography>
-            {equipNameSi && (
-              <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600 }}>
-                {equipNameSi}
-              </Typography>
-            )}
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", mt: 0.5 }}>
-            <Chip
-              size="small"
-              label={statusChip.label}
-              color={statusChip.color}
-              variant={statusChip.variant}
-              sx={{ fontWeight: 800, fontSize: "0.68rem", height: 20, fontVariantNumeric: "tabular-nums" }}
-            />
-            {info.isActive && info.tracked && info.dueDate && (
-              <Typography
-                variant="caption"
-                sx={{ fontWeight: 700, color: info.isOverdue ? "#b91c1c" : "#475569", display: "inline-flex", alignItems: "center", gap: 0.4, fontVariantNumeric: "tabular-nums" }}
-              >
-                {info.isOverdue && <AccessTimeIcon sx={{ fontSize: 13 }} />}
-                {t("orders.ledger.dueOn", { date: formatDisplayDate(info.dueDate) })}
-              </Typography>
-            )}
-            {showOwnOutDate && (
-              <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                {t("orders.ledger.outOn", { date: formatDisplayDate(info.outDate) })}
-              </Typography>
-            )}
-          </Box>
-        </Box>
-        <Typography
-          sx={{
-            fontWeight: 900,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontVariantNumeric: "tabular-nums",
-            color: info.isActive ? "primary.main" : "#0f172a",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Rs. {money(info.costToday)}
-        </Typography>
-        <ExpandMoreIcon sx={{ color: "#64748b", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
-      </Box>
-
-      {open && (
-        <Box sx={{ px: 2, py: 1.5, bgcolor: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 1.25 }}>
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 1 }}>
-            <InfoTile icon={<Inventory2OutlinedIcon />} tone="#2563eb" value={info.qty} label={t("orders.ledger.tileRented")} />
-            <InfoTile icon={<AssignmentReturnedOutlinedIcon />} tone="#059669" value={info.returned} label={t("orders.ledger.tileReturned")} />
-            <InfoTile icon={<HourglassTopOutlinedIcon />} tone="#d97706" value={info.pending} label={t("orders.ledger.tileStillOut")} />
-            <InfoTile icon={<LocalShippingOutlinedIcon />} tone="#475569" value={info.outDate ? formatDisplayDate(info.outDate) : "—"} label={t("orders.ledger.tileOutOn")} />
-            <InfoTile
-              icon={<EventAvailableOutlinedIcon />}
-              tone={info.isOverdue ? "#dc2626" : "#7c3aed"}
-              value={info.tracked && info.dueDate ? formatDisplayDate(info.dueDate) : t("orders.ledger.notSet")}
-              muted={!(info.tracked && info.dueDate)}
-              label={t("orders.ledger.tileReturnBy")}
-              note={info.isOverdue ? t("orders.ledger.lateBy", { count: info.daysLate }) : undefined}
-            />
-            <InfoTile
-              icon={<SellOutlinedIcon />}
-              tone="#0f766e"
-              value={`Rs. ${money(info.costToday)}`}
-              label={!info.isActive ? t("orders.ledger.finalPrice") : t("orders.ledger.agreedAtDispatch")}
-              note={info.isOverdue ? t("orders.ledger.includesLateFee", { fee: money(info.lateFee) }) : undefined}
-            />
-          </Box>
-          {info.isOverdue && (
-            <Typography variant="caption" sx={{ color: "#334155", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.74rem", fontVariantNumeric: "tabular-nums" }}>
-              {formula}
-            </Typography>
-          )}
-          {lineIterations.length > 0 && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#475569", fontSize: "0.66rem" }}>
-                {t("orders.handoverHistory")}
-              </Typography>
-              {lineIterations.map((iter, i) => (
-                <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                  <SubdirectoryArrowRightIcon sx={{ color: "#94a3b8", fontSize: 15 }} />
-                  <Typography variant="caption" sx={{ color: "#475569", fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
-                    {new Date(iter.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
-                  </Typography>
-                  {iter.good > 0 && (
-                    <Chip size="small" label={t("invoices.ManageInvoiceViews.good", { good: iter.good })} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
-                  )}
-                  {iter.defective > 0 && (
-                    <Chip size="small" label={t("invoices.ManageInvoiceViews.broken", { defective: iter.defective })} color="error" sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />
-                  )}
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
-      )}
-    </Box>
-  );
-}
-
 export function ManageLedgerPanel({
   invoice,
   onOpenReturn,
@@ -637,8 +377,6 @@ export function ManageLedgerPanel({
   const rawTraces = invoice.InvoiceTraces || invoice.InvoiceTrace || invoice.invoice_traces || invoice.traces || [];
   const returnTraces = rawTraces.filter((tr: any) => tr.event_action === "RETURN_PROCESSED");
   const summary = summariseInvoice(rawLines);
-  // When every machine went out the same day, say it once instead of on every row.
-  const commonOutDate = summary.lines.length > 0 && summary.lines.every((l) => l.outDate === summary.lines[0].outDate) ? summary.lines[0].outDate : "";
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
@@ -661,24 +399,24 @@ export function ManageLedgerPanel({
 
       <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: "auto", p: 2.5, display: "flex", flexDirection: "column", gap: 1.5, ...scroll, "& > *": { flexShrink: 0 } }}>
         {/* Cost for today */}
-        <Box sx={{ bgcolor: "#0f172a", borderRadius: 2.5, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box>
-            <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", fontSize: "0.68rem" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", fontSize: "0.68rem" }}>
               {t("orders.ledger.costToday")}
             </Typography>
-            <Typography sx={{ color: "#f8fafc", fontWeight: 900, fontSize: { xs: "1.6rem", md: "1.9rem" }, lineHeight: 1.15, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+            <Typography sx={{ color: "text.primary", fontWeight: 900, fontSize: { xs: "1.6rem", md: "1.9rem" }, lineHeight: 1.15, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
               Rs. {money(summary.costToday)}
             </Typography>
             {summary.earliestOut && (
-              <Typography variant="caption" sx={{ color: "#cbd5e1", fontVariantNumeric: "tabular-nums" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                 {t("orders.ledger.outSince", { date: formatDisplayDate(summary.earliestOut) })}
               </Typography>
             )}
           </Box>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            {summary.outCount > 0 && <Chip size="small" label={t("orders.ledger.machinesOut", { count: summary.outCount })} sx={{ bgcolor: "#f59e0b", color: "#0f172a", fontWeight: 800 }} />}
-            {summary.returnedCount > 0 && <Chip size="small" label={t("orders.ledger.machinesReturned", { count: summary.returnedCount })} sx={{ bgcolor: "#10b981", color: "#0f172a", fontWeight: 800 }} />}
-            {summary.overdueCount > 0 && <Chip size="small" label={t("orders.ledger.overdueCount", { count: summary.overdueCount })} sx={{ bgcolor: "#ef4444", color: "#ffffff", fontWeight: 800 }} />}
+            {summary.outCount > 0 && <Chip size="small" color="warning" label={t("orders.ledger.machinesOut", { count: summary.outCount })} sx={{ fontWeight: 800 }} />}
+            {summary.returnedCount > 0 && <Chip size="small" color="success" variant="outlined" label={t("orders.ledger.machinesReturned", { count: summary.returnedCount })} sx={{ fontWeight: 800 }} />}
+            {summary.overdueCount > 0 && <Chip size="small" color="error" label={t("orders.ledger.overdueCount", { count: summary.overdueCount })} sx={{ fontWeight: 800 }} />}
           </Box>
         </Box>
         {summary.lateFeeToday > 0 && (
@@ -687,9 +425,7 @@ export function ManageLedgerPanel({
           </Typography>
         )}
 
-        {rawLines.map((line: any, i: number) => (
-          <LedgerLineRow key={line.line_id} line={line} info={summary.lines[i]} commonOutDate={commonOutDate} returnTraces={returnTraces} />
-        ))}
+        <LedgerTable lines={rawLines} infos={summary.lines} returnTraces={returnTraces} />
 
         {/* Reviews thread — staff-only ratings + comments for this invoice */}
         <InvoiceReviewsSection invoiceId={invoice.invoice_id} />
