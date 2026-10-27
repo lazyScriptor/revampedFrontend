@@ -6,6 +6,10 @@ import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 import { useInvoiceSignatures } from "@/features/signatures/hooks/useSignatures";
 import i18n from "@/i18n";
 import { tk } from "@/i18n/marker";
+import { RECEIPT_SINHALA_FAMILY, ensureReceiptFontInApp } from "../lib/receiptFont";
+import { getReceiptDesign, getShowIdStatus, type ReceiptDesign } from "../lib/receiptPrefs";
+
+ensureReceiptFontInApp();
 
 // Signature URLs come from the backend as paths like /uploads/signatures/...
 // For the receipt (rendered in a print iframe or printed to a thermal
@@ -231,11 +235,25 @@ const RECEIPT_KEYS = {
   daysSuffix: tk("receipt.daysSuffix"),
   authorizedOperator: tk("receipt.authorizedOperator"),
   priceTiered: tk("receipt.priceTiered"),
+  mBillDispatch: tk("receipt.minimal.billDispatch"),
+  mBillCompleted: tk("receipt.minimal.billCompleted"),
+  mBillEstimate: tk("receipt.minimal.billEstimate"),
+  mSubtotal: tk("receipt.minimal.subtotal"),
+  mTransport: tk("receipt.minimal.transport"),
+  mDiscount: tk("receipt.minimal.discount"),
+  mLateFees: tk("receipt.minimal.lateFees"),
+  mTotal: tk("receipt.minimal.total"),
+  mPaid: tk("receipt.minimal.paid"),
+  mBalance: tk("receipt.minimal.balance"),
+  mIdHeld: tk("receipt.minimal.idHeld"),
+  mIdNotHeld: tk("receipt.minimal.idNotHeld"),
+  mNote: tk("receipt.minimal.note"),
 } as const;
 
 export type ReceiptLabels = { [K in keyof typeof RECEIPT_KEYS]: string } & {
   thankYou: (company: string) => string;
   equipmentNumber: (id: unknown) => string;
+  mReturned: (date: string) => string;
   priceDaily: (days: number, rate: string) => string;
   priceTiered: (base: string, days: number, extra: string) => string;
 };
@@ -247,6 +265,7 @@ export const getReceiptLabels = (lng: ReceiptLanguage): ReceiptLabels => {
   out.equipmentNumber = (id: unknown) => i18n.t("receipt.equipmentNumber", { lng, id });
   out.priceDaily = (days: number, rate: string) => i18n.t("receipt.priceDaily", { lng, count: days, rate });
   out.priceTiered = (base: string, days: number, extra: string) => i18n.t("receipt.priceTiered", { lng, base, days, extra });
+  out.mReturned = (date: string) => i18n.t("receipt.minimal.returned", { lng, date });
   return out as ReceiptLabels;
 };
 
@@ -269,6 +288,8 @@ export interface InvoiceReceiptProps {
   customNotes?: string;
   cashierName?: string;
   isPreview?: boolean; // Render visibly on screen inside a dialog preview
+  design?: ReceiptDesign; // "minimal" (default) or the detailed "classic" layout
+  showIdStatus?: boolean; // print whether the customer's ID card is kept
 }
 
 export function buildSnapshotReceiptProps(log: any) {
@@ -383,7 +404,12 @@ export const InvoiceReceipt = ({
   customNotes,
   cashierName,
   isPreview = false,
+  design,
+  showIdStatus,
 }: InvoiceReceiptProps) => {
+  // Fall back to the counter's saved choice so every print path matches the print dialog.
+  const activeDesign: ReceiptDesign = design ?? getReceiptDesign();
+  const printIdStatus = showIdStatus ?? getShowIdStatus();
   const user = useAuthStore((s) => s.user);
   const config = (user as any)?.configData || {};
 
@@ -415,18 +441,22 @@ export const InvoiceReceipt = ({
   // Company Branding from Tenant Config with fallbacks
   const companyName =
     (config?.business_display_name as string) || "GEARGRID RENTALS";
-  const companyAddress =
-    (config?.address as string) ||
-    (config?.custom_settings?.address as string) ||
-    "123 Commercial Hub, Galle Road, Colombo";
-  const companyPhone =
-    (config?.phone as string) ||
-    (config?.custom_settings?.phone as string) ||
-    "+94 11 234 5678";
-  const companyEmail =
-    (config?.email as string) ||
-    (config?.custom_settings?.email as string) ||
-    "rentals@geargrid.live";
+  // Shop contact lines come from Bill details (print dialog). Empty ones are left off the bill
+  // rather than printing placeholder text.
+  const customSettings =
+    typeof config?.custom_settings === "string"
+      ? (() => {
+          try {
+            return JSON.parse(config.custom_settings) || {};
+          } catch {
+            return {};
+          }
+        })()
+      : config?.custom_settings || {};
+  const companyAddress = ((config?.address as string) || (customSettings.address as string) || "").trim();
+  const companyPhone = ((config?.phone as string) || (customSettings.phone as string) || "").trim();
+  const companyEmail = ((config?.email as string) || (customSettings.email as string) || "").trim();
+  const contactLine = [companyPhone && `${t.tel} ${companyPhone}`, companyEmail].filter(Boolean).join(" · ");
   const currencyCode = (config?.currency_code as string) || "Rs.";
 
   // Cashier / Operator Fallback
@@ -467,6 +497,7 @@ export const InvoiceReceipt = ({
             item.equipment_name ||
             item.Equipment?.equipment_name ||
             t.equipmentItem,
+          code: item.serial_number || item.Equipment?.serial_number || "",
           qty: Number(item.borrow_quantity || 1),
           start: item.borrow_date,
           end: item.expected_return_date,
@@ -536,6 +567,7 @@ export const InvoiceReceipt = ({
         totalPaid: advance,
         balanceDue,
         vaultStatus: t.vaultPending,
+        idHeld: false,
         statusDisplay: t.statusDraft,
       };
     }
@@ -566,6 +598,7 @@ export const InvoiceReceipt = ({
           line.Equipment?.equipment_name ||
           line.equipment_name ||
           t.equipmentNumber(line.equipment_id),
+        code: line.Equipment?.serial_number || line.serial_number || "",
         qty: Number(line.borrow_quantity ?? line.quantity ?? 1),
         start: line.borrow_date,
         end: line.expected_return_date,
@@ -676,6 +709,7 @@ export const InvoiceReceipt = ({
         invoice.id_card_status || cust.is_id_retained_currently
           ? t.vaultHeld
           : t.vaultReleased,
+      idHeld: Boolean(invoice.id_card_status || cust.is_id_retained_currently),
       statusDisplay: isCompleted ? t.statusCompleted : t.statusActive,
     };
   }, [invoice, isDraft, draftData, currencyCode, activeLang, t]);
@@ -689,10 +723,13 @@ export const InvoiceReceipt = ({
   const lineHeight = "1.25";
 
   // Clean sans-serif and Sinhala font stack
-  const activeFont =
-    activeLang === "si"
-      ? "'Noto Sans Sinhala', 'Sinhala Sangam MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-      : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans Sinhala', sans-serif";
+  // The bundled Sinhala face is limited to Sinhala code points, so listing it first leaves
+  // English on the system fonts that already print well.
+  const activeFont = `'${RECEIPT_SINHALA_FAMILY}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans Sinhala', sans-serif`;
+  // Sinhala strokes are finer than Latin ones and fade on thermal paper: print it a step
+  // heavier with a hairline outline so it matches the English weight.
+  const isSi = activeLang === "si";
+  const inkStyle: React.CSSProperties = isSi ? { WebkitTextStroke: "0.25px #000000" } : {};
 
   // Container styling
   const containerStyle: React.CSSProperties = isPreview
@@ -704,9 +741,10 @@ export const InvoiceReceipt = ({
         backgroundColor: "#ffffff",
         color: "#000000",
         fontFamily: activeFont,
-        fontWeight: 500,
+        fontWeight: isSi ? 600 : 500,
         fontSize: fontSizeBase,
         lineHeight,
+        ...inkStyle,
         boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
         border: "1px solid #cbd5e1",
         borderRadius: "4px",
@@ -714,12 +752,39 @@ export const InvoiceReceipt = ({
     : {
         display: "none", // Keeps it hidden on dashboard; iframe clones innerHTML directly
         fontFamily: activeFont,
-        fontWeight: 500,
+        fontWeight: isSi ? 600 : 500,
         color: "#000000",
         backgroundColor: "#ffffff",
         fontSize: fontSizeBase,
         lineHeight,
+        ...inkStyle,
       };
+
+  const signatures = {
+    customer: capturedCustomer ? { src: resolveImageUrl(capturedCustomer.image_url) || "", name: capturedCustomer.signatory_name } : null,
+    operator: capturedOperator ? { src: resolveImageUrl(capturedOperator.image_url) || "", name: capturedOperator.signatory_name } : null,
+  };
+
+  if (activeDesign === "minimal") {
+    return (
+      <Box id={id} sx={containerStyle}>
+        <MinimalReceiptBody
+          t={t}
+          normalized={normalized}
+          company={{ name: companyName, address: companyAddress, contactLine }}
+          currency={currencyCode}
+          operatorName={operatorName}
+          signatures={signatures}
+          is58mm={is58mm}
+          isSi={isSi}
+          showTerms={showTerms}
+          showBarcode={showBarcode}
+          showIdStatus={printIdStatus}
+          customNotes={customNotes}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box id={id} sx={containerStyle}>
@@ -740,25 +805,22 @@ export const InvoiceReceipt = ({
         <div style={{ fontSize: is58mm ? "9px" : "10px", marginTop: "1px", color: "#000000", fontWeight: 600 }}>
           {t.category}
         </div>
-        <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", marginTop: "1px", color: "#000000", fontWeight: 500 }}>
-          {companyAddress}
-        </div>
-        <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", color: "#000000", fontWeight: 500 }}>
-          {t.tel} {companyPhone} · {companyEmail}
-        </div>
+        {companyAddress && (
+          <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", marginTop: "1px", color: "#000000", fontWeight: 500 }}>
+            {companyAddress}
+          </div>
+        )}
+        {contactLine && (
+          <div style={{ fontSize: is58mm ? "8.5px" : "9.5px", color: "#000000", fontWeight: 500 }}>
+            {contactLine}
+          </div>
+        )}
       </div>
 
       <hr style={{ border: "none", borderTop: "1px dashed #000000", margin: "2.5px 0" }} />
 
       {/* ── 2. DOCUMENT TYPE BANNER & METADATA ───────────────────────────────── */}
-      <div
-        style={{
-          border: "1px solid #000000",
-          padding: "2px 4px",
-          textAlign: "center",
-          margin: "2.5px 0",
-        }}
-      >
+      <div style={{ textAlign: "center", margin: "2.5px 0" }}>
         <div style={{ fontWeight: 800, fontSize: is58mm ? "10px" : "11.5px", color: "#000000" }}>
           {normalized.docTitle}
         </div>
@@ -822,15 +884,17 @@ export const InvoiceReceipt = ({
             {normalized.beneficiary.name} ({normalized.beneficiary.phone})
           </div>
         )}
-        <div
-          style={{
-            marginTop: "2px",
-            fontSize: is58mm ? "9px" : "10px",
-            fontWeight: 600,
-          }}
-        >
-          {t.vaultCollateral} [{normalized.vaultStatus}]
-        </div>
+        {printIdStatus && (
+          <div
+            style={{
+              marginTop: "2px",
+              fontSize: is58mm ? "9px" : "10px",
+              fontWeight: 600,
+            }}
+          >
+            {t.vaultCollateral} [{normalized.vaultStatus}]
+          </div>
+        )}
       </div>
 
       {/* Double divider before equipment table */}
@@ -1218,3 +1282,251 @@ export const InvoiceReceipt = ({
     </Box>
   );
 };
+
+// ─── Minimal bill ────────────────────────────────────────────────────────────
+// Same facts as the classic bill (shop, bill no. and time, customer, every
+// machine with its dates, rate and amount, charges, payments, balance, terms,
+// signatures) with less ink: no boxes, no banners, one rule between sections.
+const shortDate = (value: string | null | undefined) => {
+  if (!value) return "—";
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T12:00:00`) : new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+};
+
+const shortDateTime = (value: string | null | undefined) => {
+  const d = value ? new Date(value) : new Date();
+  if (isNaN(d.getTime())) return String(value);
+  return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true });
+};
+
+interface MinimalLine {
+  id: string | number;
+  name: string;
+  code?: string;
+  qty: number;
+  start?: string;
+  end?: string;
+  days: number;
+  lineTotal: number;
+  pricingText: string;
+  returnedDate?: string | null;
+}
+
+interface MinimalReceiptBodyProps {
+  t: ReceiptLabels;
+  normalized: {
+    docType: "ESTIMATE" | "DISPATCH" | "COMPLETED";
+    docNumber: string;
+    issuedDate: string;
+    customer: { name: string; nic: string; phone: string; address?: string };
+    beneficiary: { name: string; phone: string } | null;
+    lines: MinimalLine[];
+    subtotal: number;
+    transport: number;
+    discount: number;
+    lateFees: number;
+    grandTotal: number;
+    payments: { label: string; amount: number; method: string; date?: string }[];
+    totalPaid: number;
+    balanceDue: number;
+    idHeld: boolean;
+  };
+  company: { name: string; address: string; contactLine: string };
+  currency: string;
+  operatorName: string;
+  signatures: {
+    customer: { src: string; name?: string | null } | null;
+    operator: { src: string; name?: string | null } | null;
+  };
+  is58mm: boolean;
+  isSi: boolean;
+  showTerms: boolean;
+  showBarcode: boolean;
+  showIdStatus: boolean;
+  customNotes?: string;
+}
+
+function MinimalReceiptBody({
+  t,
+  normalized: n,
+  company,
+  currency,
+  operatorName,
+  signatures,
+  is58mm,
+  isSi,
+  showTerms,
+  showBarcode,
+  showIdStatus,
+  customNotes,
+}: MinimalReceiptBodyProps) {
+  const small = is58mm ? "8.5px" : "9.5px";
+  const big = is58mm ? "13px" : "15px";
+  const bold = isSi ? 800 : 700;
+  const rule = <div style={{ borderTop: "1px solid #000000", margin: "4px 0" }} />;
+  const row = (label: string, value: string, opts: { strong?: boolean; size?: string } = {}) => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: "6px",
+        fontWeight: opts.strong ? bold : undefined,
+        fontSize: opts.size,
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{value}</span>
+    </div>
+  );
+  const title =
+    n.docType === "ESTIMATE" ? t.mBillEstimate : n.docType === "COMPLETED" ? t.mBillCompleted : t.mBillDispatch;
+  const hasExtras = n.transport > 0 || n.discount > 0 || n.lateFees > 0;
+  const nicKnown = n.customer.nic && n.customer.nic !== t.notOnFile;
+  const phoneKnown = n.customer.phone && n.customer.phone !== "N/A";
+
+  return (
+    <>
+      {/* Shop */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontWeight: 800, fontSize: is58mm ? "14px" : "16px", lineHeight: 1.15, textTransform: "uppercase" }}>
+          {company.name}
+        </div>
+        <div style={{ fontSize: small }}>{t.category}</div>
+        {company.address && <div style={{ fontSize: small }}>{company.address}</div>}
+        {company.contactLine && (
+          <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>{company.contactLine}</div>
+        )}
+      </div>
+
+      {rule}
+
+      {/* Bill no. + time */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" }}>
+        <span style={{ fontWeight: bold }}>{title}</span>
+        <span style={{ fontWeight: bold, fontVariantNumeric: "tabular-nums" }}>{n.docNumber}</span>
+      </div>
+      <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>{shortDateTime(n.issuedDate)}</div>
+
+      {rule}
+
+      {/* Customer */}
+      <div style={{ fontWeight: bold }}>{n.customer.name}</div>
+      {(nicKnown || phoneKnown) && (
+        <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>
+          {[nicKnown && `${t.nicReg} ${n.customer.nic}`, phoneKnown && n.customer.phone].filter(Boolean).join("  ·  ")}
+        </div>
+      )}
+      {n.customer.address && <div style={{ fontSize: small }}>{n.customer.address}</div>}
+      {n.beneficiary && (
+        <div style={{ fontSize: small }}>
+          {t.onBehalfOf} {n.beneficiary.name}
+          {n.beneficiary.phone ? ` (${n.beneficiary.phone})` : ""}
+        </div>
+      )}
+      {showIdStatus && <div style={{ fontSize: small }}>{n.idHeld ? t.mIdHeld : t.mIdNotHeld}</div>}
+
+      {rule}
+
+      {/* Machines */}
+      {n.lines.length === 0 ? (
+        <div style={{ textAlign: "center", fontSize: small }}>{t.noItems}</div>
+      ) : (
+        n.lines.map((line, idx) => (
+          <div
+            key={line.id}
+            className="avoid-break"
+            style={{ marginBottom: idx < n.lines.length - 1 ? "4px" : 0, breakInside: "avoid", pageBreakInside: "avoid" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "6px", fontWeight: bold }}>
+              <span>
+                {line.code ? `${line.code} · ` : ""}
+                {line.name}
+                {line.qty > 1 ? ` × ${line.qty}` : ""}
+              </span>
+              <span style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{fmtMoney(line.lineTotal, currency)}</span>
+            </div>
+            <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>
+              {shortDate(line.start)} → {shortDate(line.end)} · {line.pricingText}
+            </div>
+            {line.returnedDate && (
+              <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>✓ {t.mReturned(shortDate(line.returnedDate))}</div>
+            )}
+          </div>
+        ))
+      )}
+
+      {rule}
+
+      {/* Money */}
+      {hasExtras && row(t.mSubtotal, fmtMoney(n.subtotal, currency))}
+      {n.transport > 0 && row(t.mTransport, `+${fmtMoney(n.transport, currency)}`)}
+      {n.discount > 0 && row(t.mDiscount, `-${fmtMoney(n.discount, currency)}`)}
+      {n.lateFees > 0 && row(t.mLateFees, `+${fmtMoney(n.lateFees, currency)}`)}
+      <div style={{ marginTop: hasExtras ? "2px" : 0 }}>{row(t.mTotal, fmtMoney(n.grandTotal, currency), { strong: true, size: big })}</div>
+      {n.payments.map((p, i) => (
+        <div key={i} style={{ fontSize: small }}>
+          {row(`${p.label} · ${p.method}`, fmtMoney(p.amount, currency))}
+        </div>
+      ))}
+      {n.payments.length > 1 && row(t.mPaid, fmtMoney(n.totalPaid, currency))}
+      <div style={{ marginTop: "2px" }}>
+        {row(t.mBalance, n.balanceDue === 0 ? t.paidInFull : fmtMoney(n.balanceDue, currency), { strong: true, size: big })}
+      </div>
+
+      {customNotes && (
+        <>
+          {rule}
+          <div style={{ fontSize: small }}>
+            <span style={{ fontWeight: bold }}>{t.mNote} </span>
+            {customNotes}
+          </div>
+        </>
+      )}
+
+      {showTerms && (
+        <>
+          {rule}
+          <div className="avoid-break" style={{ fontSize: is58mm ? "8px" : "8.5px", lineHeight: 1.3, breakInside: "avoid" }}>
+            <div>{t.term1}</div>
+            <div>{t.term2}</div>
+            <div>{t.term3}</div>
+            <div>{t.term4}</div>
+          </div>
+        </>
+      )}
+
+      {/* Signatures */}
+      <div className="avoid-break" style={{ display: "flex", gap: "10px", marginTop: "10px", fontSize: small, breakInside: "avoid" }}>
+        {[
+          { sig: signatures.customer, label: t.custSign, name: n.customer.name, align: "left" as const },
+          { sig: signatures.operator, label: t.authSign, name: operatorName, align: "right" as const },
+        ].map(({ sig, label, name, align }) => (
+          <div key={label} style={{ flex: 1, textAlign: align }}>
+            {sig?.src ? (
+              <img
+                src={sig.src}
+                alt={label}
+                style={{ display: "block", maxHeight: 40, maxWidth: "100%", objectFit: "contain", marginLeft: align === "right" ? "auto" : 0 }}
+              />
+            ) : (
+              <div style={{ height: "20px" }} />
+            )}
+            <div style={{ borderTop: "1px solid #000000", paddingTop: "1px" }}>{label}</div>
+            <div style={{ fontSize: "8px" }}>{sig?.name || name}</div>
+          </div>
+        ))}
+      </div>
+
+      {showBarcode && (
+        <div className="avoid-break" style={{ marginTop: "6px", breakInside: "avoid" }}>
+          <Code39Barcode value={n.docNumber} height={is58mm ? 24 : 28} narrowWidth={is58mm ? 1.1 : 1.3} wideWidth={is58mm ? 2.6 : 3.2} />
+        </div>
+      )}
+
+      <div style={{ textAlign: "center", marginTop: "4px", fontSize: small }}>{t.thankYou(company.name)}</div>
+      <div style={{ textAlign: "center", fontSize: "7.5px" }}>{t.poweredBy}</div>
+      <div style={{ height: "2mm" }} />
+    </>
+  );
+}

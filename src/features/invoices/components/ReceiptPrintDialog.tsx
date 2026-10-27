@@ -25,6 +25,14 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TuneIcon from "@mui/icons-material/Tune";
 import DrawIcon from "@mui/icons-material/Draw";
 import { InvoiceReceipt, InvoiceReceiptProps, ReceiptLanguage } from "./InvoiceReceipt";
+import { BillDetailsEditor } from "./BillDetailsEditor";
+import {
+  getReceiptDesign,
+  getShowIdStatus,
+  setReceiptDesign,
+  setShowIdStatus as saveShowIdStatus,
+  type ReceiptDesign,
+} from "../lib/receiptPrefs";
 import { calculateLineMath } from "./PosLedgerPanel";
 import { handlePrintInvoice, checkPrintAgent } from "../hooks/useInvoiceHooks";
 import type { PrintAgentHealth } from "../utils/thermalPrint";
@@ -64,6 +72,8 @@ export function ReceiptPrintDialog({
   });
   const [showTerms, setShowTerms] = useState(true);
   const [showBarcode, setShowBarcode] = useState(true);
+  const [design, setDesign] = useState<ReceiptDesign>(getReceiptDesign);
+  const [showIdStatus, setShowIdStatus] = useState<boolean>(getShowIdStatus);
   const [customNotes, setCustomNotes] = useState(defaultCustomNotes);
 
   const printDomId = `printable-receipt-${isDraft ? "draft" : invoice?.invoice_id || "active"}`;
@@ -205,6 +215,8 @@ export function ReceiptPrintDialog({
         showTerms={showTerms}
         showBarcode={showBarcode}
         customNotes={customNotes}
+        design={design}
+        showIdStatus={showIdStatus}
         isPreview={false}
       />
 
@@ -297,6 +309,31 @@ export function ReceiptPrintDialog({
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a" }}>
                 {t("invoices.ReceiptPrintDialog.printSettings")}
               </Typography>
+            </Box>
+
+            {/* Bill design */}
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "#64748b", display: "block", mb: 1 }}>
+                {t("invoices.ReceiptPrintDialog.billDesign")}
+              </Typography>
+              <ToggleButtonGroup
+                value={design}
+                exclusive
+                onChange={(_, val: ReceiptDesign | null) => {
+                  if (!val) return;
+                  setDesign(val);
+                  setReceiptDesign(val);
+                }}
+                fullWidth
+                size="small"
+              >
+                <ToggleButton value="minimal" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
+                  {t("invoices.ReceiptPrintDialog.designMinimal")}
+                </ToggleButton>
+                <ToggleButton value="classic" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
+                  {t("invoices.ReceiptPrintDialog.designClassic")}
+                </ToggleButton>
+              </ToggleButtonGroup>
             </Box>
 
             {/* Receipt Language / භාෂාව Toggle */}
@@ -426,7 +463,29 @@ export function ReceiptPrintDialog({
                   </Typography>
                 }
               />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showIdStatus}
+                    onChange={(e) => {
+                      setShowIdStatus(e.target.checked);
+                      saveShowIdStatus(e.target.checked);
+                    }}
+                    size="small"
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "#334155" }}>
+                    {t("invoices.ReceiptPrintDialog.showIdStatus")}
+                  </Typography>
+                }
+              />
             </Box>
+
+            <Divider sx={{ borderColor: "#f1f5f9" }} />
+
+            <BillDetailsEditor />
 
             <Divider sx={{ borderColor: "#f1f5f9" }} />
 
@@ -525,6 +584,8 @@ export function ReceiptPrintDialog({
                 showTerms={showTerms}
                 showBarcode={showBarcode}
                 customNotes={customNotes}
+                design={design}
+                showIdStatus={showIdStatus}
                 isPreview={true}
               />
             </Box>

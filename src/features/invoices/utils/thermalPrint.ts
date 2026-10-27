@@ -13,6 +13,7 @@
 
 import { api } from "@/lib/api";
 import { queryClient } from "@/app/queryClient";
+import { RECEIPT_SINHALA_FAMILY, getEmbeddedReceiptFontCss } from "../lib/receiptFont";
 
 export interface PrintInvoiceOptions {
   paperWidth?: "80mm" | "58mm";
@@ -76,7 +77,7 @@ export const checkPrintAgent = async (): Promise<PrintAgentHealth> => {
 // ─── Document builder ───────────────────────────────────────────────────────
 const buildReceiptDocument = (
   innerHtml: string,
-  opts: { title: string; pageWidth: string; pageHeight: string; fontPx: string }
+  opts: { title: string; pageWidth: string; pageHeight: string; fontPx: string; fontCss?: string }
 ) => `<!DOCTYPE html>
 <html>
   <head>
@@ -85,6 +86,7 @@ const buildReceiptDocument = (
     <style id="dynamic-page-size">
       @page { size: ${opts.pageWidth} ${opts.pageHeight}; margin: 0mm !important; }
     </style>
+    <style>${opts.fontCss || ""}</style>
     <style>
       html, body {
         width: 100% !important;
@@ -97,7 +99,7 @@ const buildReceiptDocument = (
       * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       body {
         padding: 0 1mm 0 1mm !important;
-        font-family: 'Noto Sans Sinhala', 'Sinhala Sangam MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-family: '${RECEIPT_SINHALA_FAMILY}', 'Noto Sans Sinhala', 'Sinhala Sangam MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         color: #000000 !important;
         font-size: ${opts.fontPx};
         line-height: 1.28;
@@ -193,6 +195,8 @@ export const handlePrintInvoice = async (
   const fontPx = is58 ? "10px" : "11px";
   const title = resolvedOptions?.title || "GearGrid POS Receipt";
   const innerHtml = contentElement.innerHTML;
+  // Embedded Sinhala font — without it Sinhala prints in a thin system fallback.
+  const fontCss = await getEmbeddedReceiptFontCss();
 
   // ── 1. DIRECT: exact-length print through the local agent ────────────────
   let fallbackReason = "Print agent not running";
@@ -202,6 +206,7 @@ export const handlePrintInvoice = async (
       pageWidth: `${printableWidthMm}mm`,
       pageHeight: "1000mm",
       fontPx,
+      fontCss,
     });
     const { iframe, heightMm } = await renderAndMeasure(measureDoc, `${printableWidthMm}mm`);
     iframe.parentNode?.removeChild(iframe);
@@ -211,6 +216,7 @@ export const handlePrintInvoice = async (
       pageWidth: `${printableWidthMm}mm`,
       pageHeight: `${heightMm}mm`,
       fontPx,
+      fontCss,
     });
 
     const ctrl = new AbortController();
@@ -250,6 +256,7 @@ export const handlePrintInvoice = async (
     pageWidth: rollWidth,
     pageHeight: "297mm",
     fontPx,
+    fontCss,
   });
   const { iframe, heightMm } = await renderAndMeasure(dialogDoc, rollWidth);
   const doc = iframe.contentWindow!.document;

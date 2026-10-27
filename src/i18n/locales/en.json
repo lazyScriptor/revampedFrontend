@@ -947,7 +947,11 @@
             "siteNotePlaceholder": "e.g. Site: Port City Gate 3, Attn: Kamal",
             "signaturesCaptured": "Signatures captured ✓",
             "captureSignaturesPhone": "Capture signatures (phone)",
-            "printPosBill": "Print POS Bill ({{paperWidth}})"
+            "printPosBill": "Print POS Bill ({{paperWidth}})",
+            "billDesign": "Bill design",
+            "designMinimal": "Minimal",
+            "designClassic": "Detailed",
+            "showIdStatus": "ID card status"
         },
         "ReturnSettlementDialog": {
             "logPhysicalReturnsLateFees": "Log physical returns. Late fees are calculated automatically. Payments are handled in the Financial Terminal.",
@@ -1075,6 +1079,17 @@
             "releaseIdToo": "Give the customer's ID card back",
             "completedToast": "Invoice completed.",
             "reopenedToast": "Invoice reopened."
+        },
+        "BillDetails": {
+            "title": "Shop details on the bill",
+            "hint": "Printed at the top of every bill. Leave email empty to hide it.",
+            "phone": "Phone",
+            "address": "Address",
+            "email": "Email (optional)",
+            "save": "Save",
+            "saving": "Saving…",
+            "saved": "Saved. New bills will show these details.",
+            "saveFailed": "Could not save. Try again."
         }
     },
     "orders": {
@@ -2760,7 +2775,7 @@
         "statusCompleted": "COMPLETED",
         "statusDraft": "DRAFT",
         "client": "CLIENT:",
-        "nicReg": "NIC / REG NO:",
+        "nicReg": "NIC:",
         "phone": "PHONE:",
         "address": "ADDRESS:",
         "onBehalfOf": "ON BEHALF OF:",
@@ -2810,7 +2825,23 @@
         "methodBank": "Bank Transfer",
         "methodCard": "Card",
         "daysSuffix": "d",
-        "equipmentNumber": "Equipment #{{id}}"
+        "equipmentNumber": "Equipment #{{id}}",
+        "minimal": {
+            "billDispatch": "RENTAL BILL",
+            "billCompleted": "FINAL BILL",
+            "billEstimate": "ESTIMATE",
+            "subtotal": "Subtotal",
+            "transport": "Transport",
+            "discount": "Discount",
+            "lateFees": "Late charges",
+            "total": "TOTAL",
+            "paid": "Total paid",
+            "balance": "BALANCE",
+            "idHeld": "ID card kept at the shop",
+            "idNotHeld": "ID card not kept",
+            "note": "Note:",
+            "returned": "Returned {{date}}"
+        }
     },
     "toast": {
         "success": "Success",
