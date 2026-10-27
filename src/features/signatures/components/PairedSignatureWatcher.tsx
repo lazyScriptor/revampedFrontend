@@ -9,6 +9,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { getDeviceId } from '../lib/deviceId';
+import { isRequestFinished } from '../lib/deviceShell';
 import { useDevicePendingSignatures, useDeviceStatus } from '../hooks/useSignatures';
 
 export function PairedSignatureWatcher() {
@@ -21,7 +22,7 @@ export function PairedSignatureWatcher() {
   const opened = useRef(new Set<string>());
 
   useEffect(() => {
-    const next = pending.data?.pending?.find((p) => p.token && !opened.current.has(p.token));
+    const next = pending.data?.pending?.find((p) => p.token && !opened.current.has(p.token) && !isRequestFinished(p.token));
     if (!next?.token) return;
     opened.current.add(next.token);
     navigate({ to: '/sign-paired/$token', params: { token: next.token } });

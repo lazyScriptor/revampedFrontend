@@ -1,4 +1,6 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render as rtlRender, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigate = vi.fn();
@@ -21,13 +23,22 @@ vi.mock("../hooks/useSignatures", () => ({
 }));
 
 const deviceId = vi.hoisted(() => ({ value: "gg-phone-1234" as string | null }));
-vi.mock("../lib/deviceId", () => ({ getDeviceId: () => deviceId.value }));
+vi.mock("../lib/deviceId", () => ({ getDeviceId: () => deviceId.value, clearDeviceId: vi.fn() }));
 
+const render = (ui: ReactElement) => {
+  const client = new QueryClient();
+  const wrap = (node: ReactElement) => <QueryClientProvider client={client}>{node}</QueryClientProvider>;
+  const result = rtlRender(wrap(ui));
+  return { ...result, rerender: (next: ReactElement) => result.rerender(wrap(next)) };
+};
+
+import { DeviceHomePage } from "../components/DeviceHomePage";
 import { PairedSignatureWatcher } from "../components/PairedSignatureWatcher";
 import { SimplifiedSignPage } from "../components/SimplifiedSignPage";
 
 beforeEach(() => {
   navigate.mockReset();
+  window.sessionStorage.clear();
   hooks.pendingCalls = [];
   hooks.status = { data: { paired: true } };
   hooks.pending = { data: { pending: [] } };
@@ -83,5 +94,42 @@ describe("SimplifiedSignPage", () => {
     unmount();
     expect(link.getAttribute("href")).toBe("/manifest.json");
     link.remove();
+  });
+});
+
+describe("returning to the waiting screen after signing", () => {
+  const paired = {
+    isLoading: false,
+    isSuccess: true,
+    data: {
+      paired: true,
+      operator: { operator_name: "Nimal", has_saved_signature: false },
+      tenant: { business_display_name: "Shop", primary_color: "#000", secondary_color: "#111" },
+    },
+  };
+
+  it("Back to home goes to the waiting screen and it does not bounce back into the signed bill", () => {
+    hooks.session = { isLoading: false, error: null, data: { status: "COMPLETED", pending_roles: [] } };
+    render(<SimplifiedSignPage token="tok-done" />);
+    fireEvent.click(screen.getByRole("button"));
+    expect(navigate).toHaveBeenCalledWith({ to: "/device", replace: true });
+
+    // The waiting screen still holds the list fetched before signing.
+    navigate.mockReset();
+    hooks.status = paired;
+    hooks.pending = { data: { pending: [{ token: "tok-done" }] } };
+    render(<DeviceHomePage />);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("still opens the next customer's request", () => {
+    hooks.session = { isLoading: false, error: null, data: { status: "COMPLETED", pending_roles: [] } };
+    render(<SimplifiedSignPage token="tok-done" />);
+    navigate.mockReset();
+
+    hooks.status = paired;
+    hooks.pending = { data: { pending: [{ token: "tok-done" }, { token: "tok-next" }] } };
+    render(<DeviceHomePage />);
+    expect(navigate).toHaveBeenCalledWith({ to: "/sign-paired/$token", params: { token: "tok-next" }, replace: true });
   });
 });

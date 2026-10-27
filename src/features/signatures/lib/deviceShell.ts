@@ -71,3 +71,30 @@ export function useScreenWakeLock(enabled = true) {
     };
   }, [enabled]);
 }
+
+// Requests this phone has already finished (or left). The pending list the
+// waiting screen holds can be a few seconds old, so without this it would
+// send the phone straight back into a request that was just signed.
+const FINISHED_KEY = "geargrid.finished_sign_requests";
+const finishedInMemory = new Set<string>();
+
+const readFinished = (): string[] => {
+  try {
+    return JSON.parse(window.sessionStorage.getItem(FINISHED_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
+
+export const markRequestFinished = (token: string) => {
+  finishedInMemory.add(token);
+  try {
+    const list = [token, ...readFinished().filter((t) => t !== token)].slice(0, 30);
+    window.sessionStorage.setItem(FINISHED_KEY, JSON.stringify(list));
+  } catch {
+    // private mode: the in-memory set still covers this tab
+  }
+};
+
+export const isRequestFinished = (token: string) =>
+  finishedInMemory.has(token) || readFinished().includes(token);

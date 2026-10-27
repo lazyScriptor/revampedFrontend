@@ -9,7 +9,7 @@
 // toggling (hard-coded true) and without a user-supplied name (derived
 // from invoice.Customer or the paired operator).
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -35,7 +35,8 @@ import type { SignatureRole } from '@geargrid/contracts';
 import { SignatureCanvas, type SignatureCanvasHandle } from './SignatureCanvas';
 import { useSignatureSession, useSubmitSignature } from '../hooks/useSignatures';
 import { ROLE_LABEL } from '../lib/labels';
-import { useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
+import { markRequestFinished, useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from "react-i18next";
 
 const ROLE_ICON: Record<SignatureRole, React.ReactElement> = {
@@ -65,6 +66,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
   //    (Trap 17 — React error #310: calling a hook below an early-return
   //    branch means the first render has fewer hooks than the second.)
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const session = useSignatureSession(token);
   const submit = useSubmitSignature(token);
   const canvasRef = useRef<SignatureCanvasHandle | null>(null);
@@ -81,16 +83,22 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
   // go back to the waiting screen by itself, so the next request opens with no taps.
   const finished = !!data && ['COMPLETED', 'EXPIRED', 'CANCELLED'].includes(data.status);
   const [returnIn, setReturnIn] = useState(AUTO_RETURN_SECONDS);
+  const goHome = useCallback(() => {
+    markRequestFinished(token);
+    queryClient.removeQueries({ queryKey: ['devices', 'pending'] });
+    navigate({ to: '/device', replace: true });
+  }, [token, queryClient, navigate]);
   useEffect(() => {
     if (!finished) return;
+    markRequestFinished(token);
     setReturnIn(AUTO_RETURN_SECONDS);
     const tick = setInterval(() => setReturnIn((s) => Math.max(0, s - 1)), 1000);
-    const go = setTimeout(() => navigate({ to: '/device', replace: true }), AUTO_RETURN_SECONDS * 1000);
+    const go = setTimeout(goHome, AUTO_RETURN_SECONDS * 1000);
     return () => {
       clearInterval(tick);
       clearTimeout(go);
     };
-  }, [finished, navigate]);
+  }, [finished, token, goHome]);
 
   const activeRole: SignatureRole | null = useMemo(() => {
     if (!data?.pending_roles) return null;
@@ -120,7 +128,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
         <Alert severity="error" sx={{ mb: 2 }}>
           {(session.error as Error)?.message || t("signatures.SimplifiedSignPage.couldNotLoadTheSignature")}
         </Alert>
-        <Button variant="outlined" onClick={() => navigate({ to: '/device' })}>{t("common.back")}</Button>
+        <Button variant="outlined" onClick={goHome}>{t("common.back")}</Button>
       </FullBleedCentered>
     );
   }
@@ -145,7 +153,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
         <Button
           variant="contained"
           sx={{ mt: 2, textTransform: 'none' }}
-          onClick={() => navigate({ to: '/device', replace: true })}
+          onClick={goHome}
         >
           {t("signatures.SimplifiedSignPage.backToHome")}
         </Button>

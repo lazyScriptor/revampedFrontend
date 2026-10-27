@@ -23,7 +23,7 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import { useNavigate } from '@tanstack/react-router';
 import AddToHomeScreenIcon from '@mui/icons-material/AddToHomeScreen';
 import { getDeviceId, clearDeviceId } from '../lib/deviceId';
-import { isStandalone, useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
+import { isRequestFinished, isStandalone, useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
 import {
   useDeviceStatus,
   useDevicePendingSignatures,
@@ -66,7 +66,7 @@ export function DeviceHomePage() {
   // Auto-redirect to the simplified sign page the moment a pending request
   // appears for this device's paired operator.
   useEffect(() => {
-    const first = pending.data?.pending?.[0];
+    const first = pending.data?.pending?.find((p) => p.token && !isRequestFinished(p.token));
     if (first?.token) {
       navigate({ to: '/sign-paired/$token', params: { token: first.token }, replace: true });
     }
