@@ -28,12 +28,14 @@ import {
   getDeviceLabel,
   setDeviceLabel as persistDeviceLabel,
 } from '../lib/deviceId';
+import { useDeviceManifest } from '../lib/deviceShell';
 import { useClaimPairingCode, useDeviceStatus } from '../hooks/useSignatures';
 import { Trans, useTranslation } from "react-i18next";
 
 export function PairDevicePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  useDeviceManifest();
   const [deviceId] = useState<string>(() => getOrCreateDeviceId());
   const [code, setCode] = useState('');
   const [label, setLabel] = useState<string>(() => getDeviceLabel() || suggestDeviceLabel());
