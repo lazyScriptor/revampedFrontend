@@ -62,6 +62,7 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PieChartIcon from "@mui/icons-material/PieChart";
 import PrintIcon from "@mui/icons-material/Print";
+import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
 
 const drawerWidth = 260;
 
@@ -668,6 +669,7 @@ function AuthenticatedLayout() {
         <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <Outlet />
         </Box>
+        <PairedSignatureWatcher />
       </Box>
     </Box>
   );

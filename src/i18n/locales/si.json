@@ -2254,7 +2254,9 @@
             "unpairThisPhone": "මෙම දුරකථනයේ සම්බන්ධතාව ඉවත් කරන්න",
             "pairedTo": "{{operator_name}} සමඟ සම්බන්ධයි",
             "retryingAutomatically": "ස්වයංක්‍රීයව නැවත උත්සාහ කරමින්.",
-            "unpairThisPhoneYouWill": "මෙම දුරකථනයේ සම්බන්ධතාව ඉවත් කරන්නද? ඔබට POS එකෙන් නව කේතයක් අවශ්‍ය වේ."
+            "unpairThisPhoneYouWill": "මෙම දුරකථනයේ සම්බන්ධතාව ඉවත් කරන්නද? ඔබට POS එකෙන් නව කේතයක් අවශ්‍ය වේ.",
+            "addToHomeTitle": "මෙම පිටුව ඔබගේ මුල් තිරයට එක් කරන්න",
+            "addToHomeHint": "ඉන්පසු මෙම තිරය කෙලින්ම විවෘත කිරීමට GearGrid Sign අයිකනය තට්ටු කරන්න. කවුන්ටරයෙන් එන ඉල්ලීම් ස්වයංක්‍රීයව විවෘත වේ."
         },
         "MobileSignPage": {
             "loadingSignatureRequest": "අත්සන් ඉල්ලීම පූරණය වෙමින්…",
@@ -2341,7 +2343,9 @@
             "sessionEnded": "සැසිය අවසන් විය",
             "pleaseDrawYourSignatureIn": "කරුණාකර ඉහත කොටුව තුළ ඔබේ අත්සන අඳින්න.",
             "submissionFailed": "ඉදිරිපත් කිරීම අසාර්ථක විය.",
-            "submitSignature": "{{role}} ගේ අත්සන ඉදිරිපත් කරන්න"
+            "submitSignature": "{{role}} ගේ අත්සන ඉදිරිපත් කරන්න",
+            "returningIn_one": "තත්පර {{count}} කින් ආපසු යයි…",
+            "returningIn_other": "තත්පර {{count}} කින් ආපසු යයි…"
         },
         "roles": {
             "customer": "පාරිභෝගිකයා",

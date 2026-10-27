@@ -143,12 +143,15 @@ export const useDeviceStatus = (device_id: string | null, options?: { refetchInt
 // Public: phone polls while on device home. 3-second interval is cheap on
 // bandwidth and gives perceived-instant UX for the operator who taps
 // "Request signatures" on the POS.
-export const useDevicePendingSignatures = (device_id: string | null) =>
+export const useDevicePendingSignatures = (
+  device_id: string | null,
+  options?: { enabled?: boolean; refetchInterval?: number },
+) =>
   useQuery({
     queryKey: ['devices', 'pending', device_id],
     queryFn: () => getDevicePendingSignatures(device_id!),
-    enabled: !!device_id,
-    refetchInterval: 3_000,
+    enabled: !!device_id && (options?.enabled ?? true),
+    refetchInterval: options?.refetchInterval ?? 3_000,
     retry: 1,
   });
 

@@ -2254,7 +2254,9 @@
             "unpairThisPhone": "Unpair this phone",
             "pairedTo": "Paired to {{operator_name}}",
             "retryingAutomatically": "Retrying automatically.",
-            "unpairThisPhoneYouWill": "Unpair this phone? You will need a new code from the POS."
+            "unpairThisPhoneYouWill": "Unpair this phone? You will need a new code from the POS.",
+            "addToHomeTitle": "Add this page to your home screen",
+            "addToHomeHint": "Then tap the GearGrid Sign icon to open this screen directly. Requests from the counter open on their own."
         },
         "MobileSignPage": {
             "loadingSignatureRequest": "Loading signature request…",
@@ -2341,7 +2343,9 @@
             "sessionEnded": "Session ended",
             "pleaseDrawYourSignatureIn": "Please draw your signature in the box above.",
             "submissionFailed": "Submission failed.",
-            "submitSignature": "Submit {{role}} signature"
+            "submitSignature": "Submit {{role}} signature",
+            "returningIn_one": "Going back in {{count}} second…",
+            "returningIn_other": "Going back in {{count}} seconds…"
         },
         "roles": {
             "customer": "Customer",

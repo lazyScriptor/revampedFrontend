@@ -21,7 +21,9 @@ import DrawIcon from '@mui/icons-material/Draw';
 import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import { useNavigate } from '@tanstack/react-router';
+import AddToHomeScreenIcon from '@mui/icons-material/AddToHomeScreen';
 import { getDeviceId, clearDeviceId } from '../lib/deviceId';
+import { isStandalone, useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
 import {
   useDeviceStatus,
   useDevicePendingSignatures,
@@ -42,6 +44,8 @@ export function DeviceHomePage() {
 
   const status = useDeviceStatus(deviceId, { refetchInterval: 30_000 });
   const pending = useDevicePendingSignatures(deviceId);
+  useDeviceManifest();
+  useScreenWakeLock(!!deviceId);
 
   // If the backend says the device isn't paired any more (operator unpaired
   // it from POS), clear local state and bounce back to pairing.
@@ -166,6 +170,19 @@ export function DeviceHomePage() {
             />
           )}
         </Paper>
+
+        {!isStandalone() && (
+          <Alert
+            severity="info"
+            icon={<AddToHomeScreenIcon />}
+            sx={{ borderRadius: 2, alignItems: 'center' }}
+          >
+            <strong>{t("signatures.DeviceHomePage.addToHomeTitle")}</strong>
+            <Box component="span" sx={{ display: 'block', fontSize: 12 }}>
+              {t("signatures.DeviceHomePage.addToHomeHint")}
+            </Box>
+          </Alert>
+        )}
 
         {pending.isError && (
           <Alert severity="warning">

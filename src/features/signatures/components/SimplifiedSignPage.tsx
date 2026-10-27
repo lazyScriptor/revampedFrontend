@@ -9,7 +9,7 @@
 // toggling (hard-coded true) and without a user-supplied name (derived
 // from invoice.Customer or the paired operator).
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -35,6 +35,7 @@ import type { SignatureRole } from '@geargrid/contracts';
 import { SignatureCanvas, type SignatureCanvasHandle } from './SignatureCanvas';
 import { useSignatureSession, useSubmitSignature } from '../hooks/useSignatures';
 import { ROLE_LABEL } from '../lib/labels';
+import { useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
 import { useTranslation } from "react-i18next";
 
 const ROLE_ICON: Record<SignatureRole, React.ReactElement> = {
@@ -43,6 +44,9 @@ const ROLE_ICON: Record<SignatureRole, React.ReactElement> = {
   GUARANTOR: <PersonIcon sx={{ fontSize: 32 }} />,
   WITNESS: <PersonIcon sx={{ fontSize: 32 }} />,
 };
+
+// Seconds the done screen stays up before the phone goes back to waiting.
+const AUTO_RETURN_SECONDS = 3;
 
 const formatLKR = (n: number) =>
   new Intl.NumberFormat('en-LK', {
@@ -70,6 +74,23 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const data = session.data; // may be undefined on first renders
+  useDeviceManifest();
+  useScreenWakeLock();
+
+  // Once the request is finished (signed, expired or cancelled at the counter)
+  // go back to the waiting screen by itself, so the next request opens with no taps.
+  const finished = !!data && ['COMPLETED', 'EXPIRED', 'CANCELLED'].includes(data.status);
+  const [returnIn, setReturnIn] = useState(AUTO_RETURN_SECONDS);
+  useEffect(() => {
+    if (!finished) return;
+    setReturnIn(AUTO_RETURN_SECONDS);
+    const tick = setInterval(() => setReturnIn((s) => Math.max(0, s - 1)), 1000);
+    const go = setTimeout(() => navigate({ to: '/device', replace: true }), AUTO_RETURN_SECONDS * 1000);
+    return () => {
+      clearInterval(tick);
+      clearTimeout(go);
+    };
+  }, [finished, navigate]);
 
   const activeRole: SignatureRole | null = useMemo(() => {
     if (!data?.pending_roles) return null;
@@ -105,7 +126,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
   }
 
   // Terminal states — the request is done or dead. Bounce back to device home.
-  if (['COMPLETED', 'EXPIRED', 'CANCELLED'].includes(data.status)) {
+  if (finished) {
     return (
       <FullBleedCentered>
         <Avatar
@@ -128,6 +149,9 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
         >
           {t("signatures.SimplifiedSignPage.backToHome")}
         </Button>
+        <Typography sx={{ mt: 1.5, fontSize: 12, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+          {t("signatures.SimplifiedSignPage.returningIn", { count: returnIn })}
+        </Typography>
       </FullBleedCentered>
     );
   }

@@ -1,0 +1,21 @@
+{
+  "name": "GearGrid Sign",
+  "short_name": "GG Sign",
+  "description": "Signature pad paired to a GearGrid counter. Opens sign requests automatically.",
+  "id": "/device",
+  "start_url": "/device",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/gemini-svg.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
