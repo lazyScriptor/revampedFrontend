@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatDateTime } from "@/lib/dates";
 import type { ReactNode } from "react";
 import {
   alpha,
@@ -555,7 +556,7 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
                       <Chip size="small" label={e.method} sx={{ ml: 1, height: 18, fontSize: "0.65rem" }} />
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-                      {e.date ? new Date(e.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : ""}
+                      {e.date ? formatDateTime(e.date, { today: t("time.today"), yesterday: t("time.yesterday") }) : ""}
                     </Typography>
                   </Box>
                   <Typography variant="body2" sx={{ fontWeight: 800, color: e.refund ? "warning.dark" : "success.dark", ...num }}>

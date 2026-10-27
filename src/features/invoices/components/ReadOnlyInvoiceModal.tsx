@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateTime } from "@/lib/dates";
 import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
   Dialog,
@@ -49,6 +50,7 @@ export function ReadOnlyInvoiceModal({
   invoice,
 }: ReadOnlyInvoiceModalProps) {
   const { t } = useTranslation();
+  const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isPrintOpen, setIsPrintOpen] = useState(false);
@@ -164,7 +166,7 @@ export function ReadOnlyInvoiceModal({
                 display: { xs: "none", sm: "inline" },
               }}
             >
-              {t("invoices.ReadOnlyInvoiceModal.issued")} {invoice.issued_date ? new Date(invoice.issued_date).toLocaleDateString() : "—"}
+              {t("invoices.ReadOnlyInvoiceModal.issued")} {formatDateTime(invoice.issued_date || invoice.createdAt, dayWords)}
             </Typography>
           </Box>
           <IconButton
@@ -421,7 +423,7 @@ export function ReadOnlyInvoiceModal({
                   {payments.slice(0, 3).map((p: any, i: number) => (
                     <Box key={p.payment_id || i} sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
                       <Typography variant="caption" color="text.secondary">
-                        {p.method || t("orders.methodCash")} ({p.payment_date ? new Date(p.payment_date).toLocaleDateString() : "—"})
+                        {p.method || t("orders.methodCash")} ({formatDateTime(p.payment_date || p.createdAt, dayWords)})
                       </Typography>
                       <Typography variant="caption" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                         Rs. {Number(p.payment_amount).toLocaleString()}
@@ -505,7 +507,7 @@ export function ReadOnlyInvoiceModal({
                       </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: "text.disabled", fontVariantNumeric: "tabular-nums" }}>
-                      {trace.createdAt ? new Date(trace.createdAt).toLocaleDateString() : ""}
+                      {trace.createdAt ? formatDateTime(trace.createdAt, dayWords) : ""}
                     </Typography>
                   </Box>
                 ))}

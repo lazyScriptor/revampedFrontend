@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { formatDateTime } from "@/lib/dates";
 import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
   Box,
@@ -68,14 +69,7 @@ export function PosCustomerPanel({
   const invoiceStats = customerInvoicesData?.stats || { total: 0, active: 0, completed: 0 };
   const pastInvoices = customerInvoicesData?.invoices || [];
 
-  const relDate = (dateStr: string) => {
-    if (!dateStr) return "—";
-    const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
-    if (d === 0) return t("time.today");
-    if (d === 1) return t("time.yesterday");
-    if (d < 7) return t("time.daysAgo", { count: d });
-    return new Date(dateStr).toLocaleDateString();
-  };
+  const relDate = (dateStr: string) => formatDateTime(dateStr, { today: t("time.today"), yesterday: t("time.yesterday") });
 
   const relationshipOptions = useMemo(() => {
     const list: Array<{ id: number; label: string; subtitle: string; data: any; relation: "parent" | "worker" }> = [];
@@ -869,8 +863,8 @@ export function PosCustomerPanel({
                       )}
 
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <Typography variant="caption" color="text.disabled" sx={{ fontSize: "0.65rem" }}>
-                          {relDate(inv.issued_date)}
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.68rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                          {relDate(inv.issued_date || inv.createdAt)}
                         </Typography>
                         {bal > 0 ? (
                           <Typography variant="caption" sx={{ color: "#dc2626", fontWeight: 700, fontSize: "0.68rem", fontVariantNumeric: "tabular-nums" }}>

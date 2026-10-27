@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRight";
 
-import { formatDisplayDate } from "@/lib/dates";
+import { formatDateTime, formatDisplayDate } from "@/lib/dates";
 import { EquipmentNumberBadge } from "@/features/equipment/components/EquipmentNumberBadge";
 import type { LineToday } from "../lib/lineCost";
 
@@ -224,7 +224,7 @@ export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
                         <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                           <SubdirectoryArrowRightIcon sx={{ color: "text.disabled", fontSize: 15 }} />
                           <Typography variant="caption" sx={{ ...num, color: "text.secondary" }}>
-                            {new Date(it.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                            {formatDateTime(it.date, { today: t("time.today"), yesterday: t("time.yesterday") })}
                           </Typography>
                           {it.good > 0 && <Chip size="small" color="success" variant="outlined" label={t("invoices.ManageInvoiceViews.good", { good: it.good })} sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />}
                           {it.defective > 0 && <Chip size="small" color="error" label={t("invoices.ManageInvoiceViews.broken", { defective: it.defective })} sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }} />}

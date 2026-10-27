@@ -93,3 +93,34 @@ export const formatDisplayDate = (
   if (isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat("en-GB", { ...opts, timeZone: tz }).format(d);
 };
+
+// Day key ("YYYY-MM-DD") of an instant in the tenant's tz.
+const dayKeyInTz = (d: Date, tz: string): string =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+
+// Precise invoice timestamp for lists and detail views: "Today 2:45 PM",
+// "Yesterday 9:05 AM", "24 Oct 2:45 PM", "24 Oct 2025 2:45 PM". Day words are
+// passed in so callers can translate them. Bare YYYY-MM-DD values have no time
+// part, so they render as a plain date.
+export const formatDateTime = (
+  value: string | Date | null | undefined,
+  words: { today: string; yesterday: string } = { today: "Today", yesterday: "Yesterday" },
+  tz: string = DEFAULT_TZ,
+): string => {
+  if (!value) return "—";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return formatDisplayDate(value, tz);
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return "—";
+
+  const time = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true }).format(d);
+  const day = dayKeyInTz(d, tz);
+  const today = tenantToday(tz);
+  if (day === today) return `${words.today} ${time}`;
+  const [y, m, dd] = today.split("-").map(Number);
+  const yesterday = new Date(Date.UTC(y, m - 1, dd - 1)).toISOString().slice(0, 10);
+  if (day === yesterday) return `${words.yesterday} ${time}`;
+
+  const sameYear = day.slice(0, 4) === today.slice(0, 4);
+  const date = new Intl.DateTimeFormat("en-GB", { timeZone: tz, day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }) }).format(d);
+  return `${date} ${time}`;
+};

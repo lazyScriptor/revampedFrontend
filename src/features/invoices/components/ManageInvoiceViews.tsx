@@ -52,12 +52,11 @@ import {
   useToggleVault,
   useUpdateFees,
 } from "../hooks/useInvoiceHooks";
-import { formatDisplayDate } from "@/lib/dates";
+import { formatDateTime, formatDisplayDate } from "@/lib/dates";
 import { useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
 import { ReviewThread } from "@/features/reviews/components/ReviewThread";
 import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
 import { useTranslation } from "react-i18next";
-import { relativeDay } from "@/lib/relativeTime";
 import { summariseInvoice, type LineToday } from "../lib/lineCost";
 import { invoiceStatusColor, invoiceStatusLabel } from "../lib/invoiceStatus";
 
@@ -80,8 +79,6 @@ const StatusDot = ({ color }: { color: string }) => (
   />
 );
 
-const relDate = (dateStr: string) => relativeDay(dateStr, formatDisplayDate);
-
 // ============================================================================
 // PANE 1: INVOICE ROSTER (search + status filter + live list)
 // ============================================================================
@@ -94,6 +91,7 @@ export function ManageSearchPanel({
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
   const [pageSize, setPageSize] = useState(25);
@@ -286,33 +284,23 @@ export function ManageSearchPanel({
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    Rs. {Number(inv.total_amount).toLocaleString()}
+                    {balance > 0
+                      ? t("invoices.PosCustomerPanel.dueRs", { bal: balance.toLocaleString() })
+                      : `Rs. ${Number(inv.total_amount).toLocaleString()}`}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: "65%", fontWeight: 500 }}>
                     {customerName}
                   </Typography>
-                  <Typography variant="caption" color="text.disabled" sx={{ fontSize: "0.68rem" }}>
-                    {relDate(inv.issued_date)}
-                  </Typography>
-                </Box>
-                {balance > 0 && isActive && (
                   <Typography
                     variant="caption"
-                    sx={{
-                      color: "#dc2626",
-                      fontWeight: 700,
-                      fontSize: "0.68rem",
-                      display: "block",
-                      mt: 0.25,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
+                    color="text.secondary"
+                    sx={{ fontSize: "0.7rem", fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}
                   >
-                    {t("invoices.ManageInvoiceViews.balanceDueRs", { balance: balance.toLocaleString() })}
+                    {formatDateTime(inv.issued_date || inv.createdAt, dayWords)}
                   </Typography>
-                )}
+                </Box>
               </Box>
             );
           })}
