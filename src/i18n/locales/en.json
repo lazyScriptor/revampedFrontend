@@ -1140,8 +1140,7 @@
             "confirmBody": "All items are back and the money is settled. After completing, payments and the discount are locked unless the invoice is reopened.",
             "releaseIdToo": "Give the customer's ID card back",
             "completedToast": "Invoice completed.",
-            "reopenedToast": "Invoice reopened.",
-            "extraDaysSoFar": "Extra days so far"
+            "reopenedToast": "Invoice reopened."
         },
         "BillDetails": {
             "title": "Shop details on the bill",

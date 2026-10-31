@@ -384,22 +384,14 @@ export function ReadOnlyInvoiceModal({
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">{t("common.subtotal")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
-                  Rs. {Number(invoice.sub_total || 0).toLocaleString()}
+                  Rs. {totals.subTotal.toLocaleString()}
                 </Typography>
               </Box>
-              {totals.billedExtra > 0 && (
+              {totals.lateFees > 0 && (
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="body2" color="text.secondary">{t("invoices.ManageInvoiceViews.lateFees")}</Typography>
                   <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#b91c1c", fontFamily: "'JetBrains Mono', monospace" }}>
-                    + Rs. {totals.billedExtra.toLocaleString()}
-                  </Typography>
-                </Box>
-              )}
-              {totals.soFar > 0 && (
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="body2" color="text.secondary">{t("invoices.FinancialPanel.extraDaysSoFar")}</Typography>
-                  <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#b45309", fontFamily: "'JetBrains Mono', monospace" }}>
-                    + Rs. {totals.soFar.toLocaleString()}
+                    + Rs. {totals.lateFees.toLocaleString()}
                   </Typography>
                 </Box>
               )}

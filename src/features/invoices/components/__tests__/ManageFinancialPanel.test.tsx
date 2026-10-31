@@ -44,21 +44,28 @@ beforeEach(() => {
 });
 
 describe("ManageFinancialPanel", () => {
-  it("INV-55: a machine still out shows the extra days so far in the total and the amount owed", () => {
+  it("INV-55: 2 days out at Rs 300/day is a Rs 600 subtotal and total, with no late fee", () => {
     renderPanel(
       invoice({
         status: "Active",
-        sub_total: "300",
-        total_amount: 600, // API: billed 300 + 300 running
+        sub_total: 600, // API: rental for the days so far
+        billed_sub_total: 300,
+        total_amount: 600,
         billed_total_amount: 300,
         accrued_charges: "300.00",
+        accrued_rental: "300.00",
         InvoiceLines: [line({ good_returned_qty: 0, line_status: "Active", borrow_quantity: 1 })],
         Payments: [],
       }),
     );
-    expect(screen.getByText("Extra days so far")).toBeInTheDocument();
-    expect(screen.getAllByText("Rs. 600").length).toBeGreaterThan(0);
-    expect(screen.queryByText("Late fees")).not.toBeInTheDocument();
+    expect(screen.getByText("Subtotal").parentElement).toHaveTextContent("Rs. 600");
+    expect(screen.queryByText(/Late Fees/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText("Rs. 600").length).toBeGreaterThan(1);
+  });
+
+  it("days past a set due date show as a late fee", () => {
+    renderPanel(invoice({ status: "Active", sub_total: 1000, total_amount: 1500, billed_total_amount: 1000, accrued_charges: 500, accrued_rental: 0, Payments: [] }));
+    expect(screen.getByText(/Late Fees/i).parentElement).toHaveTextContent("Rs. 500");
   });
 
   it("returned and settled → can be completed (with the ID card released)", () => {
