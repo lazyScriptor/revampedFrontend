@@ -14,6 +14,23 @@
 import { api } from "@/lib/api";
 import { queryClient } from "@/app/queryClient";
 import { RECEIPT_SINHALA_FAMILY, getEmbeddedReceiptFontCss } from "../lib/receiptFont";
+import { getPrintableSignature } from "../lib/printableSignature";
+
+/** Receipt HTML with every signature swapped for its print-ready version, even if the preview had not finished. */
+const receiptHtmlWithSharpSignatures = async (el: HTMLElement): Promise<string> => {
+  const imgs = Array.from(el.querySelectorAll<HTMLImageElement>("img[data-signature-src]"));
+  if (imgs.length === 0) return el.innerHTML;
+  const clone = el.cloneNode(true) as HTMLElement;
+  const cloneImgs = Array.from(clone.querySelectorAll<HTMLImageElement>("img[data-signature-src]"));
+  await Promise.all(
+    cloneImgs.map(async (img) => {
+      const original = img.getAttribute("data-signature-src");
+      const sharp = original ? await getPrintableSignature(original) : null;
+      if (sharp) img.setAttribute("src", sharp);
+    })
+  );
+  return clone.innerHTML;
+};
 
 export interface PrintInvoiceOptions {
   paperWidth?: "80mm" | "58mm";
@@ -194,7 +211,7 @@ export const handlePrintInvoice = async (
   const printableWidthMm = is58 ? 48 : 72; // physical printable area of the head
   const fontPx = is58 ? "10px" : "11px";
   const title = resolvedOptions?.title || "GearGrid POS Receipt";
-  const innerHtml = contentElement.innerHTML;
+  const innerHtml = await receiptHtmlWithSharpSignatures(contentElement);
   // Embedded Sinhala font — without it Sinhala prints in a thin system fallback.
   const fontCss = await getEmbeddedReceiptFontCss();
 

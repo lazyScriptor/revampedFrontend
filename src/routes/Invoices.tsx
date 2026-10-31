@@ -50,6 +50,7 @@ import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
 import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintDialog";
 import { api } from "@/lib/api";
 import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
+import { addDaysLocal, formatDateTime } from "@/lib/dates";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
@@ -91,6 +92,26 @@ export default function InvoicesRoute() {
   const [onBehalfOfCustomer, setOnBehalfOfCustomer] = useState<any | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [fees, setFees] = useState({ transport: 0, discount: 0, advance: 0 });
+  // Optional bill date/time (local "YYYY-MM-DDTHH:mm"); null means the bill is dated now.
+  const [billDate, setBillDate] = useState<string | null>(null);
+  const billDateIso = billDate ? new Date(billDate).toISOString() : null;
+
+  // Moves every line's out date to `day`, keeping each line's rental length.
+  const applyBillDateToLines = (day: string) => {
+    setCartItems((items) =>
+      items.map((item) => {
+        const shift = Math.round(
+          (new Date(`${day}T00:00:00`).getTime() - new Date(`${item.borrow_date}T00:00:00`).getTime()) / 86_400_000,
+        );
+        if (!shift) return item;
+        return {
+          ...item,
+          borrow_date: day,
+          expected_return_date: addDaysLocal(item.expected_return_date, shift),
+        };
+      }),
+    );
+  };
 
   // ── Manage State ──────────────────────────────────────────────────────────────
   const [selectedManageInvoiceId, setSelectedManageInvoiceId] = useState<number | null>(null);
@@ -143,6 +164,7 @@ export default function InvoicesRoute() {
         borrowed_on_behalf_of_customer_id: onBehalfOfCustomer?.customer_id ?? null,
         items: cartItems,
         fees: fees,
+        ...(billDateIso ? { issued_date: billDateIso } : {}),
       });
 
       const backendInv = response.data?.data?.invoice || response.data?.invoice || {};
@@ -151,7 +173,7 @@ export default function InvoicesRoute() {
       const hydratedInvoice = {
         ...backendInv,
         invoice_id: backendInv.invoice_id || Math.floor(1000 + Math.random() * 9000),
-        issued_date: backendInv.issued_date || backendInv.createdAt || new Date().toISOString(),
+        issued_date: backendInv.issued_date || billDateIso || backendInv.createdAt || new Date().toISOString(),
         total_amount: grandTotal,
         sub_total: subTotal,
         transport_fee: fees.transport,
@@ -186,7 +208,7 @@ export default function InvoicesRoute() {
                 {
                   payment_amount: fees.advance,
                   method: (fees as any).advance_payment_method || "Cash",
-                  payment_date: new Date().toISOString(),
+                  payment_date: billDateIso || new Date().toISOString(),
                 },
               ]
             : [],
@@ -229,6 +251,7 @@ export default function InvoicesRoute() {
       setOnBehalfOfCustomer(null);
       setCartItems([]);
       setFees({ transport: 0, discount: 0, advance: 0 });
+      setBillDate(null);
     } catch (error: any) {
       showToast(error.response?.data?.message || t("pages.Invoices.failedToCreateInvoice"), "error");
     } finally {
@@ -446,6 +469,9 @@ export default function InvoicesRoute() {
           onConfirmDispatch={() => setIsConfirmDispatchOpen(true)}
           onPrintEstimate={() => setIsEstimatePrintOpen(true)}
           isSubmitting={isSubmitting}
+          billDate={billDate}
+          onBillDateChange={setBillDate}
+          onApplyBillDateToLines={applyBillDateToLines}
         />
       ) : (
         <ManageFinancialPanel
@@ -748,6 +774,14 @@ export default function InvoicesRoute() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {t("pages.Invoices.reviewTheOrderBeforeCommitting")}
           </Typography>
+
+          {billDateIso && (
+            <Alert severity="warning" sx={{ mb: 2, fontVariantNumeric: "tabular-nums" }}>
+              {t("pages.Invoices.billDatedAt", {
+                when: formatDateTime(billDateIso, { today: t("time.today"), yesterday: t("time.yesterday") }),
+              })}
+            </Alert>
+          )}
 
           {/* Client block */}
           <Box
@@ -1069,6 +1103,7 @@ export default function InvoicesRoute() {
             onClick={() => {
               setCartItems([]);
               setFees({ transport: 0, discount: 0, advance: 0 });
+              setBillDate(null);
               setIsClearCartOpen(false);
             }}
             color="error"

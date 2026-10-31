@@ -8,6 +8,7 @@ import i18n from "@/i18n";
 import { tk } from "@/i18n/marker";
 import { RECEIPT_SINHALA_FAMILY, ensureReceiptFontInApp } from "../lib/receiptFont";
 import { getReceiptDesign, getShowIdStatus, type ReceiptDesign } from "../lib/receiptPrefs";
+import { usePrintableSignature } from "../lib/printableSignature";
 
 ensureReceiptFontInApp();
 
@@ -22,6 +23,45 @@ const resolveImageUrl = (url?: string | null) => {
   const origin = apiBase.replace(/\/api\/?$/, "");
   if (!origin) return url;
   return `${origin}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
+// ─── Signature slot ──────────────────────────────────────────────────────────
+// Both signatures sit on the same line whatever their shape: every slot is the
+// same fixed height and the image is pinned to its bottom edge, so a tall
+// operator signature can no longer push its label above the customer's.
+const SIGNATURE_SLOT_PX = 40;
+
+const SignatureSlot: React.FC<{
+  src?: string | null;
+  label: string;
+  name?: string | null;
+  align: "left" | "right";
+}> = ({ src, label, name, align }) => {
+  const printable = usePrintableSignature(src);
+  return (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", textAlign: align }}>
+      <div
+        style={{
+          height: `${SIGNATURE_SLOT_PX}px`,
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
+          overflow: "hidden",
+        }}
+      >
+        {printable && (
+          <img
+            src={printable}
+            data-signature-src={src || undefined}
+            alt={label}
+            style={{ display: "block", maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
+          />
+        )}
+      </div>
+      <div style={{ borderTop: "1px solid #000000", paddingTop: "1px", fontWeight: 700 }}>{label}</div>
+      <div style={{ fontSize: "8px", fontWeight: 500 }}>{name}</div>
+    </div>
+  );
 };
 
 // ─── Code 39 Barcode SVG Generator ───────────────────────────────────────────
@@ -1203,50 +1243,19 @@ export const InvoiceReceipt = ({
           breakInside: "avoid",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-          <div style={{ flex: 1, textAlign: "left" }}>
-            {capturedCustomer ? (
-              <img
-                src={resolveImageUrl(capturedCustomer.image_url) || ""}
-                alt={t.custSign}
-                style={{
-                  display: "block",
-                  maxHeight: 42,
-                  maxWidth: "100%",
-                  objectFit: "contain",
-                  marginBottom: 2,
-                }}
-              />
-            ) : (
-              <div style={{ borderBottom: "1px solid #000000", height: "18px", marginBottom: "2px" }} />
-            )}
-            <div style={{ fontWeight: 700 }}>{t.custSign}</div>
-            <div style={{ fontSize: "8px", fontWeight: 500 }}>
-              {capturedCustomer?.signatory_name || normalized.customer.name}
-            </div>
-          </div>
-          <div style={{ flex: 1, textAlign: "right" }}>
-            {capturedOperator ? (
-              <img
-                src={resolveImageUrl(capturedOperator.image_url) || ""}
-                alt={t.authSign}
-                style={{
-                  display: "block",
-                  maxHeight: 42,
-                  maxWidth: "100%",
-                  objectFit: "contain",
-                  marginBottom: 2,
-                  marginLeft: "auto",
-                }}
-              />
-            ) : (
-              <div style={{ borderBottom: "1px solid #000000", height: "18px", marginBottom: "2px" }} />
-            )}
-            <div style={{ fontWeight: 700 }}>{t.authSign}</div>
-            <div style={{ fontSize: "8px", fontWeight: 500 }}>
-              {capturedOperator?.signatory_name || operatorName}
-            </div>
-          </div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "10px" }}>
+          <SignatureSlot
+            src={resolveImageUrl(capturedCustomer?.image_url)}
+            label={t.custSign}
+            name={capturedCustomer?.signatory_name || normalized.customer.name}
+            align="left"
+          />
+          <SignatureSlot
+            src={resolveImageUrl(capturedOperator?.image_url)}
+            label={t.authSign}
+            name={capturedOperator?.signatory_name || operatorName}
+            align="right"
+          />
         </div>
       </div>
 
@@ -1497,25 +1506,9 @@ function MinimalReceiptBody({
       )}
 
       {/* Signatures */}
-      <div className="avoid-break" style={{ display: "flex", gap: "10px", marginTop: "10px", fontSize: small, breakInside: "avoid" }}>
-        {[
-          { sig: signatures.customer, label: t.custSign, name: n.customer.name, align: "left" as const },
-          { sig: signatures.operator, label: t.authSign, name: operatorName, align: "right" as const },
-        ].map(({ sig, label, name, align }) => (
-          <div key={label} style={{ flex: 1, textAlign: align }}>
-            {sig?.src ? (
-              <img
-                src={sig.src}
-                alt={label}
-                style={{ display: "block", maxHeight: 40, maxWidth: "100%", objectFit: "contain", marginLeft: align === "right" ? "auto" : 0 }}
-              />
-            ) : (
-              <div style={{ height: "20px" }} />
-            )}
-            <div style={{ borderTop: "1px solid #000000", paddingTop: "1px" }}>{label}</div>
-            <div style={{ fontSize: "8px" }}>{sig?.name || name}</div>
-          </div>
-        ))}
+      <div className="avoid-break" style={{ display: "flex", alignItems: "flex-end", gap: "10px", marginTop: "10px", fontSize: small, breakInside: "avoid" }}>
+        <SignatureSlot src={signatures.customer?.src} label={t.custSign} name={signatures.customer?.name || n.customer.name} align="left" />
+        <SignatureSlot src={signatures.operator?.src} label={t.authSign} name={signatures.operator?.name || operatorName} align="right" />
       </div>
 
       {showBarcode && (

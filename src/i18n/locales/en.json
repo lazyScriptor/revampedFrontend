@@ -1148,6 +1148,15 @@
             "saving": "Saving…",
             "saved": "Saved. New bills will show these details.",
             "saveFailed": "Could not save. Try again."
+        },
+        "BillDateControl": {
+            "billDateNow": "Bill date: now · change",
+            "title": "Bill date & time",
+            "hint": "For entering a bill after the fact. Leave as now for normal bills.",
+            "noFuture": "The bill date cannot be in the future.",
+            "willShow": "This bill will be dated {{when}}",
+            "applyToLines": "Set all lines to this date",
+            "useNow": "Use now"
         }
     },
     "orders": {
@@ -2533,7 +2542,8 @@
             "confirmDispatch2": "Confirm & Dispatch",
             "posBillInv": "POS Bill · INV-{{invoice_id}}",
             "posSubtitle": "Point of Sale & asset checkout manifest",
-            "manageSubtitle": "Ledger tracking, returns, & financial terminal"
+            "manageSubtitle": "Ledger tracking, returns, & financial terminal",
+            "billDatedAt": "This bill will be dated {{when}}, not now."
         },
         "Maintenance": {
             "loadingFleetDiagnostics": "Loading Fleet Diagnostics...",

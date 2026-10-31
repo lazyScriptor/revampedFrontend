@@ -19,6 +19,7 @@ import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 import { useTranslation } from "react-i18next";
+import { BillDateControl } from "./BillDateControl";
 
 interface PosCheckoutPanelProps {
   cartItems: CartItem[];
@@ -30,6 +31,9 @@ interface PosCheckoutPanelProps {
   onConfirmDispatch: () => void;
   onPrintEstimate?: () => void;
   isSubmitting: boolean;
+  billDate?: string | null;
+  onBillDateChange?: (value: string | null) => void;
+  onApplyBillDateToLines?: (day: string) => void;
 }
 
 export function PosCheckoutPanel({
@@ -42,6 +46,9 @@ export function PosCheckoutPanel({
   onConfirmDispatch,
   onPrintEstimate,
   isSubmitting,
+  billDate = null,
+  onBillDateChange,
+  onApplyBillDateToLines,
 }: PosCheckoutPanelProps) {
   const { t } = useTranslation();
   const subTotal = useMemo(
@@ -173,6 +180,15 @@ export function PosCheckoutPanel({
           "&::-webkit-scrollbar-thumb": { background: "#334155", borderRadius: "4px" },
         }}
       >
+        {onBillDateChange && (
+          <BillDateControl
+            value={billDate}
+            onChange={onBillDateChange}
+            onApplyToLines={onApplyBillDateToLines}
+            hasLines={cartItems.length > 0}
+          />
+        )}
+
         {/* Fees */}
         <Box>
           <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, mb: 1.5, display: "block" }}>
