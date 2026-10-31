@@ -1,12 +1,19 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { EquipmentTable } from "../EquipmentTable";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 vi.mock("../../hooks/useEquipmentHooks", () => ({
   useDeleteEquipment: () => ({
     mutate: vi.fn(),
     isPending: false,
   }),
+}));
+
+vi.mock("@/lib/socket", () => ({ connectSocket: vi.fn(), getSocket: () => ({ on: vi.fn(), off: vi.fn() }) }));
+vi.mock("@/features/signatures/hooks/useSignatures", () => ({
+  useMyDevices: () => ({ isLoading: false, data: { devices: [] } }),
 }));
 
 vi.mock("react-i18next", () => ({
@@ -35,8 +42,30 @@ describe("EquipmentTable Component", () => {
     },
   ];
 
+  const renderTable = () =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <EquipmentTable
+          data={mockEquipment}
+          isLoading={false}
+          rowCount={1}
+          paginationModel={{ page: 0, pageSize: 20 }}
+          onPaginationModelChange={vi.fn()}
+          onEdit={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+  it("tapping a row's photo opens the photo dialog for that machine", () => {
+    useAuthStore.setState({ hasPermission: (code: string) => code === "equipment:edit" } as any);
+    renderTable();
+    fireEvent.click(screen.getByRole("button", { name: /Sony Alpha A7 IV/ }));
+    expect(screen.getByText("equipment.photo.uploadFromComputer")).toBeInTheDocument();
+  });
+
   it("renders equipment data properly with Typography, rates and IDs without runtime errors", () => {
     render(
+      <QueryClientProvider client={new QueryClient()}>
       <EquipmentTable
         data={mockEquipment}
         isLoading={false}
@@ -45,6 +74,7 @@ describe("EquipmentTable Component", () => {
         onPaginationModelChange={vi.fn()}
         onEdit={vi.fn()}
       />
+      </QueryClientProvider>
     );
 
     // Verify equipment name rendered

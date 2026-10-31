@@ -17,9 +17,14 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ImageIcon from "@mui/icons-material/Image";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 
 import { EquipmentDeleteDialog } from "./EquipmentDeleteDialog";
 import { EquipmentNumberBadge } from "./EquipmentNumberBadge";
+import { EquipmentPhotoDialog } from "./EquipmentPhotoDialog";
+import { useEquipmentPhotoEvents } from "../hooks/useEquipmentPhoto";
+import { resolveAssetUrl } from "@/lib/assetUrl";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { formatDisplayDate } from "@/lib/dates";
 import { useTranslation } from "react-i18next";
 
@@ -46,6 +51,11 @@ export function EquipmentTable({
 }: EquipmentTableProps) {
   const { t } = useTranslation();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [photoId, setPhotoId] = useState<number | null>(null);
+  const canEditPhoto = useAuthStore((s) => s.hasPermission("equipment:edit"));
+  // Photos changed from another counter or the paired phone show up without a reload.
+  useEquipmentPhotoEvents();
+  const photoRow = photoId != null ? data.find((r) => r.equipment_id === photoId) ?? null : null;
 
   // 🚀 THE COMPREHENSIVE COLUMN LIST
   const columns: GridColDef[] = [
@@ -61,19 +71,80 @@ export function EquipmentTable({
     {
       field: "image_url",
       headerName: t("equipment.image"),
-      width: 70,
+      width: 76,
       sortable: false,
-      renderCell: (params) => (
-        <Avatar
-          src={params.value}
-          variant="rounded"
-          sx={{ width: 32, height: 32, bgcolor: "grey.100" }}
-        >
-          {!params.value && (
-            <ImageIcon sx={{ color: "grey.400", fontSize: 20 }} />
-          )}
-        </Avatar>
-      ),
+      renderCell: (params) => {
+        const src = resolveAssetUrl(params.value);
+        const label = canEditPhoto ? t("equipment.photo.changePhoto") : t("equipment.photo.viewPhoto");
+        return (
+          <Tooltip title={label}>
+            <Box
+              component="button"
+              type="button"
+              aria-label={`${label}: ${params.row.equipment_name}`}
+              onClick={(e) => {
+                e.stopPropagation(); // don't select the row
+                setPhotoId(params.row.equipment_id);
+              }}
+              sx={{
+                position: "relative",
+                p: 0,
+                border: 0,
+                bgcolor: "transparent",
+                cursor: "pointer",
+                borderRadius: 1.5,
+                display: "inline-flex",
+                "&:hover .gg-photo-overlay, &:focus-visible .gg-photo-overlay": { opacity: 1 },
+                "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+              }}
+            >
+              <Avatar src={src || undefined} variant="rounded" sx={{ width: 40, height: 40, bgcolor: "grey.100" }}>
+                {!src && <ImageIcon sx={{ color: "grey.400", fontSize: 22 }} />}
+              </Avatar>
+              {canEditPhoto && (
+                <Box
+                  className="gg-photo-overlay"
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: 1.5,
+                    bgcolor: "rgba(15,23,42,0.55)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: 0,
+                    transition: "opacity .15s",
+                  }}
+                >
+                  <PhotoCameraIcon sx={{ fontSize: 18 }} />
+                </Box>
+              )}
+              {canEditPhoto && (
+                // Always-visible hint for touch screens, where there is no hover.
+                <Box
+                  sx={{
+                    position: "absolute",
+                    right: -4,
+                    bottom: -4,
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                    border: "2px solid #fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <PhotoCameraIcon sx={{ fontSize: 10 }} />
+                </Box>
+              )}
+            </Box>
+          </Tooltip>
+        );
+      },
     },
     {
       field: "equipment_name",
@@ -452,6 +523,7 @@ export function EquipmentTable({
       </Box>
 
       <EquipmentDeleteDialog equipmentId={deleteId} onClose={() => setDeleteId(null)} />
+      <EquipmentPhotoDialog open={!!photoRow} equipment={photoRow} onClose={() => setPhotoId(null)} />
     </>
   );
 }

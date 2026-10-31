@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 import {
   Box,
   Typography,
@@ -411,7 +412,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     {item.image_url ? (
                       <Box
                         component="img"
-                        src={item.image_url}
+                        src={resolveAssetUrl(item.image_url) || undefined}
                         alt=""
                         loading="lazy"
                         sx={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0, borderRadius: 1 }}

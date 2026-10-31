@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 import type { ElementType, ReactNode } from "react";
 import { alpha, Box, Checkbox, Chip, IconButton, Typography, useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -201,7 +202,7 @@ export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, on
         {showPhoto ? (
           <Box
             component="img"
-            src={item.image_url}
+            src={resolveAssetUrl(item.image_url) || undefined}
             alt=""
             loading="lazy"
             draggable={false}

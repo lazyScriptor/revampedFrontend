@@ -26,6 +26,7 @@ import { MobileSignPage } from "@/features/signatures/components/MobileSignPage"
 import { PairDevicePage } from "@/features/signatures/components/PairDevicePage";
 import { DeviceHomePage } from "@/features/signatures/components/DeviceHomePage";
 import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedSignPage";
+import { PhonePhotoPage } from "@/features/equipment/components/PhonePhotoPage";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
 
@@ -107,6 +108,17 @@ const signPairedRoute = createRoute({
   component: function SignPairedComponent() {
     const { token } = signPairedRoute.useParams();
     return <SimplifiedSignPage token={token} />;
+  },
+});
+
+// Paired phone: photograph a machine the counter tapped in the equipment
+// table. Public (device_id + token authorise), like /sign-paired.
+const phonePhotoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/photo/$token",
+  component: function PhonePhotoComponent() {
+    const { token } = phonePhotoRoute.useParams();
+    return <PhonePhotoPage token={token} />;
   },
 });
 
@@ -281,6 +293,7 @@ const routeTree = rootRoute.addChildren([
   pairRoute,
   deviceHomeRoute,
   signPairedRoute,
+  phonePhotoRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,
     equipmentRoute,

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 import { alpha, Box, Tooltip, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
@@ -156,7 +157,7 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
         {showPhoto ? (
           <Box
             component="img"
-            src={item.image_url as string}
+            src={resolveAssetUrl(item.image_url as string) || undefined}
             alt=""
             loading="lazy"
             draggable={false}

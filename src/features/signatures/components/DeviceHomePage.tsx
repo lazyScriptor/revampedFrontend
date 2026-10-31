@@ -24,6 +24,7 @@ import { useNavigate } from '@tanstack/react-router';
 import AddToHomeScreenIcon from '@mui/icons-material/AddToHomeScreen';
 import { getDeviceId, clearDeviceId } from '../lib/deviceId';
 import { isRequestFinished, isStandalone, useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
+import { useDevicePendingPhotos } from '@/features/equipment/hooks/useEquipmentPhoto';
 import {
   useDeviceStatus,
   useDevicePendingSignatures,
@@ -44,6 +45,7 @@ export function DeviceHomePage() {
 
   const status = useDeviceStatus(deviceId, { refetchInterval: 30_000 });
   const pending = useDevicePendingSignatures(deviceId);
+  const pendingPhotos = useDevicePendingPhotos(deviceId, { enabled: status.data?.paired === true });
   useDeviceManifest();
   useScreenWakeLock(!!deviceId);
 
@@ -71,6 +73,12 @@ export function DeviceHomePage() {
       navigate({ to: '/sign-paired/$token', params: { token: first.token }, replace: true });
     }
   }, [pending.data?.pending, navigate]);
+
+  // Same for a photo request: the counter tapped a machine's picture.
+  useEffect(() => {
+    const next = pendingPhotos.data?.pending?.find((p) => p.token && !isRequestFinished(p.token));
+    if (next?.token) navigate({ to: '/photo/$token', params: { token: next.token }, replace: true });
+  }, [pendingPhotos.data?.pending, navigate]);
 
   if (status.isLoading || !deviceId) {
     return (

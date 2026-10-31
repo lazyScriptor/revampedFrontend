@@ -119,6 +119,7 @@ api.interceptors.response.use(
         }
 
         const errorMessage = error.response?.data?.message || i18n.t('errors.unexpected');
-        return Promise.reject(new Error(errorMessage));
+        // Keep the HTTP status (undefined = no response, e.g. offline) so callers can react to it.
+        return Promise.reject(Object.assign(new Error(errorMessage), { status }));
     }
 );

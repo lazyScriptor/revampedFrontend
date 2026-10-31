@@ -8,7 +8,8 @@ export const equipmentSchema = z.object({
   serial_number: z.string().min(1, zt("validation.serialRequired")),
   category_id: z.coerce.number().min(1, zt("validation.categoryRequired")),
   warehouse_id: z.coerce.number().min(1, zt("validation.warehouseRequired")),
-  image_url: z.string().url(zt("validation.invalidUrl")).optional().or(z.literal('')),
+  // A full URL, or a photo uploaded from the equipment table ("/uploads/…").
+  image_url: z.string().url(zt("validation.invalidUrl")).optional().or(z.literal('')).or(z.string().regex(/^\/uploads\//)),
 
   // --- Pricing & Rental Scenarios ---
   base_rental_price: z.coerce.number().min(0, zt("validation.rateNonNegative")),
