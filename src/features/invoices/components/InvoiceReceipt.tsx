@@ -628,11 +628,16 @@ export const InvoiceReceipt = ({
       // out, so the bill shows the actual return day instead of the original due day.
       const backDate = line.returned_date || line.actual_return_date || null;
       const keptLonger = !!backDate && String(backDate).slice(0, 10) > String(line.expected_return_date || "").slice(0, 10);
-      const endDate = keptLonger ? backDate : line.expected_return_date;
-      const days = calculateDays(line.borrow_date, endDate);
       const basePrice = Number(line.locked_base_price ?? line.base_price ?? 0);
       const extraRate = Number(line.locked_extra_daily_rate ?? line.extra_daily_rate ?? basePrice);
       const minDays = Number(line.locked_minimum_days ?? line.minimum_rental_period ?? 1);
+      // Days are counted by elapsed time (29 hours = 2 days), so the amount can cover more days than the
+      // two dates show. Read the billed days back from the amount so the bill never contradicts itself.
+      const perUnit = Number(line.line_total_amount ?? line.line_total ?? 0) / Math.max(1, Number(line.borrow_quantity ?? line.quantity ?? 1));
+      const paidDays = extraRate > 0 && perUnit > basePrice ? minDays + Math.round((perUnit - basePrice) / extraRate) : 0;
+      const datedDays = calculateDays(line.borrow_date, keptLonger ? backDate : line.expected_return_date);
+      const days = Math.max(datedDays, paidDays);
+      const endDate = keptLonger || (paidDays > datedDays && backDate) ? backDate : line.expected_return_date;
       const isDaily = minDays <= 1 && basePrice === extraRate;
 
       const pricingText = isDaily

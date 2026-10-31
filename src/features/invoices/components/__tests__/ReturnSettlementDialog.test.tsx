@@ -123,6 +123,12 @@ describe("late fee maths (mirrors the backend)", () => {
   it("is 0 when late fees were waived", () => {
     expect(calcLateFee({ ...line, track_overdue: false }, "2026-10-20")).toBe(0);
   });
+  it("counts elapsed hours: out 9:42 AM, back 29 hours later = 2 days = 1 extra day", () => {
+    const out = new Date(2026, 9, 30, 9, 42).toISOString();
+    const open: any = { track_overdue: false, open_ended: true, out_at: out, borrow_date: "2026-10-30", expected_return: "2026-10-30", min_days: 1, locked_extra_rate: 250, good_qty: 1, defective_qty: 0 };
+    expect(calcDaysLate(open, "2026-10-31", new Date(2026, 9, 31, 15, 8))).toBe(1);
+    expect(calcLateFee(open, "2026-10-31", new Date(2026, 9, 31, 15, 8))).toBe(250);
+  });
   it("a line with no return date is charged for the days out beyond its price (out 2 days = 1 extra)", () => {
     const open: any = { track_overdue: false, open_ended: true, borrow_date: "2026-10-10", expected_return: "2026-10-10", min_days: 1, locked_extra_rate: 500, good_qty: 2, defective_qty: 0 };
     expect(calcDaysLate(open, "2026-10-10")).toBe(0);

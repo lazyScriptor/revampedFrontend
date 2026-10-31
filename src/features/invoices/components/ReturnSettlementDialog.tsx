@@ -24,7 +24,7 @@ import { useProcessReturn } from "../hooks/useInvoiceHooks";
 import { HandoverLine, HandoverLineCard } from "./HandoverLineCard";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { todayLocalStr } from "@/lib/dates";
-import { isOpenEnded, openEndedExtraDays, toYmd } from "../lib/lineCost";
+import { elapsedDays, isOpenEnded, lineOutAt, openEndedExtraDays, toYmd } from "../lib/lineCost";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
@@ -33,12 +33,21 @@ import i18n from "@/i18n";
 // was priced for 1 day, so it is charged for every day out beyond what its price already covers.
 const DAY = 1000 * 60 * 60 * 24;
 
-type DayLine = Pick<HandoverLine, "track_overdue" | "expected_return"> & Partial<Pick<HandoverLine, "borrow_date" | "min_days" | "open_ended">>;
+type DayLine = Pick<HandoverLine, "track_overdue" | "expected_return"> & Partial<Pick<HandoverLine, "borrow_date" | "min_days" | "open_ended" | "out_at">>;
+
+/** The moment of this handover: now when it is today, otherwise the picked day at the current time of day. */
+export const handoverMoment = (handoverDate: string, now: Date = new Date()): Date => {
+  if (!handoverDate || handoverDate === todayLocalStr()) return now;
+  const [y, m, d] = handoverDate.split("-").map(Number);
+  return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+};
 
 /** Days this handover is charged for: days late (tracked line) or extra days out (no-return-date line). */
-export const calcDaysLate = (line: DayLine, handoverDate: string): number => {
+export const calcDaysLate = (line: DayLine, handoverDate: string, now?: Date): number => {
   if (!handoverDate) return 0;
   if (line.open_ended) {
+    // Elapsed time, rounded up, when the bill's time is known (29 hours = 2 days); calendar dates otherwise.
+    if (line.out_at) return Math.max(0, elapsedDays(new Date(line.out_at), handoverMoment(handoverDate, now)) - Math.max(1, line.min_days || 1));
     return line.borrow_date ? openEndedExtraDays(toYmd(line.borrow_date), handoverDate, line.min_days || 1) : 0;
   }
   if (line.track_overdue === false || !line.expected_return) return 0;
@@ -47,8 +56,8 @@ export const calcDaysLate = (line: DayLine, handoverDate: string): number => {
   return Math.max(0, Math.ceil((actual - expected) / DAY));
 };
 
-export const calcLateFee = (line: HandoverLine, handoverDate: string): number =>
-  calcDaysLate(line, handoverDate) * (line.locked_extra_rate || 0) * (line.good_qty + line.defective_qty);
+export const calcLateFee = (line: HandoverLine, handoverDate: string, now?: Date): number =>
+  calcDaysLate(line, handoverDate, now) * (line.locked_extra_rate || 0) * (line.good_qty + line.defective_qty);
 // ──────────────────────────────────────────────────────────────────────────────
 
 const money = (n: number) => Number(n.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -86,6 +95,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           borrow_date: line.borrow_date,
           min_days: Number(line.locked_minimum_days) || 1,
           open_ended: isOpenEnded(line),
+          out_at: lineOutAt(line, invoice.issued_date || invoice.createdAt)?.toISOString(),
           track_overdue: wasTracked,
           // frozen: was this line tracked when the handover started? (decides whether "waive" can be offered)
           _orig_tracked: wasTracked,
@@ -120,7 +130,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
       invoice_id: invoice.invoice_id,
       final_payment_amount: paymentNum,
       release_id_card: releaseId,
-      lines_returned: lines.map((l) => ({ ...l, actual_return_date: handoverDate })),
+      lines_returned: lines.map((l) => ({ ...l, actual_return_date: handoverDate, actual_return_at: handoverMoment(handoverDate).toISOString() })),
     };
     returnMutation.mutate(
       { id: invoice.invoice_id, data: payload },

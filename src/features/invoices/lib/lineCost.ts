@@ -42,12 +42,42 @@ export const isOpenEnded = (line: { track_overdue?: unknown; borrow_date?: unkno
   return !isTracked(line.track_overdue) && !!out && out === toYmd(line.expected_return_date);
 };
 
+/**
+ * The moment a line went out: the bill's time of day, on the line's out date.
+ * Null when the bill's time is unknown (then day counts fall back to calendar dates).
+ */
+export const lineOutAt = (line: { borrow_date?: unknown }, issuedAt?: string | Date | null): Date | null => {
+  if (!issuedAt) return null;
+  const issued = issuedAt instanceof Date ? issuedAt : new Date(issuedAt);
+  if (Number.isNaN(issued.getTime())) return null;
+  const day = toYmd(line.borrow_date);
+  if (!day || formatLocalDate(issued) === day) return issued;
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(y, m - 1, d, issued.getHours(), issued.getMinutes(), issued.getSeconds());
+};
+
+/** Rental days are elapsed time rounded up: past 24 hours is the next day (29 hours = 2 days), minimum 1. */
+export const elapsedDays = (outAt: Date, to: Date): number => {
+  const ms = to.getTime() - outAt.getTime();
+  return Number.isFinite(ms) ? Math.max(1, Math.ceil(ms / DAY)) : 1;
+};
+
 /** Days out for billing: out date to `to`, never less than 1 (a same-day return is a day). */
 export const billableDaysOut = (outDate: string, to: string): number => Math.max(1, daysBetween(outDate, to));
 
 /** Days charged beyond what the locked price already covers, for an open-ended line. */
 export const openEndedExtraDays = (outDate: string, to: string, minimumDays: number): number =>
   Math.max(0, billableDaysOut(outDate, to) - Math.max(1, minimumDays || 1));
+
+/** Optional exact moments, so days are counted by elapsed time instead of calendar dates. */
+export interface LineClock {
+  /** When the bill was written (the time machines went out). */
+  issuedAt?: string | Date | null;
+  /** The current moment for lines still out (defaults to now). */
+  now?: Date;
+  /** When the line's last handover happened, with its time. */
+  backAt?: string | null;
+}
 
 export interface LineToday {
   isActive: boolean;
@@ -72,7 +102,7 @@ export interface LineToday {
   costToday: number;
 }
 
-export function analyseLine(line: any, today: string = todayLocalStr()): LineToday {
+export function analyseLine(line: any, today: string = todayLocalStr(), clock: LineClock = {}): LineToday {
   const isActive = (line.line_status ?? line.status) === "Active";
   const qty = Number(line.borrow_quantity) || 0;
   const returned = (Number(line.good_returned_qty) || 0) + (Number(line.defective_returned_qty) || 0);
@@ -85,12 +115,18 @@ export function analyseLine(line: any, today: string = todayLocalStr()): LineTod
   const openEnded = isOpenEnded(line);
   const minDays = Number(line.locked_minimum_days) || 1;
   const rate = Number(line.locked_extra_daily_rate) || 0;
-  const extraDays = openEnded && isActive ? openEndedExtraDays(outDate, today, minDays) : 0;
+  const outAt = lineOutAt(line, clock.issuedAt);
+  const backYmd = toYmd(line.actual_return_date);
+  const backMoment = !isActive && clock.backAt && /T|\d:\d/.test(clock.backAt) ? new Date(clock.backAt) : null;
+  const endMoment = isActive ? clock.now ?? new Date() : backMoment;
+  // Elapsed time when both moments are known, calendar dates otherwise.
+  const timed = openEnded && !!outAt && !!endMoment && !Number.isNaN(endMoment.getTime());
+  const elapsedOut = timed ? elapsedDays(outAt as Date, endMoment as Date) : 0;
+  const extraDays = openEnded && isActive ? (timed ? Math.max(0, elapsedOut - Math.max(1, minDays)) : openEndedExtraDays(outDate, today, minDays)) : 0;
   const lateFee = (openEnded ? extraDays : daysLate) * rate * pending;
 
-  const backYmd = toYmd(line.actual_return_date);
   const endDay = !isActive && backYmd ? backYmd : today;
-  const daysOut = outDate ? billableDaysOut(outDate, endDay) : 1;
+  const daysOut = timed ? elapsedOut : outDate ? billableDaysOut(outDate, endDay) : 1;
   const contractDays = toYmd(line.expected_return_date) && outDate ? Math.max(1, daysBetween(outDate, toYmd(line.expected_return_date))) : 1;
   const billedDays = openEnded ? daysOut : tracked ? Math.max(contractDays, daysOut) : contractDays;
 
@@ -124,8 +160,12 @@ export interface InvoiceToday {
   earliestOut: string;
 }
 
-export function summariseInvoice(rawLines: any[], today: string = todayLocalStr()): InvoiceToday {
-  const lines = rawLines.map((l) => analyseLine(l, today));
+export function summariseInvoice(
+  rawLines: any[],
+  today: string = todayLocalStr(),
+  clock: Omit<LineClock, "backAt"> & { backAtFor?: (line: any) => string | null } = {},
+): InvoiceToday {
+  const lines = rawLines.map((l) => analyseLine(l, today, { issuedAt: clock.issuedAt, now: clock.now, backAt: clock.backAtFor?.(l) ?? null }));
   const outDates = lines.map((l) => l.outDate).filter(Boolean).sort();
   return {
     lines,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyseLine, summariseInvoice, daysBetween, toYmd } from "../lineCost";
+import { analyseLine, summariseInvoice, daysBetween, toYmd, elapsedDays } from "../lineCost";
 
 const base = {
   line_status: "Active",
@@ -88,6 +88,31 @@ describe("a line with no return date is billed for the days it is really out", (
     expect(r.isActive).toBe(false);
     expect(r.isOverdue).toBe(false);
     expect(r.costToday).toBe(1800);
+  });
+});
+
+describe("days are elapsed time, rounded up (29 hours = 2 days)", () => {
+  const out = { ...base, track_overdue: false, borrow_quantity: 1, line_total_amount: "250", locked_extra_daily_rate: 250, borrow_date: "2026-10-30", expected_return_date: "2026-10-30" };
+  const issuedAt = new Date(2026, 9, 30, 9, 42);
+
+  it("elapsedDays rounds anything past 24h up", () => {
+    expect(elapsedDays(issuedAt, new Date(2026, 9, 31, 9, 42))).toBe(1);
+    expect(elapsedDays(issuedAt, new Date(2026, 9, 31, 9, 43))).toBe(2);
+    expect(elapsedDays(issuedAt, new Date(2026, 9, 31, 15, 8))).toBe(2);
+    expect(elapsedDays(issuedAt, new Date(2026, 9, 30, 9, 50))).toBe(1);
+  });
+
+  it("an active no-return-date line out 29 hours is 2 days, +1 extra day charged", () => {
+    const r = analyseLine(out, "2026-10-31", { issuedAt, now: new Date(2026, 9, 31, 15, 8) });
+    expect(r.daysOut).toBe(2);
+    expect(r.extraDays).toBe(1);
+    expect(r.costToday).toBe(500);
+  });
+
+  it("a returned line uses the handover time", () => {
+    const r = analyseLine({ ...out, line_status: "Returned", actual_return_date: "2026-10-31", line_total_amount: "500" }, "2026-12-01", { issuedAt, backAt: new Date(2026, 9, 31, 15, 8).toISOString() });
+    expect(r.daysOut).toBe(2);
+    expect(r.costToday).toBe(500);
   });
 });
 

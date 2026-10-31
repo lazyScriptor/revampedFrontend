@@ -27,6 +27,8 @@ export interface HandoverLine {
   borrow_date?: string;
   min_days?: number;
   open_ended?: boolean;
+  /** ISO moment the machine went out (bill time on the out date); days are counted from here. */
+  out_at?: string;
   locked_extra_rate: number;
 }
 

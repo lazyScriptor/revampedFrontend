@@ -315,9 +315,9 @@ export function ReadOnlyInvoiceModal({
                     const returnedQty = (Number(line.good_returned_qty) || 0) + (Number(line.defective_returned_qty) || 0);
                     const isFullyReturned = returnedQty >= qty;
                     const lineTotal = Number(line.line_total_amount || 0);
-                    const info = analyseLine(line);
                     const iterations = iterationsFor(line.line_id, returnTraces);
                     const backAt = lastBackAt(line, iterations);
+                    const info = analyseLine(line, undefined, { issuedAt: invoice.issued_date || invoice.createdAt, backAt });
                     const outAt = issuedAtDay === info.outDate ? invoice.issued_date : info.outDate;
 
                     return (

@@ -58,6 +58,7 @@ import { ReviewThread } from "@/features/reviews/components/ReviewThread";
 import { ReviewComposer } from "@/features/reviews/components/ReviewComposer";
 import { useTranslation } from "react-i18next";
 import { summariseInvoice, type LineToday } from "../lib/lineCost";
+import { iterationsFor, lastBackAt } from "../lib/lineTimes";
 import { invoiceStatusColor, invoiceStatusLabel } from "../lib/invoiceStatus";
 
 const scroll = {
@@ -364,7 +365,10 @@ export function ManageLedgerPanel({
   const rawLines = invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
   const rawTraces = invoice.InvoiceTraces || invoice.InvoiceTrace || invoice.invoice_traces || invoice.traces || [];
   const returnTraces = rawTraces.filter((tr: any) => tr.event_action === "RETURN_PROCESSED");
-  const summary = summariseInvoice(rawLines);
+  const summary = summariseInvoice(rawLines, undefined, {
+    issuedAt: invoice.issued_date || invoice.createdAt,
+    backAtFor: (line) => lastBackAt(line, iterationsFor(line.line_id, returnTraces)),
+  });
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
