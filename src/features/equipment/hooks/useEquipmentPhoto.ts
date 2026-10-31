@@ -22,6 +22,11 @@ export interface PhotoRequest {
 
 type Saved = { equipment_id: number; image_url: string | null };
 
+// The shared client defaults to JSON, and axios turns FormData into JSON when it sees that
+// header, dropping the file. Multipart makes axios pass the form through and the browser
+// adds the boundary.
+const MULTIPART = { "Content-Type": "multipart/form-data" };
+
 /** Puts the new photo into every cached equipment list straight away, then refetches. */
 export const applyImageToCaches = (qc: QueryClient, { equipment_id, image_url }: Saved) => {
   const patch = (rows: any[]) => rows.map((r) => (r?.equipment_id === equipment_id ? { ...r, image_url } : r));
@@ -44,6 +49,7 @@ export const useUploadEquipmentImage = () => {
       const form = new FormData();
       form.append("image", blob, blob.type === "image/webp" ? "photo.webp" : "photo.jpg");
       return api.post(`/equipment/${equipmentId}/image`, form, {
+        headers: MULTIPART,
         signal,
         timeout: 120_000,
         onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
@@ -132,6 +138,7 @@ export const submitDevicePhoto = (deviceId: string, token: string, blob: Blob, o
   const form = new FormData();
   form.append("image", blob, blob.type === "image/webp" ? "photo.webp" : "photo.jpg");
   return api.post(`${devicePath(deviceId)}/${encodeURIComponent(token)}/photo`, form, {
+    headers: MULTIPART,
     timeout: 120_000,
     onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
   });

@@ -121,3 +121,12 @@ it("people without edit permission only see the photo", () => {
   expect(screen.getByText(/needs equipment edit permission/)).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Upload from this computer" })).toBeNull();
 });
+
+it("computer upload asks for a multipart request so the file is not turned into JSON", async () => {
+  api.post.mockResolvedValue({ data: { equipment_id: 5, image_url: "/uploads/x.webp" } });
+  renderDialog();
+  pickFile();
+  fireEvent.click(await screen.findByRole("button", { name: "Save photo" }));
+  await screen.findByText("Photo updated");
+  expect(api.post.mock.calls[0][2].headers).toEqual({ "Content-Type": "multipart/form-data" });
+});
