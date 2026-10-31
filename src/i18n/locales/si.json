@@ -970,7 +970,8 @@
             "auditActivity": "විගණන ක්‍රියාකාරකම් ({{tracesCount}})",
             "unknown": "නොදන්නා",
             "activityLogged": "ක්‍රියාකාරකම සටහන් කරන ලදී",
-            "customer": "පාරිභෝගිකයා"
+            "customer": "පාරිභෝගිකයා",
+            "returnedOf": "{{returned}}/{{qty}} ආපසු"
         },
         "ReceiptPrintDialog": {
             "printedViaBrowserDialogAgent": "බ්‍රවුසර සංවාද කොටුව හරහා මුද්‍රණය කරන ලදී (මුද්‍රණ සේවාව ක්‍රියා විරහිතයි)",
@@ -1095,7 +1096,8 @@
             "inclLate": "ප්‍රමාද ගාස්තු Rs. {{fee}} ඇතුළුව",
             "collectNow": "දැන් අය කරන මුදල (Rs.)",
             "fullBalance": "සම්පූර්ණ ශේෂය",
-            "nothingToConfirm": "අවම වශයෙන් ආපසු ලැබුණු ඒකකයක් හෝ ගෙවීමක් ඇතුළත් කරන්න."
+            "nothingToConfirm": "අවම වශයෙන් ආපසු ලැබුණු ඒකකයක් හෝ ගෙවීමක් ඇතුළත් කරන්න.",
+            "dExtraRs": "+අමතර දින {{days}} · +Rs.{{fee}}"
         },
         "status": {
             "active": "සක්‍රිය",
@@ -1274,7 +1276,19 @@
             "inclLate": "ප්‍රමාද {{fee}} ඇතුළුව",
             "damagedCount_one": "හානි {{count}}",
             "damagedCount_other": "හානි {{count}}",
-            "total": "එකතුව"
+            "total": "එකතුව",
+            "colOut": "පිටත් කළ වේලාව",
+            "colBack": "ආපසු ලැබුණු",
+            "colDays": "දින ගණන",
+            "colTotal": "මුළු මුදල",
+            "backCount_one": "{{count}} ආපසු",
+            "backCount_other": "{{count}} ආපසු",
+            "notBackYet": "තවම ආපසු ලැබී නැත",
+            "billedDays_one": "බිල් කළ {{count}}",
+            "billedDays_other": "බිල් කළ {{count}}",
+            "inclExtraDays_one": "අමතර දින {{count}} සඳහා {{fee}} ඇතුළුව",
+            "inclExtraDays_other": "අමතර දින {{count}} සඳහා {{fee}} ඇතුළුව",
+            "extraFormula": "පළමු දිනට රු. {{base}} + අමතර දින {{days}} × රු. {{rate}} × {{pending}} තවම පිටත"
         }
     },
     "accounting": {

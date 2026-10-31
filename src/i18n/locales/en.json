@@ -970,7 +970,8 @@
             "auditActivity": "Audit Activity ({{tracesCount}})",
             "unknown": "Unknown",
             "activityLogged": "Activity logged",
-            "customer": "Customer"
+            "customer": "Customer",
+            "returnedOf": "{{returned}}/{{qty}} back"
         },
         "ReceiptPrintDialog": {
             "printedViaBrowserDialogAgent": "Printed via browser dialog (agent offline)",
@@ -1095,7 +1096,8 @@
             "inclLate": "incl. Rs. {{fee}} late fees",
             "collectNow": "Collect now (Rs.)",
             "fullBalance": "Full balance",
-            "nothingToConfirm": "Enter at least one returned unit or a payment."
+            "nothingToConfirm": "Enter at least one returned unit or a payment.",
+            "dExtraRs": "+{{days}}d extra · +Rs.{{fee}}"
         },
         "status": {
             "active": "Active",
@@ -1274,7 +1276,19 @@
             "inclLate": "incl. late {{fee}}",
             "damagedCount_one": "{{count}} damaged",
             "damagedCount_other": "{{count}} damaged",
-            "total": "Total"
+            "total": "Total",
+            "colOut": "Rented out",
+            "colBack": "Returned",
+            "colDays": "Days out",
+            "colTotal": "Total",
+            "backCount_one": "{{count}} back",
+            "backCount_other": "{{count}} back",
+            "notBackYet": "Not back yet",
+            "billedDays_one": "billed {{count}}",
+            "billedDays_other": "billed {{count}}",
+            "inclExtraDays_one": "incl. {{fee}} for {{count}} extra day",
+            "inclExtraDays_other": "incl. {{fee}} for {{count}} extra days",
+            "extraFormula": "Rs. {{base}} for the first day + {{days}} extra day(s) × Rs. {{rate}} × {{pending}} still out"
         }
     },
     "accounting": {

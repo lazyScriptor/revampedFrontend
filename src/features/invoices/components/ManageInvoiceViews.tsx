@@ -413,7 +413,7 @@ export function ManageLedgerPanel({
           </Typography>
         )}
 
-        <LedgerTable lines={rawLines} infos={summary.lines} returnTraces={returnTraces} />
+        <LedgerTable lines={rawLines} infos={summary.lines} returnTraces={returnTraces} issuedAt={invoice.issued_date || invoice.createdAt} />
 
         {/* Reviews thread — staff-only ratings + comments for this invoice */}
         <InvoiceReviewsSection invoiceId={invoice.invoice_id} />

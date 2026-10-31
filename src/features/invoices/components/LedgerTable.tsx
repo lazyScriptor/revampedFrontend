@@ -4,63 +4,33 @@ import { useTranslation } from "react-i18next";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SubdirectoryArrowRightIcon from "@mui/icons-material/SubdirectoryArrowRight";
 
-import { formatDateTime, formatDisplayDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
 import { EquipmentNumberBadge } from "@/features/equipment/components/EquipmentNumberBadge";
 import type { LineToday } from "../lib/lineCost";
+import { iterationsFor, lastBackAt } from "../lib/lineTimes";
 
 const MONO = "'JetBrains Mono', monospace";
 const num = { fontFamily: MONO, fontVariantNumeric: "tabular-nums" } as const;
 const money = (n: number) => Number((Number(n) || 0).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
-// Machine | Dates | Qty | Returned | Rate | Cost — one row per rented line, read left to right.
-const COLUMNS = "minmax(130px, 2fr) 84px 36px 64px 92px 96px";
-
-/** "20 Oct" for this year, "20 Oct 2025" otherwise — keeps the dates column narrow. */
-const shortDate = (value: unknown) => {
-  const full = formatDisplayDate(value as any);
-  const year = String(new Date().getFullYear());
-  return full && full.endsWith(year) ? full.slice(0, -year.length).trim() : full;
-};
-
-interface Iteration {
-  date: string;
-  good: number;
-  defective: number;
-}
-
-/** The handovers that touched one line, oldest first, from the RETURN_PROCESSED traces. */
-const iterationsFor = (lineId: number, returnTraces: any[]): Iteration[] =>
-  returnTraces
-    .map((trace) => {
-      let payload = trace.state_payload || {};
-      if (typeof payload === "string") {
-        try {
-          payload = JSON.parse(payload);
-        } catch {
-          payload = {};
-        }
-      }
-      const rl = (payload.lines_returned || []).find((l: any) => l.line_id === lineId);
-      if (rl && (Number(rl.good_qty) > 0 || Number(rl.defective_qty) > 0)) {
-        return { date: trace.occurred_at || trace.createdAt, good: Number(rl.good_qty) || 0, defective: Number(rl.defective_qty) || 0 };
-      }
-      return null;
-    })
-    .filter(Boolean)
-    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()) as Iteration[];
+// Machine | Rented out | Qty | Returned | Days out | Rate | Total — one row per rented line, read left to right.
+const COLUMNS = "minmax(130px, 2fr) 104px 64px 104px 64px 92px 96px";
 
 interface LedgerTableProps {
   lines: any[];
   infos: LineToday[];
   returnTraces: any[];
+  /** When the bill was written: the time the machines went out (lines only store the date). */
+  issuedAt?: string | null;
 }
 
-export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
+export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTableProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const [openId, setOpenId] = useState<number | null>(null);
   const border = (theme.palette as any).border?.subtle || theme.palette.divider;
 
+  const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
   const totals = infos.reduce(
     (acc, i) => ({ qty: acc.qty + i.qty, returned: acc.returned + i.returned, cost: acc.cost + i.costToday }),
     { qty: 0, returned: 0, cost: 0 },
@@ -74,15 +44,16 @@ export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
 
   return (
     <Box sx={{ border: "1px solid", borderColor: border, borderRadius: 3, bgcolor: "background.paper", overflowX: "auto" }}>
-      <Box role="table" aria-label={t("orders.ledger.tableLabel")} sx={{ minWidth: 520 }}>
+      <Box role="table" aria-label={t("orders.ledger.tableLabel")} sx={{ minWidth: 700 }}>
         {/* header */}
         <Box role="row" sx={{ display: "grid", gridTemplateColumns: COLUMNS, gap: 1, alignItems: "center", px: 1.5, py: 1, bgcolor: "action.hover", borderBottom: "1px solid", borderColor: border }}>
           {head(t("orders.ledger.colMachine"))}
-          {head(t("orders.ledger.colDates"))}
+          {head(t("orders.ledger.colOut"))}
           {head(t("orders.ledger.colQty"), "center")}
-          {head(t("orders.ledger.colReturned"), "center")}
+          {head(t("orders.ledger.colBack"))}
+          {head(t("orders.ledger.colDays"), "center")}
           {head(t("orders.ledger.colRate"), "right")}
-          {head(t("orders.ledger.colCost"), "right")}
+          {head(t("orders.ledger.colTotal"), "right")}
         </Box>
 
         {lines.map((line, idx) => {
@@ -94,8 +65,10 @@ export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
           const extra = Number(line.locked_extra_daily_rate) || 0;
           const minDays = Number(line.locked_minimum_days) || 1;
           const daily = minDays <= 1 && base === extra;
-          const backDate = !info.isActive ? line.actual_return_date || (iterations.length ? iterations[iterations.length - 1].date : null) : null;
-          const expandable = iterations.length > 0 || info.isOverdue;
+          const backAt = lastBackAt(line, iterations);
+          // Time of day only exists for the bill and the handovers; a line with just a date shows the date.
+          const outAt = issuedAt && String(issuedAt).slice(0, 10) === info.outDate ? issuedAt : info.outDate;
+          const expandable = iterations.length > 0 || info.isOverdue || info.extraDays > 0;
           const open = openId === line.line_id;
 
           const status = !info.isActive
@@ -152,33 +125,44 @@ export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
                   </Box>
                 </Box>
 
-                {/* dates: out, then back / due */}
-                <Box role="cell" sx={{ ...num, fontSize: "0.78rem", lineHeight: 1.45 }}>
-                  <Box>
-                    <Box component="span" sx={{ color: "text.secondary" }}>{t("orders.ledger.outShort")} </Box>
-                    <Box component="span" sx={{ fontWeight: 700 }}>{info.outDate ? shortDate(info.outDate) : "—"}</Box>
-                  </Box>
-                  {backDate ? (
-                    <Box>
-                      <Box component="span" sx={{ color: "text.secondary" }}>{t("orders.ledger.backShort")} </Box>
-                      <Box component="span" sx={{ fontWeight: 700, color: "success.dark" }}>{shortDate(backDate)}</Box>
-                    </Box>
-                  ) : info.tracked && info.dueDate ? (
-                    <Box>
-                      <Box component="span" sx={{ color: "text.secondary" }}>{t("orders.ledger.dueShort")} </Box>
-                      <Box component="span" sx={{ fontWeight: 700, color: info.isOverdue ? "error.main" : "text.primary" }}>{shortDate(info.dueDate)}</Box>
-                    </Box>
-                  ) : null}
-                </Box>
-
-                {/* quantities */}
-                <Typography role="cell" sx={{ ...num, fontWeight: 800, textAlign: "center" }}>
-                  {info.qty}
+                {/* rented out: date and time */}
+                <Typography role="cell" sx={{ ...num, fontSize: "0.78rem", fontWeight: 700, lineHeight: 1.4 }}>
+                  {outAt ? formatDateTime(outAt, dayWords) : "—"}
                 </Typography>
+
+                {/* how many: rented, with what has come back */}
                 <Box role="cell" sx={{ textAlign: "center" }}>
-                  <Typography sx={{ ...num, fontWeight: 800, color: info.returned === info.qty ? "success.dark" : "text.primary" }}>{info.returned}</Typography>
+                  <Typography sx={{ ...num, fontWeight: 800 }}>{info.qty}</Typography>
+                  {info.returned > 0 && (
+                    <Typography sx={{ ...num, fontSize: "0.66rem", fontWeight: 700, color: info.returned === info.qty ? "success.dark" : "text.secondary" }}>
+                      {t("orders.ledger.backCount", { count: info.returned })}
+                    </Typography>
+                  )}
                   {defective > 0 && (
                     <Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: "error.main" }}>{t("orders.ledger.damagedCount", { count: defective })}</Typography>
+                  )}
+                </Box>
+
+                {/* returned: date and time, or when it is due */}
+                <Box role="cell" sx={{ ...num, fontSize: "0.78rem", lineHeight: 1.4 }}>
+                  {backAt ? (
+                    <Box sx={{ fontWeight: 700, color: "success.dark" }}>{formatDateTime(backAt, dayWords)}</Box>
+                  ) : (
+                    <Box sx={{ color: "text.secondary", fontWeight: 600 }}>{t("orders.ledger.notBackYet")}</Box>
+                  )}
+                  {info.isActive && info.tracked && info.dueDate && (
+                    <Box>
+                      <Box component="span" sx={{ color: "text.secondary" }}>{t("orders.ledger.dueShort")} </Box>
+                      <Box component="span" sx={{ fontWeight: 700, color: info.isOverdue ? "error.main" : "text.primary" }}>{formatDateTime(info.dueDate, dayWords)}</Box>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* days out (and what is billed when that differs) */}
+                <Box role="cell" sx={{ textAlign: "center" }}>
+                  <Typography sx={{ ...num, fontWeight: 800 }}>{info.daysOut}</Typography>
+                  {info.billedDays !== info.daysOut && (
+                    <Typography sx={{ ...num, fontSize: "0.66rem", fontWeight: 700, color: "text.secondary" }}>{t("orders.ledger.billedDays", { count: info.billedDays })}</Typography>
                   )}
                 </Box>
 
@@ -201,8 +185,10 @@ export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
                 {/* cost */}
                 <Box role="cell" sx={{ textAlign: "right" }}>
                   <Typography sx={{ ...num, fontWeight: 900, color: info.isActive ? "text.primary" : "text.secondary" }}>Rs. {money(info.costToday)}</Typography>
-                  {info.isOverdue && info.lateFee > 0 && (
-                    <Typography sx={{ ...num, fontSize: "0.68rem", fontWeight: 700, color: "error.main" }}>{t("orders.ledger.inclLate", { fee: money(info.lateFee) })}</Typography>
+                  {info.lateFee > 0 && (
+                    <Typography sx={{ ...num, fontSize: "0.68rem", fontWeight: 700, color: info.isOverdue ? "error.main" : "text.secondary" }}>
+                      {info.isOverdue ? t("orders.ledger.inclLate", { fee: money(info.lateFee) }) : t("orders.ledger.inclExtraDays", { fee: money(info.lateFee), count: info.extraDays })}
+                    </Typography>
                   )}
                 </Box>
               </Box>
@@ -213,6 +199,11 @@ export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
                   {info.isOverdue && (
                     <Typography variant="caption" sx={{ ...num, color: "text.secondary" }}>
                       {t("orders.ledger.lateFormula", { base: money(info.lockedCost), days: info.daysLate, rate: money(extra), pending: info.pending })}
+                    </Typography>
+                  )}
+                  {info.extraDays > 0 && (
+                    <Typography variant="caption" sx={{ ...num, color: "text.secondary" }}>
+                      {t("orders.ledger.extraFormula", { base: money(info.lockedCost), days: info.extraDays, rate: money(extra), pending: info.pending })}
                     </Typography>
                   )}
                   {iterations.length > 0 && (
@@ -243,7 +234,8 @@ export function LedgerTable({ lines, infos, returnTraces }: LedgerTableProps) {
           <Typography role="cell" sx={{ fontWeight: 800 }}>{t("orders.ledger.total")}</Typography>
           <Box role="cell" />
           <Typography role="cell" sx={{ ...num, fontWeight: 900, textAlign: "center" }}>{totals.qty}</Typography>
-          <Typography role="cell" sx={{ ...num, fontWeight: 900, textAlign: "center" }}>{totals.returned}</Typography>
+          <Typography role="cell" sx={{ ...num, fontWeight: 800, color: "text.secondary" }}>{t("orders.ledger.backCount", { count: totals.returned })}</Typography>
+          <Box role="cell" />
           <Box role="cell" />
           <Typography role="cell" sx={{ ...num, fontWeight: 900, textAlign: "right" }}>Rs. {money(totals.cost)}</Typography>
         </Box>

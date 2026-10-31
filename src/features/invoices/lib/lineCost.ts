@@ -7,7 +7,9 @@ import { formatLocalDate, todayLocalStr } from "@/lib/dates";
  *  • The line's price is locked at dispatch (`line_total_amount`).
  *  • Late fees exist ONLY when the line's return date is tracked (`track_overdue`) and the machine
  *    comes back AFTER `expected_return_date`: fee = days late × extra daily rate × units returned.
- *  • A line whose return date is not tracked never goes overdue and never accrues anything.
+ *  • A line dispatched with NO return date is "open-ended": it was priced for 1 day, but it is billed
+ *    for the days it is really out. Every day beyond what the locked price covers adds the extra daily
+ *    rate per unit. That is a charge for days out, not "overdue", so it never raises the overdue alarm.
  */
 
 const DAY = 86_400_000;
@@ -34,6 +36,19 @@ export const daysBetween = (from: string, to: string): number => {
 
 const isTracked = (v: unknown) => !(v === false || v === 0 || v === "0");
 
+/** Dispatched without a return date: untracked and due on the out date (a waived line keeps its real due date). */
+export const isOpenEnded = (line: { track_overdue?: unknown; borrow_date?: unknown; expected_return_date?: unknown }): boolean => {
+  const out = toYmd(line.borrow_date);
+  return !isTracked(line.track_overdue) && !!out && out === toYmd(line.expected_return_date);
+};
+
+/** Days out for billing: out date to `to`, never less than 1 (a same-day return is a day). */
+export const billableDaysOut = (outDate: string, to: string): number => Math.max(1, daysBetween(outDate, to));
+
+/** Days charged beyond what the locked price already covers, for an open-ended line. */
+export const openEndedExtraDays = (outDate: string, to: string, minimumDays: number): number =>
+  Math.max(0, billableDaysOut(outDate, to) - Math.max(1, minimumDays || 1));
+
 export interface LineToday {
   isActive: boolean;
   tracked: boolean;
@@ -44,6 +59,14 @@ export interface LineToday {
   dueDate: string;
   isOverdue: boolean;
   daysLate: number;
+  /** Open-ended line: days it has been out so far (active) or was out (returned). */
+  openEnded: boolean;
+  /** Days charged beyond the locked price (open-ended lines only). */
+  extraDays: number;
+  /** Whole days the machine has been out / was out, at least 1. */
+  daysOut: number;
+  /** Days actually billed: the days the locked price covers plus any extra / late days. */
+  billedDays: number;
   lockedCost: number;
   lateFee: number;
   costToday: number;
@@ -58,7 +81,18 @@ export function analyseLine(line: any, today: string = todayLocalStr()): LineTod
   const dueDate = tracked ? toYmd(line.expected_return_date) : "";
   const daysLate = isActive && tracked && dueDate ? Math.max(0, daysBetween(dueDate, today)) : 0;
   const lockedCost = Number(line.line_total_amount) || 0;
-  const lateFee = daysLate * (Number(line.locked_extra_daily_rate) || 0) * pending;
+  const outDate = toYmd(line.borrow_date);
+  const openEnded = isOpenEnded(line);
+  const minDays = Number(line.locked_minimum_days) || 1;
+  const rate = Number(line.locked_extra_daily_rate) || 0;
+  const extraDays = openEnded && isActive ? openEndedExtraDays(outDate, today, minDays) : 0;
+  const lateFee = (openEnded ? extraDays : daysLate) * rate * pending;
+
+  const backYmd = toYmd(line.actual_return_date);
+  const endDay = !isActive && backYmd ? backYmd : today;
+  const daysOut = outDate ? billableDaysOut(outDate, endDay) : 1;
+  const contractDays = toYmd(line.expected_return_date) && outDate ? Math.max(1, daysBetween(outDate, toYmd(line.expected_return_date))) : 1;
+  const billedDays = openEnded ? daysOut : tracked ? Math.max(contractDays, daysOut) : contractDays;
 
   return {
     isActive,
@@ -66,10 +100,14 @@ export function analyseLine(line: any, today: string = todayLocalStr()): LineTod
     qty,
     returned,
     pending,
-    outDate: toYmd(line.borrow_date),
+    outDate,
     dueDate,
     isOverdue: daysLate > 0,
     daysLate,
+    openEnded,
+    extraDays,
+    daysOut,
+    billedDays,
     lockedCost,
     lateFee,
     costToday: lockedCost + (isActive ? lateFee : 0),

@@ -120,7 +120,14 @@ describe("late fee maths (mirrors the backend)", () => {
     expect(calcDaysLate(line, "2026-10-13")).toBe(3);
     expect(calcLateFee(line, "2026-10-13")).toBe(3 * 500 * 3);
   });
-  it("is 0 when the return date is not tracked", () => {
+  it("is 0 when late fees were waived", () => {
     expect(calcLateFee({ ...line, track_overdue: false }, "2026-10-20")).toBe(0);
+  });
+  it("a line with no return date is charged for the days out beyond its price (out 2 days = 1 extra)", () => {
+    const open: any = { track_overdue: false, open_ended: true, borrow_date: "2026-10-10", expected_return: "2026-10-10", min_days: 1, locked_extra_rate: 500, good_qty: 2, defective_qty: 0 };
+    expect(calcDaysLate(open, "2026-10-10")).toBe(0);
+    expect(calcDaysLate(open, "2026-10-11")).toBe(0);
+    expect(calcDaysLate(open, "2026-10-12")).toBe(1);
+    expect(calcLateFee(open, "2026-10-12")).toBe(1 * 500 * 2);
   });
 });

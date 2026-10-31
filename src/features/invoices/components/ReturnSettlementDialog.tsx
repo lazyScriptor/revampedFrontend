@@ -24,15 +24,24 @@ import { useProcessReturn } from "../hooks/useInvoiceHooks";
 import { HandoverLine, HandoverLineCard } from "./HandoverLineCard";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { todayLocalStr } from "@/lib/dates";
+import { isOpenEnded, openEndedExtraDays, toYmd } from "../lib/lineCost";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
-// ─── Late fee engine (mirrors backend `processReturn`) ─────────────────────────
-// Late fees exist only for lines whose return date is tracked, and only AFTER the due date.
+// ─── Extra-day engine (mirrors backend `processReturn`) ────────────────────────
+// A tracked line is charged only for days AFTER its due date. A line dispatched with no return date
+// was priced for 1 day, so it is charged for every day out beyond what its price already covers.
 const DAY = 1000 * 60 * 60 * 24;
 
-export const calcDaysLate = (line: Pick<HandoverLine, "track_overdue" | "expected_return">, handoverDate: string): number => {
-  if (line.track_overdue === false || !line.expected_return || !handoverDate) return 0;
+type DayLine = Pick<HandoverLine, "track_overdue" | "expected_return"> & Partial<Pick<HandoverLine, "borrow_date" | "min_days" | "open_ended">>;
+
+/** Days this handover is charged for: days late (tracked line) or extra days out (no-return-date line). */
+export const calcDaysLate = (line: DayLine, handoverDate: string): number => {
+  if (!handoverDate) return 0;
+  if (line.open_ended) {
+    return line.borrow_date ? openEndedExtraDays(toYmd(line.borrow_date), handoverDate, line.min_days || 1) : 0;
+  }
+  if (line.track_overdue === false || !line.expected_return) return 0;
   const expected = new Date(line.expected_return).getTime();
   const actual = new Date(handoverDate).getTime();
   return Math.max(0, Math.ceil((actual - expected) / DAY));
@@ -74,6 +83,9 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           remaining_qty: remaining,
           locked_extra_rate: Number(line.locked_extra_daily_rate) || 0,
           expected_return: line.expected_return_date,
+          borrow_date: line.borrow_date,
+          min_days: Number(line.locked_minimum_days) || 1,
+          open_ended: isOpenEnded(line),
           track_overdue: wasTracked,
           // frozen: was this line tracked when the handover started? (decides whether "waive" can be offered)
           _orig_tracked: wasTracked,

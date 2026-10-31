@@ -624,7 +624,12 @@ export const InvoiceReceipt = ({
       invoice.status === "Returned";
 
     const lines = invLines.map((line: any, idx: number) => {
-      const days = calculateDays(line.borrow_date, line.expected_return_date);
+      // A machine kept past its due date (or one with no due date) is billed for the days it was really
+      // out, so the bill shows the actual return day instead of the original due day.
+      const backDate = line.returned_date || line.actual_return_date || null;
+      const keptLonger = !!backDate && String(backDate).slice(0, 10) > String(line.expected_return_date || "").slice(0, 10);
+      const endDate = keptLonger ? backDate : line.expected_return_date;
+      const days = calculateDays(line.borrow_date, endDate);
       const basePrice = Number(line.locked_base_price ?? line.base_price ?? 0);
       const extraRate = Number(line.locked_extra_daily_rate ?? line.extra_daily_rate ?? basePrice);
       const minDays = Number(line.locked_minimum_days ?? line.minimum_rental_period ?? 1);
@@ -643,7 +648,7 @@ export const InvoiceReceipt = ({
         code: line.Equipment?.serial_number || line.serial_number || "",
         qty: Number(line.borrow_quantity ?? line.quantity ?? 1),
         start: line.borrow_date,
-        end: line.expected_return_date,
+        end: endDate,
         days,
         lineTotal: Number(line.line_total_amount ?? line.line_total ?? 0),
         pricingText,

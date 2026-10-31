@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { formatDateTime } from "@/lib/dates";
+import { analyseLine } from "@/features/invoices/lib/lineCost";
+import { iterationsFor, lastBackAt, returnTracesOf } from "@/features/invoices/lib/lineTimes";
 import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
   Dialog,
@@ -72,6 +74,8 @@ export function ReadOnlyInvoiceModal({
     invoice.traces ||
     [];
 
+  const returnTraces = returnTracesOf(invoice);
+  const issuedAtDay = String(invoice.issued_date || "").slice(0, 10);
   const customer = invoice.Customer || invoice.customer;
   const onBehalf = invoice.OnBehalfOfCustomer || invoice.on_behalf_of_customer;
 
@@ -296,11 +300,12 @@ export function ReadOnlyInvoiceModal({
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f8fafc" }}>
                     <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>{t("accounting.asset")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>{t("orders.ledger.colOut")}</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "center" }}>{t("common.qty")}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>{t("invoices.ReadOnlyInvoiceModal.rentalPeriod")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem" }}>{t("orders.ledger.colBack")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "center" }}>{t("orders.ledger.colDays")}</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>{t("invoices.ReadOnlyInvoiceModal.baseRate")}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "center" }}>{t("common.status")}</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>{t("invoices.ReadOnlyInvoiceModal.lineTotal")}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>{t("orders.ledger.colTotal")}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -310,6 +315,10 @@ export function ReadOnlyInvoiceModal({
                     const returnedQty = (Number(line.good_returned_qty) || 0) + (Number(line.defective_returned_qty) || 0);
                     const isFullyReturned = returnedQty >= qty;
                     const lineTotal = Number(line.line_total_amount || 0);
+                    const info = analyseLine(line);
+                    const iterations = iterationsFor(line.line_id, returnTraces);
+                    const backAt = lastBackAt(line, iterations);
+                    const outAt = issuedAtDay === info.outDate ? invoice.issued_date : info.outDate;
 
                     return (
                       <TableRow key={line.line_id || idx} hover sx={{ "&:last-child td": { borderBottom: 0 } }}>
@@ -321,30 +330,31 @@ export function ReadOnlyInvoiceModal({
                             <Chip size="small" label={t("invoices.ReadOnlyInvoiceModal.bulkAsset")} sx={{ height: 16, fontSize: "0.6rem", mt: 0.25 }} />
                           )}
                         </TableCell>
-                        <TableCell sx={{ textAlign: "center", fontVariantNumeric: "tabular-nums", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
-                          {qty}
+                        <TableCell sx={{ fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.76rem", fontWeight: 600, color: "#0f172a" }}>
+                          {outAt ? formatDateTime(outAt, dayWords) : "—"}
                         </TableCell>
-                        <TableCell sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.78rem" }}>
-                          <Typography variant="caption" sx={{ display: "block", color: "#0f172a", fontWeight: 600 }}>
-                            {line.borrow_date ? new Date(line.borrow_date).toLocaleDateString() : "—"}
-                            {line.track_overdue !== false && line.track_overdue !== 0 && line.expected_return_date
-                              ? ` → ${new Date(line.expected_return_date).toLocaleDateString()}`
-                              : ""}
+                        <TableCell sx={{ textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                          {qty}
+                          <Typography component="div" variant="caption" sx={{ fontWeight: 700, color: isFullyReturned ? "success.dark" : "text.secondary", fontFamily: "inherit" }}>
+                            {isFullyReturned ? t("invoices.returned") : t("invoices.ReadOnlyInvoiceModal.returnedOf", { returned: returnedQty, qty })}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                        </TableCell>
+                        <TableCell sx={{ fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.76rem", fontWeight: 600, color: backAt ? "success.dark" : "text.secondary" }}>
+                          {backAt ? formatDateTime(backAt, dayWords) : t("orders.ledger.notBackYet")}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', monospace", fontWeight: 800 }}>
+                          {info.daysOut}
+                          {info.billedDays !== info.daysOut && (
+                            <Typography component="div" variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontFamily: "inherit" }}>
+                              {t("orders.ledger.billedDays", { count: info.billedDays })}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
+                          Rs. {Number(line.locked_base_price || 0).toLocaleString()}
+                          <Typography component="div" variant="caption" color="text.secondary" sx={{ fontFamily: "inherit" }}>
                             {t("invoices.ReadOnlyInvoiceModal.minDaySExtraRs", { value: line.locked_minimum_days || 1, value2: Number(line.locked_extra_daily_rate || 0).toLocaleString() })}
                           </Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
-                          Rs. {Number(line.locked_base_price || 0).toLocaleString()}
-                        </TableCell>
-                        <TableCell sx={{ textAlign: "center" }}>
-                          <Chip
-                            size="small"
-                            label={isFullyReturned ? t("invoices.returned") : `${returnedQty}/${qty} Ret.`}
-                            color={isFullyReturned ? "success" : "warning"}
-                            sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20, fontVariantNumeric: "tabular-nums" }}
-                          />
                         </TableCell>
                         <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 800, color: "#0f172a", fontFamily: "'JetBrains Mono', monospace" }}>
                           Rs. {lineTotal.toLocaleString()}

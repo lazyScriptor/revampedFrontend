@@ -20,18 +20,52 @@ describe("date helpers", () => {
   });
 });
 
-describe("overdue only exists when the return date is tracked (the 'expired after 1 day' bug)", () => {
-  it("untracked line, out for 5 days: NOT overdue, cost stays the locked price", () => {
+describe("a line with no return date is billed for the days it is really out", () => {
+  it("out for 5 days: not 'overdue', but 4 extra days are charged on top of the 1-day price", () => {
     const r = analyseLine({ ...base, track_overdue: false }, "2026-10-25");
+    expect(r.openEnded).toBe(true);
     expect(r.isOverdue).toBe(false);
-    expect(r.daysLate).toBe(0);
-    expect(r.costToday).toBe(1000);
+    expect(r.daysOut).toBe(5);
+    expect(r.billedDays).toBe(5);
+    expect(r.extraDays).toBe(4);
+    expect(r.lateFee).toBe(4 * 500 * 2);
+    expect(r.costToday).toBe(1000 + 4000);
     expect(r.dueDate).toBe("");
   });
 
+  it("out for 2 days is billed 2 days, not 1 (the reported bug)", () => {
+    const r = analyseLine({ ...base, track_overdue: false, borrow_quantity: 1, line_total_amount: "500" }, "2026-10-22");
+    expect(r.daysOut).toBe(2);
+    expect(r.costToday).toBe(500 + 500);
+  });
+
+  it("same-day and next-day returns stay at the 1-day price", () => {
+    expect(analyseLine({ ...base, track_overdue: false }, "2026-10-20").costToday).toBe(1000);
+    expect(analyseLine({ ...base, track_overdue: false }, "2026-10-21").costToday).toBe(1000);
+  });
+
+  it("days covered by a minimum-days package are free", () => {
+    const r = analyseLine({ ...base, track_overdue: false, locked_minimum_days: 3 }, "2026-10-23");
+    expect(r.extraDays).toBe(0);
+    expect(r.costToday).toBe(1000);
+  });
+
+  it("a waived line keeps its real due date and is not open-ended", () => {
+    const r = analyseLine({ ...base, track_overdue: false, expected_return_date: "2026-10-23" }, "2026-10-30");
+    expect(r.openEnded).toBe(false);
+    expect(r.costToday).toBe(1000);
+  });
+
   it("treats 0 / '0' from MySQL as untracked too", () => {
-    expect(analyseLine({ ...base, track_overdue: 0 }, "2026-10-25").isOverdue).toBe(false);
+    expect(analyseLine({ ...base, track_overdue: 0 }, "2026-10-25").openEnded).toBe(true);
     expect(analyseLine({ ...base, track_overdue: "0" }, "2026-10-25").isOverdue).toBe(false);
+  });
+
+  it("a returned open-ended line shows the days it was out, at the final amount", () => {
+    const r = analyseLine({ ...base, line_status: "Returned", track_overdue: false, actual_return_date: "2026-10-22", line_total_amount: "2000" }, "2026-12-01");
+    expect(r.daysOut).toBe(2);
+    expect(r.extraDays).toBe(0);
+    expect(r.costToday).toBe(2000);
   });
 
   it("tracked line is not overdue ON the due date or before it", () => {
@@ -71,7 +105,8 @@ describe("invoice summary", () => {
     expect(s.returnedCount).toBe(1);
     expect(s.overdueCount).toBe(1);
     expect(s.earliestOut).toBe("2026-10-19");
-    expect(s.lateFeeToday).toBe(2 * 500 * 2);
-    expect(s.costToday).toBe(1000 + (400 + 2000) + 300);
+    // line 1: open-ended, out 5 days = 4 extra days × 500 × 2; line 2: 2 days late × 500 × 2
+    expect(s.lateFeeToday).toBe(4 * 500 * 2 + 2 * 500 * 2);
+    expect(s.costToday).toBe(1000 + 4000 + (400 + 2000) + 300);
   });
 });
