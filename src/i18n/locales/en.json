@@ -1096,8 +1096,7 @@
             "inclLate": "incl. Rs. {{fee}} late fees",
             "collectNow": "Collect now (Rs.)",
             "fullBalance": "Full balance",
-            "nothingToConfirm": "Enter at least one returned unit or a payment.",
-            "dExtraRs": "+{{days}}d extra · +Rs.{{fee}}"
+            "nothingToConfirm": "Enter at least one returned unit or a payment."
         },
         "status": {
             "active": "Active",
@@ -1281,14 +1280,7 @@
             "colBack": "Returned",
             "colDays": "Days out",
             "colTotal": "Total",
-            "backCount_one": "{{count}} back",
-            "backCount_other": "{{count}} back",
-            "notBackYet": "Not back yet",
-            "billedDays_one": "billed {{count}}",
-            "billedDays_other": "billed {{count}}",
-            "inclExtraDays_one": "incl. {{fee}} for {{count}} extra day",
-            "inclExtraDays_other": "incl. {{fee}} for {{count}} extra days",
-            "extraFormula": "Rs. {{base}} for the first day + {{days}} extra day(s) × Rs. {{rate}} × {{pending}} still out"
+            "notBackYet": "Not back yet"
         }
     },
     "accounting": {

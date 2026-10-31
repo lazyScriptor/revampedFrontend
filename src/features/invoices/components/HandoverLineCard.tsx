@@ -127,7 +127,7 @@ export function HandoverLineCard({ line, daysLate, lateFee, onChange }: Props) {
       sx={{
         bgcolor: "white",
         border: "1px solid",
-        borderColor: isLate ? (line.open_ended ? "#fcd34d" : "#fca5a5") : "#e2e8f0",
+        borderColor: isLate && !line.open_ended ? "#fca5a5" : "#e2e8f0",
         borderRadius: 2.5,
         p: 2,
         display: "flex",
@@ -184,8 +184,8 @@ export function HandoverLineCard({ line, daysLate, lateFee, onChange }: Props) {
         {stillOut > 0 && (
           <Chip size="small" icon={<HourglassTopOutlinedIcon sx={{ fontSize: 15 }} />} label={t("invoices.handover.summaryStillOut", { count: stillOut })} sx={{ fontWeight: 800, bgcolor: "#fef3c7", color: "#92400e", "& .MuiChip-icon": { color: "#92400e" }, fontVariantNumeric: "tabular-nums" }} />
         )}
-        {isLate && (
-          <Chip size="small" icon={<AccessTimeIcon sx={{ fontSize: 15 }} />} color={line.open_ended ? "warning" : "error"} label={line.open_ended ? t("invoices.handover.dExtraRs", { days: daysLate, fee: lateFee.toLocaleString() }) : t("invoices.ReturnSettlementDialog.dLateRs", { daysLate, lineLF: lateFee.toLocaleString() })} sx={{ fontWeight: 800, fontVariantNumeric: "tabular-nums" }} />
+        {isLate && !line.open_ended && (
+          <Chip size="small" icon={<AccessTimeIcon sx={{ fontSize: 15 }} />} color="error" label={t("invoices.ReturnSettlementDialog.dLateRs", { daysLate, lineLF: lateFee.toLocaleString() })} sx={{ fontWeight: 800, fontVariantNumeric: "tabular-nums" }} />
         )}
         {isWaived && (
           <Chip size="small" icon={<MoneyOffIcon sx={{ fontSize: 15 }} />} variant="outlined" label={t("invoices.ReturnSettlementDialog.lateFeesWaived")} sx={{ fontWeight: 800, color: "#92400e", borderColor: "#fde68a", bgcolor: "#fffbeb" }} />

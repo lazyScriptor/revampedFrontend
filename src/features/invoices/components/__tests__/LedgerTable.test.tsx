@@ -58,7 +58,6 @@ describe("LedgerTable", () => {
     const cells = within(screen.getByTestId("ledger-row")).getAllByRole("cell");
     expect(cells[4]).toHaveTextContent("2");
     expect(cells[6]).toHaveTextContent("Rs. 3,000");
-    expect(cells[6]).toHaveTextContent("1 extra day");
   });
 
   it("tiered pricing shows base, cover days and the extra daily rate", () => {
@@ -72,7 +71,7 @@ describe("LedgerTable", () => {
   it("a returned line shows its return date, days out, returned and damaged counts", () => {
     renderTable([mk({ line_status: "Returned", good_returned_qty: 2, defective_returned_qty: 1, actual_return_date: "2026-10-24" })]);
     const cells = within(screen.getByTestId("ledger-row")).getAllByRole("cell");
-    expect(cells[2]).toHaveTextContent("3 back");
+    expect(cells[2]).toHaveTextContent("3");
     expect(cells[2]).toHaveTextContent("1 damaged");
     expect(cells[3]).toHaveTextContent("24 Oct");
     expect(cells[4]).toHaveTextContent("4");
@@ -83,7 +82,6 @@ describe("LedgerTable", () => {
     renderTable([mk({ track_overdue: false }), mk({ line_id: 2, borrow_quantity: 2, good_returned_qty: 2, line_status: "Returned", line_total_amount: 3000, track_overdue: false })]);
     const cells = within(screen.getByTestId("ledger-totals")).getAllByRole("cell");
     expect(cells[2]).toHaveTextContent("5");
-    expect(cells[3]).toHaveTextContent("2 back");
     expect(cells[6]).toHaveTextContent("Rs. 7,500");
   });
 

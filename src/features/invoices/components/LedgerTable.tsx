@@ -68,7 +68,7 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
           const backAt = lastBackAt(line, iterations);
           // Time of day only exists for the bill and the handovers; a line with just a date shows the date.
           const outAt = issuedAt && String(issuedAt).slice(0, 10) === info.outDate ? issuedAt : info.outDate;
-          const expandable = iterations.length > 0 || info.isOverdue || info.extraDays > 0;
+          const expandable = iterations.length > 0 || info.isOverdue;
           const open = openId === line.line_id;
 
           const status = !info.isActive
@@ -133,11 +133,6 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
                 {/* how many: rented, with what has come back */}
                 <Box role="cell" sx={{ textAlign: "center" }}>
                   <Typography sx={{ ...num, fontWeight: 800 }}>{info.qty}</Typography>
-                  {info.returned > 0 && (
-                    <Typography sx={{ ...num, fontSize: "0.66rem", fontWeight: 700, color: info.returned === info.qty ? "success.dark" : "text.secondary" }}>
-                      {t("orders.ledger.backCount", { count: info.returned })}
-                    </Typography>
-                  )}
                   {defective > 0 && (
                     <Typography sx={{ fontSize: "0.66rem", fontWeight: 700, color: "error.main" }}>{t("orders.ledger.damagedCount", { count: defective })}</Typography>
                   )}
@@ -161,9 +156,6 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
                 {/* days out (and what is billed when that differs) */}
                 <Box role="cell" sx={{ textAlign: "center" }}>
                   <Typography sx={{ ...num, fontWeight: 800 }}>{info.daysOut}</Typography>
-                  {info.billedDays !== info.daysOut && (
-                    <Typography sx={{ ...num, fontSize: "0.66rem", fontWeight: 700, color: info.billedDays < info.daysOut ? "warning.dark" : "text.secondary" }}>{t("orders.ledger.billedDays", { count: info.billedDays })}</Typography>
-                  )}
                 </Box>
 
                 {/* rate */}
@@ -185,10 +177,8 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
                 {/* cost */}
                 <Box role="cell" sx={{ textAlign: "right" }}>
                   <Typography sx={{ ...num, fontWeight: 900, color: info.isActive ? "text.primary" : "text.secondary" }}>Rs. {money(info.costToday)}</Typography>
-                  {info.lateFee > 0 && (
-                    <Typography sx={{ ...num, fontSize: "0.68rem", fontWeight: 700, color: info.isOverdue ? "error.main" : "text.secondary" }}>
-                      {info.isOverdue ? t("orders.ledger.inclLate", { fee: money(info.lateFee) }) : t("orders.ledger.inclExtraDays", { fee: money(info.lateFee), count: info.extraDays })}
-                    </Typography>
+                  {info.isOverdue && info.lateFee > 0 && (
+                    <Typography sx={{ ...num, fontSize: "0.68rem", fontWeight: 700, color: "error.main" }}>{t("orders.ledger.inclLate", { fee: money(info.lateFee) })}</Typography>
                   )}
                 </Box>
               </Box>
@@ -199,11 +189,6 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
                   {info.isOverdue && (
                     <Typography variant="caption" sx={{ ...num, color: "text.secondary" }}>
                       {t("orders.ledger.lateFormula", { base: money(info.lockedCost), days: info.daysLate, rate: money(extra), pending: info.pending })}
-                    </Typography>
-                  )}
-                  {info.extraDays > 0 && (
-                    <Typography variant="caption" sx={{ ...num, color: "text.secondary" }}>
-                      {t("orders.ledger.extraFormula", { base: money(info.lockedCost), days: info.extraDays, rate: money(extra), pending: info.pending })}
                     </Typography>
                   )}
                   {iterations.length > 0 && (
@@ -234,7 +219,7 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
           <Typography role="cell" sx={{ fontWeight: 800 }}>{t("orders.ledger.total")}</Typography>
           <Box role="cell" />
           <Typography role="cell" sx={{ ...num, fontWeight: 900, textAlign: "center" }}>{totals.qty}</Typography>
-          <Typography role="cell" sx={{ ...num, fontWeight: 800, color: "text.secondary" }}>{t("orders.ledger.backCount", { count: totals.returned })}</Typography>
+          <Box role="cell" />
           <Box role="cell" />
           <Box role="cell" />
           <Typography role="cell" sx={{ ...num, fontWeight: 900, textAlign: "right" }}>Rs. {money(totals.cost)}</Typography>

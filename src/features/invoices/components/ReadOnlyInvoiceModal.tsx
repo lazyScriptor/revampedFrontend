@@ -344,11 +344,6 @@ export function ReadOnlyInvoiceModal({
                         </TableCell>
                         <TableCell sx={{ textAlign: "center", fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', monospace", fontWeight: 800 }}>
                           {info.daysOut}
-                          {info.billedDays !== info.daysOut && (
-                            <Typography component="div" variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontFamily: "inherit" }}>
-                              {t("orders.ledger.billedDays", { count: info.billedDays })}
-                            </Typography>
-                          )}
                         </TableCell>
                         <TableCell sx={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
                           Rs. {Number(line.locked_base_price || 0).toLocaleString()}
