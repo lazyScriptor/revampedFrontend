@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatDateTime } from "@/lib/dates";
 import { analyseLine } from "@/features/invoices/lib/lineCost";
+import { invoiceTotals, lineValueSoFar } from "@/features/invoices/lib/invoiceTotals";
 import { iterationsFor, lastBackAt, returnTracesOf } from "@/features/invoices/lib/lineTimes";
 import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
@@ -79,7 +80,8 @@ export function ReadOnlyInvoiceModal({
   const customer = invoice.Customer || invoice.customer;
   const onBehalf = invoice.OnBehalfOfCustomer || invoice.on_behalf_of_customer;
 
-  const totalAmount = Number(invoice.total_amount || 0);
+  const totals = invoiceTotals(invoice);
+  const totalAmount = totals.total;
   const totalPaid = payments.reduce(
     (sum: number, p: any) => sum + Number(p.payment_amount || 0),
     0
@@ -314,7 +316,7 @@ export function ReadOnlyInvoiceModal({
                     const qty = Number(line.borrow_quantity || 1);
                     const returnedQty = (Number(line.good_returned_qty) || 0) + (Number(line.defective_returned_qty) || 0);
                     const isFullyReturned = returnedQty >= qty;
-                    const lineTotal = Number(line.line_total_amount || 0);
+                    const lineTotal = lineValueSoFar(line);
                     const iterations = iterationsFor(line.line_id, returnTraces);
                     const backAt = lastBackAt(line, iterations);
                     const info = analyseLine(line, undefined, { issuedAt: invoice.issued_date || invoice.createdAt, backAt });
@@ -385,6 +387,22 @@ export function ReadOnlyInvoiceModal({
                   Rs. {Number(invoice.sub_total || 0).toLocaleString()}
                 </Typography>
               </Box>
+              {totals.billedExtra > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">{t("invoices.ManageInvoiceViews.lateFees")}</Typography>
+                  <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#b91c1c", fontFamily: "'JetBrains Mono', monospace" }}>
+                    + Rs. {totals.billedExtra.toLocaleString()}
+                  </Typography>
+                </Box>
+              )}
+              {totals.soFar > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">{t("invoices.FinancialPanel.extraDaysSoFar")}</Typography>
+                  <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#b45309", fontFamily: "'JetBrains Mono', monospace" }}>
+                    + Rs. {totals.soFar.toLocaleString()}
+                  </Typography>
+                </Box>
+              )}
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">{t("invoices.ManageInvoiceViews.transportFee")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>

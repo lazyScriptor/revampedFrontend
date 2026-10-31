@@ -44,6 +44,23 @@ beforeEach(() => {
 });
 
 describe("ManageFinancialPanel", () => {
+  it("INV-55: a machine still out shows the extra days so far in the total and the amount owed", () => {
+    renderPanel(
+      invoice({
+        status: "Active",
+        sub_total: "300",
+        total_amount: 600, // API: billed 300 + 300 running
+        billed_total_amount: 300,
+        accrued_charges: "300.00",
+        InvoiceLines: [line({ good_returned_qty: 0, line_status: "Active", borrow_quantity: 1 })],
+        Payments: [],
+      }),
+    );
+    expect(screen.getByText("Extra days so far")).toBeInTheDocument();
+    expect(screen.getAllByText("Rs. 600").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Late fees")).not.toBeInTheDocument();
+  });
+
   it("returned and settled → can be completed (with the ID card released)", () => {
     renderPanel();
     expect(screen.getByText("Returned · open")).toBeInTheDocument();

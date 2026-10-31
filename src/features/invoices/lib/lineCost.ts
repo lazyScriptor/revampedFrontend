@@ -122,11 +122,17 @@ export function analyseLine(line: any, today: string = todayLocalStr(), clock: L
   // Elapsed time when both moments are known, calendar dates otherwise.
   const timed = openEnded && !!outAt && !!endMoment && !Number.isNaN(endMoment.getTime());
   const elapsedOut = timed ? elapsedDays(outAt as Date, endMoment as Date) : 0;
-  const extraDays = openEnded && isActive ? (timed ? Math.max(0, elapsedOut - Math.max(1, minDays)) : openEndedExtraDays(outDate, today, minDays)) : 0;
-  const lateFee = (openEnded ? extraDays : daysLate) * rate * pending;
+  // The server keeps the running charge on the line (`accrued_charge`); use it so the ledger always
+  // matches the invoice total and every report. Work it out here only when it is not sent.
+  const server = isActive && line.accrued_charge !== undefined && line.accrued_charge !== null;
+  const extraDays = openEnded && isActive
+    ? server ? Number(line.accrued_days) || 0 : timed ? Math.max(0, elapsedOut - Math.max(1, minDays)) : openEndedExtraDays(outDate, today, minDays)
+    : 0;
+  const lateDaysNow = server && !openEnded ? Number(line.accrued_days) || 0 : daysLate;
+  const lateFee = server ? Number(line.accrued_charge) || 0 : (openEnded ? extraDays : daysLate) * rate * pending;
 
   const endDay = !isActive && backYmd ? backYmd : today;
-  const daysOut = timed ? elapsedOut : outDate ? billableDaysOut(outDate, endDay) : 1;
+  const daysOut = server && Number(line.days_out) > 0 ? Number(line.days_out) : timed ? elapsedOut : outDate ? billableDaysOut(outDate, endDay) : 1;
   const contractDays = toYmd(line.expected_return_date) && outDate ? Math.max(1, daysBetween(outDate, toYmd(line.expected_return_date))) : 1;
   // Settled lines: read the billed days back from the amount actually charged, so a line that was
   // closed before extra days were billed shows "billed 1" next to "2 days out" instead of looking right.
@@ -143,8 +149,8 @@ export function analyseLine(line: any, today: string = todayLocalStr(), clock: L
     pending,
     outDate,
     dueDate,
-    isOverdue: daysLate > 0,
-    daysLate,
+    isOverdue: !openEnded && lateDaysNow > 0,
+    daysLate: lateDaysNow,
     openEnded,
     extraDays,
     daysOut,

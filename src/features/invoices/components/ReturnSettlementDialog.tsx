@@ -24,6 +24,7 @@ import { useProcessReturn } from "../hooks/useInvoiceHooks";
 import { HandoverLine, HandoverLineCard } from "./HandoverLineCard";
 import { PaymentMethodChips } from "./PaymentMethodChips";
 import type { PaymentMethod } from "../lib/paymentMethods";
+import { invoiceTotals } from "../lib/invoiceTotals";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { todayLocalStr } from "@/lib/dates";
 import { elapsedDays, isOpenEnded, lineOutAt, openEndedExtraDays, toYmd } from "../lib/lineCost";
@@ -98,6 +99,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
           borrow_date: line.borrow_date,
           min_days: Number(line.locked_minimum_days) || 1,
           open_ended: isOpenEnded(line),
+          accrued_charge: Number(line.accrued_charge) || 0,
           out_at: lineOutAt(line, invoice.issued_date || invoice.createdAt)?.toISOString(),
           track_overdue: wasTracked,
           // frozen: was this line tracked when the handover started? (decides whether "waive" can be offered)
@@ -125,7 +127,12 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
 
   // What the customer still owes once these late fees are added.
   const paid = (invoice?.Payments || []).reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0);
-  const balanceAfter = Math.max(0, Number(invoice?.total_amount || 0) + totalLateFees - paid);
+  // Billed so far + the fees for what comes back now + the running charge of what stays out.
+  const stayingOutCharge = lines.reduce(
+    (s, l) => s + (l.remaining_qty > 0 ? ((l.accrued_charge || 0) * Math.max(0, l.remaining_qty - l.good_qty - l.defective_qty)) / l.remaining_qty : 0),
+    0,
+  );
+  const balanceAfter = Math.max(0, invoiceTotals(invoice).billed + totalLateFees + stayingOutCharge - paid);
   const paymentNum = Number(payment) || 0;
   const canConfirm = !returnMutation.isPending && (totalReturning > 0 || paymentNum > 0);
 

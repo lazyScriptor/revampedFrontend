@@ -633,10 +633,11 @@ export const InvoiceReceipt = ({
       const minDays = Number(line.locked_minimum_days ?? line.minimum_rental_period ?? 1);
       // Days are counted by elapsed time (29 hours = 2 days), so the amount can cover more days than the
       // two dates show. Read the billed days back from the amount so the bill never contradicts itself.
-      const perUnit = Number(line.line_total_amount ?? line.line_total ?? 0) / Math.max(1, Number(line.borrow_quantity ?? line.quantity ?? 1));
+      const valueSoFar = Number(line.line_total_amount ?? line.line_total ?? 0) + (Number(line.accrued_charge) || 0);
+      const perUnit = valueSoFar / Math.max(1, Number(line.borrow_quantity ?? line.quantity ?? 1));
       const paidDays = extraRate > 0 && perUnit > basePrice ? minDays + Math.round((perUnit - basePrice) / extraRate) : 0;
       const datedDays = calculateDays(line.borrow_date, keptLonger ? backDate : line.expected_return_date);
-      const days = Math.max(datedDays, paidDays);
+      const days = Math.max(datedDays, paidDays, Number(line.days_out) || 0);
       const endDate = keptLonger || (paidDays > datedDays && backDate) ? backDate : line.expected_return_date;
       const isDaily = minDays <= 1 && basePrice === extraRate;
 
@@ -655,7 +656,7 @@ export const InvoiceReceipt = ({
         start: line.borrow_date,
         end: endDate,
         days,
-        lineTotal: Number(line.line_total_amount ?? line.line_total ?? 0),
+        lineTotal: valueSoFar,
         pricingText,
         status: line.line_status || "Active",
         returnedDate: line.returned_date || line.actual_return_date || null,

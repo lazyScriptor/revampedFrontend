@@ -129,6 +129,19 @@ describe("a line closed before extra days were billed (old invoices)", () => {
   });
 });
 
+describe("the server's running charge wins (one number everywhere)", () => {
+  it("uses accrued_charge / accrued_days / days_out from the API for a line still out", () => {
+    const r = analyseLine(
+      { ...base, borrow_quantity: 1, track_overdue: false, line_total_amount: "300", locked_extra_daily_rate: 300, accrued_charge: "300.00", accrued_days: 1, days_out: 2 },
+      "2026-10-20",
+    );
+    expect(r.daysOut).toBe(2);
+    expect(r.extraDays).toBe(1);
+    expect(r.lateFee).toBe(300);
+    expect(r.costToday).toBe(600);
+  });
+});
+
 describe("invoice summary", () => {
   it("totals cost today and counts out / returned / overdue", () => {
     const s = summariseInvoice(

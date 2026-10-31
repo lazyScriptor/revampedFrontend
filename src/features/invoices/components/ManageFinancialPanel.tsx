@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "../lib/paymentMethods";
+import { invoiceTotals } from "../lib/invoiceTotals";
 import { formatDateTime } from "@/lib/dates";
 import type { ReactNode } from "react";
 import {
@@ -169,11 +170,8 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   // ── figures ──
   const payments: any[] = (invoice.Payments || []).filter((p: any) => !p.is_voided);
   const paid = payments.reduce((s, p) => s + Number(p.payment_amount || 0), 0);
-  const subTotal = Number(invoice.sub_total) || 0;
-  const transport = Number(invoice.transport_fee) || 0;
-  const discount = Number(invoice.discount_amount) || 0;
-  const total = Number(invoice.total_amount) || 0;
-  const lateFees = Math.max(0, total - (subTotal + transport - discount));
+  // total = billed + extra days so far on machines still out (same figure as the ledger and reports)
+  const { subTotal, transport, discount, billedExtra: lateFees, soFar, total } = invoiceTotals(invoice);
   const money = moneyState(total, paid);
   const out = unitsOut(invoice.InvoiceLines || []);
   const isCompleted = invoice.status === "Completed";
@@ -353,6 +351,7 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
         <Card>
           <Row label={t("orders.baseSubtotal")} value={rs(subTotal)} />
           {lateFees > 0 && <Row label={t("invoices.ManageInvoiceViews.lateFees")} value={`+ ${rs(lateFees)}`} tone={theme.palette.error.main} />}
+          {soFar > 0 && <Row label={t("invoices.FinancialPanel.extraDaysSoFar")} value={`+ ${rs(soFar)}`} tone={theme.palette.warning.dark} />}
           {feeRow("transport", t("invoices.transport"), transport, "+")}
           {feeRow("discount", t("common.discount"), discount, "−")}
           {!isCompleted && discount === 0 && editing !== "discount" && (
