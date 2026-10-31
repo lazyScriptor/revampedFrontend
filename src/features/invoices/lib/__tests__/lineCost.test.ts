@@ -10,6 +10,7 @@ const base = {
   expected_return_date: "2026-10-20", // POS default: same day as dispatch
   line_total_amount: "1000",
   locked_extra_daily_rate: 500,
+  locked_base_price: 500,
 };
 
 describe("date helpers", () => {
@@ -113,6 +114,18 @@ describe("days are elapsed time, rounded up (29 hours = 2 days)", () => {
     const r = analyseLine({ ...out, line_status: "Returned", actual_return_date: "2026-10-31", line_total_amount: "500" }, "2026-12-01", { issuedAt, backAt: new Date(2026, 9, 31, 15, 8).toISOString() });
     expect(r.daysOut).toBe(2);
     expect(r.costToday).toBe(500);
+  });
+});
+
+describe("a line closed before extra days were billed (old invoices)", () => {
+  it("shows 2 days out but billed 1, taken from the amount charged", () => {
+    const r = analyseLine(
+      { ...base, borrow_quantity: 1, line_status: "Returned", track_overdue: false, borrow_date: "2026-10-30", expected_return_date: "2026-10-30", actual_return_date: "2026-10-31", line_total_amount: "250", locked_base_price: 250, locked_extra_daily_rate: 250 },
+      "2026-11-02",
+      { issuedAt: new Date(2026, 9, 30, 9, 42), backAt: new Date(2026, 9, 31, 15, 8).toISOString() },
+    );
+    expect(r.daysOut).toBe(2);
+    expect(r.billedDays).toBe(1);
   });
 });
 

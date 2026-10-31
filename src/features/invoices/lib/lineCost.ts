@@ -128,7 +128,12 @@ export function analyseLine(line: any, today: string = todayLocalStr(), clock: L
   const endDay = !isActive && backYmd ? backYmd : today;
   const daysOut = timed ? elapsedOut : outDate ? billableDaysOut(outDate, endDay) : 1;
   const contractDays = toYmd(line.expected_return_date) && outDate ? Math.max(1, daysBetween(outDate, toYmd(line.expected_return_date))) : 1;
-  const billedDays = openEnded ? daysOut : tracked ? Math.max(contractDays, daysOut) : contractDays;
+  // Settled lines: read the billed days back from the amount actually charged, so a line that was
+  // closed before extra days were billed shows "billed 1" next to "2 days out" instead of looking right.
+  const basePrice = Number(line.locked_base_price) || 0;
+  const perUnit = qty > 0 ? lockedCost / qty : 0;
+  const paidDays = rate > 0 && perUnit > basePrice ? minDays + Math.round((perUnit - basePrice) / rate) : Math.max(1, minDays);
+  const billedDays = !isActive ? paidDays : openEnded ? daysOut : tracked ? Math.max(contractDays, daysOut) : contractDays;
 
   return {
     isActive,

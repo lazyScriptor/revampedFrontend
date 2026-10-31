@@ -162,7 +162,7 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
                 <Box role="cell" sx={{ textAlign: "center" }}>
                   <Typography sx={{ ...num, fontWeight: 800 }}>{info.daysOut}</Typography>
                   {info.billedDays !== info.daysOut && (
-                    <Typography sx={{ ...num, fontSize: "0.66rem", fontWeight: 700, color: "text.secondary" }}>{t("orders.ledger.billedDays", { count: info.billedDays })}</Typography>
+                    <Typography sx={{ ...num, fontSize: "0.66rem", fontWeight: 700, color: info.billedDays < info.daysOut ? "warning.dark" : "text.secondary" }}>{t("orders.ledger.billedDays", { count: info.billedDays })}</Typography>
                   )}
                 </Box>
 
