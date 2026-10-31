@@ -9,8 +9,37 @@ const OUTPUT_HEIGHT_PX = 160; // ~4x the 40px slot, sharp on 203/300 dpi heads
 const MAX_OUTPUT_WIDTH_PX = 640;
 const INK_LUMA = 200; // anything darker than this (and visible) counts as ink
 const PAD_PX = 4;
+// Signatures are lined up by their baseline, not their lowest ink: the row by
+// which this share of the ink has been drawn is where the body of the writing
+// ends, and any tail (the leg of a p or g) hangs below the line.
+const BASELINE_INK_SHARE = 0.92;
+// Display height of the body above the baseline, in bill px, and how far a
+// tail may hang below the line (share of the image height).
+const BODY_DISPLAY_PX = 34;
+const MAX_TAIL_SHIFT = 0.22;
 
-const cache = new Map<string, Promise<string | null>>();
+export interface PrintableSignature {
+  url: string;
+  /** Tail below the baseline as a share of the body height (0 when none). */
+  tail: number;
+  /** Width / height of the image. */
+  aspect: number;
+}
+
+/** Inline style for the bill's signature image: same body size, baseline on the line. */
+export const printableSignatureStyle = (sig: PrintableSignature | null): Record<string, string> => {
+  const base = { display: "block", height: "auto" };
+  if (!sig) return { ...base, maxWidth: "100%", maxHeight: "100%", objectFit: "contain" };
+  const heightPx = BODY_DISPLAY_PX * (1 + sig.tail);
+  const shift = Math.min(MAX_TAIL_SHIFT, sig.tail / (1 + sig.tail));
+  return {
+    ...base,
+    width: `min(100%, ${Math.round(heightPx * sig.aspect)}px)`,
+    transform: shift > 0 ? `translateY(${(shift * 100).toFixed(1)}%)` : "none",
+  };
+};
+
+const cache = new Map<string, Promise<PrintableSignature | null>>();
 
 const loadBitmap = async (src: string): Promise<ImageBitmap | HTMLImageElement> => {
   // A CORS fetch keeps the canvas readable; a plain <img> from the API origin would taint it.
@@ -33,7 +62,7 @@ const isInk = (d: Uint8ClampedArray, i: number) =>
   d[i + 3] > 40 && 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2] < INK_LUMA;
 
 /** Crops to the ink and returns a solid black-on-transparent PNG, or null if there is no ink. */
-export const processSignature = async (src: string): Promise<string | null> => {
+export const processSignature = async (src: string): Promise<PrintableSignature | null> => {
   const bitmap = await loadBitmap(src);
   const w = bitmap.width;
   const h = bitmap.height;
@@ -60,12 +89,36 @@ export const processSignature = async (src: string): Promise<string | null> => {
   }
   if (maxX < 0) return null;
 
+  // Baseline: tails of letters carry little ink, so the row holding 92% of the
+  // ink (counted from the top) is where the body of the writing ends.
+  const rowInk = new Uint32Array(h);
+  let totalInk = 0;
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      if (isInk(data, (y * w + x) * 4)) {
+        rowInk[y]++;
+        totalInk++;
+      }
+    }
+  }
+  let baseline = maxY;
+  for (let y = minY, acc = 0; y <= maxY; y++) {
+    acc += rowInk[y];
+    if (acc >= totalInk * BASELINE_INK_SHARE) {
+      baseline = y;
+      break;
+    }
+  }
+
   minX = Math.max(0, minX - PAD_PX);
   minY = Math.max(0, minY - PAD_PX);
   maxX = Math.min(w - 1, maxX + PAD_PX);
   maxY = Math.min(h - 1, maxY + PAD_PX);
   const cropW = maxX - minX + 1;
   const cropH = maxY - minY + 1;
+
+  const above = Math.max(1, baseline - minY + 1);
+  const tail = Math.max(0, maxY - baseline) / above;
 
   const scale = Math.min(OUTPUT_HEIGHT_PX / cropH, MAX_OUTPUT_WIDTH_PX / cropW);
   const outW = Math.max(1, Math.round(cropW * scale));
@@ -106,10 +159,10 @@ export const processSignature = async (src: string): Promise<string | null> => {
     px[o + 3] = thick[i] ? 255 : 0;
   }
   octx.putImageData(img, 0, 0);
-  return out.toDataURL("image/png");
+  return { url: out.toDataURL("image/png"), tail, aspect: outW / outH };
 };
 
-export const getPrintableSignature = (src: string): Promise<string | null> => {
+export const getPrintableSignature = (src: string): Promise<PrintableSignature | null> => {
   let pending = cache.get(src);
   if (!pending) {
     pending = processSignature(src).catch(() => null);
@@ -118,9 +171,11 @@ export const getPrintableSignature = (src: string): Promise<string | null> => {
   return pending;
 };
 
-/** Print-ready signature for `src`; falls back to the original while processing or if it fails. */
-export const usePrintableSignature = (src: string | null | undefined): string | null => {
-  const [processed, setProcessed] = useState<{ src: string; out: string | null } | null>(null);
+/** Print-ready signature for `src`; `url` falls back to the original while processing or if it fails. */
+export const usePrintableSignature = (
+  src: string | null | undefined,
+): { url: string; sig: PrintableSignature | null } | null => {
+  const [processed, setProcessed] = useState<{ src: string; out: PrintableSignature | null } | null>(null);
   useEffect(() => {
     if (!src) return;
     let alive = true;
@@ -132,5 +187,6 @@ export const usePrintableSignature = (src: string | null | undefined): string | 
     };
   }, [src]);
   if (!src) return null;
-  return processed?.src === src && processed.out ? processed.out : src;
+  const out = processed?.src === src ? processed.out : null;
+  return { url: out?.url ?? src, sig: out };
 };

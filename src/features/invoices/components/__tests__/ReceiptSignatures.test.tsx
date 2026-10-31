@@ -12,8 +12,10 @@ vi.mock("@/features/signatures/hooks/useSignatures", () => ({
 
 // The real processing needs a canvas; here it stands in for "processed".
 vi.mock("../../lib/printableSignature", () => ({
-  usePrintableSignature: (src?: string | null) => (src ? `data:image/png;base64,SHARP-${src.split("/").pop()}` : null),
+  usePrintableSignature: (src?: string | null) =>
+    src ? { url: `data:image/png;base64,SHARP-${src.split("/").pop()}`, sig: { url: "x", tail: 0.4, aspect: 2 } } : null,
   getPrintableSignature: async () => null,
+  printableSignatureStyle: () => ({ display: "block" }),
 }));
 
 const invoice = {
@@ -49,6 +51,7 @@ describe.each(["minimal", "classic"] as const)("%s bill signatures", (design) =>
     const operatorSlot = operatorImg.parentElement as HTMLElement;
     expect(operatorSlot.style.height).toBe("40px");
     expect(operatorSlot.style.alignItems).toBe("flex-end");
+    expect(operatorSlot.style.overflow).toBe("visible");
 
     const customerLabel = screen.getByText("Customer Signature");
     const customerSlot = customerLabel.previousElementSibling as HTMLElement;

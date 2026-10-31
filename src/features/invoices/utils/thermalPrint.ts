@@ -14,7 +14,7 @@
 import { api } from "@/lib/api";
 import { queryClient } from "@/app/queryClient";
 import { RECEIPT_SINHALA_FAMILY, getEmbeddedReceiptFontCss } from "../lib/receiptFont";
-import { getPrintableSignature } from "../lib/printableSignature";
+import { getPrintableSignature, printableSignatureStyle } from "../lib/printableSignature";
 
 /** Receipt HTML with every signature swapped for its print-ready version, even if the preview had not finished. */
 const receiptHtmlWithSharpSignatures = async (el: HTMLElement): Promise<string> => {
@@ -26,7 +26,11 @@ const receiptHtmlWithSharpSignatures = async (el: HTMLElement): Promise<string> 
     cloneImgs.map(async (img) => {
       const original = img.getAttribute("data-signature-src");
       const sharp = original ? await getPrintableSignature(original) : null;
-      if (sharp) img.setAttribute("src", sharp);
+      if (sharp) {
+        img.setAttribute("src", sharp.url);
+        img.removeAttribute("style");
+        Object.assign(img.style, printableSignatureStyle(sharp));
+      }
     })
   );
   return clone.innerHTML;

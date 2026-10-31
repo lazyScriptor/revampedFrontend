@@ -8,7 +8,7 @@ import i18n from "@/i18n";
 import { tk } from "@/i18n/marker";
 import { RECEIPT_SINHALA_FAMILY, ensureReceiptFontInApp } from "../lib/receiptFont";
 import { getReceiptDesign, getShowIdStatus, type ReceiptDesign } from "../lib/receiptPrefs";
-import { usePrintableSignature } from "../lib/printableSignature";
+import { printableSignatureStyle, usePrintableSignature } from "../lib/printableSignature";
 
 ensureReceiptFontInApp();
 
@@ -28,7 +28,9 @@ const resolveImageUrl = (url?: string | null) => {
 // ─── Signature slot ──────────────────────────────────────────────────────────
 // Both signatures sit on the same line whatever their shape: every slot is the
 // same fixed height and the image is pinned to its bottom edge, so a tall
-// operator signature can no longer push its label above the customer's.
+// operator signature can no longer push its label above the customer's. The
+// image's own baseline (not its lowest stroke) rests on the line; a tail such
+// as the leg of a p hangs a little below it.
 const SIGNATURE_SLOT_PX = 40;
 
 const SignatureSlot: React.FC<{
@@ -46,15 +48,15 @@ const SignatureSlot: React.FC<{
           display: "flex",
           alignItems: "flex-end",
           justifyContent: align === "right" ? "flex-end" : "flex-start",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
         {printable && (
           <img
-            src={printable}
+            src={printable.url}
             data-signature-src={src || undefined}
             alt={label}
-            style={{ display: "block", maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
+            style={printableSignatureStyle(printable.sig)}
           />
         )}
       </div>
