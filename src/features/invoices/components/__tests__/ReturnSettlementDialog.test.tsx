@@ -93,11 +93,20 @@ describe("ReturnSettlementDialog (handover)", () => {
     expect(submitted().final_payment_amount).toBe(1250.5);
   });
 
+  it("the payment is Cash by default and can be marked as a transfer (so the cash locker does not count it)", async () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: /Full balance/i }));
+    fireEvent.click(screen.getByRole("radio", { name: "Bank transfer" }));
+    fireEvent.click(screen.getByRole("button", { name: /Confirm Return/i }));
+    expect(submitted().payment_method).toBe("Transfer");
+  });
+
   it("'Full balance' fills the amount still owed (invoice total − paid)", async () => {
     renderDialog();
     fireEvent.click(screen.getByRole("button", { name: /Full balance/i }));
     fireEvent.click(screen.getByRole("button", { name: /Confirm Return/i }));
     expect(submitted().final_payment_amount).toBe(1500); // 2000 − 500
+    expect(submitted().payment_method).toBe("Cash");
   });
 
   it("confirm is disabled when nothing is returning and no payment is entered", async () => {

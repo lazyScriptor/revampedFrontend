@@ -164,7 +164,8 @@
         "myProfile": "My Profile",
         "changePassword": "Change Password",
         "preferences": "Preferences",
-        "messages": "Messages"
+        "messages": "Messages",
+        "cashLocker": "Cash Locker"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -851,7 +852,8 @@
             "totalRs": "TOTAL · Rs. {{grandTotal}}",
             "subtotalItems": "Subtotal ({{cartItemsCount}} items)",
             "processing": "Processing…",
-            "placeDispatchOrder": "Place Dispatch Order"
+            "placeDispatchOrder": "Place Dispatch Order",
+            "advancePaidBy": "Advance paid by"
         },
         "PosCustomerPanel": {
             "linkedParent": "This customer is linked to a parent. Choose who this rental is for.",
@@ -1096,7 +1098,8 @@
             "inclLate": "incl. Rs. {{fee}} late fees",
             "collectNow": "Collect now (Rs.)",
             "fullBalance": "Full balance",
-            "nothingToConfirm": "Enter at least one returned unit or a payment."
+            "nothingToConfirm": "Enter at least one returned unit or a payment.",
+            "paidBy": "Paid by"
         },
         "status": {
             "active": "Active",
@@ -1399,7 +1402,8 @@
             "utilities": "Utilities",
             "fuelTransport": "Fuel & Transport",
             "marketing": "Marketing",
-            "taxesFees": "Taxes & Fees"
+            "taxesFees": "Taxes & Fees",
+            "paidFromLocker": "Paid with cash from the shop locker"
         },
         "InvoicesTab": {
             "days": "Days",
@@ -3051,6 +3055,128 @@
             "loadMore": "Load more",
             "sent": "Sent",
             "opened": "Opened"
+        }
+    },
+    "locker": {
+        "title": "Cash Locker",
+        "subtitle": "Keep the float and today's advances in the drawer; everything else goes home.",
+        "tabToday": "Today",
+        "tabHistory": "History",
+        "notStartedStaff": "The cash locker has not been started yet. Ask the owner to start it.",
+        "errors": {
+            "loadFailed": "Could not load the cash locker.",
+            "saveFailed": "Could not save. Please try again."
+        },
+        "opening": {
+            "title": "Locker opening amount",
+            "prompt": "How much cash is in the locker right now? Count it before the first customer.",
+            "lastNight": "Last night left: Rs. {{amount}}",
+            "amountLabel": "Cash in the locker (Rs.)",
+            "noteLabel": "Note for the owner (optional)",
+            "later": "Remind me in an hour",
+            "saved": "Saved: Rs. {{amount}}",
+            "ownerNotified": "The owner has been notified. You can also send it on WhatsApp.",
+            "openWhatsAppLink": "Open WhatsApp",
+            "sendToOwner": "Send to owner"
+        },
+        "whatsapp": {
+            "opened": "Locker opened {{time}}: Rs. {{amount}}",
+            "matches": "Matches last night (Rs. {{expected}}).",
+            "short": "Last night Rs. {{expected}}: Rs. {{diff}} short.",
+            "over": "Last night Rs. {{expected}}: Rs. {{diff}} over.",
+            "note": "Note: {{note}}"
+        },
+        "diff": {
+            "short": "Rs. {{amount}} short",
+            "over": "Rs. {{amount}} over"
+        },
+        "close": {
+            "title": "Close the day",
+            "countedLabel": "Cash you counted (Rs.)",
+            "checkFirst": "Check today's entries first: a card or transfer saved as Cash, an expense not entered, or an advance not recorded. You can fix the payment method on the locker page.",
+            "matches": "Matches.",
+            "reasonLabel": "Reason (required)",
+            "topUp": "The drawer is below what it should keep. Nothing goes home; add Rs. {{amount}} from home.",
+            "sendHomeLabel": "Send home (Rs.)",
+            "suggested": "Suggested: Rs. {{amount}}",
+            "leftInDrawer": "Left in the drawer",
+            "save": "Close the day",
+            "saved": "Day closed. Rs. {{amount}} to send home."
+        },
+        "drawerShouldHave": "Drawer should have",
+        "keepInDrawer": "Keep in the drawer",
+        "keepBreakdown_one": "Float Rs. {{float}} + advances Rs. {{advances}} ({{count}} invoice)",
+        "keepBreakdown_other": "Float Rs. {{float}} + advances Rs. {{advances}} ({{count}} invoices)",
+        "expense": {
+            "title": "Pay an expense from the drawer",
+            "whatFor": "What for",
+            "saved": "Expense of Rs. {{amount}} recorded."
+        },
+        "start": {
+            "title": "Start the cash locker",
+            "intro": "Do this once, at closing time or before opening. After that it runs every day.",
+            "step1": "1. Float to keep in the drawer every night",
+            "step2": "2. Advances for invoices that are not completed",
+            "step2Hint": "These should be in the drawer. Tick any that already went home.",
+            "noAdvances": "No open invoices with a cash advance.",
+            "atHome": "Already at home",
+            "atHomeFor": "Advance of INV-{{id}} already at home",
+            "step3": "3. Put the float and the advances together and count once",
+            "shouldHold": "The drawer should hold",
+            "countedLabel": "Cash you counted (Rs.)",
+            "short": "Rs. {{amount}} short. Check the list: invoices whose machines are back should be completed, card or transfer advances fixed, and advances already at home ticked.",
+            "noteLabel": "Note (required)",
+            "extra": "Rs. {{amount}} is extra income: send it home and keep Rs. {{keep}}.",
+            "button": "Start the locker",
+            "started": "Cash locker started."
+        },
+        "float": "Float",
+        "floatHint": "The fixed amount left in the drawer every night, on top of the advances.",
+        "floatSaved": "Float saved.",
+        "allBack": "Machines back: complete the invoice",
+        "move": {
+            "advance": "Advance",
+            "payment": "Payment",
+            "refund": "Refund",
+            "expense": "Expense"
+        },
+        "notInDrawer": "not in the drawer",
+        "methodChanged": "Payment method changed.",
+        "methodFor": "Payment method for INV-{{id}}",
+        "openedBy": "Opened {{time}} by {{name}}: Rs. {{amount}}",
+        "enterOpening": "Enter opening amount",
+        "notOpened": "Today's opening amount has not been entered.",
+        "closedBy": "Closed {{time}} by {{name}}: Rs. {{sent}} sent home",
+        "sinceLastCount": "Since {{time}}",
+        "topUpLabel": "Add from home",
+        "sendHome": "Send home",
+        "topUpHint": "The drawer is below the float + advances",
+        "sendHomeHint": "Everything above what to keep",
+        "closeDay": "Close the day",
+        "payExpense": "Pay an expense",
+        "completeThese_one": "{{list}}: the machines are back but the invoice is still open, so its advance stays in the drawer. Complete it when the customer settles.",
+        "completeThese_other": "{{list}}: the machines are back but these invoices are still open, so their advances stay in the drawer. Complete them when the customers settle.",
+        "entriesTitle": "Cash entries since the last count",
+        "noEntries": "Nothing recorded since the last count.",
+        "heldTitle": "Advances held in the drawer",
+        "noHeld": "No cash advances are being held.",
+        "refundedPart": "Rs. {{amount}} already given back",
+        "kind": {
+            "START": "Start",
+            "OPENING": "Opening",
+            "CLOSING": "Closing"
+        },
+        "history": {
+            "matched": "Matched",
+            "counted": "Counted Rs. {{amount}}",
+            "expected": "expected Rs. {{amount}}",
+            "sentHome": "sent home Rs. {{amount}}",
+            "left": "left Rs. {{amount}}",
+            "reason": "Reason: {{reason}}",
+            "acceptedBy": "Accepted by {{name}}, {{time}}",
+            "accept": "Accept",
+            "accepted": "Difference accepted.",
+            "empty": "No counts yet."
         }
     }
 }

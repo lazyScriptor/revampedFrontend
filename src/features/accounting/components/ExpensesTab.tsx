@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Box, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, MenuItem, IconButton, Tooltip,
+  TextField, MenuItem, IconButton, Tooltip, FormControlLabel, Switch,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
@@ -17,6 +17,7 @@ import { useCurrencyFormatter } from "../utils/currency";
 import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { Can } from "@/components/auth/Can";
 import { tk } from "@/i18n/marker";
 
@@ -45,6 +46,7 @@ const EMPTY_FORM = {
   amount: "",
   date: todayLocalStr(),
   description: "",
+  paid_from_locker: false,
 };
 
 export default function ExpensesTab() {
@@ -56,6 +58,8 @@ export default function ExpensesTab() {
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
+  // Cashiers pay small expenses from the drawer; the owner's (rent, salaries) usually are not.
+  const lockerByDefault = !useAuthStore((s) => s.hasPermission("locker:manage"));
 
   // Form state
   const [formOpen, setFormOpen] = useState(false);
@@ -64,7 +68,7 @@ export default function ExpensesTab() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, date: todayLocalStr(), paid_from_locker: lockerByDefault });
     setFormOpen(true);
   };
 
@@ -75,6 +79,7 @@ export default function ExpensesTab() {
       amount: String(row.amount),
       date: row.date ? formatLocalDate(new Date(row.date)) : "",
       description: row.description || "",
+      paid_from_locker: !!row.paid_from_locker,
     });
     setFormOpen(true);
   };
@@ -93,6 +98,7 @@ export default function ExpensesTab() {
         amount: parseFloat(form.amount),
         date: form.date,
         description: form.description,
+        paid_from_locker: form.paid_from_locker,
       };
       if (editingId) {
         return api.patch(`/expenses/${editingId}`, payload);
@@ -300,7 +306,7 @@ export default function ExpensesTab() {
             type="date"
             value={form.date}
             onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             label={t("common.description")}
@@ -310,6 +316,10 @@ export default function ExpensesTab() {
             rows={2}
             value={form.description}
             onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+          />
+          <FormControlLabel
+            control={<Switch checked={form.paid_from_locker} onChange={(e) => setForm((p) => ({ ...p, paid_from_locker: e.target.checked }))} />}
+            label={t("accounting.ExpensesTab.paidFromLocker")}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

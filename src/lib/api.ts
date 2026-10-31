@@ -59,7 +59,7 @@ const AUTH_BYPASS = ['/auth/login', '/auth/refresh', '/auth/logout', '/super-adm
 // Endpoints where a 401 should NOT force the user out. These are background/peripheral
 // features (notifications bell, bulk-job poller) whose failures must never break the
 // session — a brief auth glitch on /notifications shouldn't kick the user back to login.
-const LOGOUT_BYPASS = ['/notifications', '/bulk-jobs'];
+const LOGOUT_BYPASS = ['/notifications', '/bulk-jobs', '/locker/status'];
 
 api.interceptors.response.use(
     (response: AxiosResponse) => {

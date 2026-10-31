@@ -62,6 +62,8 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PieChartIcon from "@mui/icons-material/PieChart";
 import PrintIcon from "@mui/icons-material/Print";
+import { LockerOpeningPrompt } from "@/features/locker/components/LockerOpeningPrompt";
+import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
 
 const drawerWidth = 260;
@@ -223,6 +225,13 @@ function AuthenticatedLayout() {
       path: "/messages",
       search: { tab: "today" },
       requiredPermission: "whatsapp:send",
+    },
+    {
+      text: "Cash Locker",
+      label: t("nav.cashLocker"),
+      icon: <PointOfSaleIcon />,
+      path: "/locker",
+      requiredPermission: "locker:count",
     },
     {
       text: "Data Arena",
@@ -670,6 +679,7 @@ function AuthenticatedLayout() {
           <Outlet />
         </Box>
         <PairedSignatureWatcher />
+        <LockerOpeningPrompt />
       </Box>
     </Box>
   );

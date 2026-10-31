@@ -15,6 +15,7 @@ import WorkforceRoute from "@/routes/Workforce";
 import AccountingRoute from "@/routes/Accounting";
 import ReportsRoute from "@/routes/Reports";
 import MessagesRoute, { MESSAGE_TABS } from "@/routes/Messages";
+import LockerRoute, { LOCKER_TABS } from "@/routes/Locker";
 import ProfileRoute from "@/routes/Profile";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
@@ -199,6 +200,16 @@ const messagesRoute = createRoute({
   beforeLoad: () => requirePermission("whatsapp:send"),
   component: () => <MessagesRoute />,
 });
+//cash locker (the shop's cash drawer)
+const lockerRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/locker",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (LOCKER_TABS as readonly string[]).includes(search.tab as string) ? (search.tab as (typeof LOCKER_TABS)[number]) : undefined,
+  }),
+  beforeLoad: () => requirePermission("locker:count"),
+  component: () => <LockerRoute />,
+});
 //workforce
 const workforceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -304,6 +315,7 @@ const routeTree = rootRoute.addChildren([
     rentalHistoryRoute,
     maintenanceRoute,
     messagesRoute,
+    lockerRoute,
     workforceRoute,
     accountingRoute,
     reportsRoute,

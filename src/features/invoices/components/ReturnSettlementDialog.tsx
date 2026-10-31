@@ -22,6 +22,8 @@ import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useProcessReturn } from "../hooks/useInvoiceHooks";
 import { HandoverLine, HandoverLineCard } from "./HandoverLineCard";
+import { PaymentMethodChips } from "./PaymentMethodChips";
+import type { PaymentMethod } from "../lib/paymentMethods";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { todayLocalStr } from "@/lib/dates";
 import { elapsedDays, isOpenEnded, lineOutAt, openEndedExtraDays, toYmd } from "../lib/lineCost";
@@ -70,6 +72,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
 
   const [releaseId, setReleaseId] = useState(true);
   const [payment, setPayment] = useState<number | "">("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [handoverDate, setHandoverDate] = useState(todayLocalStr());
   const [lines, setLines] = useState<HandoverLine[]>([]);
 
@@ -105,6 +108,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
       }),
     );
     setPayment("");
+    setPaymentMethod("Cash");
     setReleaseId(true);
     setHandoverDate(todayLocalStr());
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,6 +133,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
     const payload = {
       invoice_id: invoice.invoice_id,
       final_payment_amount: paymentNum,
+      payment_method: paymentMethod,
       release_id_card: releaseId,
       lines_returned: lines.map((l) => ({ ...l, actual_return_date: handoverDate, actual_return_at: handoverMoment(handoverDate).toISOString() })),
     };
@@ -248,6 +253,11 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                 </Button>
               )}
             </Box>
+            {paymentNum > 0 && (
+              <Box sx={{ mt: 1.25 }}>
+                <PaymentMethodChips label={t("invoices.handover.paidBy")} value={paymentMethod} onChange={setPaymentMethod} />
+              </Box>
+            )}
           </Box>
 
           {/* ID in the vault */}

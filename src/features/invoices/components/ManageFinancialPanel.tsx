@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "../lib/paymentMethods";
 import { formatDateTime } from "@/lib/dates";
 import type { ReactNode } from "react";
 import {
@@ -44,7 +45,6 @@ import SecurityIcon from "@mui/icons-material/Security";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
 import { Can } from "@/components/auth/Can";
-import { tk } from "@/i18n/marker";
 import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import {
@@ -60,14 +60,7 @@ import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
 
 const MONO = "'JetBrains Mono', monospace";
-const PAYMENT_METHODS = ["Cash", "Card", "Transfer", "Cheque"] as const;
-type PaymentMethod = (typeof PAYMENT_METHODS)[number];
-const METHOD_LABELS: Record<PaymentMethod, string> = {
-  Cash: tk("invoices.FinancialPanel.method.Cash"),
-  Card: tk("invoices.FinancialPanel.method.Card"),
-  Transfer: tk("invoices.FinancialPanel.method.Transfer"),
-  Cheque: tk("invoices.FinancialPanel.method.Cheque"),
-};
+// PAYMENT_METHODS / METHOD_LABELS: shared with the checkout and the handover dialog.
 type Mode = "collect" | "refund";
 
 const rs = (n: number) => `Rs. ${Number(n || 0).toLocaleString()}`;

@@ -10,6 +10,7 @@ import {
   IconButton,
 } from "@mui/material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import { PaymentMethodChips } from "./PaymentMethodChips";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -63,7 +64,10 @@ export function PosCheckoutPanel({
     setFees((prev: any) => ({
       ...prev,
       [field]: isNaN(num) ? 0 : num,
-      ...(field === "advance" ? { advance_payment_method: "Cash" } : {}),
+      // A new amount keeps the chosen method, except after the wallet was applied.
+      ...(field === "advance"
+        ? { advance_payment_method: prev.advance_payment_method && prev.advance_payment_method !== "WalletDeposit" ? prev.advance_payment_method : "Cash" }
+        : {}),
     }));
   };
 
@@ -429,6 +433,17 @@ export function PosCheckoutPanel({
               inputLabel: { sx: { color: "#94a3b8" } },
             }}
           />
+
+          {fees.advance > 0 && fees.advance_payment_method !== "WalletDeposit" && (
+            <Box sx={{ mt: 1.25 }}>
+              <PaymentMethodChips
+                tone="dark"
+                label={t("invoices.PosCheckoutPanel.advancePaidBy")}
+                value={fees.advance_payment_method || "Cash"}
+                onChange={(m) => setFees((prev: any) => ({ ...prev, advance_payment_method: m }))}
+              />
+            </Box>
+          )}
 
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", mt: 1.5 }}>
             <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 700 }}>{t("invoices.PosCheckoutPanel.remainingBalance")}</Typography>
