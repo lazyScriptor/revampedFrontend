@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import type { ElementType, ReactNode } from "react";
 import { alpha, Box, Checkbox, Chip, IconButton, Typography, useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
@@ -27,13 +28,18 @@ interface EquipmentInfoCardProps {
   onSelect: (id: number, checked: boolean) => void;
   onEdit: (item: any) => void;
   onDelete: (item: any) => void;
+  /** Tap the photo to change (or, without edit rights, view) it. */
+  onPhoto?: (item: any) => void;
+  canEditPhoto?: boolean;
 }
 
-export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, onDelete }: EquipmentInfoCardProps) {
+export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, onDelete, onPhoto, canEditPhoto = false }: EquipmentInfoCardProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const dark = theme.palette.mode === "dark";
   const [imgFailed, setImgFailed] = useState(false);
+  // A new photo gets a fresh chance to load.
+  useEffect(() => setImgFailed(false), [item.image_url]);
 
   const label = (key: CardFieldKey) => t(FIELD[key].labelKey);
   const on = (key: CardFieldKey) => config[key];
@@ -190,13 +196,28 @@ export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, on
 
       {/* ── Photo ── */}
       <Box
+        {...(onPhoto
+          ? {
+              component: "button" as const,
+              type: "button" as const,
+              onClick: () => onPhoto(item),
+              "aria-label": `${canEditPhoto ? t("equipment.photo.changePhoto") : t("equipment.photo.viewPhoto")}: ${item.equipment_name}`,
+            }
+          : {})}
         sx={{
           position: "relative",
           aspectRatio: "3 / 2",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          width: "100%",
+          border: 0,
+          p: 0,
+          font: "inherit",
+          cursor: onPhoto ? "pointer" : "default",
           background: showPhoto ? "linear-gradient(160deg, #ffffff 0%, #e9eff7 100%)" : tintBg,
+          "&:hover .gg-card-photo-hint, &:focus-visible .gg-card-photo-hint": { opacity: 1 },
+          "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -2 },
         }}
       >
         {showPhoto ? (
@@ -211,6 +232,57 @@ export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, on
           />
         ) : (
           <Placeholder sx={{ fontSize: 56, color: tintFg, opacity: 0.9 }} />
+        )}
+        {onPhoto && canEditPhoto && (
+          <>
+            {/* hover / keyboard focus: what tapping does */}
+            <Box
+              className="gg-card-photo-hint"
+              sx={{
+                position: "absolute",
+                left: "50%",
+                bottom: 10,
+                transform: "translateX(-50%)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.5,
+                px: 1.25,
+                py: 0.5,
+                borderRadius: 3,
+                bgcolor: "rgba(15,23,42,0.75)",
+                color: "#f8fafc",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                opacity: 0,
+                transition: "opacity .15s",
+                pointerEvents: "none",
+              }}
+            >
+              <PhotoCameraIcon sx={{ fontSize: 15 }} />
+              {t("equipment.photo.changePhoto")}
+            </Box>
+            {/* always visible, for touch screens without hover */}
+            <Box
+              sx={{
+                position: "absolute",
+                right: 8,
+                bottom: 8,
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                boxShadow: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                pointerEvents: "none",
+              }}
+            >
+              <PhotoCameraIcon sx={{ fontSize: 16 }} />
+            </Box>
+          </>
         )}
       </Box>
 

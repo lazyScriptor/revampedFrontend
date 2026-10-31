@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, renderHook, act, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { EquipmentNumberBadge } from "../EquipmentNumberBadge";
 import { EquipmentInfoCard } from "../EquipmentInfoCard";
 import { EquipmentCardGrid } from "../EquipmentCardGrid";
@@ -10,6 +12,11 @@ import {
   useEquipmentCardConfig,
   type CardConfig,
 } from "../../lib/equipmentCardFields";
+
+vi.mock("@/lib/socket", () => ({ connectSocket: vi.fn(), getSocket: () => ({ on: vi.fn(), off: vi.fn() }) }));
+vi.mock("@/features/signatures/hooks/useSignatures", () => ({
+  useMyDevices: () => ({ isLoading: false, data: { devices: [{ device_id: "gg-1" }] } }),
+}));
 
 vi.mock("../../hooks/useEquipmentHooks", () => ({
   useDeleteEquipment: () => ({ mutate: vi.fn(), isPending: false }),
@@ -130,7 +137,11 @@ describe("EquipmentCardGrid", () => {
       config: baseConfig(),
       ...over,
     };
-    render(<EquipmentCardGrid {...props} />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <EquipmentCardGrid {...props} />
+      </QueryClientProvider>,
+    );
     return props;
   };
 
@@ -155,6 +166,21 @@ describe("EquipmentCardGrid", () => {
   it("shows an empty state", () => {
     grid({ data: [], rowCount: 0 });
     expect(screen.getByText("No equipment matches your filters.")).toBeInTheDocument();
+  });
+
+  it("tapping a card's photo opens the photo dialog for that machine", () => {
+    useAuthStore.setState({ hasPermission: (c: string) => c === "equipment:edit" } as any);
+    grid();
+    fireEvent.click(screen.getByRole("button", { name: "Change photo: Step Ladder" }));
+    expect(screen.getByRole("button", { name: "Take with phone" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upload from this computer" })).toBeInTheDocument();
+  });
+
+  it("without edit permission the photo opens view-only", () => {
+    useAuthStore.setState({ hasPermission: () => false } as any);
+    grid();
+    fireEvent.click(screen.getByRole("button", { name: "View photo: Step Ladder" }));
+    expect(screen.getByText(/needs equipment edit permission/)).toBeInTheDocument();
   });
 
   it("asks before deleting", () => {

@@ -6,6 +6,9 @@ import SearchOffIcon from "@mui/icons-material/SearchOff";
 import type { CardConfig } from "../lib/equipmentCardFields";
 import { EquipmentInfoCard } from "./EquipmentInfoCard";
 import { EquipmentDeleteDialog } from "./EquipmentDeleteDialog";
+import { EquipmentPhotoDialog } from "./EquipmentPhotoDialog";
+import { useEquipmentPhotoEvents } from "../hooks/useEquipmentPhoto";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 interface EquipmentCardGridProps {
   data: any[];
@@ -35,6 +38,11 @@ export function EquipmentCardGrid({
   const { t } = useTranslation();
   const theme = useTheme();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [photoId, setPhotoId] = useState<number | null>(null);
+  const canEditPhoto = useAuthStore((s) => s.hasPermission("equipment:edit"));
+  // Photos changed elsewhere (another counter, the paired phone) appear without a reload.
+  useEquipmentPhotoEvents();
+  const photoItem = photoId != null ? data.find((d) => d.equipment_id === photoId) ?? null : null;
 
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   const pageIds = useMemo(() => data.map((d) => d.equipment_id as number), [data]);
@@ -110,6 +118,8 @@ export function EquipmentCardGrid({
                 onSelect={toggleOne}
                 onEdit={onEdit}
                 onDelete={(row) => setDeleteId(row.equipment_id)}
+                onPhoto={(row) => setPhotoId(row.equipment_id)}
+                canEditPhoto={canEditPhoto}
               />
             ))}
           </Box>
@@ -157,6 +167,7 @@ export function EquipmentCardGrid({
       </Box>
 
       <EquipmentDeleteDialog equipmentId={deleteId} onClose={() => setDeleteId(null)} />
+      <EquipmentPhotoDialog open={!!photoItem} equipment={photoItem} onClose={() => setPhotoId(null)} />
     </Box>
   );
 }
