@@ -92,6 +92,18 @@ export function SignatureCaptureDialog({
         });
         if (cancelled) return;
         setSession(result);
+        // A saved operator signature is applied by the server on creation.
+        const created = result as typeof result & {
+          status?: string;
+          auto_signed_roles?: SignatureRole[];
+          pending_roles?: SignatureRole[];
+        };
+        if (created.auto_signed_roles?.length) setCapturedRoles(created.auto_signed_roles);
+        if (created.pending_roles) setPendingRoles(created.pending_roles);
+        if (created.status === 'COMPLETED') {
+          setAllDone(true);
+          onCompleted?.();
+        }
         // The backend doesn't echo the DB row id in CreateSignatureRequest's
         // response (token is sufficient to resume), but our socket channel
         // keys by request_id. We'll fill request_id from the first socket

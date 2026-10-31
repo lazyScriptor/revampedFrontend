@@ -2418,16 +2418,17 @@
         },
         "SimplifiedSignPage": {
             "backToHome": "Back to home",
-            "useMySavedSignature": "Use my saved signature",
             "signature": "{{role}} signature",
             "signingAs": "Signing as {{signatoryName}}",
             "couldNotLoadTheSignature": "Could not load the signature request.",
             "sessionEnded": "Session ended",
             "pleaseDrawYourSignatureIn": "Please draw your signature in the box above.",
             "submissionFailed": "Submission failed.",
-            "submitSignature": "Submit {{role}} signature",
             "returningIn_one": "Going back in {{count}} second…",
-            "returningIn_other": "Going back in {{count}} seconds…"
+            "returningIn_other": "Going back in {{count}} seconds…",
+            "terms": "Terms",
+            "confirmSignature": "Confirm signature",
+            "applyingSavedSignature": "Adding your saved signature…"
         },
         "roles": {
             "customer": "Customer",

@@ -2418,16 +2418,17 @@
         },
         "SimplifiedSignPage": {
             "backToHome": "මුල් පිටුවට ආපසු",
-            "useMySavedSignature": "මගේ සුරකින ලද අත්සන භාවිතා කරන්න",
             "signature": "{{role}} ගේ අත්සන",
             "signingAs": "{{signatoryName}} ලෙස අත්සන් කරමින්",
             "couldNotLoadTheSignature": "අත්සන් ඉල්ලීම පූරණය කළ නොහැකි විය.",
             "sessionEnded": "සැසිය අවසන් විය",
             "pleaseDrawYourSignatureIn": "කරුණාකර ඉහත කොටුව තුළ ඔබේ අත්සන අඳින්න.",
             "submissionFailed": "ඉදිරිපත් කිරීම අසාර්ථක විය.",
-            "submitSignature": "{{role}} ගේ අත්සන ඉදිරිපත් කරන්න",
             "returningIn_one": "තත්පර {{count}} කින් ආපසු යයි…",
-            "returningIn_other": "තත්පර {{count}} කින් ආපසු යයි…"
+            "returningIn_other": "තත්පර {{count}} කින් ආපසු යයි…",
+            "terms": "කොන්දේසි",
+            "confirmSignature": "අත්සන තහවුරු කරන්න",
+            "applyingSavedSignature": "ඔබගේ සුරැකි අත්සන එක් කරමින්…"
         },
         "roles": {
             "customer": "පාරිභෝගිකයා",

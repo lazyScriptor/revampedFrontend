@@ -25,6 +25,10 @@ interface SignatureCanvasProps {
   disabled?: boolean;
   onDirtyChange?: (isDirty: boolean) => void;
   placeholder?: string;
+  /** The pad is shown turned 90° clockwise (CSS) so a portrait phone gets a landscape pad. */
+  rotated?: boolean;
+  /** Hide the built-in Clear button (the caller shows its own). */
+  hideClear?: boolean;
 }
 
 export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
@@ -37,6 +41,8 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
       disabled = false,
       onDirtyChange,
       placeholder,
+      rotated = false,
+      hideClear = false,
     },
     ref,
   ) {
@@ -45,6 +51,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
     const [isDirty, setIsDirty] = useState(false);
     const drawingRef = useRef(false);
     const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+    const sizeRef = useRef('');
 
     // ── Resize observer — keeps the backing store sized to CSS pixels ────
     useEffect(() => {
@@ -57,6 +64,15 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
         const dpr = window.devicePixelRatio || 1;
         const cssWidth = parent.clientWidth;
         const cssHeight = height;
+        const size = `${cssWidth}x${cssHeight}x${dpr}`;
+        if (size === sizeRef.current) return; // same size: keep the drawing
+        // Resizing wipes the bitmap, so the pad is empty again; say so, or a
+        // blank image would be sent as the signature.
+        if (sizeRef.current) {
+          setIsDirty(false);
+          onDirtyChange?.(false);
+        }
+        sizeRef.current = size;
         canvas.style.width = `${cssWidth}px`;
         canvas.style.height = `${cssHeight}px`;
         canvas.width = Math.round(cssWidth * dpr);
@@ -78,10 +94,13 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
       const ro = new ResizeObserver(sync);
       ro.observe(parent);
       return () => ro.disconnect();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [height, backgroundColor, strokeColor, strokeWidth]);
 
     const getPoint = (ev: React.PointerEvent<HTMLCanvasElement>) => {
       const rect = ev.currentTarget.getBoundingClientRect();
+      // Turned 90° clockwise: the canvas's x runs down the screen and its y runs right-to-left.
+      if (rotated) return { x: ev.clientY - rect.top, y: rect.right - ev.clientX };
       return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
     };
 
@@ -189,7 +208,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
             </Typography>
           )}
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+        {!hideClear && <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
           <Button
             size="small"
             startIcon={<DeleteOutlinedIcon />}
@@ -199,7 +218,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
           >
             {t("common.clear")}
           </Button>
-        </Box>
+        </Box>}
       </Box>
     );
   },

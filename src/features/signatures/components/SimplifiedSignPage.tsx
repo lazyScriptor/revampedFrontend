@@ -1,35 +1,34 @@
 // features/signatures/components/SimplifiedSignPage.tsx
 //
-// Minimal sign page shown on the paired phone when a signature request is
-// pending. No name field, no agree-to-terms checkbox — the tap on the role
-// button IS the agreement. Terms text is visible above the fold.
+// Sign page shown on the paired phone when a signature request is pending.
+// No name field, no agree-to-terms checkbox — the confirm tap IS the
+// agreement; the terms are one tap away in the pad's header.
 //
-// This page replaces the full MobileSignPage for paired devices. The
-// backend endpoints are the same; we just submit without agreed_to_terms
-// toggling (hard-coded true) and without a user-supplied name (derived
-// from invoice.Customer or the paired operator).
+// The pad is landscape and fills the screen. A phone held upright gets the
+// pad turned sideways (CSS) so the person just turns the phone; a phone
+// already sideways gets it as-is.
+//
+// The operator never signs here if they have a saved signature: the server
+// applies it when the counter makes the request, and this page applies it
+// too if it still finds the operator pending.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Button,
   Avatar,
   CircularProgress,
   Alert,
-  Stack,
   Chip,
-  Divider,
   IconButton,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
-import FlashOnIcon from '@mui/icons-material/FlashOn';
 import GavelIcon from '@mui/icons-material/Gavel';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import { useNavigate } from '@tanstack/react-router';
 import type { SignatureRole } from '@geargrid/contracts';
 import { SignatureCanvas, type SignatureCanvasHandle } from './SignatureCanvas';
@@ -40,14 +39,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from "react-i18next";
 
 const ROLE_ICON: Record<SignatureRole, React.ReactElement> = {
-  CUSTOMER: <PersonIcon sx={{ fontSize: 32 }} />,
-  OPERATOR: <SupportAgentIcon sx={{ fontSize: 32 }} />,
-  GUARANTOR: <PersonIcon sx={{ fontSize: 32 }} />,
-  WITNESS: <PersonIcon sx={{ fontSize: 32 }} />,
+  CUSTOMER: <PersonIcon />,
+  OPERATOR: <SupportAgentIcon />,
+  GUARANTOR: <PersonIcon />,
+  WITNESS: <PersonIcon />,
 };
 
 // Seconds the done screen stays up before the phone goes back to waiting.
 const AUTO_RETURN_SECONDS = 3;
+const HEADER_PX = 52;
+const FOOTER_PX = 64;
+const GUTTER_PX = 12;
 
 const formatLKR = (n: number) =>
   new Intl.NumberFormat('en-LK', {
@@ -55,6 +57,26 @@ const formatLKR = (n: number) =>
     currency: 'LKR',
     maximumFractionDigits: 2,
   }).format(n);
+
+const readViewport = () => ({
+  w: typeof window === 'undefined' ? 800 : window.innerWidth,
+  h: typeof window === 'undefined' ? 400 : window.innerHeight,
+});
+
+/** Window size, kept current through rotation and browser-bar changes. */
+const useViewport = () => {
+  const [vp, setVp] = useState(readViewport);
+  useEffect(() => {
+    const update = () => setVp(readViewport());
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
+  return vp;
+};
 
 interface SimplifiedSignPageProps {
   token: string;
@@ -70,10 +92,17 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
   const session = useSignatureSession(token);
   const submit = useSubmitSignature(token);
   const canvasRef = useRef<SignatureCanvasHandle | null>(null);
+  const viewport = useViewport();
 
   const [selectedRole, setSelectedRole] = useState<SignatureRole | null>(null);
   const [showTerms, setShowTerms] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // What the last submit told us, so the screen moves on the moment the
+  // server answers instead of waiting for the next session refetch (that
+  // gap made it look like the first tap did nothing).
+  const [signedHere, setSignedHere] = useState<SignatureRole[]>([]);
+  const [allSignedHere, setAllSignedHere] = useState(false);
+  const autoOperatorTried = useRef(false);
 
   const data = session.data; // may be undefined on first renders
   useDeviceManifest();
@@ -81,7 +110,12 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
 
   // Once the request is finished (signed, expired or cancelled at the counter)
   // go back to the waiting screen by itself, so the next request opens with no taps.
-  const finished = !!data && ['COMPLETED', 'EXPIRED', 'CANCELLED'].includes(data.status);
+  const finishedStatus: string | null = allSignedHere
+    ? 'COMPLETED'
+    : data && ['COMPLETED', 'EXPIRED', 'CANCELLED'].includes(data.status)
+      ? data.status
+      : null;
+  const finished = finishedStatus !== null;
   const [returnIn, setReturnIn] = useState(AUTO_RETURN_SECONDS);
   const goHome = useCallback(() => {
     markRequestFinished(token);
@@ -100,11 +134,27 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
     };
   }, [finished, token, goHome]);
 
+  // A full-screen pad must not scroll or pull-to-refresh under the finger.
+  useEffect(() => {
+    const body = document.body.style;
+    const prev = { overflow: body.overflow, overscroll: body.overscrollBehavior };
+    body.overflow = 'hidden';
+    body.overscrollBehavior = 'none';
+    return () => {
+      body.overflow = prev.overflow;
+      body.overscrollBehavior = prev.overscroll;
+    };
+  }, []);
+
+  const pendingRoles = useMemo(
+    () => (data?.pending_roles || []).filter((r) => !signedHere.includes(r)),
+    [data?.pending_roles, signedHere],
+  );
+
   const activeRole: SignatureRole | null = useMemo(() => {
-    if (!data?.pending_roles) return null;
-    if (selectedRole && data.pending_roles.includes(selectedRole)) return selectedRole;
-    return data.pending_roles[0] || null;
-  }, [selectedRole, data?.pending_roles]);
+    if (selectedRole && pendingRoles.includes(selectedRole)) return selectedRole;
+    return pendingRoles[0] || null;
+  }, [selectedRole, pendingRoles]);
 
   const signatoryName = useMemo(() => {
     if (!data) return 'Signatory';
@@ -112,6 +162,55 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
     if (activeRole === 'CUSTOMER') return data.invoice.customer_name || 'Walk-in customer';
     return 'Signatory';
   }, [activeRole, data]);
+
+  const handleSubmit = useCallback(
+    async (useStored = false) => {
+      setSubmitError(null);
+      if (!activeRole || !data || submit.isPending) return;
+
+      let imageDataUrl: string | null = null;
+      if (!useStored) {
+        imageDataUrl = canvasRef.current?.toDataUrl('image/png') ?? null;
+        if (!imageDataUrl) {
+          setSubmitError(t("signatures.SimplifiedSignPage.pleaseDrawYourSignatureIn"));
+          return;
+        }
+      }
+
+      try {
+        const result: any = await submit.mutateAsync({
+          role: activeRole,
+          signatory_name: signatoryName,
+          agreed_to_terms: true,
+          terms_version: data.terms.version,
+          use_stored_operator_signature: useStored,
+          image_data_url: useStored ? undefined : imageDataUrl ?? undefined,
+        });
+        canvasRef.current?.clear();
+        setSelectedRole(null);
+        setSignedHere((prev) => (prev.includes(activeRole) ? prev : [...prev, activeRole]));
+        if (result?.all_captured || result?.status === 'COMPLETED') setAllSignedHere(true);
+      } catch (err: any) {
+        // Someone (or the auto step) already signed this role: just move on.
+        if (err?.status === 409) {
+          setSignedHere((prev) => (prev.includes(activeRole) ? prev : [...prev, activeRole]));
+          session.refetch();
+          return;
+        }
+        setSubmitError(err?.message || t("signatures.SimplifiedSignPage.submissionFailed"));
+      }
+    },
+    [activeRole, data, signatoryName, submit, session, t],
+  );
+
+  // Operator with a saved signature: sign for them, no drawing, no tap.
+  const canUseStoredOperatorSig =
+    activeRole === 'OPERATOR' && !!data?.operator_saved_signature?.has_saved_signature;
+  useEffect(() => {
+    if (!canUseStoredOperatorSig || finished || autoOperatorTried.current) return;
+    autoOperatorTried.current = true;
+    handleSubmit(true);
+  }, [canUseStoredOperatorSig, finished, handleSubmit]);
 
   // ── Early returns from here down — hook count is now stable.
   if (session.isLoading) {
@@ -139,7 +238,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
       <FullBleedCentered>
         <Avatar
           sx={{
-            bgcolor: data.status === 'COMPLETED' ? '#16a34a' : '#f59e0b',
+            bgcolor: finishedStatus === 'COMPLETED' ? '#16a34a' : '#f59e0b',
             width: 72,
             height: 72,
             mb: 2,
@@ -148,7 +247,7 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
           <CheckCircleOutlinedIcon sx={{ fontSize: 44 }} />
         </Avatar>
         <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 1, textAlign: 'center' }}>
-          {data.status === 'COMPLETED' ? t("signatures.SignatureCaptureDialog.allSignaturesCaptured") : t("signatures.SimplifiedSignPage.sessionEnded")}
+          {finishedStatus === 'COMPLETED' ? t("signatures.SignatureCaptureDialog.allSignaturesCaptured") : t("signatures.SimplifiedSignPage.sessionEnded")}
         </Typography>
         <Button
           variant="contained"
@@ -164,241 +263,157 @@ export function SimplifiedSignPage({ token }: SimplifiedSignPageProps) {
     );
   }
 
-  const canUseStoredOperatorSig =
-    activeRole === 'OPERATOR' && !!data.operator_saved_signature?.has_saved_signature;
+  const primary = data.tenant.primary_color || '#1976d2';
 
-  const handleSubmit = async (useStored = false) => {
-    setSubmitError(null);
-    if (!activeRole) return;
-
-    let imageDataUrl: string | null = null;
-    if (!useStored) {
-      imageDataUrl = canvasRef.current?.toDataUrl('image/png') ?? null;
-      if (!imageDataUrl) {
-        setSubmitError(t("signatures.SimplifiedSignPage.pleaseDrawYourSignatureIn"));
-        return;
-      }
-    }
-
-    try {
-      await submit.mutateAsync({
-        role: activeRole,
-        signatory_name: signatoryName,
-        agreed_to_terms: true,
-        terms_version: data.terms.version,
-        use_stored_operator_signature: useStored,
-        image_data_url: useStored ? undefined : imageDataUrl ?? undefined,
-      });
-      canvasRef.current?.clear();
-      setSelectedRole(null);
-      session.refetch();
-    } catch (err: any) {
-      setSubmitError(err?.message || t("signatures.SimplifiedSignPage.submissionFailed"));
-    }
-  };
-
-  const theme = {
-    primary: data.tenant.primary_color || '#1976d2',
-    secondary: data.tenant.secondary_color || '#9c27b0',
-  };
+  // Landscape box: as-is on a sideways phone, turned 90° on an upright one.
+  const portrait = viewport.h > viewport.w;
+  const padW = portrait ? viewport.h : viewport.w;
+  const padH = portrait ? viewport.w : viewport.h;
+  const canvasH = Math.max(120, padH - HEADER_PX - FOOTER_PX - GUTTER_PX * 2);
+  const savingOperator = canUseStoredOperatorSig && submit.isPending;
+  const capturedRoles = data.captured_roles.map((r) => r.role).concat(signedHere);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Box
-        sx={{
-          background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
-          color: 'white',
-          px: 2,
-          py: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontSize: 12, opacity: 0.9, fontWeight: 500 }}>
-            {data.invoice.invoice_number} · {data.checkpoint.replace(/_/g, ' ').toLowerCase()}
+    <Box
+      data-testid="sign-pad"
+      data-rotated={portrait ? 'true' : 'false'}
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: padW,
+        height: padH,
+        transformOrigin: 'top left',
+        transform: portrait ? `translateX(${viewport.w}px) rotate(90deg)` : 'none',
+        bgcolor: '#f8fafc',
+        display: 'flex',
+        flexDirection: 'column',
+        px: `${GUTTER_PX}px`,
+        py: `${GUTTER_PX}px`,
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        touchAction: 'none',
+      }}
+    >
+      {/* Header: who signs, for which bill, terms */}
+      <Box sx={{ height: HEADER_PX, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+        <Avatar sx={{ bgcolor: primary, width: 36, height: 36 }}>{activeRole ? ROLE_ICON[activeRole] : null}</Avatar>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography noWrap sx={{ fontSize: 16, fontWeight: 800, color: '#0f172a', lineHeight: 1.15 }}>
+            {activeRole ? t("signatures.SimplifiedSignPage.signature", { role: t(ROLE_LABEL[activeRole]) }) : ''}
+            <Box component="span" sx={{ fontWeight: 500, color: '#64748b', ml: 1, fontSize: 13 }}>
+              {t("signatures.SimplifiedSignPage.signingAs", { signatoryName })}
+            </Box>
           </Typography>
-          <Typography sx={{ fontSize: 17, fontWeight: 700, lineHeight: 1.1 }}>
-            {data.invoice.customer_name || t("signatures.MobileSignPage.walkInCustomer")}
+          <Typography noWrap sx={{ fontSize: 12, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+            {data.invoice.invoice_number} · {formatLKR(data.invoice.total_amount)}
           </Typography>
         </Box>
-        <Typography sx={{ fontSize: 20, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-          {formatLKR(data.invoice.total_amount)}
-        </Typography>
-      </Box>
-
-      {/* Captured roles chips */}
-      {data.captured_roles.length > 0 && (
-        <Stack direction="row" spacing={1} sx={{ px: 2, pt: 2, flexWrap: 'wrap' }}>
-          {data.captured_roles.map((r) => (
+        {capturedRoles.map((r) => (
+          <Chip
+            key={r}
+            size="small"
+            icon={<CheckCircleOutlinedIcon />}
+            label={t("signatures.roleSigned", { role: t(ROLE_LABEL[r]) })}
+            sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+          />
+        ))}
+        {pendingRoles.length > 1 &&
+          pendingRoles.map((role) => (
             <Chip
-              key={r.role}
-              size="small"
-              icon={<CheckCircleOutlinedIcon />}
-              label={t("signatures.roleSigned", { role: t(ROLE_LABEL[r.role]) })}
-              sx={{ bgcolor: '#dcfce7', color: '#166534', fontWeight: 600 }}
+              key={role}
+              label={t(ROLE_LABEL[role])}
+              onClick={() => setSelectedRole(role)}
+              color={role === activeRole ? 'primary' : 'default'}
+              variant={role === activeRole ? 'filled' : 'outlined'}
+              sx={{ fontWeight: 700 }}
             />
           ))}
-        </Stack>
-      )}
-
-      {/* Role picker (only when more than one is pending) */}
-      {data.pending_roles.length > 1 && (
-        <Stack direction="row" spacing={1.5} sx={{ px: 2, pt: 2 }}>
-          {data.pending_roles.map((role) => (
-            <Paper
-              key={role}
-              elevation={0}
-              onClick={() => setSelectedRole(role)}
-              sx={{
-                flex: 1,
-                p: 2,
-                borderRadius: 2,
-                cursor: 'pointer',
-                textAlign: 'center',
-                bgcolor: activeRole === role ? theme.primary : 'white',
-                color: activeRole === role ? 'white' : '#0f172a',
-                border: `2px solid ${activeRole === role ? theme.primary : '#e2e8f0'}`,
-                transition: 'all 120ms ease',
-              }}
-            >
-              {ROLE_ICON[role]}
-              <Typography sx={{ mt: 0.5, fontSize: 14, fontWeight: 700 }}>
-                {t(ROLE_LABEL[role])}
-              </Typography>
-            </Paper>
-          ))}
-        </Stack>
-      )}
-
-      {/* Terms (collapsible, visible above-fold) */}
-      <Paper
-        elevation={0}
-        sx={{
-          mx: 2,
-          mt: 2,
-          borderRadius: 2,
-          border: '1px solid #e2e8f0',
-          bgcolor: 'white',
-        }}
-      >
-        <Box
-          onClick={() => setShowTerms((s) => !s)}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            px: 2,
-            py: 1.25,
-            cursor: 'pointer',
-          }}
+        <Button
+          size="small"
+          startIcon={<GavelIcon />}
+          onClick={() => setShowTerms(true)}
+          sx={{ textTransform: 'none', color: '#475569', flexShrink: 0 }}
         >
-          <GavelIcon sx={{ color: '#64748b', fontSize: 20 }} />
-          <Typography sx={{ fontSize: 13, color: '#0f172a', fontWeight: 600, flex: 1 }}>
-            {t("signatures.MobileSignPage.rentalTermsV", { version: data.terms.version })}
-          </Typography>
-          <IconButton size="small" sx={{ p: 0 }}>
-            {showTerms ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-          </IconButton>
-        </Box>
+          {t("signatures.SimplifiedSignPage.terms")}
+        </Button>
+      </Box>
+
+      {/* The pad */}
+      <Box sx={{ position: 'relative', flex: 1, minHeight: 0 }}>
+        {activeRole && (
+          <SignatureCanvas
+            key={activeRole}
+            ref={canvasRef}
+            height={canvasH}
+            rotated={portrait}
+            hideClear
+            disabled={submit.isPending}
+            placeholder={savingOperator ? t("signatures.SimplifiedSignPage.applyingSavedSignature") : undefined}
+          />
+        )}
         {showTerms && (
           <Box
             sx={{
-              px: 2,
-              pb: 2,
-              fontSize: 13,
-              color: '#334155',
-              whiteSpace: 'pre-wrap',
-              maxHeight: 180,
+              position: 'absolute',
+              inset: 0,
+              bgcolor: 'white',
+              border: '1px solid #e2e8f0',
+              borderRadius: 2,
+              p: 2,
               overflowY: 'auto',
-              borderTop: '1px solid #e2e8f0',
-              pt: 1.5,
+              touchAction: 'pan-y',
+              zIndex: 2,
             }}
           >
-            {data.terms.markdown}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Typography sx={{ fontWeight: 700, flex: 1, color: '#0f172a' }}>
+                {t("signatures.MobileSignPage.rentalTermsV", { version: data.terms.version })}
+              </Typography>
+              <IconButton size="small" onClick={() => setShowTerms(false)} aria-label={t("common.close")}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            <Typography sx={{ fontSize: 13, color: '#334155', whiteSpace: 'pre-wrap' }}>{data.terms.markdown}</Typography>
           </Box>
         )}
-      </Paper>
+      </Box>
 
-      {/* Canvas + submit */}
-      {activeRole && (
-        <Paper
-          elevation={0}
-          sx={{
-            mx: 2,
-            mt: 2,
-            mb: 3,
-            p: 2,
-            borderRadius: 2,
-            border: '1px solid #e2e8f0',
-            bgcolor: 'white',
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
+      {/* Actions */}
+      <Box sx={{ height: FOOTER_PX, display: 'flex', alignItems: 'center', gap: 1.5, pt: 1 }}>
+        <Button
+          variant="outlined"
+          size="large"
+          startIcon={<DeleteOutlinedIcon />}
+          onClick={() => {
+            canvasRef.current?.clear();
+            setSubmitError(null);
           }}
+          disabled={submit.isPending}
+          sx={{ textTransform: 'none', fontWeight: 700, color: '#475569', borderColor: '#cbd5e1', flexShrink: 0 }}
         >
-          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1.5 }}>
-            {ROLE_ICON[activeRole]}
-            <Box>
-              <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {t("signatures.SimplifiedSignPage.signature", { role: t(ROLE_LABEL[activeRole]) })}
-              </Typography>
-              <Typography sx={{ fontSize: 12, color: '#64748b' }}>
-                {t("signatures.SimplifiedSignPage.signingAs", { signatoryName })}
-              </Typography>
-            </Box>
-          </Stack>
-
-          <Divider sx={{ mb: 1.5 }} />
-          <SignatureCanvas ref={canvasRef} height={200} />
-
+          {t("common.clear")}
+        </Button>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           {submitError && (
-            <Alert severity="error" sx={{ mt: 1.5, fontSize: 13 }}>
+            <Typography role="alert" sx={{ color: '#b91c1c', fontSize: 13, fontWeight: 600 }}>
               {submitError}
-            </Alert>
+            </Typography>
           )}
-
-          <Stack direction="column" spacing={1.25} sx={{ mt: 2 }}>
-            {canUseStoredOperatorSig && (
-              <Button
-                variant="contained"
-                fullWidth
-                size="large"
-                startIcon={<FlashOnIcon />}
-                disabled={submit.isPending}
-                onClick={() => handleSubmit(true)}
-                sx={{
-                  bgcolor: theme.primary,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  py: 1.5,
-                  fontSize: 16,
-                }}
-              >
-                {t("signatures.SimplifiedSignPage.useMySavedSignature")}
-              </Button>
-            )}
-            <Button
-              variant={canUseStoredOperatorSig ? 'outlined' : 'contained'}
-              fullWidth
-              size="large"
-              disabled={submit.isPending}
-              onClick={() => handleSubmit(false)}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 700,
-                py: 1.5,
-                fontSize: 16,
-                ...(canUseStoredOperatorSig ? {} : { bgcolor: theme.primary }),
-              }}
-            >
-              {submit.isPending ? t("signatures.MobileSignPage.submitting") : t("signatures.SimplifiedSignPage.submitSignature", { role: t(ROLE_LABEL[activeRole]).toLowerCase() })}
-            </Button>
-          </Stack>
-        </Paper>
-      )}
+        </Box>
+        <Button
+          variant="contained"
+          size="large"
+          disabled={!activeRole || submit.isPending}
+          onClick={() => handleSubmit(false)}
+          startIcon={submit.isPending ? <CircularProgress size={18} color="inherit" /> : <CheckCircleOutlinedIcon />}
+          sx={{ bgcolor: primary, textTransform: 'none', fontWeight: 800, fontSize: 17, px: 4, py: 1.25, minWidth: 220 }}
+        >
+          {submit.isPending
+            ? t("signatures.MobileSignPage.submitting")
+            : t("signatures.SimplifiedSignPage.confirmSignature")}
+        </Button>
+      </Box>
     </Box>
   );
 }
