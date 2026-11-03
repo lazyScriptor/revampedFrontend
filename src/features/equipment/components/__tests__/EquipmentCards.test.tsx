@@ -21,7 +21,7 @@ vi.mock("@/features/signatures/hooks/useSignatures", () => ({
 }));
 
 vi.mock("../../hooks/useEquipmentHooks", () => ({
-  useDeleteEquipment: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteEquipment: () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false }),
 }));
 
 const item = (over: Record<string, unknown> = {}) => ({
