@@ -64,6 +64,7 @@ import PieChartIcon from "@mui/icons-material/PieChart";
 import PrintIcon from "@mui/icons-material/Print";
 import { LockerOpeningPrompt } from "@/features/locker/components/LockerOpeningPrompt";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
+import PostAddIcon from "@mui/icons-material/PostAdd";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
 
 const drawerWidth = 260;
@@ -240,6 +241,7 @@ function AuthenticatedLayout() {
       requiredPermission: "data_arena:view",
       children: [
         { text: "Imports", label: t("nav.imports"), path: "/data-arena", search: { section: "imports" }, icon: <UploadFileIcon fontSize="small" /> },
+        { text: "Add Machines", label: t("nav.addMachines"), path: "/data-arena", search: { section: "addMachines" }, icon: <PostAddIcon fontSize="small" /> },
         { text: "Exports", label: t("nav.exports"), path: "/data-arena", search: { section: "exports" }, icon: <FileDownloadIcon fontSize="small" /> },
         { text: "Bulk Actions", label: t("nav.bulkActions"), path: "/data-arena", search: { section: "bulk" }, icon: <PlaylistAddCheckIcon fontSize="small" /> },
         { text: "Downloads", label: t("nav.downloads"), path: "/data-arena", search: { section: "downloads" }, icon: <FolderZipIcon fontSize="small" /> },

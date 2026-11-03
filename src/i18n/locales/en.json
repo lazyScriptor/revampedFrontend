@@ -165,7 +165,8 @@
         "changePassword": "Change Password",
         "preferences": "Preferences",
         "messages": "Messages",
-        "cashLocker": "Cash Locker"
+        "cashLocker": "Cash Locker",
+        "addMachines": "Add Machines"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -535,6 +536,45 @@
             "noCamera": "No camera was found on this device.",
             "cameraBusy": "Another app is using the camera. Close it and try again.",
             "cameraUnavailable": "The live camera isn't available here. Tap Open camera instead."
+        },
+        "bulkGrid": {
+            "subtitle": "Add many machines, or edit many at once, like a spreadsheet.",
+            "title": "Machines",
+            "addRow": "Add row",
+            "copies": "Copies",
+            "columns": "Columns",
+            "addCopies": "Add {{count}} more like this",
+            "removeRow": "Remove row",
+            "editExisting": "Edit existing type",
+            "load": "Load",
+            "nothingToLoad": "No machines of this type yet.",
+            "fixRows_one": "{{count}} row needs fixing. Nothing was saved.",
+            "fixRows_other": "{{count}} rows need fixing. Nothing was saved.",
+            "saved_one": "{{count}} machine saved.",
+            "saved_other": "{{count}} machines saved.",
+            "photosFailed_one": "The machines are saved, but {{count}} photo didn't upload. Tap its photo in the equipment list to try again.",
+            "photosFailed_other": "The machines are saved, but {{count}} photos didn't upload. Tap their photos in the equipment list to try again.",
+            "saveFailed": "Could not save.",
+            "noPermission": "Adding and editing machines here needs both equipment add and edit permission.",
+            "hint": "Pick a type to fill in the name, number and price. You can also paste rows from Excel. All rows save together, or none do.",
+            "errors": {
+                "category_required": "Choose a type",
+                "warehouse_required": "Choose a location",
+                "price_required": "Enter a price",
+                "qty_invalid": "Enter 1 or more",
+                "name_required": "Enter a name",
+                "number_required": "Enter a number",
+                "number_taken": "Already used",
+                "machine_missing": "This machine no longer exists",
+                "qty_below_out": "Below what is out or in repair"
+            },
+            "save_one": "Save {{count}} row",
+            "save_other": "Save {{count}} rows"
+        },
+        "types": {
+            "addNew": "Add \"{{name}}\" as a new type",
+            "nameHelp": "Type a machine type, like drill, and pick one. The name, number and price fill in.",
+            "numberHelp": "Filled in automatically. You can change it."
         }
     },
     "customers": {

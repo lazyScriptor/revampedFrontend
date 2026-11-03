@@ -85,3 +85,33 @@ export const bulkUpdateEquipment = async (
   const response = await api.patch("/equipment/bulk", payload);
   return response.data;
 };
+export interface NextEquipment {
+  serial_number: string;
+  name_number?: number;
+  base_name?: string;
+  base_name_si?: string;
+  base_rental_price?: number | null;
+  extra_daily_rate?: number | null;
+  minimum_rental_days?: number;
+  warehouse_id?: number | null;
+}
+
+/** The next automatic number and, for a type, its next name and usual prices. */
+export const fetchNextEquipment = async (categoryId?: number): Promise<NextEquipment> => {
+  const body: any = await api.get('/equipment/next', { params: { category_id: categoryId || undefined } });
+  return body?.data;
+};
+
+export interface BulkRowError {
+  row: number;
+  field: string;
+  code: string;
+}
+export type BulkSaveResult =
+  | { saved: true; rows: { row: number; equipment_id: number; serial_number: string; equipment_name: string }[] }
+  | { saved: false; errors: BulkRowError[] };
+
+export const bulkSaveEquipment = async (rows: Record<string, unknown>[]): Promise<BulkSaveResult> => {
+  const body: any = await api.post('/equipment/bulk-save', { rows });
+  return body?.data;
+};

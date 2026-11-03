@@ -7,6 +7,8 @@ import {
 } from "@mui/material";
 import { useSearch } from "@tanstack/react-router";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import PostAddIcon from "@mui/icons-material/PostAdd";
+import { EquipmentBulkGrid } from "@/features/equipment/components/EquipmentBulkGrid";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
@@ -18,7 +20,7 @@ import { DownloadsTable } from "@/features/data-arena/components/DownloadsTable"
 import { useTranslation } from "react-i18next";
 import { tk } from "@/i18n/marker";
 
-type SectionKey = "imports" | "exports" | "bulk" | "downloads" | "jobs";
+type SectionKey = "imports" | "addMachines" | "exports" | "bulk" | "downloads" | "jobs";
 
 const SECTIONS: {
   key: SectionKey;
@@ -31,6 +33,12 @@ const SECTIONS: {
     label: tk("nav.imports"),
     subtitle: tk("pages.DataArena.uploadCsvExcelToBulk"),
     icon: <UploadFileIcon />,
+  },
+  {
+    key: "addMachines",
+    label: tk("nav.addMachines"),
+    subtitle: tk("equipment.bulkGrid.subtitle"),
+    icon: <PostAddIcon />,
   },
   {
     key: "exports",
@@ -115,6 +123,7 @@ export default function DataArenaRoute() {
 
       {/* Content */}
       {activeKey === "imports" && <ImportsView />}
+      {activeKey === "addMachines" && <EquipmentBulkGrid />}
       {activeKey === "exports" && <ExportsView />}
       {activeKey === "bulk" && <BulkActionsView />}
       {activeKey === "downloads" && <DownloadsView />}

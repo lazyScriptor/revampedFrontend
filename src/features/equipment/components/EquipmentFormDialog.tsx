@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { createCategory } from "../api/category.api";
+import { fetchNextEquipment } from "../api/equipment.api";
+import { withNumber } from "../lib/equipmentNumbering";
+import { EquipmentTypeField } from "./EquipmentTypeField";
 import { NumberField } from "@/components/ui/NumberField";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,6 +71,10 @@ export function EquipmentFormDialog({
   const uploadImage = useUploadEquipmentImage();
   const { showWarning } = useToast();
   const [pendingImage, setPendingImage] = useState<Blob | null>(null);
+  const [pickedType, setPickedType] = useState<{ base: string; baseSi: string; number: number } | null>(null);
+  const serialTouched = useRef(false);
+  const queryClient = useQueryClient();
+  const canCreateType = useAuthStore((s) => s.hasPermission("category:create"));
   const isPending = createMutation.isPending || updateMutation.isPending || uploadImage.isPending;
   const [mutationError, setMutationError] = useState<string | null>(null);
 
@@ -148,6 +158,51 @@ export function EquipmentFormDialog({
     }
   }, [open, initialData, reset]);
 
+  // New machine: the next number is shown straight away.
+  const fillNumber = useCallback(async () => {
+    const next = await fetchNextEquipment().catch(() => null);
+    if (next && !serialTouched.current) setValue("serial_number", next.serial_number, { shouldValidate: true });
+  }, [setValue]);
+
+  useEffect(() => {
+    if (!open || initialData) return;
+    serialTouched.current = false;
+    setPickedType(null);
+    fillNumber();
+  }, [open, initialData, fillNumber]);
+
+  const applyType = async (type: { category_id: number; category_name: string }) => {
+    setValue("category_id", type.category_id, { shouldValidate: true, shouldDirty: true });
+    setValue("equipment_name", type.category_name, { shouldValidate: true, shouldDirty: true });
+    const next = await fetchNextEquipment(type.category_id).catch(() => null);
+    if (!next) return;
+    setPickedType({ base: next.base_name || type.category_name, baseSi: next.base_name_si || "", number: next.name_number || 1 });
+    if (!serialTouched.current) setValue("serial_number", next.serial_number, { shouldValidate: true });
+    if (next.base_rental_price !== null && next.base_rental_price !== undefined) setValue("base_rental_price", next.base_rental_price, { shouldValidate: true });
+    if (next.extra_daily_rate !== null && next.extra_daily_rate !== undefined) setValue("extra_daily_rate", next.extra_daily_rate, { shouldValidate: true });
+    if (next.minimum_rental_days) setValue("minimum_rental_days", next.minimum_rental_days, { shouldValidate: true });
+    if (next.warehouse_id && !watch("warehouse_id")) setValue("warehouse_id", next.warehouse_id, { shouldValidate: true });
+  };
+
+  const addType = async (name: string) => {
+    try {
+      const res: any = await createCategory({ category_name: name } as any);
+      const created = res?.category ?? res;
+      await queryClient.invalidateQueries({ queryKey: ["category-options"] });
+      await applyType({ category_id: created.category_id, category_name: created.category_name || name });
+    } catch (err: any) {
+      setMutationError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
+    }
+  };
+
+  // A quantity machine is one record, so its name carries no number.
+  useEffect(() => {
+    if (!pickedType) return;
+    const numbered = (base: string) => (base ? (isBulkItem ? base : withNumber(base, pickedType.number)) : "");
+    setValue("equipment_name", numbered(pickedType.base), { shouldValidate: true, shouldDirty: true });
+    if (pickedType.baseSi) setValue("equipment_name_si", numbered(pickedType.baseSi), { shouldDirty: true });
+  }, [pickedType, isBulkItem, setValue]);
+
   const onSubmit = (data: EquipmentFormData) => {
     setMutationError(null);
     const payload: any = { ...data };
@@ -156,7 +211,11 @@ export function EquipmentFormDialog({
     // The photo has its own save path; a stale value here would overwrite a photo changed meanwhile.
     delete payload.image_url;
 
-    const onErr = (err: any) => setMutationError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
+    const onErr = (err: any) => {
+      setMutationError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
+      // Someone else may have just taken the number shown here.
+      if (!isEditing) fillNumber();
+    };
     if (isEditing && initialData) {
       updateMutation.mutate(
         { id: initialData.equipment_id, data: payload },
@@ -239,21 +298,38 @@ export function EquipmentFormDialog({
           title={t("equipment.EquipmentFormDialog.generalInformation")}
           hint={t("equipment.EquipmentFormDialog.whatTheAssetIsWhere")}
         >
-          <TextField
-            fullWidth
-            size="small"
-            label={t("equipment.equipmentName")}
-            placeholder={t("equipment.EquipmentFormDialog.eGBoschHammerDrill")}
-            {...register("equipment_name")}
-            error={!!errors.equipment_name}
-            helperText={errors.equipment_name?.message}
-          />
+          {isEditing ? (
+            <TextField
+              fullWidth
+              size="small"
+              label={t("equipment.equipmentName")}
+              placeholder={t("equipment.EquipmentFormDialog.eGBoschHammerDrill")}
+              {...register("equipment_name")}
+              error={!!errors.equipment_name}
+              helperText={errors.equipment_name?.message}
+            />
+          ) : (
+            <EquipmentTypeField
+              text={watch("equipment_name") || ""}
+              onTextChange={(v) => {
+                setPickedType(null);
+                setValue("equipment_name", v, { shouldValidate: true, shouldDirty: true });
+              }}
+              types={categories}
+              onPick={applyType}
+              onCreate={canCreateType ? addType : undefined}
+              label={t("equipment.equipmentName")}
+              error={!!errors.equipment_name}
+              helperText={errors.equipment_name?.message || t("equipment.types.nameHelp")}
+            />
+          )}
           <TextField
             fullWidth
             size="small"
             label={t("equipment.equipmentNameSi")}
             placeholder={t("equipment.equipmentNameSiHint")}
             {...register("equipment_name_si")}
+            slotProps={{ inputLabel: { shrink: true } }}
             error={!!errors.equipment_name_si}
             helperText={errors.equipment_name_si?.message || t("equipment.equipmentNameSiHelp")}
           />
@@ -263,9 +339,10 @@ export function EquipmentFormDialog({
               fullWidth
               size="small"
               label={t("equipment.EquipmentFormDialog.skuSerialNumber")}
-              {...register("serial_number")}
+              {...register("serial_number", { onChange: () => { serialTouched.current = true; } })}
+              slotProps={{ inputLabel: { shrink: true } }}
               error={!!errors.serial_number}
-              helperText={errors.serial_number?.message}
+              helperText={errors.serial_number?.message || (isEditing ? undefined : t("equipment.types.numberHelp"))}
             />
           </FieldGrid>
           <FieldGrid>
