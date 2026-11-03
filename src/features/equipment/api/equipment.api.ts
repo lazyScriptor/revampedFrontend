@@ -120,3 +120,21 @@ export const bulkSaveEquipment = async (rows: Record<string, unknown>[]): Promis
   const body: any = await api.post('/equipment/bulk-save', { rows });
   return body?.data;
 };
+
+export interface SheetRowError {
+  key: string;
+  field: string;
+  code: string;
+}
+export type SheetSaveResult =
+  | { saved: true; created: { key: string; equipment_id: number }[]; updated: number; deleted: number; archived: number }
+  | { saved: false; errors: SheetRowError[] };
+
+export const saveEquipmentSheet = async (changes: {
+  updates: { key: string; equipment_id: number; changes: Record<string, unknown> }[];
+  creates: { key: string; values: Record<string, unknown> }[];
+  deletes: { key: string; equipment_id: number }[];
+}): Promise<SheetSaveResult> => {
+  const body: any = await api.post('/equipment/sheet-save', changes);
+  return body?.data;
+};

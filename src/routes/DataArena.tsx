@@ -9,6 +9,8 @@ import { useSearch } from "@tanstack/react-router";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import { EquipmentBulkGrid } from "@/features/equipment/components/EquipmentBulkGrid";
+import { EquipmentSheet } from "@/features/equipment/sheet/EquipmentSheet";
+import GridOnIcon from "@mui/icons-material/GridOn";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PlaylistAddCheckIcon from "@mui/icons-material/PlaylistAddCheck";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
@@ -20,7 +22,7 @@ import { DownloadsTable } from "@/features/data-arena/components/DownloadsTable"
 import { useTranslation } from "react-i18next";
 import { tk } from "@/i18n/marker";
 
-type SectionKey = "imports" | "addMachines" | "exports" | "bulk" | "downloads" | "jobs";
+type SectionKey = "imports" | "addMachines" | "equipmentSheet" | "exports" | "bulk" | "downloads" | "jobs";
 
 const SECTIONS: {
   key: SectionKey;
@@ -39,6 +41,12 @@ const SECTIONS: {
     label: tk("nav.addMachines"),
     subtitle: tk("equipment.bulkGrid.subtitle"),
     icon: <PostAddIcon />,
+  },
+  {
+    key: "equipmentSheet",
+    label: tk("nav.equipmentSheet"),
+    subtitle: tk("equipment.sheet.subtitle"),
+    icon: <GridOnIcon />,
   },
   {
     key: "exports",
@@ -79,6 +87,9 @@ export default function DataArenaRoute() {
   }, [search.section]);
 
   const active = SECTIONS.find((s) => s.key === activeKey)!;
+
+  // The sheet keeps every row it can: its own toolbar replaces the page header.
+  if (activeKey === "equipmentSheet") return <EquipmentSheet />;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 4 }}>

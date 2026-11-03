@@ -156,7 +156,7 @@ const invoicesRoute = createRoute({
 });
 
 // NEW: Data Arena Route (Protected by 'admin' permission)
-const DATA_ARENA_SECTIONS = ["imports", "addMachines", "exports", "bulk", "downloads", "jobs"] as const;
+const DATA_ARENA_SECTIONS = ["imports", "addMachines", "equipmentSheet", "exports", "bulk", "downloads", "jobs"] as const;
 
 const dataArenaRoute = createRoute({
   getParentRoute: () => authenticatedRoute,

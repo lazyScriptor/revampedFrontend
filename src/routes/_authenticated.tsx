@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import GridOnIcon from "@mui/icons-material/GridOn";
 import { createRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { Route as rootRoute } from "./__root";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -242,6 +243,7 @@ function AuthenticatedLayout() {
       children: [
         { text: "Imports", label: t("nav.imports"), path: "/data-arena", search: { section: "imports" }, icon: <UploadFileIcon fontSize="small" /> },
         { text: "Add Machines", label: t("nav.addMachines"), path: "/data-arena", search: { section: "addMachines" }, icon: <PostAddIcon fontSize="small" /> },
+        { text: "Equipment Sheet", label: t("nav.equipmentSheet"), path: "/data-arena", search: { section: "equipmentSheet" }, icon: <GridOnIcon fontSize="small" /> },
         { text: "Exports", label: t("nav.exports"), path: "/data-arena", search: { section: "exports" }, icon: <FileDownloadIcon fontSize="small" /> },
         { text: "Bulk Actions", label: t("nav.bulkActions"), path: "/data-arena", search: { section: "bulk" }, icon: <PlaylistAddCheckIcon fontSize="small" /> },
         { text: "Downloads", label: t("nav.downloads"), path: "/data-arena", search: { section: "downloads" }, icon: <FolderZipIcon fontSize="small" /> },
