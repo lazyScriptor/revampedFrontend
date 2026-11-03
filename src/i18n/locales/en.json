@@ -545,9 +545,9 @@
             "columns": "Columns",
             "addCopies": "Add {{count}} more like this",
             "removeRow": "Remove row",
-            "editExisting": "Edit existing type",
+            "editExisting": "Edit existing category",
             "load": "Load",
-            "nothingToLoad": "No machines of this type yet.",
+            "nothingToLoad": "No machines in this category yet.",
             "fixRows_one": "{{count}} row needs fixing. Nothing was saved.",
             "fixRows_other": "{{count}} rows need fixing. Nothing was saved.",
             "saved_one": "{{count}} machine saved.",
@@ -555,10 +555,11 @@
             "photosFailed_one": "The machines are saved, but {{count}} photo didn't upload. Tap its photo in the equipment list to try again.",
             "photosFailed_other": "The machines are saved, but {{count}} photos didn't upload. Tap their photos in the equipment list to try again.",
             "saveFailed": "Could not save.",
+            "nextFailed": "Could not get the next number. Try again.",
             "noPermission": "Adding and editing machines here needs both equipment add and edit permission.",
-            "hint": "Pick a type to fill in the name, number and price. You can also paste rows from Excel. All rows save together, or none do.",
+            "hint": "Type a name and pick a machine to fill in the next number, Sinhala name and price. You can also paste rows from Excel. All rows save together, or none do.",
             "errors": {
-                "category_required": "Choose a type",
+                "category_required": "Choose a category",
                 "warehouse_required": "Choose a location",
                 "price_required": "Enter a price",
                 "qty_invalid": "Enter 1 or more",
@@ -572,8 +573,8 @@
             "save_other": "Save {{count}} rows"
         },
         "types": {
-            "addNew": "Add \"{{name}}\" as a new type",
-            "nameHelp": "Type a machine type, like drill, and pick one. The name, number and price fill in.",
+            "addNew": "Add \"{{name}}\" as a new category",
+            "nameHelp": "Type a name, like battery drill, and pick a machine. The next number, Sinhala name and price fill in.",
             "numberHelp": "Filled in automatically. You can change it."
         }
     },

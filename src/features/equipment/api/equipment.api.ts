@@ -88,17 +88,20 @@ export const bulkUpdateEquipment = async (
 export interface NextEquipment {
   serial_number: string;
   name_number?: number;
+  equipment_name?: string;
+  equipment_name_si?: string;
   base_name?: string;
   base_name_si?: string;
+  category_id?: number;
+  warehouse_id?: number | null;
   base_rental_price?: number | null;
   extra_daily_rate?: number | null;
   minimum_rental_days?: number;
-  warehouse_id?: number | null;
 }
 
-/** The next automatic number and, for a type, its next name and usual prices. */
-export const fetchNextEquipment = async (categoryId?: number): Promise<NextEquipment> => {
-  const body: any = await api.get('/equipment/next', { params: { category_id: categoryId || undefined } });
+/** The next automatic number and, following a picked machine, its next name and usual details. */
+export const fetchNextEquipment = async (likeId?: number): Promise<NextEquipment> => {
+  const body: any = await api.get('/equipment/next', { params: { like_id: likeId || undefined } });
   return body?.data;
 };
 

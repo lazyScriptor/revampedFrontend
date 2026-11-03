@@ -1,26 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent, waitFor } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const toast = { showSuccess: vi.fn(), showError: vi.fn(), showWarning: vi.fn(), showInfo: vi.fn() };
 vi.mock("@/components/ui/AppToast", () => ({ useToast: () => toast }));
 vi.mock("@/stores/useAuthStore", () => ({ useAuthStore: (sel: any) => sel({ hasPermission: () => true }) }));
-vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ invalidateQueries: vi.fn() }) }));
 vi.mock("../../hooks/useCategoryHooks", () => ({ useCategoryOptions: () => ({ data: [{ category_id: 1, category_name: "Compressor" }] }) }));
 vi.mock("@/features/warehouses/hooks/useWarehouseOptions", () => ({ useWarehouseOptions: () => ({ data: [{ warehouse_id: 9, location_name: "Main" }] }) }));
 vi.mock("../../hooks/useEquipmentPhoto", () => ({ useUploadEquipmentImage: () => ({ mutateAsync: vi.fn() }) }));
 const bulkSave = vi.fn();
 vi.mock("../../api/equipment.api", () => ({
-  fetchNextEquipment: vi.fn(async (id?: number) => (id ? { serial_number: "EQ-111", name_number: 3, base_name: "Compressor", base_name_si: "කොම්ප්‍රෙසර්", base_rental_price: 500, extra_daily_rate: 500, minimum_rental_days: 1, warehouse_id: 9 } : { serial_number: "EQ-111" })),
+  fetchEquipment: vi.fn(async () => ({ equipment: [{ equipment_id: 6, equipment_name: "Compressor - 2", equipment_name_si: "කොම්ප්‍රෙසර් - 2", serial_number: "EQ-100" }], total: 1 })),
+  fetchNextEquipment: vi.fn(async (id?: number) => (id ? { serial_number: "EQ-111", name_number: 3, equipment_name: "Compressor - 3", equipment_name_si: "කොම්ප්‍රෙසර් - 3", base_name: "Compressor", base_name_si: "කොම්ප්‍රෙසර්", category_id: 1, base_rental_price: 500, extra_daily_rate: 500, minimum_rental_days: 1, warehouse_id: 9 } : { serial_number: "EQ-111" })),
   bulkSaveEquipment: (rows: any) => bulkSave(rows),
 }));
 
 import { EquipmentBulkGrid } from "../EquipmentBulkGrid";
-import { nextGridNameNumber, nextGridSerial, parsePaste } from "../../lib/equipmentNumbering";
+import { nextGridNameNumber, nextGridSerial, parsePaste, renumberName, renumberSinhala } from "../../lib/equipmentNumbering";
 
-const value = (name: RegExp) => (screen.getByRole("textbox", { name }) as HTMLInputElement).value;
+const render = (ui: ReactElement) => rtlRender(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+
+const value = (name: RegExp) => (screen.getByLabelText(name) as HTMLInputElement).value;
 const pickCompressor = async () => {
-  fireEvent.change(within(screen.getAllByTestId("grid-row")[0]).getByRole("combobox"), { target: { value: "comp" } });
-  fireEvent.click(await screen.findByRole("option", { name: "Compressor" }));
+  fireEvent.change(screen.getByRole("combobox", { name: /Equipment name 1$/ }), { target: { value: "comp" } });
+  fireEvent.click(await screen.findByRole("option", { name: /Compressor - 2/ }));
   await waitFor(() => expect(value(/Equipment name 1$/)).toBe("Compressor - 3"));
 };
 
@@ -33,7 +37,15 @@ describe("numbering helpers", () => {
   it("stays ahead of the server and the grid", () => {
     expect(nextGridSerial("EQ-111", ["EQ-111", "EQ-112"])).toBe(113);
     expect(nextGridSerial("EQ-111", [])).toBe(111);
-    expect(nextGridNameNumber("A", 3, ["A - 3", "A - 4", "B - 9"])).toBe(5);
+    expect(nextGridNameNumber("A - 3", 3, ["A-3", "a 4", "B - 9"])).toBe(5);
+  });
+  it("keeps the format of the name", () => {
+    expect(renumberName("Drill-06", 7)).toBe("Drill-07");
+    expect(renumberName("6 - Drill", 7)).toBe("7 - Drill");
+    expect(renumberName("Mixer", 2)).toBe("Mixer - 2");
+    expect(renumberSinhala("කියත", "9-Saw", 10)).toBe("10-කියත");
+    expect(renumberSinhala("කියත", "Saw (9)", 10)).toBe("කියත (10)");
+    expect(renumberSinhala("", "Saw - 9", 10)).toBe("");
   });
   it("only multi-cell paste is treated as a grid", () => {
     expect(parsePaste("Drill")).toBeNull();
@@ -42,12 +54,13 @@ describe("numbering helpers", () => {
 });
 
 describe("bulk grid", () => {
-  it("picking a type fills name, Sinhala, number and price", async () => {
+  it("picking a machine fills the next name, Sinhala, number, category and price", async () => {
     render(<EquipmentBulkGrid />);
     await pickCompressor();
     expect(value(/Sinhala\) 1$/)).toBe("කොම්ප්‍රෙසර් - 3");
     expect(value(/Equipment No\. 1$/)).toBe("EQ-111");
     expect(value(/Daily Rate 1$/)).toBe("500");
+    expect(value(/Category 1$/)).toBe("Compressor");
   });
 
   it("'add more like this' numbers each copy and saves them together", async () => {
@@ -69,9 +82,17 @@ describe("bulk grid", () => {
     expect(sent[1].photo).toBeUndefined();
   });
 
+  it("choosing a category leaves the name alone", async () => {
+    render(<EquipmentBulkGrid />);
+    fireEvent.change(screen.getByRole("combobox", { name: /Category 1$/ }), { target: { value: "comp" } });
+    fireEvent.click(await screen.findByRole("option", { name: "Compressor" }));
+    expect(value(/Category 1$/)).toBe("Compressor");
+    expect(value(/Equipment name 1$/)).toBe("");
+  });
+
   it("pasting from Excel fills cells and adds rows", async () => {
     render(<EquipmentBulkGrid />);
-    fireEvent.paste(screen.getByRole("textbox", { name: /Equipment name 1$/ }), { clipboardData: { getData: () => "Pump - 1\tපොම්ප - 1\nPump - 2\tපොම්ප - 2" } });
+    fireEvent.paste(screen.getByRole("combobox", { name: /Equipment name 1$/ }), { clipboardData: { getData: () => "Pump - 1\tපොම්ප - 1\nPump - 2\tපොම්ප - 2" } });
     await waitFor(() => expect(screen.getAllByTestId("grid-row")).toHaveLength(2));
     expect(value(/Sinhala\) 2$/)).toBe("පොම්ප - 2");
   });

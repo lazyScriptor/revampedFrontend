@@ -24,8 +24,10 @@ import { bulkSaveEquipment, fetchNextEquipment, type BulkRowError } from "../api
 import { useCategoryOptions } from "../hooks/useCategoryHooks";
 import { useUploadEquipmentImage } from "../hooks/useEquipmentPhoto";
 import { compressImage } from "../lib/compressImage";
-import { formatSerial, nextGridNameNumber, nextGridSerial, parsePaste, stripNameNumber, withNumber } from "../lib/equipmentNumbering";
-import { EquipmentTypeField, type TypeOption } from "./EquipmentTypeField";
+import { formatSerial, nextGridNameNumber, nextGridSerial, parseName, parsePaste, renumberName, renumberSinhala } from "../lib/equipmentNumbering";
+import type { Equipment } from "../schemas/equipment.schema";
+import { EquipmentCategoryField, type CategoryOption } from "./EquipmentCategoryField";
+import { EquipmentNameField } from "./EquipmentNameField";
 import { ImageHoverPreview } from "./ImageHoverPreview";
 
 const num = { fontVariantNumeric: "tabular-nums" } as const;
@@ -34,7 +36,7 @@ interface GridRow {
   key: number;
   equipment_id?: number;
   category_id: number | "";
-  type_text: string;
+  category_text: string;
   equipment_name: string;
   equipment_name_si: string;
   serial_number: string;
@@ -53,7 +55,7 @@ interface GridRow {
 type TextField_ = "equipment_name" | "equipment_name_si" | "serial_number" | "base_rental_price" | "extra_daily_rate" | "minimum_rental_days" | "purchase_cost" | "warranty_period_months" | "end_of_warranty_date" | "total_owned_qty";
 
 const BASE_COLUMNS: { field: TextField_; label: string; width: number }[] = [
-  { field: "equipment_name", label: tk("equipment.equipmentName"), width: 210 },
+  { field: "equipment_name", label: tk("equipment.equipmentName"), width: 270 },
   { field: "equipment_name_si", label: tk("equipment.equipmentNameSi"), width: 200 },
   { field: "serial_number", label: tk("equipment.equipmentNo"), width: 110 },
   { field: "base_rental_price", label: tk("equipment.dailyRate"), width: 100 },
@@ -81,7 +83,7 @@ let keySeq = 1;
 const emptyRow = (over: Partial<GridRow> = {}): GridRow => ({
   key: keySeq++,
   category_id: "",
-  type_text: "",
+  category_text: "",
   equipment_name: "",
   equipment_name_si: "",
   serial_number: "",
@@ -106,9 +108,9 @@ export function EquipmentBulkGrid() {
   const { t } = useTranslation();
   const toast = useToast();
   const qc = useQueryClient();
-  const { data: types = [] } = useCategoryOptions();
+  const { data: categories = [] } = useCategoryOptions();
   const { data: warehouses = [] } = useWarehouseOptions();
-  const canCreateType = useAuthStore((s) => s.hasPermission("category:create"));
+  const canCreateCategory = useAuthStore((s) => s.hasPermission("category:create"));
   const canUse = useAuthStore((s) => s.hasPermission("equipment:create") && s.hasPermission("equipment:edit"));
   const upload = useUploadEquipmentImage();
 
@@ -146,40 +148,45 @@ export function EquipmentBulkGrid() {
 
   const nextSerialIn = (list: GridRow[]) => formatSerial(nextGridSerial(serverSerial, list.map((r) => r.serial_number)));
 
-  const pickType = async (key: number, type: TypeOption) => {
-    const row = rows.find((r) => r.key === key);
-    patch(key, { category_id: type.category_id, type_text: type.category_name });
-    if (!row || row.equipment_id) return; // editing: only the type changes
-    const next = await fetchNextEquipment(type.category_id).catch(() => null);
-    if (!next) return;
+  /** A machine was picked from the name list: this row becomes the next one after it. */
+  const pickMachine = async (key: number, machine: Equipment) => {
+    const next = await fetchNextEquipment(machine.equipment_id).catch(() => null);
+    if (!next) {
+      toast.showError(t("equipment.bulkGrid.nextFailed"));
+      return;
+    }
     setServerSerial(next.serial_number);
+    setErrors([]);
     setRows((prev) =>
       prev.map((r) => {
         if (r.key !== key) return r;
         const others = prev.filter((o) => o.key !== key);
-        const base = next.base_name || type.category_name;
-        const n = nextGridNameNumber(base, next.name_number, others.map((o) => o.equipment_name));
-        const named = (b: string) => (isQuantity(r) ? b : withNumber(b, n));
+        const n = nextGridNameNumber(next.equipment_name, next.name_number ?? 1, others.map((o) => o.equipment_name));
+        const si = next.equipment_name_si ?? "";
         return {
           ...r,
-          equipment_name: named(base),
-          equipment_name_si: next.base_name_si ? named(next.base_name_si) : r.equipment_name_si,
+          equipment_name: isQuantity(r) ? str(next.base_name) : renumberName(next.equipment_name, n),
+          equipment_name_si: isQuantity(r) ? str(next.base_name_si) : renumberSinhala(si, next.equipment_name, n),
           serial_number: r.serial_number || formatSerial(nextGridSerial(next.serial_number, others.map((o) => o.serial_number))),
-          base_rental_price: r.base_rental_price || str(next.base_rental_price),
-          extra_daily_rate: r.extra_daily_rate || str(next.extra_daily_rate),
-          minimum_rental_days: r.minimum_rental_days || str(next.minimum_rental_days),
-          warehouse_id: r.warehouse_id || next.warehouse_id || firstWarehouse,
+          category_id: next.category_id ?? r.category_id,
+          category_text: categories.find((c) => c.category_id === next.category_id)?.category_name ?? r.category_text,
+          base_rental_price: str(next.base_rental_price),
+          extra_daily_rate: str(next.extra_daily_rate),
+          minimum_rental_days: str(next.minimum_rental_days),
+          warehouse_id: next.warehouse_id || r.warehouse_id || firstWarehouse,
         };
       }),
     );
   };
 
-  const addType = async (key: number, name: string) => {
+  const pickCategory = (key: number, category: CategoryOption) => patch(key, { category_id: category.category_id, category_text: category.category_name });
+
+  const addCategory = async (key: number, name: string) => {
     try {
       const res: any = await createCategory({ category_name: name } as any);
       const created = res?.category ?? res;
       await qc.invalidateQueries({ queryKey: ["category-options"] });
-      await pickType(key, { category_id: created.category_id, category_name: created.category_name || name });
+      pickCategory(key, { category_id: created.category_id, category_name: created.category_name || name });
     } catch (err: any) {
       toast.showError(err?.message || t("equipment.bulkGrid.saveFailed"));
     }
@@ -195,22 +202,21 @@ export function EquipmentBulkGrid() {
       const at = prev.findIndex((r) => r.key === key);
       if (at < 0) return prev;
       const source = prev[at];
-      const base = stripNameNumber(source.equipment_name);
-      const baseSi = stripNameNumber(source.equipment_name_si);
+      const name = parseName(source.equipment_name);
+      const si = parseName(source.equipment_name_si);
       let list = prev;
       const made: GridRow[] = [];
       for (let i = 0; i < count; i++) {
         const all = [...list, ...made];
-        const n = nextGridNameNumber(base, 1, all.map((r) => r.equipment_name));
-        const copy = {
+        const n = nextGridNameNumber(source.equipment_name, 2, all.map((r) => r.equipment_name));
+        made.push({
           ...source,
           key: keySeq++,
           equipment_id: undefined,
-          equipment_name: isQuantity(source) ? base : withNumber(base, n),
-          equipment_name_si: baseSi ? (isQuantity(source) ? baseSi : withNumber(baseSi, n)) : "",
+          equipment_name: isQuantity(source) ? name.text : renumberName(source.equipment_name, n),
+          equipment_name_si: isQuantity(source) ? si.text : renumberSinhala(source.equipment_name_si, source.equipment_name, n),
           serial_number: nextSerialIn(all),
-        };
-        made.push(copy);
+        });
       }
       list = [...prev.slice(0, at + 1), ...made, ...prev.slice(at + 1)];
       return list;
@@ -269,12 +275,12 @@ export function EquipmentBulkGrid() {
     try {
       const body: any = await api.get("/equipment", { params: { category_id: loadType, limit: 200 } });
       const list: any[] = body?.data?.equipment || [];
-      const typeName = types.find((c) => c.category_id === loadType)?.category_name || "";
+      const categoryName = categories.find((c) => c.category_id === loadType)?.category_name || "";
       const loaded = [...list].reverse().map((m) =>
         emptyRow({
           equipment_id: m.equipment_id,
           category_id: m.category_id,
-          type_text: typeName,
+          category_text: categoryName,
           equipment_name: str(m.equipment_name),
           equipment_name_si: str(m.equipment_name_si),
           serial_number: str(m.serial_number),
@@ -305,7 +311,7 @@ export function EquipmentBulkGrid() {
     setSaving(true);
     setErrors([]);
     try {
-      const payload = rows.map(({ key, type_text, photo, photoUrl, ...r }) => ({
+      const payload = rows.map(({ key, category_text, photo, photoUrl, ...r }) => ({
         ...r,
         warehouse_id: r.warehouse_id || firstWarehouse,
       }));
@@ -381,7 +387,7 @@ export function EquipmentBulkGrid() {
           onChange={(e) => setLoadType(Number(e.target.value))}
           sx={{ minWidth: 200 }}
         >
-          {types.map((c) => (
+          {categories.map((c) => (
             <MenuItem key={c.category_id} value={c.category_id}>
               {c.category_name}
             </MenuItem>
@@ -398,12 +404,12 @@ export function EquipmentBulkGrid() {
         <Table size="small" stickyHeader aria-label={t("equipment.bulkGrid.title")}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 800, minWidth: 190 }}>{t("common.category")}</TableCell>
               {columns.map((c) => (
                 <TableCell key={c.field} sx={{ fontWeight: 800, minWidth: c.width }}>
                   {t(c.label)}
                 </TableCell>
               ))}
+              <TableCell sx={{ fontWeight: 800, minWidth: 170 }}>{t("common.category")}</TableCell>
               {manyWarehouses && <TableCell sx={{ fontWeight: 800, minWidth: 150 }}>{t("equipment.warehouse")}</TableCell>}
               <TableCell sx={{ fontWeight: 800 }}>{t("equipment.image")}</TableCell>
               <TableCell />
@@ -412,19 +418,24 @@ export function EquipmentBulkGrid() {
           <TableBody>
             {rows.map((r, rowIndex) => (
               <TableRow key={r.key} data-testid="grid-row" sx={r.equipment_id ? { bgcolor: "action.hover" } : undefined}>
-                <TableCell sx={{ verticalAlign: "top", ...dense }}>
-                  <EquipmentTypeField
-                    text={r.type_text}
-                    onTextChange={(v) => patch(r.key, { type_text: v, category_id: "" })}
-                    types={types}
-                    onPick={(type) => pickType(r.key, type)}
-                    onCreate={canCreateType ? (name) => addType(r.key, name) : undefined}
-                    error={!!errorFor(rowIndex, "category_id")}
-                    helperText={errorText(errorFor(rowIndex, "category_id"))}
-                  />
-                </TableCell>
                 {columns.map((c, colIndex) => {
                   const err = errorFor(rowIndex, c.field);
+                  // A new row's name lists machines to follow; a saved machine's name is just edited.
+                  if (c.field === "equipment_name" && !r.equipment_id) {
+                    return (
+                      <TableCell key={c.field} sx={{ verticalAlign: "top", ...dense }}>
+                        <EquipmentNameField
+                          text={r.equipment_name}
+                          onTextChange={(v) => patch(r.key, { equipment_name: v })}
+                          onPick={(machine) => pickMachine(r.key, machine)}
+                          onPaste={(e) => onPaste(e, rowIndex, colIndex)}
+                          ariaLabel={`${t(c.label)} ${rowIndex + 1}`}
+                          error={!!err}
+                          helperText={errorText(err)}
+                        />
+                      </TableCell>
+                    );
+                  }
                   return (
                     <TableCell key={c.field} sx={{ verticalAlign: "top" }}>
                       <TextField
@@ -442,6 +453,18 @@ export function EquipmentBulkGrid() {
                     </TableCell>
                   );
                 })}
+                <TableCell sx={{ verticalAlign: "top", ...dense }}>
+                  <EquipmentCategoryField
+                    text={r.category_text}
+                    onTextChange={(v) => patch(r.key, { category_text: v, category_id: "" })}
+                    categories={categories}
+                    onPick={(category) => pickCategory(r.key, category)}
+                    onCreate={canCreateCategory ? (name) => addCategory(r.key, name) : undefined}
+                    ariaLabel={`${t("common.category")} ${rowIndex + 1}`}
+                    error={!!errorFor(rowIndex, "category_id")}
+                    helperText={errorText(errorFor(rowIndex, "category_id"))}
+                  />
+                </TableCell>
                 {manyWarehouses && (
                   <TableCell sx={{ verticalAlign: "top" }}>
                     <TextField

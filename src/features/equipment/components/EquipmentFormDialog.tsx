@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { createCategory } from "../api/category.api";
 import { fetchNextEquipment } from "../api/equipment.api";
-import { withNumber } from "../lib/equipmentNumbering";
-import { EquipmentTypeField } from "./EquipmentTypeField";
+import { EquipmentNameField } from "./EquipmentNameField";
 import { NumberField } from "@/components/ui/NumberField";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,10 +67,8 @@ export function EquipmentFormDialog({
   const uploadImage = useUploadEquipmentImage();
   const { showWarning } = useToast();
   const [pendingImage, setPendingImage] = useState<Blob | null>(null);
-  const [pickedType, setPickedType] = useState<{ base: string; baseSi: string; number: number } | null>(null);
+  const [picked, setPicked] = useState<{ name: string; nameSi: string; base: string; baseSi: string } | null>(null);
   const serialTouched = useRef(false);
-  const queryClient = useQueryClient();
-  const canCreateType = useAuthStore((s) => s.hasPermission("category:create"));
   const isPending = createMutation.isPending || updateMutation.isPending || uploadImage.isPending;
   const [mutationError, setMutationError] = useState<string | null>(null);
 
@@ -167,41 +161,33 @@ export function EquipmentFormDialog({
   useEffect(() => {
     if (!open || initialData) return;
     serialTouched.current = false;
-    setPickedType(null);
+    setPicked(null);
     fillNumber();
   }, [open, initialData, fillNumber]);
 
-  const applyType = async (type: { category_id: number; category_name: string }) => {
-    setValue("category_id", type.category_id, { shouldValidate: true, shouldDirty: true });
-    setValue("equipment_name", type.category_name, { shouldValidate: true, shouldDirty: true });
-    const next = await fetchNextEquipment(type.category_id).catch(() => null);
-    if (!next) return;
-    setPickedType({ base: next.base_name || type.category_name, baseSi: next.base_name_si || "", number: next.name_number || 1 });
+  // A machine was picked from the name list: the new one is the next after it.
+  const followMachine = async (machine: Equipment) => {
+    const next = await fetchNextEquipment(machine.equipment_id).catch(() => null);
+    if (!next) {
+      setMutationError(t("equipment.bulkGrid.nextFailed"));
+      return;
+    }
+    setMutationError(null);
+    setPicked({ name: next.equipment_name || "", nameSi: next.equipment_name_si || "", base: next.base_name || "", baseSi: next.base_name_si || "" });
     if (!serialTouched.current) setValue("serial_number", next.serial_number, { shouldValidate: true });
+    if (next.category_id) setValue("category_id", next.category_id, { shouldValidate: true, shouldDirty: true });
+    if (next.warehouse_id) setValue("warehouse_id", next.warehouse_id, { shouldValidate: true, shouldDirty: true });
     if (next.base_rental_price !== null && next.base_rental_price !== undefined) setValue("base_rental_price", next.base_rental_price, { shouldValidate: true });
     if (next.extra_daily_rate !== null && next.extra_daily_rate !== undefined) setValue("extra_daily_rate", next.extra_daily_rate, { shouldValidate: true });
     if (next.minimum_rental_days) setValue("minimum_rental_days", next.minimum_rental_days, { shouldValidate: true });
-    if (next.warehouse_id && !watch("warehouse_id")) setValue("warehouse_id", next.warehouse_id, { shouldValidate: true });
-  };
-
-  const addType = async (name: string) => {
-    try {
-      const res: any = await createCategory({ category_name: name } as any);
-      const created = res?.category ?? res;
-      await queryClient.invalidateQueries({ queryKey: ["category-options"] });
-      await applyType({ category_id: created.category_id, category_name: created.category_name || name });
-    } catch (err: any) {
-      setMutationError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
-    }
   };
 
   // A quantity machine is one record, so its name carries no number.
   useEffect(() => {
-    if (!pickedType) return;
-    const numbered = (base: string) => (base ? (isBulkItem ? base : withNumber(base, pickedType.number)) : "");
-    setValue("equipment_name", numbered(pickedType.base), { shouldValidate: true, shouldDirty: true });
-    if (pickedType.baseSi) setValue("equipment_name_si", numbered(pickedType.baseSi), { shouldDirty: true });
-  }, [pickedType, isBulkItem, setValue]);
+    if (!picked) return;
+    setValue("equipment_name", isBulkItem ? picked.base : picked.name, { shouldValidate: true, shouldDirty: true });
+    setValue("equipment_name_si", isBulkItem ? picked.baseSi : picked.nameSi, { shouldDirty: true });
+  }, [picked, isBulkItem, setValue]);
 
   const onSubmit = (data: EquipmentFormData) => {
     setMutationError(null);
@@ -309,15 +295,13 @@ export function EquipmentFormDialog({
               helperText={errors.equipment_name?.message}
             />
           ) : (
-            <EquipmentTypeField
+            <EquipmentNameField
               text={watch("equipment_name") || ""}
               onTextChange={(v) => {
-                setPickedType(null);
+                setPicked(null);
                 setValue("equipment_name", v, { shouldValidate: true, shouldDirty: true });
               }}
-              types={categories}
-              onPick={applyType}
-              onCreate={canCreateType ? addType : undefined}
+              onPick={followMachine}
               label={t("equipment.equipmentName")}
               error={!!errors.equipment_name}
               helperText={errors.equipment_name?.message || t("equipment.types.nameHelp")}

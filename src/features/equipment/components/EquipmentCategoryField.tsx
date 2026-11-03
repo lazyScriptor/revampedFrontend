@@ -1,42 +1,36 @@
-import { useMemo } from "react";
 import { Autocomplete, TextField, createFilterOptions } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { stripNameNumber } from "../lib/equipmentNumbering";
 
-export interface TypeOption {
+export interface CategoryOption {
   category_id: number;
   category_name: string;
 }
-type Option = TypeOption | { newName: string };
+type Option = CategoryOption | { newName: string };
 
 const filter = createFilterOptions<Option>({ stringify: (o) => ("newName" in o ? o.newName : o.category_name) });
 
 interface Props {
-  /** What the box shows. */
   text: string;
   onTextChange: (text: string) => void;
-  types: TypeOption[];
-  onPick: (type: TypeOption) => void;
-  /** Without this, new types can't be added here. */
+  categories: CategoryOption[];
+  onPick: (category: CategoryOption) => void;
+  /** Without this, new categories can't be added here. */
   onCreate?: (name: string) => void;
-  label?: string;
   error?: boolean;
   helperText?: string;
-  disabled?: boolean;
+  ariaLabel?: string;
 }
 
-/** Type "drill": every matching machine type drops down; picking one fills in the rest. */
-export function EquipmentTypeField({ text, onTextChange, types, onPick, onCreate, label, error, helperText, disabled }: Props) {
+/** Choose a category, or add a new one. Only sets the category: the machine's name is separate. */
+export function EquipmentCategoryField({ text, onTextChange, categories, onPick, onCreate, error, helperText, ariaLabel }: Props) {
   const { t } = useTranslation();
-  const query = useMemo(() => stripNameNumber(text), [text]);
 
   return (
     <Autocomplete<Option, false, false, true>
       freeSolo
       size="small"
       fullWidth
-      disabled={disabled}
-      options={types}
+      options={categories}
       value={null}
       inputValue={text}
       blurOnSelect
@@ -51,8 +45,9 @@ export function EquipmentTypeField({ text, onTextChange, types, onPick, onCreate
       getOptionLabel={(o) => (typeof o === "string" ? o : "newName" in o ? o.newName : o.category_name)}
       getOptionKey={(o) => (typeof o === "string" ? o : "newName" in o ? "new" : o.category_id)}
       filterOptions={(options, state) => {
+        const query = text.trim();
         const found = filter(options, { ...state, inputValue: query });
-        const exact = types.some((c) => c.category_name.toLowerCase() === query.toLowerCase());
+        const exact = categories.some((c) => c.category_name.toLowerCase() === query.toLowerCase());
         return onCreate && query.length >= 2 && !exact ? [...found, { newName: query }] : found;
       }}
       renderOption={({ key, ...props }, o) => (
@@ -60,7 +55,14 @@ export function EquipmentTypeField({ text, onTextChange, types, onPick, onCreate
           {"newName" in o ? t("equipment.types.addNew", { name: o.newName }) : o.category_name}
         </li>
       )}
-      renderInput={(params) => <TextField {...params} label={label} error={error} helperText={helperText} />}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          error={error}
+          helperText={helperText}
+          slotProps={{ ...params.slotProps, htmlInput: { ...params.slotProps.htmlInput, "aria-label": ariaLabel } }}
+        />
+      )}
     />
   );
 }
