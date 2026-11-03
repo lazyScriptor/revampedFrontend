@@ -47,6 +47,8 @@ interface GridRow {
   warranty_period_months: string;
   end_of_warranty_date: string;
   total_owned_qty: string;
+  /** Follows a quantity machine: one record, no number in its name. */
+  is_bulk_item: boolean;
   warehouse_id: number | "";
   photo: Blob | null;
   photoUrl: string | null;
@@ -94,13 +96,14 @@ const emptyRow = (over: Partial<GridRow> = {}): GridRow => ({
   warranty_period_months: "",
   end_of_warranty_date: "",
   total_owned_qty: "",
+  is_bulk_item: false,
   warehouse_id: "",
   photo: null,
   photoUrl: null,
   ...over,
 });
 
-const isQuantity = (r: GridRow) => Number(r.total_owned_qty) > 1;
+const isQuantity = (r: Pick<GridRow, "total_owned_qty" | "is_bulk_item">) => r.is_bulk_item || Number(r.total_owned_qty) > 1;
 const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
 
 /** Add many machines, or edit many at once, like a spreadsheet. Saves all rows or none. */
@@ -157,6 +160,8 @@ export function EquipmentBulkGrid() {
     }
     setServerSerial(next.serial_number);
     setErrors([]);
+    const quantity = !!next.is_bulk_item;
+    if (quantity) toast.showInfo(t("equipment.bulkGrid.quantityMachine", { name: next.base_name, total: next.total_owned_qty }));
     setRows((prev) =>
       prev.map((r) => {
         if (r.key !== key) return r;
@@ -165,8 +170,9 @@ export function EquipmentBulkGrid() {
         const si = next.equipment_name_si ?? "";
         return {
           ...r,
-          equipment_name: isQuantity(r) ? str(next.base_name) : renumberName(next.equipment_name, n),
-          equipment_name_si: isQuantity(r) ? str(next.base_name_si) : renumberSinhala(si, next.equipment_name, n),
+          is_bulk_item: quantity,
+          equipment_name: quantity || isQuantity({ ...r, is_bulk_item: false }) ? str(next.base_name) : renumberName(next.equipment_name, n),
+          equipment_name_si: quantity || isQuantity({ ...r, is_bulk_item: false }) ? str(next.base_name_si) : renumberSinhala(si, next.equipment_name, n),
           serial_number: r.serial_number || formatSerial(nextGridSerial(next.serial_number, others.map((o) => o.serial_number))),
           category_id: next.category_id ?? r.category_id,
           category_text: categories.find((c) => c.category_id === next.category_id)?.category_name ?? r.category_text,

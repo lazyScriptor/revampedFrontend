@@ -97,6 +97,8 @@ export interface NextEquipment {
   base_rental_price?: number | null;
   extra_daily_rate?: number | null;
   minimum_rental_days?: number;
+  is_bulk_item?: boolean;
+  total_owned_qty?: number;
 }
 
 /** The next automatic number and, following a picked machine, its next name and usual details. */

@@ -2,7 +2,7 @@
 // EQ numbers; these keep what the grid shows ahead of rows that aren't saved yet.
 
 export const serialValue = (s: unknown): number | null => {
-  const m = String(s ?? "").trim().match(/^EQ-(\d+)$/i);
+  const m = String(s ?? "").trim().match(/^EQ\s*-\s*(\d+)$/i);
   return m ? Number(m[1]) : null;
 };
 export const formatSerial = (n: number) => `EQ-${String(n).padStart(3, "0")}`;
@@ -42,7 +42,9 @@ export const parseName = (name: unknown): ParsedName => {
     s.match(/^((?:no\.?\s*|#\s*))(\d+)(\s+)(.+)$/isu) ||
     s.match(/^(.+?\s[-–—]\s*)(\d+)(\s*[-–—(].*)$/su);
   const sized = !!m && /\d[.,/:]$/.test(m[1]);
-  const before = m && !sized ? m[1] : null;
+  // "Chainsaw 445" is a model; a machine number that large would have a separator.
+  const model = !!m && m[2].length >= 3 && !m[2].startsWith("0") && /[\p{L}\p{M}\d)]\s+$/u.test(m[1]) && !/(?:^|\s)(?:no|num|number)\.?\s+$/i.test(m[1]);
+  const before = m && !sized && !model ? m[1] : null;
   const after = before === null || !m ? "" : `${m[3]}${m[4] ?? ""}`;
   const leftText = before === null ? clean(s) : cleanBefore(before);
   const rightText = clean(after.replace(/^\s*\)/, ""));

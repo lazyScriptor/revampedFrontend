@@ -17,6 +17,7 @@ vi.mock("../../api/equipment.api", () => ({
 }));
 
 import { EquipmentBulkGrid } from "../EquipmentBulkGrid";
+import { fetchNextEquipment } from "../../api/equipment.api";
 import { nextGridNameNumber, nextGridSerial, parsePaste, renumberName, renumberSinhala } from "../../lib/equipmentNumbering";
 
 const render = (ui: ReactElement) => rtlRender(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
@@ -37,12 +38,15 @@ describe("numbering helpers", () => {
   it("stays ahead of the server and the grid", () => {
     expect(nextGridSerial("EQ-111", ["EQ-111", "EQ-112"])).toBe(113);
     expect(nextGridSerial("EQ-111", [])).toBe(111);
+    expect(nextGridSerial("EQ-111", ["EQ -120"])).toBe(121);
     expect(nextGridNameNumber("A - 3", 3, ["A-3", "a 4", "B - 9"])).toBe(5);
   });
   it("keeps the format of the name", () => {
     expect(renumberName("Drill-06", 7)).toBe("Drill-07");
     expect(renumberName("6 - Drill", 7)).toBe("7 - Drill");
     expect(renumberName("Mixer", 2)).toBe("Mixer - 2");
+    expect(renumberName("Husqvarna Chainsaw 445", 2)).toBe("Husqvarna Chainsaw 445 - 2");
+    expect(renumberName("Hilti bit 15", 16)).toBe("Hilti bit 16");
     expect(renumberSinhala("කියත", "9-Saw", 10)).toBe("10-කියත");
     expect(renumberSinhala("කියත", "Saw (9)", 10)).toBe("කියත (10)");
     expect(renumberSinhala("", "Saw - 9", 10)).toBe("");
@@ -80,6 +84,17 @@ describe("bulk grid", () => {
     expect(sent).toHaveLength(3);
     expect(sent[1]).toMatchObject({ category_id: 1, equipment_name: "Compressor - 4", serial_number: "EQ-112", warehouse_id: 9 });
     expect(sent[1].photo).toBeUndefined();
+  });
+
+  it("following a quantity machine keeps the name without a number and says why", async () => {
+    vi.mocked(fetchNextEquipment).mockResolvedValueOnce({ serial_number: "EQ-111" });
+    render(<EquipmentBulkGrid />);
+    await waitFor(() => expect(value(/Equipment No\. 1$/)).toBe("EQ-111"));
+    vi.mocked(fetchNextEquipment).mockResolvedValueOnce({ serial_number: "EQ-111", name_number: 2, equipment_name: "Compressor - 2", base_name: "Compressor", is_bulk_item: true, total_owned_qty: 100 });
+    fireEvent.change(screen.getByRole("combobox", { name: /Equipment name 1$/ }), { target: { value: "comp" } });
+    fireEvent.click(await screen.findByRole("option", { name: /Compressor - 2/ }));
+    await waitFor(() => expect(value(/Equipment name 1$/)).toBe("Compressor"));
+    expect(toast.showInfo).toHaveBeenCalled();
   });
 
   it("choosing a category leaves the name alone", async () => {

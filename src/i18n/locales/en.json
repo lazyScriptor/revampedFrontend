@@ -555,6 +555,7 @@
             "photosFailed_one": "The machines are saved, but {{count}} photo didn't upload. Tap its photo in the equipment list to try again.",
             "photosFailed_other": "The machines are saved, but {{count}} photos didn't upload. Tap their photos in the equipment list to try again.",
             "saveFailed": "Could not save.",
+            "quantityMachine": "{{name}} is a quantity machine with {{total}} units. To add more, change its total instead of adding a new one.",
             "nextFailed": "Could not get the next number. Try again.",
             "noPermission": "Adding and editing machines here needs both equipment add and edit permission.",
             "hint": "Type a name and pick a machine to fill in the next number, Sinhala name and price. You can also paste rows from Excel. All rows save together, or none do.",

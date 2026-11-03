@@ -173,6 +173,8 @@ export function EquipmentFormDialog({
       return;
     }
     setMutationError(null);
+    setValue("is_bulk_item", !!next.is_bulk_item, { shouldDirty: true });
+    if (next.is_bulk_item) showWarning(t("equipment.bulkGrid.quantityMachine", { name: next.base_name, total: next.total_owned_qty }));
     setPicked({ name: next.equipment_name || "", nameSi: next.equipment_name_si || "", base: next.base_name || "", baseSi: next.base_name_si || "" });
     if (!serialTouched.current) setValue("serial_number", next.serial_number, { shouldValidate: true });
     if (next.category_id) setValue("category_id", next.category_id, { shouldValidate: true, shouldDirty: true });
