@@ -24,6 +24,7 @@ import { useCategoryOptions } from "@/features/equipment/hooks/useCategoryHooks"
 import { EquipmentCatalog, EquipmentSearchBar } from "./EquipmentCatalog";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { ImageHoverPreview } from "@/features/equipment/components/ImageHoverPreview";
 
 // ─── CartItem and calculateLineMath ───────────────────────────────────────────
 // `track_overdue` controls whether late-fee tracking applies to this line.
@@ -410,13 +411,15 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                     }}
                   >
                     {item.image_url ? (
-                      <Box
-                        component="img"
-                        src={resolveAssetUrl(item.image_url) || undefined}
-                        alt=""
-                        loading="lazy"
-                        sx={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0, borderRadius: 1 }}
-                      />
+                      <ImageHoverPreview src={resolveAssetUrl(item.image_url)}>
+                        <Box
+                          component="img"
+                          src={resolveAssetUrl(item.image_url) || undefined}
+                          alt=""
+                          loading="lazy"
+                          sx={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0, borderRadius: 1 }}
+                        />
+                      </ImageHoverPreview>
                     ) : (
                       <ConstructionIcon sx={{ fontSize: 16, color: "primary.main", flexShrink: 0 }} />
                     )}

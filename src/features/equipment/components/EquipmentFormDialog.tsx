@@ -39,6 +39,9 @@ import {
   ToggleRow,
 } from "@/components/forms/FormDialogShell";
 import { useTranslation } from "react-i18next";
+import { useToast } from "@/components/ui/AppToast";
+import { useUploadEquipmentImage } from "../hooks/useEquipmentPhoto";
+import { EquipmentImageField } from "./EquipmentImageField";
 
 interface EquipmentFormDialogProps {
   open: boolean;
@@ -59,7 +62,10 @@ export function EquipmentFormDialog({
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useWarehouseOptions();
 
   const isEditing = !!initialData;
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const uploadImage = useUploadEquipmentImage();
+  const { showWarning } = useToast();
+  const [pendingImage, setPendingImage] = useState<Blob | null>(null);
+  const isPending = createMutation.isPending || updateMutation.isPending || uploadImage.isPending;
   const [mutationError, setMutationError] = useState<string | null>(null);
 
   const {
@@ -106,6 +112,7 @@ export function EquipmentFormDialog({
   useEffect(() => {
     if (open) {
       setMutationError(null);
+      setPendingImage(null);
       if (initialData) {
         reset({
           ...initialData,
@@ -146,7 +153,8 @@ export function EquipmentFormDialog({
     const payload: any = { ...data };
     if (!payload.is_bulk_item) payload.total_owned_qty = 1;
     if (payload.end_of_warranty_date === "") payload.end_of_warranty_date = null;
-    if (payload.image_url === "") payload.image_url = null;
+    // The photo has its own save path; a stale value here would overwrite a photo changed meanwhile.
+    delete payload.image_url;
 
     const onErr = (err: any) => setMutationError(err?.message || t("equipment.EquipmentFormDialog.saveFailed"));
     if (isEditing && initialData) {
@@ -155,7 +163,19 @@ export function EquipmentFormDialog({
         { onSuccess: () => onClose(), onError: onErr },
       );
     } else {
-      createMutation.mutate(payload, { onSuccess: () => onClose(), onError: onErr });
+      createMutation.mutate(payload, {
+        onError: onErr,
+        onSuccess: async (created: any) => {
+          const newId = created?.equipment?.equipment_id ?? created?.equipment_id;
+          if (pendingImage && newId) {
+            // The machine is already saved, so a failed photo must not look like a failed save.
+            await uploadImage
+              .mutateAsync({ equipmentId: newId, blob: pendingImage })
+              .catch(() => showWarning(t("equipment.photo.savedWithoutPhoto")));
+          }
+          onClose();
+        },
+      });
     }
   };
 
@@ -237,6 +257,7 @@ export function EquipmentFormDialog({
             error={!!errors.equipment_name_si}
             helperText={errors.equipment_name_si?.message || t("equipment.equipmentNameSiHelp")}
           />
+          <EquipmentImageField equipment={initialData} pending={pendingImage} onPendingChange={setPendingImage} />
           <FieldGrid>
             <TextField
               fullWidth
@@ -245,15 +266,6 @@ export function EquipmentFormDialog({
               {...register("serial_number")}
               error={!!errors.serial_number}
               helperText={errors.serial_number?.message}
-            />
-            <TextField
-              fullWidth
-              size="small"
-              label={t("equipment.EquipmentFormDialog.imageUrlOptional")}
-              placeholder="https://…"
-              {...register("image_url")}
-              error={!!errors.image_url}
-              helperText={errors.image_url?.message}
             />
           </FieldGrid>
           <FieldGrid>

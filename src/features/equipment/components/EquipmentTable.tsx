@@ -22,6 +22,7 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { EquipmentDeleteDialog } from "./EquipmentDeleteDialog";
 import { EquipmentNumberBadge } from "./EquipmentNumberBadge";
 import { EquipmentPhotoDialog } from "./EquipmentPhotoDialog";
+import { ImageHoverPreview } from "./ImageHoverPreview";
 import { useEquipmentPhotoEvents } from "../hooks/useEquipmentPhoto";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -77,7 +78,7 @@ export function EquipmentTable({
         const src = resolveAssetUrl(params.value);
         const label = canEditPhoto ? t("equipment.photo.changePhoto") : t("equipment.photo.viewPhoto");
         return (
-          <Tooltip title={label}>
+          <ImageHoverPreview src={src} alt={params.row.equipment_name} fallbackTitle={label}>
             <Box
               component="button"
               type="button"
@@ -142,7 +143,7 @@ export function EquipmentTable({
                 </Box>
               )}
             </Box>
-          </Tooltip>
+          </ImageHoverPreview>
         );
       },
     },

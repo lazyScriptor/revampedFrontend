@@ -15,6 +15,7 @@ import { formatDisplayDate } from "@/lib/dates";
 import { equipmentIcon, equipmentTint } from "../lib/equipmentVisual";
 import { CARD_FIELDS, type CardConfig, type CardFieldKey } from "../lib/equipmentCardFields";
 import { EquipmentNumberBadge } from "./EquipmentNumberBadge";
+import { ImageHoverPreview } from "./ImageHoverPreview";
 
 const MONO = "'JetBrains Mono', monospace";
 const FIELD = Object.fromEntries(CARD_FIELDS.map((f) => [f.key, f])) as Record<CardFieldKey, (typeof CARD_FIELDS)[number]>;
@@ -221,7 +222,8 @@ export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, on
         }}
       >
         {showPhoto ? (
-          <Box
+          <ImageHoverPreview src={resolveAssetUrl(item.image_url)}>
+<Box
             component="img"
             src={resolveAssetUrl(item.image_url) || undefined}
             alt=""
@@ -230,6 +232,7 @@ export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, on
             onError={() => setImgFailed(true)}
             sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", p: 1.25, boxSizing: "border-box" }}
           />
+          </ImageHoverPreview>
         ) : (
           <Placeholder sx={{ fontSize: 56, color: tintFg, opacity: 0.9 }} />
         )}
@@ -238,6 +241,7 @@ export function EquipmentInfoCard({ item, config, selected, onSelect, onEdit, on
             {/* hover / keyboard focus: what tapping does */}
             <Box
               className="gg-card-photo-hint"
+              style={{ pointerEvents: "none" }}
               sx={{
                 position: "absolute",
                 left: "50%",

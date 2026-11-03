@@ -53,8 +53,9 @@ export const createEquipment = async (data: EquipmentFormData): Promise<Equipmen
   return response.data;
 };
 
-export const deleteEquipment = async (id: number): Promise<void> => {
-  await api.delete(`/equipment/${id}`);
+export const deleteEquipment = async (id: number): Promise<{ archived: boolean }> => {
+  const body: any = await api.delete(`/equipment/${id}`);
+  return { archived: !!body?.data?.archived };
 };
 export const updateEquipment = async ({ id, data }: { id: number; data: Partial<EquipmentFormData> }): Promise<Equipment> => {
   const response = await api.put(`/equipment/${id}`, data);

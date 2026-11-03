@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { EquipmentTable } from "../EquipmentTable";
 import { useAuthStore } from "@/stores/useAuthStore";
 
+vi.mock("@/components/ui/AppToast", () => ({ useToast: () => ({ showSuccess: vi.fn(), showError: vi.fn(), showWarning: vi.fn() }) }));
+
 vi.mock("../../hooks/useEquipmentHooks", () => ({
   useDeleteEquipment: () => ({
     mutate: vi.fn(),

@@ -6,6 +6,8 @@ import { EquipmentNumberBadge } from "../EquipmentNumberBadge";
 import { EquipmentInfoCard } from "../EquipmentInfoCard";
 import { EquipmentCardGrid } from "../EquipmentCardGrid";
 import { EquipmentCardSettings } from "../EquipmentCardSettings";
+
+vi.mock("@/components/ui/AppToast", () => ({ useToast: () => ({ showSuccess: vi.fn(), showError: vi.fn(), showWarning: vi.fn() }) }));
 import {
   defaultCardConfig,
   readCardConfig,

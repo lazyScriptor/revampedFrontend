@@ -14,6 +14,7 @@ import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import type { CatalogEquipment } from "../hooks/usePosEquipmentCatalog";
 import { equipmentIcon, equipmentTint, stockLevel } from "@/features/equipment/lib/equipmentVisual";
 import { EquipmentNumberBadge } from "@/features/equipment/components/EquipmentNumberBadge";
+import { ImageHoverPreview } from "@/features/equipment/components/ImageHoverPreview";
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -155,7 +156,8 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
         }}
       >
         {showPhoto ? (
-          <Box
+          <ImageHoverPreview src={resolveAssetUrl(item.image_url as string)}>
+<Box
             component="img"
             src={resolveAssetUrl(item.image_url as string) || undefined}
             alt=""
@@ -174,6 +176,7 @@ export function EquipmentCard({ item, inCartQty, onAdd, onDecrement }: Equipment
               opacity: level === "out" ? 0.45 : 1,
             }}
           />
+          </ImageHoverPreview>
         ) : (
           <Icon sx={{ fontSize: 44, color: tintFg, opacity: level === "out" ? 0.35 : 0.9 }} />
         )}
