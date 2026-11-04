@@ -64,7 +64,9 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PieChartIcon from "@mui/icons-material/PieChart";
 import PrintIcon from "@mui/icons-material/Print";
 import { LockerOpeningPrompt } from "@/features/locker/components/LockerOpeningPrompt";
-import { PlanSync, usePlanChecker } from "@/features/plan/usePlan";
+import { PlanSync, useMenuPlanChecker } from "@/features/plan/usePlan";
+import { PaymentNotice } from "@/features/plan/PaymentNotice";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
@@ -172,7 +174,7 @@ function AuthenticatedLayout() {
 
   const user = useAuthStore((state) => state.user);
   const hasPermission = useAuthStore((state) => state.hasPermission);
-  const planCheck = usePlanChecker();
+  const planCheck = useMenuPlanChecker();
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
   const navigate = useNavigate();
@@ -320,6 +322,7 @@ function AuthenticatedLayout() {
       icon: <AdminPanelSettingsIcon />,
       children: [
         { text: "Users", label: t("nav.users"), path: "/admin/users", icon: <PeopleIcon fontSize="small" /> },
+        { text: "Locations", label: t("nav.locations"), path: "/admin/locations", icon: <PlaceOutlinedIcon fontSize="small" />, requiredPermission: "warehouse:view" },
         { text: "Roles", label: t("nav.roles"), path: "/admin/roles", icon: <AdminPanelSettingsIcon fontSize="small" /> },
         { text: "Permissions", label: t("nav.permissions"), path: "/permissions", icon: <SecurityIcon fontSize="small" /> },
       ],
@@ -716,6 +719,7 @@ function AuthenticatedLayout() {
         }}
       >
         <DrawerHeader sx={{ flexShrink: 0 }} />
+        <PaymentNotice />
         <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <Outlet />
         </Box>

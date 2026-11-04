@@ -121,15 +121,43 @@ export const useActivateTenant = () => {
 export const useMarkTenantOverdue = () => {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (tenantId: string) => {
-            const res = await api.post(`/super-admin/tenants/${tenantId}/mark-overdue`);
+        mutationFn: async ({ tenantId, body }: { tenantId: string; body?: Record<string, unknown> }) => {
+            const res = await api.post(`/super-admin/tenants/${tenantId}/mark-overdue`, body ?? {});
             return res.data.tenant;
         },
-        onSuccess: (_, tenantId) => {
+        onSuccess: (_, { tenantId }) => {
             qc.invalidateQueries({ queryKey: ['sa-tenants'] });
-            qc.invalidateQueries({ queryKey: ['sa-dashboard'] });
             qc.invalidateQueries({ queryKey: ['sa-tenant', tenantId] });
         },
+    });
+};
+
+export interface NoticeDefaults {
+    message_en: string;
+    message_si: string;
+    grace_days: number | null;
+    repeat_minutes: number;
+    wait_seconds: number;
+}
+
+export const useNoticeDefaults = () =>
+    useQuery({
+        queryKey: ['sa-payment-notice'],
+        queryFn: async () => {
+            const res = await api.get('/super-admin/payment-notice');
+            return res.data as NoticeDefaults;
+        },
+        refetchOnWindowFocus: false,
+    });
+
+export const useSaveNoticeDefaults = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (body: NoticeDefaults) => {
+            const res = await api.put('/super-admin/payment-notice', body);
+            return res.data as NoticeDefaults;
+        },
+        onSuccess: (data) => qc.setQueryData(['sa-payment-notice'], data),
     });
 };
 

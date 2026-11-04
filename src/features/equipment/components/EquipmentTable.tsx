@@ -1,3 +1,4 @@
+import { useSingleLocation } from "@/features/warehouses/hooks/useWarehouseOptions";
 import { useState, useMemo } from "react";
 import {
   DataGrid,
@@ -59,6 +60,7 @@ export function EquipmentTable({
   const photoRow = photoId != null ? data.find((r) => r.equipment_id === photoId) ?? null : null;
 
   // 🚀 THE COMPREHENSIVE COLUMN LIST
+  const { single: oneLocation } = useSingleLocation();
   const columns: GridColDef[] = [
     // --- Identifiers & Media ---
     { field: "equipment_id", headerName: t("equipment.internalId"), width: 70 },
@@ -431,7 +433,7 @@ export function EquipmentTable({
       >
         <DataGrid
           rows={data}
-          columns={columns}
+          columns={oneLocation ? columns.filter((c) => c.field !== "warehouse") : columns}
           getRowId={(row) => row.equipment_id}
           loading={isLoading}
           paginationMode="server"

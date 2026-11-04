@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import { syncLanguageFromAuth } from '@/i18n';
 
 // 1. Updated to match your exact backend payload from the console
+import type { PaymentNoticeData } from "@/features/plan/paymentNoticeText";
+
 export interface TenantPlan {
     tier: string;
     features: Record<string, boolean>;
@@ -28,7 +30,10 @@ interface User {
     // and ships this at login. Frontend i18n picks it up in syncLanguageFromAuth.
     language?: string | null;
     // What this shop's plan includes; kept current by PlanSync.
+    // undefined: not known yet. null: the server couldn't say, so nothing is hidden.
     plan?: TenantPlan | null;
+    // Set while the shop is overdue on its GearGrid subscription.
+    paymentNotice?: PaymentNoticeData | null;
 }
 
 interface AuthState {

@@ -8,7 +8,8 @@ let allowed = true;
 vi.mock("@/stores/useAuthStore", () => ({ useAuthStore: (sel: any) => sel({ hasPermission: () => allowed }) }));
 vi.mock("@tanstack/react-router", () => ({ useBlocker: () => ({ status: "idle" }) }));
 vi.mock("../../hooks/useCategoryHooks", () => ({ useCategoryOptions: () => ({ data: [{ category_id: 1, category_name: "Power Tools" }, { category_id: 2, category_name: "Pumps" }] }) }));
-vi.mock("@/features/warehouses/hooks/useWarehouseOptions", () => ({ useWarehouseOptions: () => ({ data: [{ warehouse_id: 9, location_name: "Main" }] }) }));
+let locations = [{ warehouse_id: 9, location_name: "Main" }, { warehouse_id: 10, location_name: "Second" }];
+vi.mock("@/features/warehouses/hooks/useWarehouseOptions", () => ({ useWarehouseOptions: () => ({ data: locations }) }));
 vi.mock("../../hooks/useEquipmentPhoto", () => ({ useUploadEquipmentImage: () => ({ mutateAsync: vi.fn() }) }));
 vi.mock("../../components/EquipmentPhotoDialog", () => ({ EquipmentPhotoDialog: ({ open, equipment }: any) => (open ? <div>photo dialog {equipment.equipment_name}</div> : null) }));
 
@@ -173,6 +174,13 @@ describe("equipment sheet", () => {
     fireEvent.keyDown(grid(), { key: "F2" });
     expect(cellOf("Drill - 1", RATE).querySelector("input")).toBeNull();
     expect(screen.queryByRole("button", { name: "Add row" })).toBeNull();
+  });
+
+  it("a shop with one location has no location column, and new rows go there", async () => {
+    locations = [{ warehouse_id: 9, location_name: "Main" }];
+    await open();
+    expect(screen.queryByRole("columnheader", { name: /Location/ })).toBeNull();
+    locations = [{ warehouse_id: 9, location_name: "Main" }, { warehouse_id: 10, location_name: "Second" }];
   });
 
   it("the search box narrows the rows", async () => {

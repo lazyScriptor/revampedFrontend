@@ -17,6 +17,8 @@ import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
 import PlatformKpiCards from '@/features/super-admin/components/PlatformKpiCards';
 import AuditLogTable from '@/features/super-admin/components/AuditLogTable';
 import { PlanEditor } from '@/features/super-admin/components/PlanEditor';
+import { PaymentNoticePanel } from '@/features/super-admin/components/PaymentNoticePanel';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import TenantListPanel from '@/features/super-admin/components/TenantListPanel';
 import TenantDetailPanel from '@/features/super-admin/components/TenantDetailPanel';
@@ -31,12 +33,13 @@ import { useTranslation } from "react-i18next";
 import { tk } from "@/i18n/marker";
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
-type NavKey = 'dashboard' | 'tenants' | 'plans' | 'inquiries' | 'cors' | 'audit';
+type NavKey = 'dashboard' | 'tenants' | 'plans' | 'payments' | 'inquiries' | 'cors' | 'audit';
 
 const NAV: { key: NavKey; icon: React.ReactNode; label: string }[] = [
     { key: 'dashboard', icon: <DashboardOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("nav.dashboard") },
     { key: 'tenants', icon: <BusinessOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.tenants") },
     { key: 'plans', icon: <TuneOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.plans.nav") },
+    { key: 'payments', icon: <PaymentsOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.overdue.nav") },
     { key: 'inquiries', icon: <MailOutlineOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.inquiries") },
     { key: 'cors', icon: <PublicOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.cors") },
     { key: 'audit', icon: <HistoryOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.auditLog") },
@@ -459,6 +462,12 @@ export default function SuperAdminDashboard() {
                 <Box sx={{ flex: 1, minHeight: 0, display: activeNav === 'plans' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
                     <PlanEditor />
                 </Box>
+
+                {activeNav === 'payments' && (
+                    <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+                        <PaymentNoticePanel />
+                    </Box>
+                )}
 
                 {activeNav === 'cors' && (
                     <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>

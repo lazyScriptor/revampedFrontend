@@ -19,6 +19,7 @@ import LockerRoute, { LOCKER_TABS } from "@/routes/Locker";
 import ProfileRoute from "@/routes/Profile";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
+import { adminLocationsRoute } from "@/routes/admin/locations";
 import { FeatureGate } from "@/features/plan/usePlan";
 import PermissionsPage from "@/routes/Permissions";
 import SuperAdminLogin from "@/routes/SuperAdminLogin";
@@ -324,6 +325,7 @@ const routeTree = rootRoute.addChildren([
     permissionsRoute,
     adminUsersRoute,
     adminRolesRoute,
+    adminLocationsRoute,
   ]),
   superAdminIndexRoute,
   superAdminLoginRoute,

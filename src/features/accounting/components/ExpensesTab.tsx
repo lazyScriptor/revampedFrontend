@@ -1,3 +1,4 @@
+import { useSingleLocation } from "@/features/warehouses/hooks/useWarehouseOptions";
 import { useState } from "react";
 import {
   Box, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions,
@@ -133,6 +134,7 @@ export default function ExpensesTab() {
     }
   };
 
+  const { single: oneLocation } = useSingleLocation();
   const columns: GridColDef[] = [
     {
       field: "expense_id",
@@ -252,7 +254,7 @@ export default function ExpensesTab() {
       <Box sx={{ bgcolor: "white", borderRadius: 2.5, border: "1px solid #e2e8f0", overflow: "hidden" }}>
         <DataGrid
           rows={data?.rows || []}
-          columns={columns}
+          columns={oneLocation ? columns.filter((c) => c.field !== "Warehouse") : columns}
           getRowId={(row) => row.expense_id}
           loading={isLoading}
           rowCount={data?.totalCount || 0}

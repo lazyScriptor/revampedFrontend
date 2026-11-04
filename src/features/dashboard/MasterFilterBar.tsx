@@ -112,6 +112,7 @@ const MasterFilterBar: React.FC = () => {
       }}
     >
       {/* Depot / Warehouse Selector */}
+      {warehouseList.length !== 1 && (
       <FormControl size="small" sx={{ minWidth: { xs: 120, sm: 155 }, flexShrink: 0 }}>
         <Select
           value={globalFilters.warehouseId ? String(globalFilters.warehouseId) : "all"}
@@ -170,6 +171,7 @@ const MasterFilterBar: React.FC = () => {
           ))}
         </Select>
       </FormControl>
+      )}
 
       {/* Segmented Quick Date Pills */}
       <Box

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 
 import { api } from "@/lib/api";
 import { useAuthStore, type TenantPlan } from "@/stores/useAuthStore";
+import type { PaymentNoticeData } from "./paymentNoticeText";
 
 export type FeatureKeys = string | readonly string[];
 
@@ -24,29 +25,40 @@ export const usePlanChecker = () => {
   return (keys: FeatureKeys) => planAllows(plan, keys);
 };
 
+/** For the menu: nothing plan-limited shows until the plan is known, so it never appears and vanishes. */
+export const useMenuPlanChecker = () => {
+  const plan = useAuthStore((s) => s.user?.plan);
+  return (keys: FeatureKeys) => plan !== undefined && planAllows(plan, keys);
+};
+
 export const useFeature = (keys: FeatureKeys) => planAllows(useAuthStore((s) => s.user?.plan), keys);
 
 /** Keeps the plan current while the app is open, so a console change shows up without logging in again. */
 export function PlanSync() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const updateUserPartial = useAuthStore((s) => s.updateUserPartial);
-  const { data } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: ["my-plan"],
     enabled: isAuthenticated,
     queryFn: async () => {
       const body: any = await api.get("/me/plan");
-      return (body?.data?.plan ?? null) as TenantPlan | null;
+      return { plan: (body?.data?.plan ?? null) as TenantPlan | null, notice: (body?.data?.notice ?? null) as PaymentNoticeData | null };
     },
     staleTime: 30 * 1000,
-    refetchInterval: 2 * 60 * 1000,
+    refetchInterval: 60 * 1000,
     refetchOnWindowFocus: true,
     retry: 1,
   });
   useEffect(() => {
-    if (data === undefined) return;
-    const current = useAuthStore.getState().user?.plan ?? null;
-    if (JSON.stringify(current) !== JSON.stringify(data)) updateUserPartial({ plan: data });
+    if (!data) return;
+    const user = useAuthStore.getState().user;
+    if (JSON.stringify(user?.plan) !== JSON.stringify(data.plan)) updateUserPartial({ plan: data.plan });
+    if (JSON.stringify(user?.paymentNotice ?? null) !== JSON.stringify(data.notice)) updateUserPartial({ paymentNotice: data.notice });
   }, [data, updateUserPartial]);
+  // Couldn't ask: show the menu rather than leave it empty. The server still enforces the plan.
+  useEffect(() => {
+    if (isError && useAuthStore.getState().user?.plan === undefined) updateUserPartial({ plan: null });
+  }, [isError, updateUserPartial]);
   return null;
 }
 

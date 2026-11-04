@@ -167,7 +167,12 @@ export function EquipmentSheet() {
     return merged;
   }, [allRows, serverErrors]);
   const rows = useMemo(() => visibleRows(allRows, { search, categoryId: categoryFilter, view, sort, errors }, lookups), [allRows, search, categoryFilter, view, sort, errors, lookups]);
-  const columns = useMemo(() => COLUMNS.filter((c) => !hidden.includes(c.key)).map((c) => ({ ...c, width: widths[c.key] ?? c.width })), [hidden, widths]);
+  // One location: nothing to choose, so no column for it.
+  const oneLocation = warehouses.length === 1;
+  const columns = useMemo(
+    () => COLUMNS.filter((c) => !hidden.includes(c.key) && !(oneLocation && c.key === "warehouse_id")).map((c) => ({ ...c, width: widths[c.key] ?? c.width })),
+    [hidden, widths, oneLocation],
+  );
   const rowIndex = useMemo(() => new Map(rows.map((r, i) => [r.key, i])), [rows]);
   const colIndex = useMemo(() => new Map(columns.map((c, i) => [c.key as string, i])), [columns]);
 
@@ -882,7 +887,7 @@ export function EquipmentSheet() {
           </IconButton>
         </Tooltip>
         <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)} sx={{ zIndex: 1300 }}>
-          {COLUMNS.filter((c) => !FROZEN.includes(c.key)).map((c) => (
+          {COLUMNS.filter((c) => !FROZEN.includes(c.key) && !(oneLocation && c.key === "warehouse_id")).map((c) => (
             <MenuItem key={c.key} dense sx={{ py: 0 }}>
               <FormControlLabel control={<Checkbox size="small" checked={!hidden.includes(c.key)} onChange={() => toggleColumn(c.key)} />} label={t(c.label)} slotProps={{ typography: { sx: { fontSize: 12 } } }} />
             </MenuItem>

@@ -1,3 +1,4 @@
+import { useSingleLocation } from "@/features/warehouses/hooks/useWarehouseOptions";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchNextEquipment } from "../api/equipment.api";
 import { EquipmentNameField } from "./EquipmentNameField";
@@ -64,6 +65,7 @@ export function EquipmentFormDialog({
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useWarehouseOptions();
 
   const isEditing = !!initialData;
+  const { single: oneLocation, only: onlyLocation } = useSingleLocation();
   const uploadImage = useUploadEquipmentImage();
   const { showWarning } = useToast();
   const [pendingImage, setPendingImage] = useState<Blob | null>(null);
@@ -151,6 +153,12 @@ export function EquipmentFormDialog({
       }
     }
   }, [open, initialData, reset]);
+
+  // One location: there is nothing to pick, the machine just goes there.
+  useEffect(() => {
+    if (open && !isEditing && onlyLocation && !watch("warehouse_id")) setValue("warehouse_id", onlyLocation.warehouse_id, { shouldValidate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEditing, onlyLocation, setValue]);
 
   // New machine: the next number is shown straight away.
   const fillNumber = useCallback(async () => {
@@ -361,35 +369,37 @@ export function EquipmentFormDialog({
                 </TextField>
               )}
             />
-            <Controller
-              name="warehouse_id"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  fullWidth
-                  size="small"
-                  label={t("equipment.warehouse")}
-                  {...field}
-                  value={field.value ?? ""}
-                  disabled={isLoadingWarehouses}
-                  error={!!errors.warehouse_id}
-                  helperText={errors.warehouse_id?.message}
-                >
-                  {isLoadingWarehouses ? (
-                    <MenuItem value="" disabled>
-                      {t("common.loading")}
-                    </MenuItem>
-                  ) : (
-                    warehouses.map((w) => (
-                      <MenuItem key={w.warehouse_id} value={w.warehouse_id}>
-                        {w.location_name}
+            {!oneLocation && (
+              <Controller
+                name="warehouse_id"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label={t("equipment.warehouse")}
+                    {...field}
+                    value={field.value ?? ""}
+                    disabled={isLoadingWarehouses}
+                    error={!!errors.warehouse_id}
+                    helperText={errors.warehouse_id?.message}
+                  >
+                    {isLoadingWarehouses ? (
+                      <MenuItem value="" disabled>
+                        {t("common.loading")}
                       </MenuItem>
-                    ))
-                  )}
-                </TextField>
-              )}
-            />
+                    ) : (
+                      warehouses.map((w) => (
+                        <MenuItem key={w.warehouse_id} value={w.warehouse_id}>
+                          {w.location_name}
+                        </MenuItem>
+                      ))
+                    )}
+                  </TextField>
+                )}
+              />
+            )}
           </FieldGrid>
         </FormSection>
 

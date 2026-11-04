@@ -1,3 +1,4 @@
+import { useSingleLocation } from "@/features/warehouses/hooks/useWarehouseOptions";
 import { useState } from "react";
 import {
   Alert,
@@ -58,6 +59,7 @@ export function EquipmentBulkEditDialog({
 
   const { data: categories = [], isLoading: isLoadingCategories } = useCategoryOptions();
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useWarehouseOptions();
+  const { single: oneLocation } = useSingleLocation();
 
   // Field activation flags (Industry standard: Only explicitly enabled fields are updated)
   const [enableCategory, setEnableCategory] = useState(false);
@@ -326,6 +328,7 @@ export function EquipmentBulkEditDialog({
         </Box>
 
         {/* Warehouse Row */}
+        {!oneLocation && (
         <Box
           sx={{
             p: 2,
@@ -369,6 +372,7 @@ export function EquipmentBulkEditDialog({
             </Box>
           )}
         </Box>
+        )}
       </FormSection>
 
       {/* ── 2. Inventory & Classification ── */}

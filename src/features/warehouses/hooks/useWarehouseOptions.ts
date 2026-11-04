@@ -17,3 +17,9 @@ export const useWarehouseOptions = () => {
         staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     });
 };
+
+/** A shop with exactly one location has nothing to choose, so location choices stay out of its way. */
+export const useSingleLocation = () => {
+    const { data: locations = [] } = useWarehouseOptions();
+    return { single: locations.length === 1, only: locations.length === 1 ? locations[0] : null };
+};

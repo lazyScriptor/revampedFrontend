@@ -22,6 +22,8 @@ import TenantUserDialog from './TenantUserDialog';
 import { formatDisplayDate } from '@/lib/dates';
 import { useTranslation } from "react-i18next";
 import { TenantPlanExceptions } from './TenantPlanExceptions';
+import { OverdueDialog } from './OverdueDialog';
+import { isLockedNow, timeLeftText } from '@/features/plan/paymentNoticeText';
 
 const STATUS_META: Record<string, { color: string; bg: string }> = {
     Active: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
@@ -44,6 +46,34 @@ interface Props {
     tenantId: string;
 }
 
+/** Says plainly what an overdue shop is seeing, and how long it has left. */
+function OverdueBar({ notice, busy, onChange, onLockNow, onPaid }: { notice?: any; busy: boolean; onChange: () => void; onLockNow: () => void; onPaid: () => void }) {
+    const { t } = useTranslation();
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(id);
+    }, []);
+    const hasTimer = !!notice?.overdue_since;
+    const locked = !hasTimer || isLockedNow({ ...notice, locked: false }, now);
+    const text = !hasTimer
+        ? t('superAdmin.overdue.statusLockedNoTimer')
+        : locked
+            ? t('superAdmin.overdue.statusLocked')
+            : notice.lock_at
+                ? t('superAdmin.overdue.statusLocksIn', { time: timeLeftText(notice.lock_at, now) })
+                : t('superAdmin.overdue.statusNever');
+    return (
+        <Box role="status" sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', px: 2.5, py: 1, bgcolor: locked ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)', borderBottom: '1px solid', borderColor: locked ? '#7f1d1d' : '#92400e' }}>
+            <WarningAmberOutlinedIcon sx={{ fontSize: 18, color: locked ? '#f87171' : '#fbbf24' }} />
+            <Typography sx={{ flex: 1, minWidth: 160, fontSize: '0.82rem', fontWeight: 800, color: locked ? '#fca5a5' : '#fde68a', fontVariantNumeric: 'tabular-nums' }}>{text}</Typography>
+            <Button size="small" disabled={busy} onClick={onChange} sx={{ textTransform: 'none', fontWeight: 700, color: '#e2e8f0' }}>{t('superAdmin.overdue.changeButton')}</Button>
+            {!locked && <Button size="small" disabled={busy} onClick={onLockNow} sx={{ textTransform: 'none', fontWeight: 700, color: '#fca5a5' }}>{t('superAdmin.overdue.lockNowButton')}</Button>}
+            <Button size="small" variant="contained" color="success" disableElevation disabled={busy} onClick={onPaid} sx={{ textTransform: 'none', fontWeight: 800 }}>{t('superAdmin.overdue.markPaid')}</Button>
+        </Box>
+    );
+}
+
 export default function TenantDetailPanel({ tenantId }: Props) {
     const { t } = useTranslation();
     const { data, isLoading } = useTenantDetails(tenantId);
@@ -54,6 +84,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
     const suspendMutation = useSuspendTenant();
     const activateMutation = useActivateTenant();
     const overdueMutation = useMarkTenantOverdue();
+    const [overdueOpen, setOverdueOpen] = useState(false);
     const impersonateMutation = useImpersonate();
 
     const deleteTenantUser = useDeleteTenantUser();
@@ -206,8 +237,8 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                 size="small"
                                 variant={tenant.subscription_status === 'Overdue' ? 'contained' : 'outlined'}
                                 startIcon={<WarningAmberOutlinedIcon />}
-                                disabled={tenant.subscription_status === 'Overdue' || overdueMutation.isPending}
-                                onClick={() => overdueMutation.mutate(tenantId)}
+                                disabled={tenant.subscription_status === 'Overdue'}
+                                onClick={() => setOverdueOpen(true)}
                                 sx={{
                                     borderColor: '#f59e0b', color: tenant.subscription_status === 'Overdue' ? '#fff' : '#f59e0b',
                                     bgcolor: tenant.subscription_status === 'Overdue' ? '#f59e0b' : 'transparent',
@@ -221,6 +252,23 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                     </Tooltip>
                 </Box>
             </Box>
+
+            {tenant.subscription_status === 'Overdue' && (
+                <OverdueBar
+                    notice={(tenant.feature_flags as any)?.payment_notice}
+                    busy={overdueMutation.isPending || activateMutation.isPending}
+                    onChange={() => setOverdueOpen(true)}
+                    onLockNow={() => overdueMutation.mutate({ tenantId, body: { lock_at: new Date().toISOString() } })}
+                    onPaid={() => activateMutation.mutate(tenantId)}
+                />
+            )}
+            <OverdueDialog
+                open={overdueOpen}
+                onClose={() => setOverdueOpen(false)}
+                tenantId={tenantId}
+                shopName={String(tenant.display_name ?? '')}
+                current={tenant.subscription_status === 'Overdue' ? (tenant.feature_flags as any)?.payment_notice : null}
+            />
 
             {/* Tabs */}
             <Tabs
