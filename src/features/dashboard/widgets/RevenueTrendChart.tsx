@@ -1,3 +1,4 @@
+import { useDashboardMoney } from "@/features/accounting/utils/currency";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Typography, Skeleton, Chip } from "@mui/material";
@@ -15,22 +16,8 @@ import { useDashboardKPIs } from "@/features/dashboard/hooks/useDashboardHooks";
 import dayjs from "dayjs";
 import { dashboardTokens as dt, dashboardTones } from "../_tokens";
 
-const fmt = (v: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(v);
-
-const fmtFull = (v: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(v);
-
 const RevenueTrendChart: React.FC = () => {
+  const { full: fmtFull, compact: fmt } = useDashboardMoney();
   const { t } = useTranslation();
   const { data, isLoading } = useDashboardKPIs();
 

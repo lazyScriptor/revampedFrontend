@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useFeature } from "@/features/plan/usePlan";
 import { useLockerStatus } from "../hooks/useLocker";
 import { isSnoozed, writeSnooze } from "../lib/locker";
 import { OpeningDialog } from "./OpeningDialog";
@@ -11,7 +12,8 @@ import { OpeningDialog } from "./OpeningDialog";
 export function LockerOpeningPrompt() {
   const user = useAuthStore((s) => s.user);
   const canManage = useAuthStore((s) => s.hasPermission("locker:manage"));
-  const eligible = !!user && (user.permissions || []).includes("locker:count") && !canManage;
+  const included = useFeature("cash_locker");
+  const eligible = included && !!user && (user.permissions || []).includes("locker:count") && !canManage;
   const { data: status } = useLockerStatus(eligible);
   const [now, setNow] = useState(() => Date.now());
   const [active, setActive] = useState(false);

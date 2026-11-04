@@ -18,6 +18,7 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import PrintIcon from "@mui/icons-material/Print";
 
+import { FeatureLocked, usePlanChecker } from "@/features/plan/usePlan";
 import AllCustomersReport from "@/features/reports/customers/AllCustomersReport";
 import OutstandingBalancesReport from "@/features/reports/customers/OutstandingBalancesReport";
 import UtilizationReport from "@/features/reports/equipment/UtilizationReport";
@@ -103,6 +104,7 @@ export default function ReportsRoute() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const { t } = useTranslation();
+  const planCheck = usePlanChecker();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { category?: string; report?: string };
@@ -142,6 +144,8 @@ export default function ReportsRoute() {
     setReportKey(key);
     updateUrl(category.key, key);
   };
+
+  if (!planCheck(`reports.${category.key}`)) return <FeatureLocked />;
 
   // ── Dedicated category view (sidebar deep-link target) ──────────────────────
   if (isDedicated) {

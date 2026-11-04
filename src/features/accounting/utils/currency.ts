@@ -51,3 +51,16 @@ export function useCurrencyFormatter() {
       formatCurrency(amount, code),
   };
 }
+
+/**
+ * Whole-number amounts for the dashboard's big figures and chart axes, in the tenant's currency:
+ * "Rs. 45,710", and "Rs. 12.5K" when compact.
+ */
+export function useDashboardMoney() {
+  const { symbol } = useCurrencyFormatter();
+  return {
+    full: (amount: number) => `${symbol} ${Math.round(Number(amount) || 0).toLocaleString("en-US")}`,
+    compact: (amount: number) =>
+      `${symbol} ${new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(Number(amount) || 0)}`,
+  };
+}

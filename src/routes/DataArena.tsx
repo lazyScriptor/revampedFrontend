@@ -21,6 +21,7 @@ import { JobHistoryTable } from "@/features/data-arena/components/JobHistoryTabl
 import { DownloadsTable } from "@/features/data-arena/components/DownloadsTable";
 import { useTranslation } from "react-i18next";
 import { tk } from "@/i18n/marker";
+import { FeatureLocked, useFeature } from "@/features/plan/usePlan";
 
 type SectionKey = "imports" | "addMachines" | "equipmentSheet" | "exports" | "bulk" | "downloads" | "jobs";
 
@@ -76,6 +77,16 @@ const SECTIONS: {
 
 const SECTION_KEYS = SECTIONS.map((s) => s.key);
 
+const SECTION_FEATURES: Record<SectionKey, string | readonly string[]> = {
+  imports: "data.imports",
+  addMachines: "data.add_machines",
+  equipmentSheet: "data.equipment_sheet",
+  exports: "data.exports",
+  bulk: ["data.imports", "data.exports"],
+  downloads: ["data.imports", "data.exports"],
+  jobs: ["data.imports", "data.exports"],
+};
+
 export default function DataArenaRoute() {
   const { t } = useTranslation();
   const search = useSearch({ strict: false }) as { section?: string };
@@ -87,6 +98,8 @@ export default function DataArenaRoute() {
   }, [search.section]);
 
   const active = SECTIONS.find((s) => s.key === activeKey)!;
+  const included = useFeature(SECTION_FEATURES[activeKey]);
+  if (!included) return <FeatureLocked />;
 
   // The sheet keeps every row it can: its own toolbar replaces the page header.
   if (activeKey === "equipmentSheet") return <EquipmentSheet />;

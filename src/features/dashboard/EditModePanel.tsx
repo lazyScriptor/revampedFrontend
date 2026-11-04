@@ -1,3 +1,4 @@
+import { useFeature } from "@/features/plan/usePlan";
 import React from "react";
 import { Box, Typography, Switch, Divider, IconButton, Drawer, Button, Tooltip } from "@mui/material";
 import { Close, Check } from "@mui/icons-material";
@@ -11,6 +12,7 @@ const EditModePanel: React.FC = () => {
   const layout = useDashboardStore((s) => s.layout);
   const toggleWidget = useDashboardStore((s) => s.toggleWidget);
   const widgetCatalog = useDashboardStore((s) => s.widgetCatalog);
+  const maintenanceOn = useFeature("maintenance");
 
   return (
     <Drawer
@@ -92,7 +94,7 @@ const EditModePanel: React.FC = () => {
           "&::-webkit-scrollbar-thumb": { bgcolor: "#cbd5e1", borderRadius: 4 },
         }}
       >
-        {widgetCatalog.map((widget) => {
+        {widgetCatalog.filter((widget) => widget.widget_key !== "maintenance_queue" || maintenanceOn).map((widget) => {
           const isEnabled = layout.some((item) => item.i === widget.widget_key);
 
           return (

@@ -3,6 +3,7 @@ import { Box, Typography } from "@mui/material";
 import type React from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { FeatureLocked, usePlanChecker } from "@/features/plan/usePlan";
 import OverviewTab from "@/features/accounting/components/OverviewTab";
 import InvoicesTab from "@/features/accounting/components/InvoicesTab";
 import PaymentsTab from "@/features/accounting/components/PaymentsTab";
@@ -33,6 +34,7 @@ const buildTabConfig = (t: (k: string) => string): { key: AccountingTabKey; labe
 export default function AccountingRoute() {
   const { t } = useTranslation();
   const TAB_CONFIG = buildTabConfig(t);
+  const planCheck = usePlanChecker();
   const { activeTab, setActiveTab } = useReportStore();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: AccountingTabKey };
@@ -46,6 +48,8 @@ export default function AccountingRoute() {
       setActiveTab(dedicatedIdx);
     }
   }, [dedicatedIdx, isDedicated]);
+
+  if (isDedicated && !planCheck(`accounting.${ACCOUNTING_TAB_KEYS[dedicatedIdx]}`)) return <FeatureLocked />;
 
   // ── Dedicated single-tab view (sidebar deep-link target) ────────────────────
   if (isDedicated) {
@@ -82,8 +86,11 @@ export default function AccountingRoute() {
 
 function RedirectToOverview() {
   const navigate = useNavigate();
+  const planCheck = usePlanChecker();
+  // The first tab this shop's plan includes: usually the Overview.
+  const first = ACCOUNTING_TAB_KEYS.find((k) => planCheck(`accounting.${k}`));
   useEffect(() => {
-    navigate({ to: "/accounting", search: { tab: "overview" } as any, replace: true });
-  }, [navigate]);
-  return null;
+    if (first) navigate({ to: "/accounting", search: { tab: first } as any, replace: true });
+  }, [navigate, first]);
+  return first ? null : <FeatureLocked />;
 }

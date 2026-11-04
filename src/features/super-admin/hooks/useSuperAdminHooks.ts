@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { Plans, PlansData } from '../lib/planEditing';
 
 // ============================================================================
 // DASHBOARD
@@ -11,6 +12,43 @@ export const usePlatformDashboard = () =>
             const res = await api.get('/super-admin/dashboard');
             return res.data;
         },
+    });
+
+// ============================================================================
+// PLANS
+// ============================================================================
+export const usePlans = () =>
+    useQuery({
+        queryKey: ['sa-plans'],
+        queryFn: async () => {
+            const res = await api.get('/super-admin/plans');
+            return res.data as PlansData;
+        },
+        refetchOnWindowFocus: false,
+    });
+
+export const useSavePlans = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: async (body: { plans: Plans; version: number }) => {
+            const res = await api.put('/super-admin/plans', body);
+            return res.data as PlansData;
+        },
+        onSuccess: (data) => {
+            qc.setQueryData(['sa-plans'], data);
+            qc.invalidateQueries({ queryKey: ['sa-tenant-plan'] });
+        },
+    });
+};
+
+export const useTenantPlan = (tenantId: string | null) =>
+    useQuery({
+        queryKey: ['sa-tenant-plan', tenantId],
+        queryFn: async () => {
+            const res = await api.get(`/super-admin/tenants/${tenantId}/plan`);
+            return res.data as { plan: unknown; usage: Record<string, number> | null };
+        },
+        enabled: !!tenantId,
     });
 
 // ============================================================================
@@ -45,6 +83,7 @@ export const useUpdateTenant = () => {
         onSuccess: (_, { tenantId }) => {
             qc.invalidateQueries({ queryKey: ['sa-tenants'] });
             qc.invalidateQueries({ queryKey: ['sa-tenant', tenantId] });
+            qc.invalidateQueries({ queryKey: ['sa-tenant-plan', tenantId] });
         },
     });
 };

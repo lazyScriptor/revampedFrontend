@@ -16,6 +16,8 @@ import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
 
 import PlatformKpiCards from '@/features/super-admin/components/PlatformKpiCards';
 import AuditLogTable from '@/features/super-admin/components/AuditLogTable';
+import { PlanEditor } from '@/features/super-admin/components/PlanEditor';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import TenantListPanel from '@/features/super-admin/components/TenantListPanel';
 import TenantDetailPanel from '@/features/super-admin/components/TenantDetailPanel';
 import CorsManagerPanel from '@/features/super-admin/components/CorsManagerPanel';
@@ -29,11 +31,12 @@ import { useTranslation } from "react-i18next";
 import { tk } from "@/i18n/marker";
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
-type NavKey = 'dashboard' | 'tenants' | 'inquiries' | 'cors' | 'audit';
+type NavKey = 'dashboard' | 'tenants' | 'plans' | 'inquiries' | 'cors' | 'audit';
 
 const NAV: { key: NavKey; icon: React.ReactNode; label: string }[] = [
     { key: 'dashboard', icon: <DashboardOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("nav.dashboard") },
     { key: 'tenants', icon: <BusinessOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.tenants") },
+    { key: 'plans', icon: <TuneOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.plans.nav") },
     { key: 'inquiries', icon: <MailOutlineOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.inquiries") },
     { key: 'cors', icon: <PublicOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.cors") },
     { key: 'audit', icon: <HistoryOutlinedIcon sx={{ fontSize: 18 }} />, label: tk("superAdmin.auditLog") },
@@ -451,6 +454,11 @@ export default function SuperAdminDashboard() {
                         <DashboardView />
                     </Box>
                 )}
+
+                {/* Stays mounted, so moving to another section doesn't lose unsaved edits. */}
+                <Box sx={{ flex: 1, minHeight: 0, display: activeNav === 'plans' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
+                    <PlanEditor />
+                </Box>
 
                 {activeNav === 'cors' && (
                     <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>

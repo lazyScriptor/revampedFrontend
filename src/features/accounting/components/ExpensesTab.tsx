@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/AppToast";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useFeature } from "@/features/plan/usePlan";
 import { Can } from "@/components/auth/Can";
 import { tk } from "@/i18n/marker";
 
@@ -59,7 +60,9 @@ export default function ExpensesTab() {
   const { showSuccess, showError } = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
   // Cashiers pay small expenses from the drawer; the owner's (rent, salaries) usually are not.
-  const lockerByDefault = !useAuthStore((s) => s.hasPermission("locker:manage"));
+  const lockerOn = useFeature("cash_locker");
+  const canManageLocker = useAuthStore((s) => s.hasPermission("locker:manage"));
+  const lockerByDefault = lockerOn && !canManageLocker;
 
   // Form state
   const [formOpen, setFormOpen] = useState(false);
@@ -317,10 +320,10 @@ export default function ExpensesTab() {
             value={form.description}
             onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
           />
-          <FormControlLabel
+          {lockerOn && <FormControlLabel
             control={<Switch checked={form.paid_from_locker} onChange={(e) => setForm((p) => ({ ...p, paid_from_locker: e.target.checked }))} />}
             label={t("accounting.ExpensesTab.paidFromLocker")}
-          />
+          />}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setFormOpen(false)} color="inherit">

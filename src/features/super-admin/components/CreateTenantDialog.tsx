@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { usePlans } from "../hooks/useSuperAdminHooks";
 import {
   Alert,
   Box,
@@ -58,6 +59,14 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
   });
 
   const displayName = watch("display_name");
+
+  // A new shop starts at its plan's price; it can still be changed here for a special deal.
+  const { data: planData } = usePlans();
+  const chosenTier = watch("tier");
+  useEffect(() => {
+    const price = planData?.plans?.[chosenTier]?.price;
+    if (price !== undefined) setValue("monthly_rate", price === null ? "0" : String(price));
+  }, [planData, chosenTier, setValue]);
 
   useEffect(() => {
     if (displayName) {

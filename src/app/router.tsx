@@ -19,6 +19,7 @@ import LockerRoute, { LOCKER_TABS } from "@/routes/Locker";
 import ProfileRoute from "@/routes/Profile";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
+import { FeatureGate } from "@/features/plan/usePlan";
 import PermissionsPage from "@/routes/Permissions";
 import SuperAdminLogin from "@/routes/SuperAdminLogin";
 import SuperAdminDashboard from "@/routes/SuperAdmin";
@@ -188,7 +189,7 @@ const maintenanceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/maintenance",
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => <MaintenanceRoute />,
+  component: () => <FeatureGate feature="maintenance"><MaintenanceRoute /></FeatureGate>,
 });
 //messages (free WhatsApp hub)
 const messagesRoute = createRoute({
@@ -198,7 +199,7 @@ const messagesRoute = createRoute({
     tab: (MESSAGE_TABS as readonly string[]).includes(search.tab as string) ? (search.tab as (typeof MESSAGE_TABS)[number]) : undefined,
   }),
   beforeLoad: () => requirePermission("whatsapp:send"),
-  component: () => <MessagesRoute />,
+  component: () => <FeatureGate feature="messages"><MessagesRoute /></FeatureGate>,
 });
 //cash locker (the shop's cash drawer)
 const lockerRoute = createRoute({
@@ -208,14 +209,14 @@ const lockerRoute = createRoute({
     tab: (LOCKER_TABS as readonly string[]).includes(search.tab as string) ? (search.tab as (typeof LOCKER_TABS)[number]) : undefined,
   }),
   beforeLoad: () => requirePermission("locker:count"),
-  component: () => <LockerRoute />,
+  component: () => <FeatureGate feature="cash_locker"><LockerRoute /></FeatureGate>,
 });
 //workforce
 const workforceRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/workforce",
   beforeLoad: () => requirePermission("workforce:view"),
-  component: () => <WorkforceRoute />,
+  component: () => <FeatureGate feature="workforce"><WorkforceRoute /></FeatureGate>,
 });
 
 // Accounting & Reports
@@ -265,7 +266,7 @@ const permissionsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/permissions",
   beforeLoad: () => requirePermission("inventory_permission"),
-  component: () => <PermissionsPage />,
+  component: () => <FeatureGate feature="admin.roles"><PermissionsPage /></FeatureGate>,
 });
 
 // Super Admin Routes (standalone, separate auth)

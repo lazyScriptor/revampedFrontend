@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    Box, Typography, Chip, Tabs, Tab, TextField, Button, Switch,
-    CircularProgress, Tooltip, IconButton, Divider,
+    Box, Typography, Chip, Tabs, Tab, TextField, Button, CircularProgress, Tooltip, IconButton, Divider,
     MenuItem, Avatar, Alert,
 } from '@mui/material';
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
@@ -22,7 +21,7 @@ import RecordPaymentDialog from './RecordPaymentDialog';
 import TenantUserDialog from './TenantUserDialog';
 import { formatDisplayDate } from '@/lib/dates';
 import { useTranslation } from "react-i18next";
-import { tk } from "@/i18n/marker";
+import { TenantPlanExceptions } from './TenantPlanExceptions';
 
 const STATUS_META: Record<string, { color: string; bg: string }> = {
     Active: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
@@ -39,13 +38,6 @@ const DARK_INPUT = {
     },
     '& .MuiInputLabel-root': { color: '#94a3b8' },
     '& .MuiInputLabel-root.Mui-focused': { color: '#3b82f6' },
-};
-
-const FEATURE_LABELS: Record<string, { label: string; desc: string }> = {
-    continuous_return: { label: tk("superAdmin.TenantDetailPanel.continuousReturn"), desc: tk("superAdmin.TenantDetailPanel.featureContinuousReturnDesc") },
-    accounting_module: { label: tk("superAdmin.TenantDetailPanel.accountingModule"), desc: tk("superAdmin.TenantDetailPanel.featureAccountingModuleDesc") },
-    bulk_import: { label: tk("dataArena.EquipmentDataPanel.bulkImport"), desc: tk("superAdmin.TenantDetailPanel.featureBulkImportDesc") },
-    maintenance_module: { label: tk("superAdmin.TenantDetailPanel.maintenanceModule"), desc: tk("superAdmin.TenantDetailPanel.featureMaintenanceModuleDesc") },
 };
 
 interface Props {
@@ -303,8 +295,6 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                     </MenuItem>
                                 ))}
                             </TextField>
-                            <TextField size="small" type="number" label={t("superAdmin.TenantDetailPanel.maxUsers")} value={configForm.max_users}
-                                onChange={(e) => setConfigForm(f => ({ ...f, max_users: parseInt(e.target.value) || 1 }))} sx={DARK_INPUT} />
                         </Box>
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
@@ -341,22 +331,12 @@ export default function TenantDetailPanel({ tenantId }: Props) {
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
                         <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.featureFlags")}</Typography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {Object.entries(FEATURE_LABELS).map(([key, { label, desc }]) => (
-                                <Box key={key} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5, bgcolor: '#0f172a', borderRadius: 1.5, border: '1px solid #1e293b' }}>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.82rem' }}>{t(label)}</Typography>
-                                        <Typography variant="caption" sx={{ color: '#475569' }}>{t(desc)}</Typography>
-                                    </Box>
-                                    <Switch
-                                        checked={!!(configForm.feature_flags as any)[key]}
-                                        onChange={(e) => setConfigForm(f => ({ ...f, feature_flags: { ...f.feature_flags, [key]: e.target.checked } }))}
-                                        size="small"
-                                        sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#10b981' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#10b981' } }}
-                                    />
-                                </Box>
-                            ))}
-                        </Box>
+                        <TenantPlanExceptions
+                            tenantId={tenantId}
+                            tier={configForm.tier}
+                            overrides={(configForm.feature_flags as any).plan_overrides}
+                            onChange={(next) => setConfigForm(f => ({ ...f, feature_flags: { ...f.feature_flags, plan_overrides: next } as any }))}
+                        />
 
                         <Divider sx={{ borderColor: '#1e293b' }} />
                         <Typography variant="overline" sx={{ color: '#64748b', fontSize: '0.65rem', letterSpacing: '0.1em' }}>{t("superAdmin.TenantDetailPanel.branding")}</Typography>

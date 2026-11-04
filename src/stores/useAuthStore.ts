@@ -3,6 +3,12 @@ import { persist } from 'zustand/middleware';
 import { syncLanguageFromAuth } from '@/i18n';
 
 // 1. Updated to match your exact backend payload from the console
+export interface TenantPlan {
+    tier: string;
+    features: Record<string, boolean>;
+    limits: Record<string, number | null>;
+}
+
 interface User {
     id: number;
     email: string;
@@ -21,6 +27,8 @@ interface User {
     //   user.language → tenant.default_language → "si"
     // and ships this at login. Frontend i18n picks it up in syncLanguageFromAuth.
     language?: string | null;
+    // What this shop's plan includes; kept current by PlanSync.
+    plan?: TenantPlan | null;
 }
 
 interface AuthState {

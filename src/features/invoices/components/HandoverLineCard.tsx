@@ -9,6 +9,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MoneyOffIcon from "@mui/icons-material/MoneyOff";
 import RestoreIcon from "@mui/icons-material/Restore";
 import { useTranslation } from "react-i18next";
+import { useFeature } from "@/features/plan/usePlan";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { formatDisplayDate } from "@/lib/dates";
 
@@ -108,6 +109,8 @@ function QtyField({
 
 export function HandoverLineCard({ line, daysLate, lateFee, onChange }: Props) {
   const { t } = useTranslation();
+  // Damaged machines go to the repair queue, so without Maintenance there's nowhere for them to go.
+  const canMarkDamaged = useFeature("maintenance");
   const returning = line.good_qty + line.defective_qty;
   const stillOut = Math.max(0, line.remaining_qty - returning);
   const tracked = line.track_overdue !== false;
@@ -166,7 +169,7 @@ export function HandoverLineCard({ line, daysLate, lateFee, onChange }: Props) {
             ) : undefined
           }
         />
-        <QtyField
+        {canMarkDamaged && <QtyField
           label={t("invoices.handover.damaged")}
           icon={<BuildCircleOutlinedIcon />}
           tone="#dc2626"
@@ -174,7 +177,7 @@ export function HandoverLineCard({ line, daysLate, lateFee, onChange }: Props) {
           max={returning}
           onChange={setDamaged}
           hint={line.defective_qty > 0 ? t("invoices.handover.damagedHint") : undefined}
-        />
+        />}
       </Box>
 
       {/* live result */}

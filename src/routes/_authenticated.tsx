@@ -64,6 +64,7 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PieChartIcon from "@mui/icons-material/PieChart";
 import PrintIcon from "@mui/icons-material/Print";
 import { LockerOpeningPrompt } from "@/features/locker/components/LockerOpeningPrompt";
+import { PlanSync, usePlanChecker } from "@/features/plan/usePlan";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
@@ -123,6 +124,34 @@ const Drawer = styled(MuiDrawer, {
 }));
 
 // --- The Route Definition ---
+// Which plan features each menu entry needs, as "Section" or "Section/Item".
+const NAV_FEATURES: Record<string, string | readonly string[]> = {
+  "Inventory/Maintenance": "maintenance",
+  Messages: "messages",
+  "Cash Locker": "cash_locker",
+  Workforce: "workforce",
+  "Data Arena/Imports": "data.imports",
+  "Data Arena/Add Machines": "data.add_machines",
+  "Data Arena/Equipment Sheet": "data.equipment_sheet",
+  "Data Arena/Exports": "data.exports",
+  "Data Arena/Bulk Actions": ["data.imports", "data.exports"],
+  "Data Arena/Downloads": ["data.imports", "data.exports"],
+  "Data Arena/Job History": ["data.imports", "data.exports"],
+  "Accounting/Overview": "accounting.overview",
+  "Accounting/Invoices": "accounting.invoices",
+  "Accounting/Payments": "accounting.payments",
+  "Accounting/Expenses": "accounting.expenses",
+  "Accounting/Receivables": "accounting.receivables",
+  "Accounting/Journal": "accounting.journal",
+  "Reports/Customers": "reports.customers",
+  "Reports/Equipment": "reports.equipment",
+  "Reports/Invoices": "reports.invoices",
+  "Reports/Financials": "reports.financials",
+  "Reports/Print Audit": "reports.audit",
+  "User Configuration/Roles": "admin.roles",
+  "User Configuration/Permissions": "admin.roles",
+};
+
 export const authenticatedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "_authenticated",
@@ -143,6 +172,7 @@ function AuthenticatedLayout() {
 
   const user = useAuthStore((state) => state.user);
   const hasPermission = useAuthStore((state) => state.hasPermission);
+  const planCheck = usePlanChecker();
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
   const navigate = useNavigate();
@@ -297,7 +327,14 @@ function AuthenticatedLayout() {
   ];
 
   // 2. Filter the items based on permissions (supports both granular and legacy fallback)
+  const planAllowsNav = (parent: string, child?: string) => {
+    const keys = NAV_FEATURES[child ? `${parent}/${child}` : parent];
+    return !keys || planCheck(keys);
+  };
   const visibleNavItems = allNavItems.filter((item) => {
+    if (!planAllowsNav(item.text)) return false;
+    // A section with nothing left in it goes too.
+    if (item.children && !item.children.some((c) => planAllowsNav(item.text, c.text))) return false;
     if (!item.requiredPermission) return true;
     return hasPermission(item.requiredPermission) || hasPermission("inventory_permission");
   });
@@ -405,7 +442,7 @@ function AuthenticatedLayout() {
                 >
                   <List component="div" disablePadding>
                     {item.children
-                      .filter((child) => !child.requiredPermission || hasPermission(child.requiredPermission))
+                      .filter((child) => planAllowsNav(item.text, child.text) && (!child.requiredPermission || hasPermission(child.requiredPermission)))
                       .map((child) => {
                       const childSearch = child.search || {};
                       const currentSearch = (location.search as Record<string, string>) || {};
@@ -684,6 +721,7 @@ function AuthenticatedLayout() {
         </Box>
         <PairedSignatureWatcher />
         <LockerOpeningPrompt />
+        <PlanSync />
       </Box>
     </Box>
   );

@@ -1,3 +1,4 @@
+import { useFeature } from "@/features/plan/usePlan";
 import React, { Suspense, useMemo } from "react";
 import {
   Box,
@@ -64,6 +65,7 @@ const DashboardEngine: React.FC = () => {
   const isConfigLoaded = useDashboardStore((s) => s.isConfigLoaded);
   const toggleEditMode = useDashboardStore((s) => s.toggleEditMode);
   const toggleWidget = useDashboardStore((s) => s.toggleWidget);
+  const maintenanceOn = useFeature("maintenance");
   const hasPermission = useAuthStore((s) => s.hasPermission);
   const userDisplayName = useAuthStore(
     (s) => (s.user?.first_name as string | undefined) || s.user?.username || "",
@@ -103,10 +105,11 @@ const DashboardEngine: React.FC = () => {
       const def = catalogMap[item.i];
       return (
         def &&
-        (!def.required_permission || hasPermission(def.required_permission))
+        (!def.required_permission || hasPermission(def.required_permission)) &&
+        (item.i !== "maintenance_queue" || maintenanceOn)
       );
     });
-  }, [layout, catalogMap, hasPermission]);
+  }, [layout, catalogMap, hasPermission, maintenanceOn]);
 
   // Desktop RGL Layout
   const desktopLayouts = useMemo(

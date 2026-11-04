@@ -1,13 +1,12 @@
+import { useDashboardMoney } from '@/features/accounting/utils/currency';
 import React from 'react';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { useTranslation } from 'react-i18next';
 import { KPICard } from './KPICard';
 import { useDashboardKPIs } from '@/features/dashboard/hooks/useDashboardHooks';
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
-
 const RevenueKPIWidget: React.FC = () => {
+  const { full: fmt } = useDashboardMoney();
   const { t } = useTranslation();
   const { data, isLoading } = useDashboardKPIs();
   const prev = data?.revenueTrend?.[0]?.revenue ?? 0;
