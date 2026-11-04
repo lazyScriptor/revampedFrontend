@@ -1,3 +1,4 @@
+import { useToast } from "@/components/ui/AppToast";
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -55,6 +56,7 @@ interface Props {
 }
 
 export default function TenantUserDialog({ open, onClose, tenantId, editUser }: Props) {
+  const toast = useToast();
   const { t } = useTranslation();
   const isEdit = !!editUser;
   const { data: roles = [] } = useTenantRoles(tenantId);
@@ -142,7 +144,9 @@ export default function TenantUserDialog({ open, onClose, tenantId, editUser }: 
           },
         },
         {
-          onSuccess: () => {
+          onSuccess: (user: any) => {
+            if (user?.email_sent) toast.showSuccess(t("auth.welcome.userEmailed", { email: values.email }));
+            else toast.showWarning(t("auth.welcome.userNotEmailed", { email: values.email }));
             reset();
             onClose();
           },

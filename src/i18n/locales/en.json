@@ -1860,6 +1860,55 @@
         "notInUse": "Nothing is using this location, so it can be removed safely.",
         "moveAndRemove": "Move and remove"
     },
+    "auth": {
+        "forgot": {
+            "title": "Reset your password",
+            "doneTitle": "Password changed",
+            "askHint": "Enter your email or username and we'll email you a 6-digit code.",
+            "identifier": "Email or username",
+            "noEmailHint": "No access to that email? Ask your shop's administrator to send you a code on WhatsApp.",
+            "sendCode": "Send code",
+            "codeSent": "If that account exists, a code has been sent to its email. It may take a minute, so check your spam folder too. A code from your administrator works here as well.",
+            "code": "6-digit code",
+            "newPassword": "New password",
+            "setPassword": "Set password",
+            "resend": "Send a new code",
+            "resent": "New code sent",
+            "done": "Your password has been changed. You can log in with it now.",
+            "backToLogin": "Back to login",
+            "failed": "Something went wrong. Please try again."
+        },
+        "password": {
+            "min": "At least 8 characters.",
+            "confirm": "Confirm new password",
+            "mismatch": "These don't match.",
+            "mustDiffer": "Choose a different password from your temporary one.",
+            "forceTitle": "Choose your own password",
+            "forceHint": "Your password was set by someone else. Please choose your own to keep your account safe.",
+            "temporary": "Current password",
+            "failed": "Could not change the password."
+        },
+        "adminReset": {
+            "action": "Send reset code",
+            "title": "Reset code for {{name}}",
+            "hint": "This makes a one-time code. Send it to them on WhatsApp, and they enter it under Forgot password on the login page.",
+            "create": "Create code",
+            "expires": "Works for {{minutes}} minutes, once.",
+            "noNumber": "No WhatsApp number is saved for this person. WhatsApp will ask you to choose the contact.",
+            "sendWhatsApp": "Send on WhatsApp",
+            "copy": "Copy message",
+            "copied": "Copied",
+            "close": "Done",
+            "failed": "Could not create a code.",
+            "message": "Hello {{name}}, your GearGrid password code is {{code}}. It works for {{minutes}} minutes.\n\nOpen {{url}}, choose Forgot password, enter your username ({{username}}), then choose Send code and enter this code with your new password. Please don't share it."
+        },
+        "welcome": {
+            "userEmailed": "User created, and their login details were emailed to {{email}}.",
+            "userNotEmailed": "User created, but the email to {{email}} couldn't be sent. Please give them their login details yourself.",
+            "shopEmailed": "Shop created, and a welcome email went to {{email}}.",
+            "shopNotEmailed": "Shop created, but the welcome email to {{email}} couldn't be sent. Please contact them yourself."
+        }
+    },
     "plan": {
         "notice": {
             "title": "Payment overdue",
@@ -2416,6 +2465,8 @@
     "login": {
         "headline": "GearGrid",
         "tagline": "Enterprise Management System",
+        "identifier": "Email or username",
+        "identifierPlaceholder": "you@company.com or your username",
         "workEmail": "Work email",
         "password": "Password",
         "rememberMe": "Remember me",
@@ -3071,7 +3122,7 @@
             "masterPlatformTelemetryActive": "Master Platform Telemetry: Active",
             "geargridEngineV24": "GearGrid Engine v2.4",
             "allSystemsOperational": "All Systems Operational",
-            "enterYourCorporateEmailTo": "Enter your corporate email to access your workspace.",
+            "enterYourCorporateEmailTo": "Enter your email or username to access your workspace.",
             "contactYourTenantAdministratorTo": "Contact your tenant administrator to reset credentials",
             "togglePasswordVisibility": "toggle password visibility",
             "authenticatingWorkspace": "Authenticating Workspace...",

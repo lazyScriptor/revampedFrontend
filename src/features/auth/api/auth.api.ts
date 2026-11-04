@@ -11,3 +11,11 @@ export const verifySession = async () => {
   const response = await api.get('/auth/verify');
   return response.data;
 };
+
+export const requestPasswordCode = async (identifier: string) => {
+  await api.post('/auth/forgot-password', { identifier });
+};
+
+export const resetPasswordWithCode = async (payload: { identifier: string; code: string; new_password: string }) => {
+  await api.post('/auth/reset-password', payload);
+};

@@ -66,6 +66,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import { LockerOpeningPrompt } from "@/features/locker/components/LockerOpeningPrompt";
 import { PlanSync, useMenuPlanChecker } from "@/features/plan/usePlan";
 import { PaymentNotice } from "@/features/plan/PaymentNotice";
+import { ForcePasswordChange } from "@/features/auth/ForcePasswordChange";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PostAddIcon from "@mui/icons-material/PostAdd";
@@ -726,6 +727,7 @@ function AuthenticatedLayout() {
         <PairedSignatureWatcher />
         <LockerOpeningPrompt />
         <PlanSync />
+        <ForcePasswordChange />
       </Box>
     </Box>
   );

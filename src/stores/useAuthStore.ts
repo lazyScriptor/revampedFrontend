@@ -34,6 +34,8 @@ interface User {
     plan?: TenantPlan | null;
     // Set while the shop is overdue on its GearGrid subscription.
     paymentNotice?: PaymentNoticeData | null;
+    // Their password was set by someone else: they choose their own before going further.
+    must_change_password?: boolean;
 }
 
 interface AuthState {

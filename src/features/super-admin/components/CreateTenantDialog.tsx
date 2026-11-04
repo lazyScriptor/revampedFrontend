@@ -1,3 +1,4 @@
+import { useToast } from "@/components/ui/AppToast";
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { usePlans } from "../hooks/useSuperAdminHooks";
@@ -59,6 +60,7 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
   });
 
   const displayName = watch("display_name");
+  const toast = useToast();
 
   // A new shop starts at its plan's price; it can still be changed here for a special deal.
   const { data: planData } = usePlans();
@@ -89,6 +91,8 @@ export default function CreateTenantDialog({ open, onClose, onCreated }: Props) 
       },
       {
         onSuccess: (tenant: Record<string, unknown>) => {
+          if (tenant.email_sent) toast.showSuccess(t("auth.welcome.shopEmailed", { email: values.contact_email }));
+          else toast.showWarning(t("auth.welcome.shopNotEmailed", { email: values.contact_email }));
           reset();
           onCreated(tenant.tenant_id as string);
         },

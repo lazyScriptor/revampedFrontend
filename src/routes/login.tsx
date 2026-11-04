@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ForgotPasswordDialog } from "@/features/auth/ForgotPasswordDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -18,7 +19,6 @@ import {
   IconButton,
   FormControlLabel,
   Checkbox,
-  Tooltip,
   Chip,
   useTheme,
   useMediaQuery,
@@ -68,6 +68,7 @@ export default function LoginRoute() {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
@@ -96,6 +97,8 @@ export default function LoginRoute() {
   const onSubmit = (data: LoginCredentials) => {
     loginMutation.mutate(data);
   };
+
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
 
@@ -655,14 +658,15 @@ export default function LoginRoute() {
                   mb: 0.75,
                 }}
               >
-                {t("login.workEmail") || t("pages.login.corporateEmail")}
+                {t("login.identifier")}
               </Typography>
               <TextField
                 required
                 fullWidth
                 id="email"
-                placeholder="you@company.com"
-                autoComplete="email"
+                placeholder={t("login.identifierPlaceholder")}
+                autoComplete="username"
+                inputProps={{ "data-no-sinhala": "" }}
                 autoFocus
                 {...register("email")}
                 error={!!errors.email}
@@ -729,8 +733,16 @@ export default function LoginRoute() {
                 >
                   {t("login.password") || t("common.password")}
                 </Typography>
-                <Tooltip title={t("pages.login.contactYourTenantAdministratorTo")} arrow>
                   <Typography
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setForgotOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setForgotOpen(true);
+                      }
+                    }}
                     variant="caption"
                     sx={{
                       color: "#F59E0B",
@@ -742,7 +754,6 @@ export default function LoginRoute() {
                   >
                     {t("login.forgotPassword") || t("pages.login.forgot")}
                   </Typography>
-                </Tooltip>
               </Box>
 
               <TextField
@@ -977,6 +988,7 @@ export default function LoginRoute() {
           </Typography>
         </Box>
       </Box>
+      <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} initialIdentifier={forgotOpen ? getValues("email") : ""} />
     </Box>
   );
 }

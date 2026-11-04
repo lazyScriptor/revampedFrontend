@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { zt } from '@/i18n/zod';
 
 export const loginSchema = z.object({
-    email: z.string().min(1, zt("validation.emailRequired")).email(zt("validation.invalidEmail")),
+    // An email or a username.
+    email: z.string().trim().min(1, zt("validation.emailRequired")),
     password: z.string().min(6, zt("validation.passwordMin6")),
 });
 

@@ -192,7 +192,7 @@ export const useCreateTenant = () => {
             monthly_rate: number;
         }) => {
             const res = await api.post('/super-admin/tenants', data);
-            return res.data.tenant as Record<string, unknown>;
+            return { ...res.data.tenant, email_sent: res.data.email_sent } as Record<string, unknown>;
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['sa-tenants'] });
@@ -268,7 +268,7 @@ export const useCreateTenantUser = () => {
     return useMutation({
         mutationFn: async ({ tenantId, data }: { tenantId: string; data: Record<string, unknown> }) => {
             const res = await api.post(`/super-admin/tenants/${tenantId}/users`, data);
-            return res.data.user;
+            return { ...res.data.user, email_sent: res.data.email_sent };
         },
         onSuccess: (_, { tenantId }) => {
             qc.invalidateQueries({ queryKey: ['sa-tenant-users', tenantId] });

@@ -19,6 +19,9 @@ import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
+import { ResetCodeDialog, type ResetCode } from "./ResetCodeDialog";
+import { api } from "@/lib/api";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
@@ -135,6 +138,7 @@ function KpiTile({ icon, label, value, tone }: KpiTileProps) {
 }
 
 export default function UserManagement() {
+  const [resetUser, setResetUser] = useState<any | null>(null);
   const { t } = useTranslation();
   const theme = useTheme();
   const [users, setUsers] = useState<any[]>([]);
@@ -462,6 +466,18 @@ export default function UserManagement() {
               </IconButton>
             </Tooltip>
             {params.row.is_active && (
+              <Tooltip title={t("auth.adminReset.action")}>
+                <IconButton
+                  size="small"
+                  aria-label={`${t("auth.adminReset.action")} ${params.row.username}`}
+                  onClick={() => setResetUser(params.row)}
+                  sx={{ color: theme.palette.text.secondary, "&:hover": { color: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.08) } }}
+                >
+                  <VpnKeyOutlinedIcon sx={{ fontSize: 17 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {params.row.is_active && (
               <Tooltip title={t("admin.users.deactivateUser")}>
                 <IconButton
                   size="small"
@@ -625,6 +641,16 @@ export default function UserManagement() {
           }}
         />
       </ListPageShell>
+
+      <ResetCodeDialog
+        open={!!resetUser}
+        onClose={() => setResetUser(null)}
+        name={resetUser?.first_name || resetUser?.username || ""}
+        createCode={async () => {
+          const body: any = await api.post(`/users/${resetUser.user_id}/reset-code`);
+          return body.data as ResetCode;
+        }}
+      />
 
       {drawerOpen && (
         <UserFormDrawer

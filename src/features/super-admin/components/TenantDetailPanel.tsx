@@ -23,6 +23,9 @@ import { formatDisplayDate } from '@/lib/dates';
 import { useTranslation } from "react-i18next";
 import { TenantPlanExceptions } from './TenantPlanExceptions';
 import { OverdueDialog } from './OverdueDialog';
+import { ResetCodeDialog, type ResetCode } from '@/features/admin/components/ResetCodeDialog';
+import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
+import { api } from '@/lib/api';
 import { isLockedNow, timeLeftText } from '@/features/plan/paymentNoticeText';
 
 const STATUS_META: Record<string, { color: string; bg: string }> = {
@@ -85,6 +88,7 @@ export default function TenantDetailPanel({ tenantId }: Props) {
     const activateMutation = useActivateTenant();
     const overdueMutation = useMarkTenantOverdue();
     const [overdueOpen, setOverdueOpen] = useState(false);
+    const [resetUser, setResetUser] = useState<any | null>(null);
     const impersonateMutation = useImpersonate();
 
     const deleteTenantUser = useDeleteTenantUser();
@@ -262,6 +266,15 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                     onPaid={() => activateMutation.mutate(tenantId)}
                 />
             )}
+            <ResetCodeDialog
+                open={!!resetUser}
+                onClose={() => setResetUser(null)}
+                name={resetUser?.first_name || resetUser?.username || ''}
+                createCode={async () => {
+                    const body: any = await api.post(`/super-admin/tenants/${tenantId}/users/${resetUser.user_id}/reset-code`);
+                    return body.data as ResetCode;
+                }}
+            />
             <OverdueDialog
                 open={overdueOpen}
                 onClose={() => setOverdueOpen(false)}
@@ -654,6 +667,11 @@ export default function TenantDetailPanel({ tenantId }: Props) {
                                             sx={{ color: '#3b82f6', '&:hover': { bgcolor: 'rgba(59,130,246,0.1)' }, width: 28, height: 28 }}
                                         >
                                             <PersonSearchOutlinedIcon sx={{ fontSize: 16 }} />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={t("auth.adminReset.action")}>
+                                        <IconButton size="small" aria-label={`${t("auth.adminReset.action")} ${u.username}`} onClick={() => setResetUser(u)} sx={{ color: '#f59e0b', '&:hover': { bgcolor: 'rgba(245,158,11,0.1)' } }}>
+                                            <VpnKeyOutlinedIcon sx={{ fontSize: 16 }} />
                                         </IconButton>
                                     </Tooltip>
                                     <Tooltip title={t("admin.users.editUser")}>

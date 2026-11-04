@@ -1,3 +1,4 @@
+import { useToast } from "@/components/ui/AppToast";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -35,6 +36,7 @@ const blankForm = {
 };
 
 export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = null }: Props) {
+  const toast = useToast();
   const { t } = useTranslation();
   const isEditMode = Boolean(userToEdit);
 
@@ -83,7 +85,9 @@ export default function UserFormDialog({ open, onClose, onSuccess, userToEdit = 
         if (formData.password) payload.password = formData.password;
         await userApi.updateUser(userToEdit.user_id, payload);
       } else {
-        await userApi.createUser(formData);
+        const res: any = await userApi.createUser(formData);
+        if (res?.data?.email_sent) toast.showSuccess(t("auth.welcome.userEmailed", { email: formData.email }));
+        else toast.showWarning(t("auth.welcome.userNotEmailed", { email: formData.email }));
       }
       onSuccess();
     } catch (err: any) {
