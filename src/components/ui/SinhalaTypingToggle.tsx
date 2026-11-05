@@ -77,6 +77,22 @@ function TypingChart({ on }: { on: boolean }) {
 export function SinhalaTypingToggle() {
   const { t } = useTranslation();
   useEffect(() => installSinhalaTyping(), []);
+  useEffect(() => {
+  const handleMacShortcut = (event: KeyboardEvent) => {
+    if (
+      event.metaKey &&
+      event.altKey &&
+      event.key.toLowerCase() === "s" &&
+      !event.repeat
+    ) {
+      event.preventDefault();
+      setSinhalaTyping(!isSinhalaTypingEnabled());
+    }
+  };
+
+  window.addEventListener("keydown", handleMacShortcut);
+  return () => window.removeEventListener("keydown", handleMacShortcut);
+}, []);
   const on = useSyncExternalStore(subscribeSinhalaTyping, isSinhalaTypingEnabled, () => false);
 
   return (

@@ -1,4 +1,4 @@
-import { Box, Chip } from "@mui/material";
+import { Box, Chip, Table } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import AccountingFilterBar from "./AccountingFilterBar";
 import { useAccountingFilters } from "../hooks/useAccountingFilters";
@@ -15,7 +15,10 @@ const STATUS_OPTIONS = [
   { value: "Overdue", label: tk("invoices.overdue") },
 ];
 
-const STATUS_COLORS: Record<string, "primary" | "success" | "error" | "default" | "warning"> = {
+const STATUS_COLORS: Record<
+  string,
+  "primary" | "success" | "error" | "default" | "warning"
+> = {
   Active: "primary",
   Completed: "success",
   Settled: "default",
@@ -24,8 +27,15 @@ const STATUS_COLORS: Record<string, "primary" | "success" | "error" | "default" 
 
 export default function InvoicesTab() {
   const { t } = useTranslation();
-  const { filters, updateFilter, updateMultiple, resetFilters, setPage, setPageSize, toQueryParams } =
-    useAccountingFilters({ sortField: "issued_date" });
+  const {
+    filters,
+    updateFilter,
+    updateMultiple,
+    resetFilters,
+    setPage,
+    setPageSize,
+    toQueryParams,
+  } = useAccountingFilters({ sortField: "issued_date" });
   const { format } = useCurrencyFormatter();
   const { data, isLoading } = useAccountingInvoices(toQueryParams());
 
@@ -35,7 +45,12 @@ export default function InvoicesTab() {
       headerName: t("invoices.invoiceNumber"),
       width: 100,
       renderCell: (p) => (
-        <Chip label={`INV-${p.value}`} size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: "0.72rem" }} />
+        <Chip
+          label={`INV-${p.value}`}
+          size="small"
+          variant="outlined"
+          sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+        />
       ),
     },
     {
@@ -53,7 +68,9 @@ export default function InvoicesTab() {
       valueGetter: (_value: any, row: any) => {
         const c = row.Customer;
         if (!c) return "—";
-        return c.customer_type === "Business" ? c.company_name : `${c.first_name} ${c.last_name}`;
+        return c.customer_type === "Business"
+          ? c.company_name
+          : `${c.first_name} ${c.last_name}`;
       },
     },
     {
@@ -82,7 +99,13 @@ export default function InvoicesTab() {
       align: "right",
       headerAlign: "right",
       renderCell: (p) => (
-        <span style={{ fontVariantNumeric: "tabular-nums", color: "#16a34a", fontWeight: 600 }}>
+        <span
+          style={{
+            fontVariantNumeric: "tabular-nums",
+            color: "#16a34a",
+            fontWeight: 600,
+          }}
+        >
           {format(p.value)}
         </span>
       ),
@@ -127,10 +150,23 @@ export default function InvoicesTab() {
         onUpdate={updateFilter}
         onUpdateMultiple={updateMultiple}
         onReset={resetFilters}
-        show={{ search: true, dateRange: true, datePresets: true, status: true, amountRange: true }}
+        show={{
+          search: true,
+          dateRange: true,
+          datePresets: true,
+          status: true,
+          amountRange: true,
+        }}
         statusOptions={STATUS_OPTIONS}
       />
-      <Box sx={{ bgcolor: "white", borderRadius: 2.5, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+      <Box
+        sx={{
+          bgcolor: "white",
+          borderRadius: 2.5,
+          border: "1px solid #e2e8f0",
+          overflow: "hidden",
+        }}
+      >
         <DataGrid
           rows={data?.rows || []}
           columns={columns}
@@ -138,13 +174,15 @@ export default function InvoicesTab() {
           loading={isLoading}
           rowCount={data?.totalCount || 0}
           paginationMode="server"
-          paginationModel={{ page: filters.page - 1, pageSize: filters.pageSize }}
+          paginationModel={{
+            page: filters.page - 1,
+            pageSize: filters.pageSize,
+          }}
           onPaginationModelChange={(model) => {
             updateMultiple({ page: model.page + 1, pageSize: model.pageSize });
           }}
           pageSizeOptions={[10, 25, 50, 100]}
           disableRowSelectionOnClick
-          autoHeight
           getRowHeight={() => "auto"}
           getEstimatedRowHeight={() => 56}
           sx={{
@@ -152,7 +190,11 @@ export default function InvoicesTab() {
             "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
             "& .MuiDataGrid-row": { minHeight: "56px !important" },
             "& .MuiDataGrid-cell": { fontSize: "0.84rem", py: 1 },
-            "& .MuiDataGrid-columnHeaderTitle": { fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase" },
+            "& .MuiDataGrid-columnHeaderTitle": {
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+            },
           }}
         />
       </Box>
