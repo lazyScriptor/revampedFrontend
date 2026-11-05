@@ -73,26 +73,29 @@ function TypingChart({ on }: { on: boolean }) {
   );
 }
 
-/** Top-bar switch for phonetic Sinhala typing (Singlish). Ctrl+Alt+S toggles it too. */
+/** Top-bar switch for phonetic Sinhala typing (Singlish). Ctrl/Option+Alt+S toggles it too. */
 export function SinhalaTypingToggle() {
   const { t } = useTranslation();
   useEffect(() => installSinhalaTyping(), []);
   useEffect(() => {
-  const handleMacShortcut = (event: KeyboardEvent) => {
-    if (
-      event.metaKey &&
-      event.altKey &&
-      event.key.toLowerCase() === "s" &&
-      !event.repeat
-    ) {
-      event.preventDefault();
-      setSinhalaTyping(!isSinhalaTypingEnabled());
-    }
-  };
+    const handleLanguageShortcut = (event: KeyboardEvent) => {
+      // Ctrl+Alt+S works on Windows/Linux and Control+Option+S on Mac.
+      // Keep Command+Option+S as an additional Mac-friendly alternative.
+      const hasModifier = event.ctrlKey || event.metaKey;
+      if (
+        hasModifier &&
+        event.altKey &&
+        event.key.toLowerCase() === "s" &&
+        !event.repeat
+      ) {
+        event.preventDefault();
+        setSinhalaTyping(!isSinhalaTypingEnabled());
+      }
+    };
 
-  window.addEventListener("keydown", handleMacShortcut);
-  return () => window.removeEventListener("keydown", handleMacShortcut);
-}, []);
+    window.addEventListener("keydown", handleLanguageShortcut);
+    return () => window.removeEventListener("keydown", handleLanguageShortcut);
+  }, []);
   const on = useSyncExternalStore(subscribeSinhalaTyping, isSinhalaTypingEnabled, () => false);
 
   return (

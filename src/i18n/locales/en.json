@@ -3276,7 +3276,7 @@
         "label": "Sinhala typing",
         "titleOn": "Sinhala typing is ON",
         "titleOff": "Sinhala typing is OFF",
-        "howTo": "Click the button or press Ctrl+Alt+S to switch. Type English letters by sound and they turn into Sinhala.",
+        "howTo": "Click the button or press Ctrl+Alt+S (Windows/Linux) or Control+Option+S (Mac) to switch. Type English letters by sound and they turn into Sinhala.",
         "vowels": "Vowels (letter · sign)",
         "consonants": "Consonants",
         "special": "Special",
