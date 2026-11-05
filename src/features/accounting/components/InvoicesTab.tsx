@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Box, Typography, Chip } from "@mui/material";
 import { DataGrid, GridColDef, GridFooterContainer, GridPagination } from "@mui/x-data-grid";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
@@ -153,6 +154,24 @@ export default function InvoicesTab() {
   const { format } = useCurrencyFormatter();
   const { data, isLoading } = useAccountingInvoices(toQueryParams());
 
+  // Resilient financial summary: uses backend database-wide summary when available;
+  // gracefully falls back to summing active page rows if server hasn't reloaded yet.
+  const summary = useMemo(() => {
+    if (data?.summary && (data.summary.total_amount > 0 || data.summary.total_paid > 0 || data.totalCount === 0)) {
+      return data.summary;
+    }
+    const rows = data?.rows || [];
+    if (rows.length === 0) return { total_amount: 0, total_paid: 0, outstanding: 0 };
+    const totalAmount = rows.reduce((s: number, r: any) => s + (Number(r.total_amount) || 0), 0);
+    const totalPaid = rows.reduce((s: number, r: any) => s + (Number(r.total_paid) || 0), 0);
+    const outstanding = rows.reduce((s: number, r: any) => s + (Number(r.outstanding) || 0), 0);
+    return {
+      total_amount: Math.round(totalAmount * 100) / 100,
+      total_paid: Math.round(totalPaid * 100) / 100,
+      outstanding: Math.round(outstanding * 100) / 100,
+    };
+  }, [data]);
+
   const columns: GridColDef[] = [
     {
       field: "invoice_id",
@@ -258,24 +277,24 @@ export default function InvoicesTab() {
         <ResponsiveKpiStrip mobileLabel={t("accounting.invoices")}>
           <KpiTile
             label={t("common.total")}
-            value={format(data?.summary?.total_amount || 0)}
+            value={format(summary.total_amount)}
             hint={`${data?.totalCount || 0} ${t("accounting.invoices").toLowerCase()}`}
             icon={<ReceiptLongIcon />}
             tone="default"
           />
           <KpiTile
             label={t("invoices.paid")}
-            value={format(data?.summary?.total_paid || 0)}
+            value={format(summary.total_paid)}
             hint={t("orders.settled")}
             icon={<TrendingUpIcon />}
             tone="success"
           />
           <KpiTile
             label={t("accounting.InvoicesTab.outstanding")}
-            value={format(data?.summary?.outstanding || 0)}
+            value={format(summary.outstanding)}
             hint={t("invoices.overdue")}
             icon={<WarningAmberIcon />}
-            tone={(data?.summary?.outstanding || 0) > 0 ? "error" : "success"}
+            tone={summary.outstanding > 0 ? "error" : "success"}
           />
         </ResponsiveKpiStrip>
       }
@@ -318,7 +337,7 @@ export default function InvoicesTab() {
         slots={{
           footer: () => (
             <InvoicesTableFooter
-              summary={data?.summary}
+              summary={summary}
               totalCount={data?.totalCount || 0}
             />
           ),
