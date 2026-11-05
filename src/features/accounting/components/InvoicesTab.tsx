@@ -1,5 +1,11 @@
-import { Box, Chip, Table } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { Box, Typography, Chip } from "@mui/material";
+import { DataGrid, GridColDef, GridFooterContainer, GridPagination } from "@mui/x-data-grid";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { ListPageShell } from "@/components/layout/ListPageShell";
+import { ResponsiveKpiStrip } from "@/components/ui/ResponsiveKpiStrip";
+import { KpiTile } from "@/components/reports/KpiTile";
 import AccountingFilterBar from "./AccountingFilterBar";
 import { useAccountingFilters } from "../hooks/useAccountingFilters";
 import { useAccountingInvoices } from "../hooks/useAccountingQueries";
@@ -15,15 +21,125 @@ const STATUS_OPTIONS = [
   { value: "Overdue", label: tk("invoices.overdue") },
 ];
 
-const STATUS_COLORS: Record<
-  string,
-  "primary" | "success" | "error" | "default" | "warning"
-> = {
+const STATUS_COLORS: Record<string, "primary" | "success" | "error" | "default" | "warning"> = {
   Active: "primary",
   Completed: "success",
   Settled: "default",
   Overdue: "error",
 };
+
+interface InvoicesTableFooterProps {
+  summary?: {
+    total_amount: number;
+    total_paid: number;
+    outstanding: number;
+  };
+  totalCount: number;
+}
+
+function InvoicesTableFooter({ summary, totalCount }: InvoicesTableFooterProps) {
+  const { format } = useCurrencyFormatter();
+
+  return (
+    <GridFooterContainer
+      sx={{
+        flexDirection: "column",
+        alignItems: "stretch",
+        p: 0,
+        bgcolor: (t) => (t.palette.mode === "dark" ? "#0f172a" : "#ffffff"),
+      }}
+    >
+      {/* ── Tier 1: Pinned Database-Wide Totals Row ── */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          bgcolor: (t) => (t.palette.mode === "dark" ? "#1e293b" : "#f8fafc"),
+          borderTop: (t) => `1px solid ${t.palette.divider}`,
+          borderBottom: (t) => `1px solid ${t.palette.divider}`,
+          px: { xs: 1.5, sm: 2 },
+          py: 1,
+          flexWrap: "wrap",
+          gap: 1.5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 800,
+              fontSize: "0.72rem",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "text.secondary",
+            }}
+          >
+            Grand Totals ({totalCount} Matching {totalCount === 1 ? "Invoice" : "Invoices"}):
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 2, sm: 3 },
+            fontVariantNumeric: "tabular-nums",
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          <Box sx={{ textAlign: "right" }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em" }}
+            >
+              TOTAL BILLED
+            </Typography>
+            <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "inherit" }}>
+              {format(summary?.total_amount || 0)}
+            </span>
+          </Box>
+
+          <Box sx={{ textAlign: "right" }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em" }}
+            >
+              TOTAL PAID
+            </Typography>
+            <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#16a34a" }}>
+              {format(summary?.total_paid || 0)}
+            </span>
+          </Box>
+
+          <Box sx={{ textAlign: "right" }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em" }}
+            >
+              OUTSTANDING
+            </Typography>
+            <span
+              style={{
+                fontWeight: 800,
+                fontSize: "0.88rem",
+                color: (summary?.outstanding || 0) > 0 ? "#dc2626" : "#16a34a",
+              }}
+            >
+              {format(summary?.outstanding || 0)}
+            </span>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* ── Tier 2: Server-Side Pagination Bar ── */}
+      <GridPagination />
+    </GridFooterContainer>
+  );
+}
 
 export default function InvoicesTab() {
   const { t } = useTranslation();
@@ -32,8 +148,6 @@ export default function InvoicesTab() {
     updateFilter,
     updateMultiple,
     resetFilters,
-    setPage,
-    setPageSize,
     toQueryParams,
   } = useAccountingFilters({ sortField: "issued_date" });
   const { format } = useCurrencyFormatter();
@@ -43,13 +157,13 @@ export default function InvoicesTab() {
     {
       field: "invoice_id",
       headerName: t("invoices.invoiceNumber"),
-      width: 100,
+      width: 110,
       renderCell: (p) => (
         <Chip
           label={`INV-${p.value}`}
           size="small"
           variant="outlined"
-          sx={{ fontWeight: 700, fontSize: "0.72rem" }}
+          sx={{ fontWeight: 700, fontSize: "0.72rem", fontVariantNumeric: "tabular-nums" }}
         />
       ),
     },
@@ -68,9 +182,7 @@ export default function InvoicesTab() {
       valueGetter: (_value: any, row: any) => {
         const c = row.Customer;
         if (!c) return "—";
-        return c.customer_type === "Business"
-          ? c.company_name
-          : `${c.first_name} ${c.last_name}`;
+        return c.customer_type === "Business" ? c.company_name : `${c.first_name} ${c.last_name}`;
       },
     },
     {
@@ -99,13 +211,7 @@ export default function InvoicesTab() {
       align: "right",
       headerAlign: "right",
       renderCell: (p) => (
-        <span
-          style={{
-            fontVariantNumeric: "tabular-nums",
-            color: "#16a34a",
-            fontWeight: 600,
-          }}
-        >
+        <span style={{ fontVariantNumeric: "tabular-nums", color: "#16a34a", fontWeight: 600 }}>
           {format(p.value)}
         </span>
       ),
@@ -144,60 +250,93 @@ export default function InvoicesTab() {
   ];
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <AccountingFilterBar
-        filters={filters}
-        onUpdate={updateFilter}
-        onUpdateMultiple={updateMultiple}
-        onReset={resetFilters}
-        show={{
-          search: true,
-          dateRange: true,
-          datePresets: true,
-          status: true,
-          amountRange: true,
-        }}
-        statusOptions={STATUS_OPTIONS}
-      />
-      <Box
-        sx={{
-          bgcolor: "white",
-          borderRadius: 2.5,
-          border: "1px solid #e2e8f0",
-          overflow: "hidden",
-        }}
-      >
-        <DataGrid
-          rows={data?.rows || []}
-          columns={columns}
-          getRowId={(row) => row.invoice_id}
-          loading={isLoading}
-          rowCount={data?.totalCount || 0}
-          paginationMode="server"
-          paginationModel={{
-            page: filters.page - 1,
-            pageSize: filters.pageSize,
+    <ListPageShell
+      icon={<ReceiptLongIcon sx={{ fontSize: 22 }} />}
+      title={t("accounting.invoices")}
+      subtitle={t("accounting.subtitles.invoices")}
+      kpis={
+        <ResponsiveKpiStrip mobileLabel={t("accounting.invoices")}>
+          <KpiTile
+            label={t("common.total")}
+            value={format(data?.summary?.total_amount || 0)}
+            hint={`${data?.totalCount || 0} ${t("accounting.invoices").toLowerCase()}`}
+            icon={<ReceiptLongIcon />}
+            tone="default"
+          />
+          <KpiTile
+            label={t("invoices.paid")}
+            value={format(data?.summary?.total_paid || 0)}
+            hint={t("orders.settled")}
+            icon={<TrendingUpIcon />}
+            tone="success"
+          />
+          <KpiTile
+            label={t("accounting.InvoicesTab.outstanding")}
+            value={format(data?.summary?.outstanding || 0)}
+            hint={t("invoices.overdue")}
+            icon={<WarningAmberIcon />}
+            tone={(data?.summary?.outstanding || 0) > 0 ? "error" : "success"}
+          />
+        </ResponsiveKpiStrip>
+      }
+      filters={
+        <AccountingFilterBar
+          filters={filters}
+          onUpdate={updateFilter}
+          onUpdateMultiple={updateMultiple}
+          onReset={resetFilters}
+          show={{
+            search: true,
+            dateRange: true,
+            datePresets: true,
+            status: true,
+            amountRange: true,
           }}
-          onPaginationModelChange={(model) => {
-            updateMultiple({ page: model.page + 1, pageSize: model.pageSize });
-          }}
-          pageSizeOptions={[10, 25, 50, 100]}
-          disableRowSelectionOnClick
-          getRowHeight={() => "auto"}
-          getEstimatedRowHeight={() => 56}
-          sx={{
-            border: 0,
-            "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
-            "& .MuiDataGrid-row": { minHeight: "56px !important" },
-            "& .MuiDataGrid-cell": { fontSize: "0.84rem", py: 1 },
-            "& .MuiDataGrid-columnHeaderTitle": {
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-            },
-          }}
+          statusOptions={STATUS_OPTIONS}
+          sx={{ border: 0, p: 0, bgcolor: "transparent", width: "100%" }}
         />
-      </Box>
-    </Box>
+      }
+    >
+      <DataGrid
+        rows={data?.rows || []}
+        columns={columns}
+        getRowId={(row) => row.invoice_id}
+        loading={isLoading}
+        rowCount={data?.totalCount || 0}
+        paginationMode="server"
+        paginationModel={{
+          page: filters.page - 1,
+          pageSize: filters.pageSize,
+        }}
+        onPaginationModelChange={(model) => {
+          updateMultiple({ page: model.page + 1, pageSize: model.pageSize });
+        }}
+        pageSizeOptions={[10, 25, 50, 100]}
+        disableRowSelectionOnClick
+        getRowHeight={() => "auto"}
+        getEstimatedRowHeight={() => 56}
+        slots={{
+          footer: () => (
+            <InvoicesTableFooter
+              summary={data?.summary}
+              totalCount={data?.totalCount || 0}
+            />
+          ),
+        }}
+        sx={{
+          border: 0,
+          height: "100%",
+          width: "100%",
+          "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
+          "& .MuiDataGrid-row": { minHeight: "56px !important" },
+          "& .MuiDataGrid-cell": { fontSize: "0.84rem", py: 1 },
+          "& .MuiDataGrid-columnHeaderTitle": {
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+          },
+        }}
+      />
+    </ListPageShell>
   );
 }

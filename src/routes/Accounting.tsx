@@ -54,6 +54,17 @@ export default function AccountingRoute() {
   // ── Dedicated single-tab view (sidebar deep-link target) ────────────────────
   if (isDedicated) {
     const { label, subtitle, component: Component } = TAB_CONFIG[dedicatedIdx];
+    const key = ACCOUNTING_TAB_KEYS[dedicatedIdx];
+
+    // InvoicesTab uses ListPageShell to lock to viewport and provide its own title & KPI strip
+    if (key === "invoices") {
+      return (
+        <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <Component />
+        </Box>
+      );
+    }
+
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 4 }}>
         <Box>

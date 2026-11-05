@@ -1,4 +1,5 @@
 import { Box, TextField, MenuItem, Button, Chip, InputAdornment, IconButton, Tooltip } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
 import TodayIcon from "@mui/icons-material/Today";
@@ -26,6 +27,7 @@ interface FilterBarProps {
   statusOptions?: { value: string; label: string; color?: string }[];
   categoryOptions?: { value: string; label: string }[];
   methodOptions?: { value: string; label: string }[];
+  sx?: SxProps<Theme>;
 }
 
 // Built per render (not at module load) so "Today/This month" stay correct if the tab is left open past midnight.
@@ -48,6 +50,7 @@ export default function AccountingFilterBar({
   statusOptions = [],
   categoryOptions = [],
   methodOptions = [],
+  sx,
 }: FilterBarProps) {
   const { t } = useTranslation();
   const DATE_PRESETS = buildDatePresets();
@@ -72,6 +75,7 @@ export default function AccountingFilterBar({
         bgcolor: "white",
         border: "1px solid #e2e8f0",
         borderRadius: 2.5,
+        ...(sx as any),
       }}
     >
       {/* Row 1: Search + Date Range */}
