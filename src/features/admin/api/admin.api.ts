@@ -5,6 +5,7 @@ export const userApi = {
   createUser: (data: any) => api.post("/users", data),
   updateUser: (id: string | number, data: any) => api.put(`/users/${id}`, data),
   deleteUser: (id: string | number) => api.delete(`/users/${id}`),
+  permanentlyDeleteUser: (id: string | number) => api.delete(`/users/${id}/permanent`),
   assignRoles: (id: string | number, roleIds: number[]) => api.post(`/users/${id}/assign-roles`, { roleIds }),
   toggleStatus: (id: string | number, isActive: boolean) => api.patch(`/users/${id}/toggle-status`, { isActive }),
 };

@@ -23,6 +23,7 @@ import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
 import { ResetCodeDialog, type ResetCode } from "./ResetCodeDialog";
 import { api } from "@/lib/api";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import DeleteForeverOutlinedIcon from "@mui/icons-material/DeleteForeverOutlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
@@ -210,6 +211,26 @@ export default function UserManagement() {
       fetchUsers();
     } catch (error: any) {
       showError(error.message || t("admin.UserManagement.failedToDeactivateUser"));
+    }
+  };
+
+  const handleRemovePermanently = async (id: number, username: string) => {
+    const confirmed = await confirm({
+      title: t("admin.UserManagement.removePermanently", { defaultValue: "Remove user permanently" }),
+      message: t("admin.UserManagement.removePermanentlyMessage", {
+        username,
+        defaultValue: `Permanently remove "${username}"? This frees the login and cannot be undone. Users with invoice history stay on record as inactive.`,
+      }),
+      confirmLabel: t("common.delete", { defaultValue: "Delete" }),
+      severity: "error",
+    });
+    if (!confirmed) return;
+    try {
+      const res: any = await userApi.permanentlyDeleteUser(id);
+      showSuccess(res?.message || `${username} removed.`);
+      fetchUsers();
+    } catch (error: any) {
+      showError(error.message || "Failed to remove user.");
     }
   };
 
@@ -491,6 +512,18 @@ export default function UserManagement() {
                   }}
                 >
                   <DeleteOutlineOutlinedIcon sx={{ fontSize: 17 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {!params.row.is_active && (
+              <Tooltip title={t("admin.UserManagement.removePermanently", { defaultValue: "Remove user permanently" })}>
+                <IconButton
+                  size="small"
+                  aria-label={`Remove ${params.row.username} permanently`}
+                  onClick={() => handleRemovePermanently(params.row.user_id, params.row.username)}
+                  sx={{ color: theme.palette.error.main, "&:hover": { bgcolor: alpha(theme.palette.error.main, 0.08) } }}
+                >
+                  <DeleteForeverOutlinedIcon sx={{ fontSize: 17 }} />
                 </IconButton>
               </Tooltip>
             )}
