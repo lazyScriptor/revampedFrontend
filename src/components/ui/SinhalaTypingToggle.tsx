@@ -85,7 +85,9 @@ export function SinhalaTypingToggle() {
       if (
         hasModifier &&
         event.altKey &&
-        event.key.toLowerCase() === "s" &&
+        // Use the physical key: on macOS, Option+S can produce "ß" (or
+        // another layout-specific character), so event.key is not reliably "s".
+        (event.code === "KeyS" || event.key.toLowerCase() === "s") &&
         !event.repeat
       ) {
         event.preventDefault();
