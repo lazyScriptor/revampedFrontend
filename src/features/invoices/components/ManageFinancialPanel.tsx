@@ -59,6 +59,7 @@ import { invoiceStatusColor, invoiceStatusLabel, moneyState, unitsOut } from "..
 import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
 import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
+import { CompletionRatingDialog } from "@/features/reviews/components/CompletionRatingDialog";
 
 const MONO = "'JetBrains Mono', monospace";
 // PAYMENT_METHODS / METHOD_LABELS: shared with the checkout and the handover dialog.
@@ -131,6 +132,7 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   const [printOpen, setPrintOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [ratingOpen, setRatingOpen] = useState(false);
 
   const invoiceId = invoice?.invoice_id;
   // open on the action that is actually due: Refund when money is owed back to the customer
@@ -142,6 +144,7 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
     setEditing(null);
     setMode(refundDueNow ? "refund" : "collect");
     setConfirmOpen(false);
+    setRatingOpen(false);
   }, [invoiceId, refundDueNow]);
 
   const border = (theme.palette as any).border?.subtle || theme.palette.divider;
@@ -246,6 +249,10 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
         onSuccess: () => {
           showToast(t("invoices.FinancialPanel.completedToast"), "success");
           setConfirmOpen(false);
+          // Completion already succeeded — now ask staff to rate the customer.
+          // The dialog itself skips the prompt if this invoice already has
+          // a primary rating, and Skip leaves the rating untouched.
+          setRatingOpen(true);
         },
         onError: (e: any) => {
           showToast(e?.message || t("errors.unexpected"), "error");
@@ -584,6 +591,21 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
       <ReceiptPrintDialog open={printOpen} onClose={() => setPrintOpen(false)} invoice={invoice} />
       <InvoicePrintHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} invoiceId={invoiceId} invoiceNumber={invoice.invoice_number || `INV-${invoiceId}`} />
       <DeleteInvoiceDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} invoice={invoice} onDeleted={onInvoiceDeleted} />
+      {/* Mounted only once completion succeeds, so its review queries never
+          run (and never need a QueryClient in tests) while the panel is idle. */}
+      {ratingOpen && (
+        <CompletionRatingDialog
+          open={ratingOpen}
+          onClose={() => setRatingOpen(false)}
+          invoiceId={invoiceId}
+          customerName={
+            invoice.Customer?.company_name ||
+            `${invoice.Customer?.first_name || ""} ${invoice.Customer?.last_name || ""}`.trim() ||
+            null
+          }
+          showToast={showToast}
+        />
+      )}
     </Box>
   );
 }
