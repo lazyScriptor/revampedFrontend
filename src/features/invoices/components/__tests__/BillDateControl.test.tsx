@@ -24,7 +24,8 @@ describe("BillDateControl", () => {
   it("applies the chosen day to the lines and can go back to now", () => {
     const onApply = vi.fn();
     const onChange = vi.fn();
-    render(<BillDateControl value="2026-10-20T08:30" onChange={onChange} onApplyToLines={onApply} hasLines />);
+    const testDate = toLocalInputValue(new Date(2026, 9, 20, 8, 30));
+    render(<BillDateControl value={testDate} onChange={onChange} onApplyToLines={onApply} hasLines />);
     fireEvent.click(screen.getByRole("button", { name: "Set all lines to this date" }));
     expect(onApply).toHaveBeenCalledWith("2026-10-20");
     fireEvent.click(screen.getByRole("button", { name: "Use now" }));

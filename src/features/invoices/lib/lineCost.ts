@@ -6,7 +6,8 @@ import { formatLocalDate, todayLocalStr } from "@/lib/dates";
  * Billing rules (mirrors backend `processReturn`):
  *  • The line's price is locked at dispatch (`line_total_amount`).
  *  • Late fees exist ONLY when the line's return date is tracked (`track_overdue`) and the machine
- *    comes back AFTER `expected_return_date`: fee = days late × extra daily rate × units returned.
+ *    comes back AFTER `expected_return_date`: fee = chargeable late days × extra daily rate × units
+ *    returned, where days still inside the paid minimum period are not charged (`chargeableLateDays`).
  *  • A line dispatched with NO return date is "open-ended": it was priced for 1 day, but it is billed
  *    for the days it is really out. Every day beyond what the locked price covers adds the extra daily
  *    rate per unit. That is a charge for days out, not "overdue", so it never raises the overdue alarm.
@@ -65,6 +66,31 @@ export const elapsedDays = (outAt: Date, to: Date): number => {
 /** Days out for billing: out date to `to`, never less than 1 (a same-day return is a day). */
 export const billableDaysOut = (outDate: string, to: string): number => Math.max(1, daysBetween(outDate, to));
 
+// ── The pricing rule (mirrors backend utils/rentalDays.js `periodCharge` / `chargeableLateDays`) ──
+// The base price pays for the whole minimum period (e.g. Rs. 250 for up to 5 days). Every day after
+// that period costs the extra daily rate. Both are per unit. A 1-day machine is the same rule with a
+// 1-day period.
+
+/** Charge for `days` out: (base + days past the period × extra rate) × qty. */
+export const periodCharge = (p: { base: number; minDays: number; rate: number; days: number; qty: number }): number => {
+  const days = Math.max(1, Number(p.days) || 1);
+  const extra = Math.max(0, days - Math.max(1, Number(p.minDays) || 1));
+  return ((Number(p.base) || 0) + extra * (Number(p.rate) || 0)) * (Number(p.qty) || 0);
+};
+
+/**
+ * Chargeable late days for a line with a due date: days past the due date, but never days still
+ * inside the paid minimum period (a 5-day item due back tomorrow and returned on day 3 owes nothing
+ * extra). For 1-day machines this is plain days late.
+ */
+export const chargeableLateDays = (outDate: string, dueDate: string, to: string, minimumDays: number): number => {
+  if (!dueDate || !to) return 0;
+  const late = Math.max(0, daysBetween(dueDate, to));
+  const contract = outDate ? Math.max(1, daysBetween(outDate, dueDate)) : 1;
+  const insidePeriod = Math.max(0, Math.max(1, minimumDays || 1) - contract);
+  return Math.max(0, late - insidePeriod);
+};
+
 /** Days charged beyond what the locked price already covers, for an open-ended line. */
 export const openEndedExtraDays = (outDate: string, to: string, minimumDays: number): number =>
   Math.max(0, billableDaysOut(outDate, to) - Math.max(1, minimumDays || 1));
@@ -88,7 +114,10 @@ export interface LineToday {
   outDate: string;
   dueDate: string;
   isOverdue: boolean;
+  /** Days past the due date (drives the "late" reminder). */
   daysLate: number;
+  /** Late days actually charged: days past the due date that are also past the paid period. */
+  chargedLateDays: number;
   /** Open-ended line: days it has been out so far (active) or was out (returned). */
   openEnded: boolean;
   /** Days charged beyond the locked price (open-ended lines only). */
@@ -128,8 +157,9 @@ export function analyseLine(line: any, today: string = todayLocalStr(), clock: L
   const extraDays = openEnded && isActive
     ? server ? Number(line.accrued_days) || 0 : timed ? Math.max(0, elapsedOut - Math.max(1, minDays)) : openEndedExtraDays(outDate, today, minDays)
     : 0;
-  const lateDaysNow = server && !openEnded ? Number(line.accrued_days) || 0 : daysLate;
-  const lateFee = server ? Number(line.accrued_charge) || 0 : (openEnded ? extraDays : daysLate) * rate * pending;
+  // Days past the due date (the reminder) vs. days actually charged (never inside the paid period).
+  const chargedLate = server && !openEnded ? Number(line.accrued_days) || 0 : isActive && tracked ? chargeableLateDays(outDate, dueDate, today, minDays) : 0;
+  const lateFee = server ? Number(line.accrued_charge) || 0 : (openEnded ? extraDays : chargedLate) * rate * pending;
 
   const endDay = !isActive && backYmd ? backYmd : today;
   const daysOut = server && Number(line.days_out) > 0 ? Number(line.days_out) : timed ? elapsedOut : outDate ? billableDaysOut(outDate, endDay) : 1;
@@ -149,8 +179,9 @@ export function analyseLine(line: any, today: string = todayLocalStr(), clock: L
     pending,
     outDate,
     dueDate,
-    isOverdue: !openEnded && lateDaysNow > 0,
-    daysLate: lateDaysNow,
+    isOverdue: !openEnded && (daysLate > 0 || chargedLate > 0),
+    daysLate: Math.max(daysLate, chargedLate),
+    chargedLateDays: chargedLate,
     openEnded,
     extraDays,
     daysOut,

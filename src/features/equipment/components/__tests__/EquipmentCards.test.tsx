@@ -226,6 +226,6 @@ describe("EquipmentCardSettings", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Purchase cost" }));
     expect(onToggle).toHaveBeenCalledWith("purchaseCost");
     expect(screen.getByRole("checkbox", { name: "Purchase cost" })).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Daily Rate" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Base price" })).toBeChecked();
   });
 });

@@ -48,7 +48,10 @@ describe("LedgerTable", () => {
   });
 
   it("shows the time the bill was written as the rented-out time", () => {
-    render(<LedgerTable lines={[mk()]} infos={[analyseLine(mk(), TODAY)]} returnTraces={[]} issuedAt="2026-10-20T09:05:00" />);
+    // 03:35 UTC is 09:05 in the tenant timezone (Asia/Colombo). The instant
+    // must carry its zone: a bare "09:05:00" is read as local time, so on a
+    // UTC machine it would render as 2:35 PM and fail the build.
+    render(<LedgerTable lines={[mk()]} infos={[analyseLine(mk(), TODAY)]} returnTraces={[]} issuedAt="2026-10-20T03:35:00Z" />);
     expect(within(screen.getByTestId("ledger-row")).getAllByRole("cell")[1]).toHaveTextContent(/9:05 AM/);
   });
 
@@ -65,7 +68,7 @@ describe("LedgerTable", () => {
     const rate = within(screen.getByTestId("ledger-row")).getAllByRole("cell")[5];
     expect(rate).toHaveTextContent("Rs. 4,500");
     expect(rate).toHaveTextContent("for 3 days");
-    expect(rate).toHaveTextContent("then 1,200/day");
+    expect(rate).toHaveTextContent("then Rs. 1,200/day");
   });
 
   it("a returned line shows its return date, days out, returned and damaged counts", () => {
