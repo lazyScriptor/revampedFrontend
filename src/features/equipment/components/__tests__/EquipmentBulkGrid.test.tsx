@@ -63,7 +63,7 @@ describe("bulk grid", () => {
     await pickCompressor();
     expect(value(/Sinhala\) 1$/)).toBe("කොම්ප්‍රෙසර් - 3");
     expect(value(/Equipment No\. 1$/)).toBe("EQ-111");
-    expect(value(/Daily Rate 1$/)).toBe("500");
+    expect(value(/Base price 1$/)).toBe("500");
     expect(value(/Category 1$/)).toBe("Compressor");
   });
 
