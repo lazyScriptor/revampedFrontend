@@ -51,6 +51,7 @@ import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintD
 import { api } from "@/lib/api";
 import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
 import { addDaysLocal, formatDateTime } from "@/lib/dates";
+import { POS_CATALOG_KEY } from "@/features/invoices/hooks/usePosEquipmentCatalog";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
@@ -78,7 +79,7 @@ export default function InvoicesRoute() {
     queryClient.invalidateQueries({ queryKey: ["customer-invoices"] });
     queryClient.invalidateQueries({ queryKey: ["customers"] });
     queryClient.invalidateQueries({ queryKey: ["equipment"] });
-    queryClient.invalidateQueries({ queryKey: ["pos-equipment-catalog"] });
+    queryClient.invalidateQueries({ queryKey: POS_CATALOG_KEY });
   };
 
   const switchPosMode = (next: "dispatch" | "manage") => {

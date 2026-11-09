@@ -29,6 +29,7 @@ import type { Equipment } from "../schemas/equipment.schema";
 import { EquipmentCategoryField, type CategoryOption } from "./EquipmentCategoryField";
 import { EquipmentNameField } from "./EquipmentNameField";
 import { ImageHoverPreview } from "./ImageHoverPreview";
+import { POS_CATALOG_KEY } from "@/features/invoices/hooks/usePosEquipmentCatalog";
 
 const num = { fontVariantNumeric: "tabular-nums" } as const;
 
@@ -337,7 +338,7 @@ export function EquipmentBulkGrid() {
       }
       qc.invalidateQueries({ queryKey: ["equipment"] });
       qc.invalidateQueries({ queryKey: ["equipment-stats"] });
-      qc.invalidateQueries({ queryKey: ["pos-equipment-catalog"] });
+      qc.invalidateQueries({ queryKey: POS_CATALOG_KEY });
       toast.showSuccess(t("equipment.bulkGrid.saved", { count: res.rows.length }));
       if (photoFails) toast.showWarning(t("equipment.bulkGrid.photosFailed", { count: photoFails }));
       const next = await fetchNextEquipment().catch(() => null);

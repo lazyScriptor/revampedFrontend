@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { api } from "@/lib/api";
 import { connectSocket, getSocket } from "@/lib/socket";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { POS_CATALOG_KEY } from "@/features/invoices/hooks/usePosEquipmentCatalog";
 
 export interface PhotoRequest {
   token: string;
@@ -39,7 +40,7 @@ export const applyImageToCaches = (qc: QueryClient, { equipment_id, image_url }:
     return old;
   });
   qc.invalidateQueries({ queryKey: ["equipment"] });
-  qc.invalidateQueries({ queryKey: ["pos-equipment-catalog"] });
+  qc.invalidateQueries({ queryKey: POS_CATALOG_KEY });
 };
 
 export const useUploadEquipmentImage = () => {
