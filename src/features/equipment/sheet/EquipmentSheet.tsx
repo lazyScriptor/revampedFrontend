@@ -36,6 +36,7 @@ import {
   selectionStats, setCells, toggleDeleted, validateRows, viewNewRow, viewRow, visibleRows,
   type Column, type ColumnKey, type Field, type Lookups, type NewRow, type RowErrors, type SheetRow, type SheetState, type SheetView, type SortState, type Values,
 } from "./sheetModel";
+import { POS_CATALOG_KEY } from "@/features/invoices/hooks/usePosEquipmentCatalog";
 
 const ROW_H = 24;
 const HEAD_H = 26;
@@ -740,7 +741,7 @@ export function EquipmentSheet() {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["equipment"] }),
         qc.invalidateQueries({ queryKey: ["equipment-stats"] }),
-        qc.invalidateQueries({ queryKey: ["pos-equipment-catalog"] }),
+        qc.invalidateQueries({ queryKey: POS_CATALOG_KEY }),
       ]);
       setHist({ past: [], present: EMPTY_STATE, future: [] });
       setServerErrors({});

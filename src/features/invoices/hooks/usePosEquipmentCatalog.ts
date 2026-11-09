@@ -4,6 +4,11 @@ import { useDebounce } from "./usePosSearch";
 
 export const CATALOG_PAGE_SIZE = 24;
 
+// Filed under "equipment" on purpose: every place that refreshes equipment after a save (the edit
+// form, the sheet, the bulk grid, imports, repairs, returns) invalidates ["equipment"], and that
+// prefix also refreshes the till. Otherwise the till keeps selling at the old price after an edit.
+export const POS_CATALOG_KEY = ["equipment", "pos-catalog"] as const;
+
 // The slice of an EQUIPMENT row the POS catalog reads.
 export interface CatalogEquipment {
   equipment_id: number;
@@ -42,7 +47,7 @@ export const usePosEquipmentCatalog = ({ search, categoryId, inStockOnly, enable
   const stockFilter = inStockOnly && debounced.length === 0;
 
   const query = useInfiniteQuery({
-    queryKey: ["pos-equipment-catalog", { search: debounced, categoryId, stockFilter }],
+    queryKey: [...POS_CATALOG_KEY, { search: debounced, categoryId, stockFilter }],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const body: any = await api.get("/equipment", {
