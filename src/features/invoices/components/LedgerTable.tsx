@@ -169,7 +169,7 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
                     <>
                       <Box sx={{ fontWeight: 700 }}>Rs. {money(base)}</Box>
                       <Box sx={{ color: "text.secondary", fontSize: "0.7rem" }}>{t("orders.ledger.forDays", { count: minDays })}</Box>
-                      <Box sx={{ color: "text.secondary", fontSize: "0.7rem" }}>{t("orders.ledger.thenPerDay", { rate: money(extra) })}</Box>
+                      <Box sx={{ color: "text.secondary", fontSize: "0.7rem" }}>{t("orders.ledger.thenPerDay", { rate: `Rs. ${money(extra)}` })}</Box>
                     </>
                   )}
                 </Box>
@@ -186,9 +186,9 @@ export function LedgerTable({ lines, infos, returnTraces, issuedAt }: LedgerTabl
               {/* details: late-fee maths and every handover */}
               {expandable && open && (
                 <Box sx={{ px: 2, py: 1.25, bgcolor: "action.hover", borderBottom: "1px solid", borderColor: border, display: "flex", flexDirection: "column", gap: 0.75 }}>
-                  {info.isOverdue && (
+                  {info.isOverdue && info.lateFee > 0 && (
                     <Typography variant="caption" sx={{ ...num, color: "text.secondary" }}>
-                      {t("orders.ledger.lateFormula", { base: money(info.lockedCost), days: info.daysLate, rate: money(extra), pending: info.pending })}
+                      {t("orders.ledger.lateFormula", { base: money(info.lockedCost), days: info.chargedLateDays, rate: money(extra), pending: info.pending })}
                     </Typography>
                   )}
                   {iterations.length > 0 && (

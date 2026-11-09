@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { resolveAssetUrl } from "@/lib/assetUrl";
+import { periodCharge } from "../lib/lineCost";
 import {
   Box,
   Typography,
@@ -94,21 +95,20 @@ export const calculateLineMath = (item: CartItem, lng?: string) => {
   let totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
   if (totalDays < 1 || isNaN(totalDays)) totalDays = 1;
 
-  let lineCost = 0;
-  let calculationText = "";
-
-  if (totalDays <= item.locked_minimum_days) {
-    lineCost = item.locked_base_price * item.borrow_quantity;
-    calculationText =
-      item.pricing_mode === "daily"
+  const lineCost = periodCharge({
+    base: item.locked_base_price,
+    minDays: item.locked_minimum_days,
+    rate: item.locked_extra_daily_rate,
+    days: totalDays,
+    qty: item.borrow_quantity,
+  });
+  const extraDays = Math.max(0, totalDays - Math.max(1, item.locked_minimum_days || 1));
+  const calculationText =
+    extraDays > 0
+      ? i18n.t("invoices.PosLedgerPanel.calcBasePlusExtra", { count: extraDays, lng })
+      : item.pricing_mode === "daily"
         ? i18n.t("invoices.PosLedgerPanel.calcDays", { count: totalDays, lng })
         : i18n.t("invoices.PosLedgerPanel.calcBaseCover", { days: item.locked_minimum_days, lng });
-  } else {
-    const extraDays = totalDays - item.locked_minimum_days;
-    const extraCost = extraDays * item.locked_extra_daily_rate;
-    lineCost = (item.locked_base_price + extraCost) * item.borrow_quantity;
-    calculationText = i18n.t("invoices.PosLedgerPanel.calcBasePlusExtra", { count: extraDays, lng });
-  }
 
   return { totalDays, lineCost, calculationText };
 };

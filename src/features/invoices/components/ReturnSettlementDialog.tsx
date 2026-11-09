@@ -27,15 +27,14 @@ import type { PaymentMethod } from "../lib/paymentMethods";
 import { invoiceTotals } from "../lib/invoiceTotals";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { todayLocalStr } from "@/lib/dates";
-import { elapsedDays, isOpenEnded, lineOutAt, openEndedExtraDays, toYmd } from "../lib/lineCost";
+import { chargeableLateDays, elapsedDays, isOpenEnded, lineOutAt, openEndedExtraDays, toYmd } from "../lib/lineCost";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
 // ─── Extra-day engine (mirrors backend `processReturn`) ────────────────────────
-// A tracked line is charged only for days AFTER its due date. A line dispatched with no return date
+// A tracked line is charged only for days AFTER its due date that are also past the paid minimum
+// period (`chargeableLateDays`). A line dispatched with no return date
 // was priced for 1 day, so it is charged for every day out beyond what its price already covers.
-const DAY = 1000 * 60 * 60 * 24;
-
 type DayLine = Pick<HandoverLine, "track_overdue" | "expected_return"> & Partial<Pick<HandoverLine, "borrow_date" | "min_days" | "open_ended" | "out_at">>;
 
 /** The moment of this handover: now when it is today, otherwise the picked day at the current time of day. */
@@ -54,9 +53,8 @@ export const calcDaysLate = (line: DayLine, handoverDate: string, now?: Date): n
     return line.borrow_date ? openEndedExtraDays(toYmd(line.borrow_date), handoverDate, line.min_days || 1) : 0;
   }
   if (line.track_overdue === false || !line.expected_return) return 0;
-  const expected = new Date(line.expected_return).getTime();
-  const actual = new Date(handoverDate).getTime();
-  return Math.max(0, Math.ceil((actual - expected) / DAY));
+  // Days past the due date, but never days still inside the paid minimum period.
+  return chargeableLateDays(toYmd(line.borrow_date), toYmd(line.expected_return), handoverDate, line.min_days || 1);
 };
 
 export const calcLateFee = (line: HandoverLine, handoverDate: string, now?: Date): number =>

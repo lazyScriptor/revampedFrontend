@@ -65,7 +65,7 @@ describe("LedgerTable", () => {
     const rate = within(screen.getByTestId("ledger-row")).getAllByRole("cell")[5];
     expect(rate).toHaveTextContent("Rs. 4,500");
     expect(rate).toHaveTextContent("for 3 days");
-    expect(rate).toHaveTextContent("then 1,200/day");
+    expect(rate).toHaveTextContent("then Rs. 1,200/day");
   });
 
   it("a returned line shows its return date, days out, returned and damaged counts", () => {
