@@ -208,6 +208,45 @@ describe("Step 3.3: Pricing UI Rendering Tests", () => {
       ).toBeInTheDocument();
       unmountSi();
     });
+
+    it("prints the INV-104 saved snapshot values and Rs. 200 total", () => {
+      const savedInvoice = {
+        invoice_id: 104,
+        status: "Active",
+        issued_date: "2026-11-09T10:00:00+05:30",
+        InvoiceLines: [
+          {
+            line_id: 1,
+            borrow_date: "2026-11-09",
+            expected_return_date: "2026-11-09",
+            borrow_quantity: 2,
+            locked_base_price: 50,
+            locked_minimum_days: 5,
+            locked_extra_daily_rate: 50,
+            line_total_amount: 100,
+            Equipment: { equipment_name: "Steel Scaffolding Plank - 6 feet", serial_number: "EQ-209" },
+          },
+          {
+            line_id: 2,
+            borrow_date: "2026-11-09",
+            expected_return_date: "2026-11-09",
+            borrow_quantity: 2,
+            locked_base_price: 50,
+            locked_minimum_days: 1,
+            locked_extra_daily_rate: 50,
+            line_total_amount: 100,
+            Equipment: { equipment_name: "Scaffolding (4*5)", serial_number: "EQ-047" },
+          },
+        ],
+        sub_total: 200,
+        total_amount: 200,
+      };
+
+      renderReceipt(savedInvoice, "en");
+      expect(screen.getByText(/Base: Rs\. 50\.00 \(5d\) \+ Extra: Rs\. 50\.00\/d/i)).toBeInTheDocument();
+      expect(screen.getAllByText("Rs. 100.00").length).toBeGreaterThanOrEqual(2);
+      expect(screen.getAllByText("Rs. 200.00").length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   describe("ReturnSettlementDialog rendering", () => {

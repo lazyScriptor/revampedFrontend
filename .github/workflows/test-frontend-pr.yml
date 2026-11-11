@@ -63,10 +63,18 @@ jobs:
       - name: Run Pricing Regression Tests
         run: |
           if [ "${{ matrix.tz }}" = "UTC" ]; then
-            npm run test:tz:utc -- src/features/invoices/lib/__tests__/pricing-regression.test.ts src/features/invoices/lib/__tests__/pricing-rendering.test.tsx src/i18n/__tests__/pricingLabels.test.ts src/features/invoices/lib/__tests__/timezone-lint.test.ts
+            npm run test:tz:utc -- src/features/invoices/lib/__tests__/pricing-regression.test.ts src/features/invoices/lib/__tests__/periodPricing.test.ts src/features/invoices/lib/__tests__/pricing-rendering.test.tsx src/features/invoices/lib/__tests__/lineCost.test.ts src/features/invoices/components/__tests__/ReturnSettlementDialog.test.tsx src/features/invoices/components/__tests__/PosLedgerPanel.test.tsx src/features/invoices/components/__tests__/LedgerTable.test.tsx src/features/invoices/components/__tests__/InvoiceReceipt.test.tsx src/i18n/__tests__/pricingLabels.test.ts src/features/invoices/lib/__tests__/timezone-lint.test.ts --reporter=verbose --reporter=junit --outputFile=pricing-results-${{ matrix.tz }}.xml
           else
-            npm run test:tz:colombo -- src/features/invoices/lib/__tests__/pricing-regression.test.ts src/features/invoices/lib/__tests__/pricing-rendering.test.tsx src/i18n/__tests__/pricingLabels.test.ts src/features/invoices/lib/__tests__/timezone-lint.test.ts
+            npm run test:tz:colombo -- src/features/invoices/lib/__tests__/pricing-regression.test.ts src/features/invoices/lib/__tests__/periodPricing.test.ts src/features/invoices/lib/__tests__/pricing-rendering.test.tsx src/features/invoices/lib/__tests__/lineCost.test.ts src/features/invoices/components/__tests__/ReturnSettlementDialog.test.tsx src/features/invoices/components/__tests__/PosLedgerPanel.test.tsx src/features/invoices/components/__tests__/LedgerTable.test.tsx src/features/invoices/components/__tests__/InvoiceReceipt.test.tsx src/i18n/__tests__/pricingLabels.test.ts src/features/invoices/lib/__tests__/timezone-lint.test.ts --reporter=verbose --reporter=junit --outputFile=pricing-results-${{ matrix.tz }}.xml
           fi
+
+      - name: Upload Pricing Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-pricing-results-${{ matrix.tz }}
+          path: pricing-results-${{ matrix.tz }}.xml
+          if-no-files-found: warn
 
       - name: Verify Build
         run: npm run build

@@ -124,4 +124,33 @@ describe("Step 3.1 & 3.2: Frontend Golden Table assertions & Parity", () => {
       });
     }
   }
+
+  it("INV-104 snapshot stays at its saved Rs. 200 until historical prices are explicitly corrected", () => {
+    const snapshot = goldenCases.find((tc: any) => tc.id === "E19-inv-104-snapshot");
+    expect(snapshot).toBeDefined();
+    const lines = snapshot.lines.map((l: any, index: number) => {
+      const item: CartItem = {
+        cart_id: `inv104-${index}`,
+        equipment_id: index + 1,
+        equipment_name: `Snapshot item ${index + 1}`,
+        available_qty: 10,
+        is_bulk_item: true,
+        borrow_quantity: l.borrow_quantity,
+        borrow_date: l.borrow_date,
+        expected_return_date: l.expected_return_date,
+        locked_base_price: Number(l.locked_base_price),
+        locked_minimum_days: Number(l.locked_minimum_days),
+        locked_extra_daily_rate: Number(l.locked_extra_daily_rate),
+        pricing_mode: Number(l.locked_minimum_days) > 1 ? "tiered" : "daily",
+        track_overdue: false,
+      };
+      const pos = calculateLineMath(item);
+      const today = analyseLine(l, snapshot.returnDate, { issuedAt: snapshot.issuedAt, now: new Date(snapshot.at) });
+      expect(pos.lineCost).toBe(l.line_total_amount);
+      expect(today.costToday).toBe(l.line_total_amount);
+      return pos.lineCost;
+    });
+    expect(lines).toEqual([100, 100]);
+    expect(lines.reduce((sum: number, amount: number) => sum + amount, 0)).toBe(snapshot.expected.dispatchTotal);
+  });
 });
