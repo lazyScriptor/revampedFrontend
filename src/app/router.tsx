@@ -16,7 +16,7 @@ import AccountingRoute from "@/routes/Accounting";
 import ReportsRoute from "@/routes/Reports";
 import MessagesRoute, { MESSAGE_TABS } from "@/routes/Messages";
 import LockerRoute, { LOCKER_TABS } from "@/routes/Locker";
-import ProfileRoute from "@/routes/Profile";
+import ProfileRoute, { PROFILE_TAB_KEYS } from "@/routes/Profile";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
 import { adminLocationsRoute } from "@/routes/admin/locations";
@@ -314,13 +314,12 @@ const reportsRoute = createRoute({
 });
 
 // Personal profile (no permission gate — every authenticated user has one)
-const PROFILE_TABS = ["profile", "security", "signature", "preferences", "notifications", "activity", "access"] as const;
 const profileRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/profile",
   validateSearch: (search: Record<string, unknown>) => ({
-    tab: (PROFILE_TABS as readonly string[]).includes(search.tab as string)
-      ? (search.tab as typeof PROFILE_TABS[number])
+    tab: (PROFILE_TAB_KEYS as readonly string[]).includes(search.tab as string)
+      ? (search.tab as (typeof PROFILE_TAB_KEYS)[number])
       : undefined,
   }),
   component: () => <ProfileRoute />,

@@ -34,15 +34,19 @@ import { usePlanChecker } from "@/features/plan/usePlan";
 import { DesktopPopupSizeCard } from "@/features/phone-assistant/components/DesktopPopupSizeCard";
 import { MyPushPreferences } from "@/features/phone-assistant/components/MyPushPreferences";
 
-type TabKey =
-  | "profile"
-  | "security"
-  | "signature"
-  | "phones"
-  | "preferences"
-  | "notifications"
-  | "activity"
-  | "access";
+/** Every Profile tab. The router validates `?tab=` against this list, so add new tabs here. */
+export const PROFILE_TAB_KEYS = [
+  "profile",
+  "security",
+  "signature",
+  "phones",
+  "preferences",
+  "notifications",
+  "activity",
+  "access",
+] as const;
+
+type TabKey = (typeof PROFILE_TAB_KEYS)[number];
 
 const buildTabs = (t: (k: string) => string, showPhonesConsole: boolean) => {
   const tabs: Array<{ key: TabKey; label: string; icon: ReactElement }> = [
