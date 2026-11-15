@@ -3531,7 +3531,7 @@
             "fromPhoneContacts": "From phone contacts",
             "searchingContacts": "Searching synced phone contacts…",
             "confirmTitle": "Use this contact for this bill?",
-            "confirmBody": "Creating a customer from an operator's synced phone contact alerts the shop owner.",
+            "confirmBody": "A new customer will be created from this contact's name and phone number.",
             "confirmAction": "Use contact",
             "usingContact": "Preparing…",
             "useFailed": "Could not load that contact. Please try again."
