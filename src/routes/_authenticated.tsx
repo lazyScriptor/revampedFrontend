@@ -25,6 +25,7 @@ import {
   Avatar,
   Tooltip,
   Collapse,
+  Button,
 } from "@mui/material";
 
 // MUI Icons
@@ -71,6 +72,8 @@ import { ForcePasswordChange } from "@/features/auth/ForcePasswordChange";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PostAddIcon from "@mui/icons-material/PostAdd";
+import { isNativePhoneApp } from "@/features/phone-assistant/lib/nativeBridge";
+import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
 import { IncomingCallToast } from "@/features/phone-assistant/components/IncomingCallToast";
 
@@ -174,6 +177,8 @@ export const authenticatedRoute = createRoute({
 function AuthenticatedLayout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  // Inside the GearGrid Phone app the application always has a way back to the phone pages.
+  const inPhoneApp = isNativePhoneApp() && Boolean(getDeviceId());
   const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
@@ -672,6 +677,16 @@ function AuthenticatedLayout() {
             </Box>
           )}
           <Box sx={{ flexGrow: 1 }} />
+          {inPhoneApp && (
+            <Button
+              size="small"
+              startIcon={<PhoneAndroidOutlinedIcon fontSize="small" />}
+              onClick={() => navigate({ to: "/device" })}
+              sx={{ textTransform: "none", fontWeight: 700, minHeight: 40, mr: 1, whiteSpace: "nowrap" }}
+            >
+              {t("phoneShell.backToPhoneHome")}
+            </Button>
+          )}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <SinhalaTypingToggle />
             <NotificationBellSafe />

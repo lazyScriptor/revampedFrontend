@@ -25,6 +25,8 @@ import HttpBackend from "i18next-http-backend";
 
 import enFallback from "./locales/en.json";
 import siFallback from "./locales/si.json";
+// Tamil covers the phone pages only (notification and call-screen wording); everything else falls back to English.
+import taFallback from "./locales/ta.json";
 
 export const SUPPORTED_LANGUAGES = ["en", "si"] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -60,7 +62,7 @@ i18n
   .init({
     lng: detectInitialLanguage(),
     fallbackLng: "en",
-    supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
+    supportedLngs: [...SUPPORTED_LANGUAGES, "ta"],
     // Single bundled namespace per language — translations are nested by
     // domain (common, nav, dashboard, …) within one file.
     ns: ["translation"],
@@ -70,6 +72,7 @@ i18n
     resources: {
       en: { translation: enFallback },
       si: { translation: siFallback },
+      ta: { translation: taFallback },
     },
     backend: {
       loadPath: `${apiBase}/i18n/pack/{{lng}}`,

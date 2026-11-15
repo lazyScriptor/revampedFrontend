@@ -31,6 +31,7 @@ import { AccessSection } from "@/features/profile/components/AccessSection";
 import { SignatureSection } from "@/features/profile/components/SignatureSection";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import { usePlanChecker } from "@/features/plan/usePlan";
+import { DesktopPopupSizeCard } from "@/features/phone-assistant/components/DesktopPopupSizeCard";
 import { MyPushPreferences } from "@/features/phone-assistant/components/MyPushPreferences";
 
 type TabKey =
@@ -173,7 +174,7 @@ export default function ProfileRoute() {
         <Paper elevation={0} sx={{ p: 3, border: 1, borderColor: "divider", borderRadius: 2.5, bgcolor: "background.paper" }}>
           <Typography sx={{ fontWeight: 800 }}>{t("phoneAssistant.settings.movedTitle")}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{t("phoneAssistant.settings.movedBody")}</Typography>
-          <Button variant="contained" onClick={() => navigate({ to: "/settings/phone-assistant" })}>
+          <Button variant="contained" onClick={() => navigate({ to: "/settings/phone-assistant", search: {} as any })}>
             {t("phoneAssistant.settings.openSettings")}
           </Button>
         </Paper>
@@ -183,6 +184,7 @@ export default function ProfileRoute() {
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           <NotificationsSection profile={profile} />
           {hasPhoneAssistant && <MyPushPreferences />}
+          {hasPhoneAssistant && <DesktopPopupSizeCard />}
           {hasPhoneAssistant && isAdmin && (
             <Button variant="outlined" onClick={() => navigate({ to: "/settings/phone-assistant", search: { tab: "notifications" } as any })} sx={{ alignSelf: "flex-start" }}>
               {t("phoneAssistant.settings.openShopNotifications")}

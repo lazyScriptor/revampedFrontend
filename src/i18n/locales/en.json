@@ -1140,7 +1140,10 @@
             "billDesign": "Bill design",
             "designMinimal": "Minimal",
             "designClassic": "Detailed",
-            "showIdStatus": "ID card status"
+            "showIdStatus": "ID card status",
+            "sharePdf": "Share PDF",
+            "pdfShared": "PDF ready to share. Printing is only available at the counter.",
+            "pdfFailed": "Could not make the PDF."
         },
         "ReturnSettlementDialog": {
             "logPhysicalReturnsLateFees": "Log physical returns. Late fees are calculated automatically. Payments are handled in the Financial Terminal.",
@@ -3764,7 +3767,8 @@
             "push": "Push notifications",
             "contact_sync": "Contact sync",
             "call_logging": "Call logging",
-            "click_to_call": "Click to call"
+            "click_to_call": "Click to call",
+            "full_app": "Full application on the phone"
         },
         "capabilityReasons": {
             "plan": "Plan disabled",
@@ -4290,7 +4294,136 @@
             "sessionHint": "The phone stays paired; only the signed-in person is signed out.",
             "blockScreenshots": "Block screenshots of the application",
             "approvalsTitle": "Approvals",
-            "approvalsNotBuilt": "Approvals from the phone (invoice delete, payment void, large discounts) are not available yet. Existing permission rules apply unchanged."
+            "approvalsNotBuilt": "Approvals from the phone (invoice delete, payment void, large discounts) are not available yet. Existing permission rules apply unchanged.",
+            "popupSizeMine": "My call popup size",
+            "popupSizeMineHint": "How big the incoming-call popup is on this computer, for you only.",
+            "popupShopDefault": "Use the shop setting"
         }
+    },
+    "phoneShell": {
+        "navLabel": "Phone navigation",
+        "tab_home": "Home",
+        "tab_calls": "Calls",
+        "tab_alerts": "Alerts",
+        "tab_app": "GearGrid",
+        "tab_settings": "Settings",
+        "offlineBanner": "Offline – showing saved data",
+        "refreshing": "Refreshing…",
+        "pullToRefresh": "Pull down to refresh",
+        "home": {
+            "statusStrip": "Phone status",
+            "paired": "Paired",
+            "approved": "Approved",
+            "fix": "Fix",
+            "setupWarnings": "{{count}} phone setting(s) need attention, so calls or alerts may be missed.",
+            "missed": "Missed calls",
+            "followUps": "Follow-ups",
+            "requests": "Requests"
+        },
+        "sync": {
+            "title": "Data on this phone",
+            "lastBrief": "Customers synced",
+            "lastContacts": "Contacts synced",
+            "cached": "Customers saved",
+            "waiting": "Waiting to upload",
+            "never": "Never",
+            "offline": "Offline",
+            "state_fresh": "Up to date",
+            "state_stale": "Out of date",
+            "state_never": "Not synced yet",
+            "itemsWaiting": "{{count}} items waiting to upload. They send by themselves when there is a connection.",
+            "updated": "Updated {{count}} customers",
+            "noConnection": "No connection",
+            "failed": "Sync did not finish. Try again.",
+            "syncNow": "Sync now",
+            "syncing": "Syncing…"
+        },
+        "search": {
+            "title": "Find a customer",
+            "placeholder": "Name, NIC, customer ID or phone",
+            "appOnly": "Customer search works inside the GearGrid Phone app.",
+            "cached": "{{count}} customers saved on this phone",
+            "none": "No saved customer matches.",
+            "noneNumber": "No saved customer matches. Phone contacts show only after {{digits}} digits.",
+            "contact": "Phone contact",
+            "blacklisted": "Blacklisted"
+        },
+        "calls": {
+            "offlineLists": "Missed calls and follow-ups need a connection."
+        },
+        "alerts": {
+            "group_all": "All",
+            "group_bills": "Bills",
+            "group_payments": "Payments",
+            "group_returns": "Returns",
+            "group_alerts": "Alerts",
+            "group_digest": "Summaries",
+            "empty": "No alerts yet.",
+            "clear": "Clear history"
+        },
+        "app": {
+            "offline": "Connect to the internet to open GearGrid.",
+            "notAllowedTitle": "The full application is not available on this phone",
+            "reason_shop_policy": "Your shop has turned the full application off for phones.",
+            "reason_not_granted": "An administrator has not allowed the full application on this phone.",
+            "reason_plan": "Your plan does not include the phone assistant.",
+            "reason_device_pending": "This phone is waiting for approval.",
+            "reason_device_suspended": "This phone is suspended.",
+            "reason_device_revoked": "This phone was removed.",
+            "lockFailed": "Unlock your phone to open GearGrid.",
+            "tryAgain": "Try again"
+        },
+        "settings": {
+            "title": "Settings",
+            "setByShop": "Set by your shop",
+            "saveFailed": "Could not save this setting.",
+            "shopSetting": "Shop setting",
+            "on": "On",
+            "off": "Off",
+            "group_phone": "This phone",
+            "group_call_screen": "Call screen",
+            "group_notifications": "Notifications",
+            "group_privacy": "Sharing & privacy",
+            "group_language": "Language & text",
+            "group_setup": "Setup checklist",
+            "group_app_lock": "App lock",
+            "group_about": "About & help",
+            "pairedTo": "Paired to",
+            "status": "Status",
+            "appVersion": "App version",
+            "lockScreenDisplay": "Shown on the lock screen",
+            "callTextSize": "Text size on call screen",
+            "useShopSetting": "Use shop setting",
+            "showSampleCall": "Show sample call",
+            "businessSim": "Business SIM",
+            "businessSimHint": "Only calls on this SIM are shown and logged.",
+            "chooseSim": "Choose SIM",
+            "allSims": "All SIMs",
+            "appLanguage": "App language",
+            "lang_follow": "Follow phone",
+            "appTextSize": "App text size",
+            "textSize_small": "Small",
+            "textSize_default": "Default",
+            "textSize_large": "Large",
+            "textSize_extra_large": "Extra large",
+            "systemTextNote": "Android notifications always use the phone's own text size. Change it in the phone's Display settings.",
+            "notificationLanguage": "Notification language",
+            "followProfile": "Follow my profile",
+            "notifLang_default": "Default",
+            "appLock": "Ask for fingerprint, face or PIN",
+            "appLockHint": "Needed before the GearGrid application opens. The app never sees your GearGrid password.",
+            "sessionNote": "The application signs you out after {{minutes}} minutes in the background. The phone stays paired."
+        },
+        "about": {
+            "offlineTitle": "What works without internet",
+            "worksOffline": "The call screen, customer search and this checklist work offline, from the data saved on the phone.",
+            "needsConnection": "Notifications, the desktop popup, live refresh, sending notes, approvals and the full application need a connection.",
+            "limitsTitle": "Known limits",
+            "limits": "WhatsApp and other internet calls cannot be detected. iPhones are not supported. Some phone makers stop the app unless the battery steps are done.",
+            "notificationTextTitle": "Notification text size",
+            "notificationText": "Android notifications use the phone's own text size, which an app cannot change. GearGrid controls the wording and which details appear.",
+            "licences": "Open-source licences are listed on geargrid.live."
+        },
+        "backToPhoneHome": "Phone home"
     }
 }

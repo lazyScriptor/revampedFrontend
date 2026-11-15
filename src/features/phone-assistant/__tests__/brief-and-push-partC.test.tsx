@@ -71,6 +71,8 @@ vi.mock("../api/phoneAssistantApi", () => ({
   updateDevicePushPreferences: mocks.updateDevicePushPreferences,
 }));
 
+vi.mock("../components/DeviceShell", () => ({ DeviceShell: ({ children }: any) => children }));
+
 import { DeviceConsolePage } from "../pages/DeviceConsolePage";
 import { PushSettingsPanel } from "../components/PushSettingsPanel";
 import { MyPushPreferences } from "../components/MyPushPreferences";

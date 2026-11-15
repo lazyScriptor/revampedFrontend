@@ -1,3 +1,4 @@
+import { DeviceShell } from "../components/DeviceShell";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -208,10 +209,9 @@ export function DevicePrivacyPage() {
     .map(([cap]) => cap);
 
   return (
+    <DeviceShell active="settings" hideTitle>
     <Box
       sx={{
-        minHeight: "100vh",
-        bgcolor: "background.default",
         color: "text.primary",
         p: 2,
         pb: 4,
@@ -222,7 +222,7 @@ export function DevicePrivacyPage() {
           <Button
             size="small"
             startIcon={<ArrowBackIcon fontSize="small" />}
-            onClick={() => navigate({ to: "/device" })}
+            onClick={() => navigate({ to: "/device/settings" })}
             sx={{
               minHeight: 40,
               textTransform: "none",
@@ -654,5 +654,6 @@ export function DevicePrivacyPage() {
         </DialogActions>
       </Dialog>
     </Box>
+    </DeviceShell>
   );
 }

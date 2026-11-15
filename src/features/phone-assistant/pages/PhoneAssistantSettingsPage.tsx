@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactElement } from "react";
 import { Alert, Box, Tab, Tabs, Typography } from "@mui/material";
 import PhoneAndroidOutlinedIcon from "@mui/icons-material/PhoneAndroidOutlined";
 import PhonelinkRingOutlinedIcon from "@mui/icons-material/PhonelinkRingOutlined";
@@ -29,7 +29,7 @@ export const PHONE_SETTINGS_TABS = [
 ] as const;
 export type PhoneSettingsTab = (typeof PHONE_SETTINGS_TABS)[number];
 
-const ICONS: Record<PhoneSettingsTab, JSX.Element> = {
+const ICONS: Record<PhoneSettingsTab, ReactElement> = {
   phones: <PhoneAndroidOutlinedIcon fontSize="small" />,
   "call-screen": <PhonelinkRingOutlinedIcon fontSize="small" />,
   notifications: <NotificationsActiveOutlinedIcon fontSize="small" />,

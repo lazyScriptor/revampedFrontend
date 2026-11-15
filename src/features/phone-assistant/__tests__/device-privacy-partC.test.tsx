@@ -63,6 +63,8 @@ vi.mock("../api/phoneAssistantApi", () => ({
   updatePhoneAssistantPolicy: mocks.updatePhoneAssistantPolicy,
 }));
 
+vi.mock("../components/DeviceShell", () => ({ DeviceShell: ({ children }: any) => children }));
+
 import { DevicePrivacyPage } from "../pages/DevicePrivacyPage";
 import { DeviceConsolePage } from "../pages/DeviceConsolePage";
 

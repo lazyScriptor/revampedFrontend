@@ -53,6 +53,8 @@ vi.mock("@/features/admin/api/admin.api", () => ({
   },
 }));
 
+vi.mock("../components/DeviceShell", () => ({ DeviceShell: ({ children }: any) => children }));
+
 import { PushSettingsPanel } from "../components/PushSettingsPanel";
 import { MyPushPreferences } from "../components/MyPushPreferences";
 import { DeviceInvoicePage } from "../pages/DeviceInvoicePage";

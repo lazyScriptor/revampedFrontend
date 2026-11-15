@@ -69,6 +69,7 @@ const CAPABILITY_KEYS = [
   "contact_sync",
   "call_logging",
   "click_to_call",
+  "full_app",
 ] as const;
 
 const DEFAULT_BRIEF_PROFILES: BriefProfile[] = [

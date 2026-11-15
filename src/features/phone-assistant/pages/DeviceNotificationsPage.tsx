@@ -10,6 +10,7 @@ import type {
   UserPersonalQuietHours,
   UserPushPreferenceUpdate,
 } from "../api/phoneAssistantApi";
+import { DeviceShell } from "../components/DeviceShell";
 import { PersonalQuietHoursCard } from "../components/PersonalQuietHoursCard";
 import { PushPreferenceList } from "../components/PushPreferenceList";
 import {
@@ -67,10 +68,9 @@ export function DeviceNotificationsPage() {
   };
 
   return (
+    <DeviceShell active="settings" hideTitle>
     <Box
       sx={{
-        minHeight: "100vh",
-        bgcolor: "background.default",
         color: "text.primary",
         p: 2,
         pb: 4,
@@ -81,7 +81,7 @@ export function DeviceNotificationsPage() {
           <Button
             size="small"
             startIcon={<ArrowBackIcon fontSize="small" />}
-            onClick={() => navigate({ to: "/device" })}
+            onClick={() => navigate({ to: "/device/settings" })}
             sx={{
               minHeight: 40,
               textTransform: "none",
@@ -198,5 +198,6 @@ export function DeviceNotificationsPage() {
         </Paper>
       </Stack>
     </Box>
+    </DeviceShell>
   );
 }

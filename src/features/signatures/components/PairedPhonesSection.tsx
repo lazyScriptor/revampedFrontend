@@ -45,6 +45,7 @@ const REQUESTABLE_CAPABILITIES = [
   'contact_sync',
   'call_logging',
   'click_to_call',
+  'full_app',
 ] as const;
 
 export function PairedPhonesSection() {

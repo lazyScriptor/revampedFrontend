@@ -31,6 +31,10 @@ import { DeviceHomePage } from "@/features/signatures/components/DeviceHomePage"
 import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedSignPage";
 import { PhonePhotoPage } from "@/features/equipment/components/PhonePhotoPage";
 import { DeviceInvoicePage } from "@/features/phone-assistant/pages/DeviceInvoicePage";
+import { DeviceCallsPage } from "@/features/phone-assistant/pages/device/DeviceCallsPage";
+import { DeviceAlertsPage } from "@/features/phone-assistant/pages/device/DeviceAlertsPage";
+import { DeviceAppGatePage } from "@/features/phone-assistant/pages/device/DeviceAppGatePage";
+import { DeviceSettingsPage } from "@/features/phone-assistant/pages/device/DeviceSettingsPage";
 import { DeviceNotificationsPage } from "@/features/phone-assistant/pages/DeviceNotificationsPage";
 import PhoneAssistantSettingsPage from "@/features/phone-assistant/pages/PhoneAssistantSettingsPage";
 import { DevicePrivacyPage } from "@/features/phone-assistant/pages/DevicePrivacyPage";
@@ -48,25 +52,26 @@ const requirePermission = (permissionCode: string) => {
 
 // --- 2. Route Definitions ---
 // Add this right above your loginRoute definition
+const APP_LAUNCHED_KEY = "geargrid.app_launched";
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    const user = useAuthStore.getState().user;
-    if (user) {
-      throw redirect({ to: "/dashboard" });
-    }
-    // Paired-PWA fast path: if this is a phone that already has a device_id
-    // in localStorage (installed PWA, previously paired), skip the login
-    // page and go straight to its signature-ready home. Un-paired devices
-    // on /device get re-routed to /pair by DeviceHomePage itself.
+    // Paired-phone start page: a phone that already has a device_id opens on its own home (/device).
+    // This applies to the first visit of a launch only. Choosing the GearGrid tab or following a link
+    // to "/" later in the same session must not bounce back (it used to trap staff on /device).
     try {
-      if (getDeviceId()) {
+      if (getDeviceId() && !window.sessionStorage.getItem(APP_LAUNCHED_KEY)) {
+        window.sessionStorage.setItem(APP_LAUNCHED_KEY, "1");
         throw redirect({ to: "/device" });
       }
     } catch (err: any) {
-      // Rethrow TanStack Router redirects; swallow any localStorage errors.
+      // Rethrow TanStack Router redirects; swallow any storage errors.
       if (err && typeof err === "object" && "to" in err) throw err;
+    }
+    const user = useAuthStore.getState().user;
+    if (user) {
+      throw redirect({ to: "/dashboard" });
     }
     throw redirect({ to: "/login" });
   },
@@ -127,6 +132,36 @@ const phonePhotoRoute = createRoute({
     const { token } = phonePhotoRoute.useParams();
     return <PhonePhotoPage token={token} />;
   },
+});
+
+const deviceCallsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/calls",
+  component: () => <DeviceCallsPage />,
+});
+
+const deviceAlertsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/alerts",
+  component: () => <DeviceAlertsPage />,
+});
+
+const deviceAppRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/app",
+  component: () => <DeviceAppGatePage />,
+});
+
+const deviceSettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/settings",
+  component: () => <DeviceSettingsPage />,
+});
+
+const deviceSettingsSectionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/settings/$section",
+  component: () => <DeviceSettingsPage />,
 });
 
 const deviceNotificationsRoute = createRoute({
@@ -349,6 +384,11 @@ const routeTree = rootRoute.addChildren([
   deviceHomeRoute,
   signPairedRoute,
   phonePhotoRoute,
+  deviceCallsRoute,
+  deviceAlertsRoute,
+  deviceAppRoute,
+  deviceSettingsRoute,
+  deviceSettingsSectionRoute,
   deviceNotificationsRoute,
   devicePrivacyRoute,
   deviceInvoiceRoute,

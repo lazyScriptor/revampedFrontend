@@ -54,6 +54,7 @@ const SHOP_CAPABILITIES = [
   'bill_view',
   'push',
   'click_to_call',
+  'full_app',
 ] as const;
 
 const PHONE_SEND_CAPABILITIES = ['contact_sync', 'call_logging'] as const;

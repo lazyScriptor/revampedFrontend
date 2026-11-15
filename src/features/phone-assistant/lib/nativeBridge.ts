@@ -36,7 +36,66 @@ export interface PhoneAssistantSetupStatus {
   reportedState?: ReportedState | null;
 }
 
+export interface NativeSyncStatus {
+  lastBriefSyncAt: string | null;
+  lastContactSyncAt: string | null;
+  cachedBriefs: number;
+  outboxPending: number;
+  staleAfterMinutes: number;
+  showSyncFooter: "always" | "only_when_stale" | "never";
+  online: boolean;
+  /** Result of the last "Sync now": how many customers changed, or why it failed. */
+  lastResult?: { ok: boolean; updated?: number; error?: string } | null;
+}
+
+export interface NativeAppPrefs {
+  appLanguage: "follow" | "en" | "si" | "ta";
+  appTextSize: "small" | "default" | "large" | "extra_large";
+  callTextScale: number | null;
+  appLockEnabled: boolean;
+  appVersion?: string;
+}
+
+export interface NativeAlert {
+  id: string;
+  receivedAt: string;
+  title: string;
+  body: string;
+  group: string;
+  eventKey?: string | null;
+  invoiceId?: string | null;
+  customerId?: string | null;
+  link?: string | null;
+}
+
+export interface NativeCustomerHit {
+  kind: "customer" | "contact";
+  id: number;
+  name: string;
+  company?: string | null;
+  phone: string | null;
+  rating?: number | null;
+  summary?: string | null;
+  status?: string | null;
+  hasDues?: boolean;
+}
+
 interface NativePluginShape {
+  getSyncStatus?: () => Promise<NativeSyncStatus>;
+  showSampleCall?: () => Promise<{ shown: boolean }>;
+  setCallTextScale?: (args: { scale: number | null }) => Promise<{ saved: boolean }>;
+  getAppPrefs?: () => Promise<NativeAppPrefs>;
+  setAppLanguage?: (args: { language: string }) => Promise<{ saved: boolean }>;
+  setAppTextSize?: (args: { size: string }) => Promise<{ saved: boolean }>;
+  setAppLock?: (args: { enabled: boolean }) => Promise<{ saved: boolean }>;
+  authenticateAppLock?: () => Promise<{ ok: boolean; error?: string }>;
+  sharePdf?: (args: { html: string; filename: string; widthMm?: number }) => Promise<{ shared: boolean; error?: string }>;
+  listSims?: () => Promise<{ sims: Array<{ id: string; label: string }> }>;
+  getAlerts?: () => Promise<{ alerts: NativeAlert[] }>;
+  clearAlerts?: () => Promise<{ cleared: boolean }>;
+  searchCustomers?: (args: { query: string; limit?: number }) => Promise<{ hits: NativeCustomerHit[]; cachedBriefs: number }>;
+  noteAppForeground?: () => Promise<{ locked: boolean; signedOut: boolean }>;
+  setSignedIn?: (args: { signedIn: boolean }) => Promise<{ saved: boolean }>;
   setCredentials?: (args: {
     deviceId: string;
     deviceToken: string;
@@ -141,6 +200,11 @@ export async function registerDeviceWithServer(body: {
   os_version?: string | null;
   reported_state?: ReportedState | null;
   click_to_call_enabled?: boolean;
+  cached_briefs?: number;
+  brief_format?: number;
+  outbox_pending?: number;
+  last_brief_sync_at?: string;
+  last_contact_sync_at?: string;
 }) {
   if (!getDeviceId() || !getDeviceToken() || !getDeviceTenantDb()) {
     return null;
@@ -149,6 +213,145 @@ export async function registerDeviceWithServer(body: {
 }
 
 export const nativeBridge = {
+  async getSyncStatus(): Promise<NativeSyncStatus | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.getSyncStatus) return null;
+    try {
+      return await plugin.getSyncStatus();
+    } catch {
+      return null;
+    }
+  },
+  async showSampleCall(): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.showSampleCall) return false;
+    try {
+      return Boolean((await plugin.showSampleCall()).shown);
+    } catch {
+      return false;
+    }
+  },
+  async setCallTextScale(scale: number | null): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.setCallTextScale) return false;
+    try {
+      return Boolean((await plugin.setCallTextScale({ scale })).saved);
+    } catch {
+      return false;
+    }
+  },
+  async getAppPrefs(): Promise<NativeAppPrefs | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.getAppPrefs) return null;
+    try {
+      return await plugin.getAppPrefs();
+    } catch {
+      return null;
+    }
+  },
+  async setAppLanguage(language: NativeAppPrefs["appLanguage"]): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.setAppLanguage) return false;
+    try {
+      return Boolean((await plugin.setAppLanguage({ language })).saved);
+    } catch {
+      return false;
+    }
+  },
+  async setAppTextSize(size: NativeAppPrefs["appTextSize"]): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.setAppTextSize) return false;
+    try {
+      return Boolean((await plugin.setAppTextSize({ size })).saved);
+    } catch {
+      return false;
+    }
+  },
+  async setAppLock(enabled: boolean): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.setAppLock) return false;
+    try {
+      return Boolean((await plugin.setAppLock({ enabled })).saved);
+    } catch {
+      return false;
+    }
+  },
+  /** Asks for fingerprint, face or device PIN. The app never sees or stores the GearGrid password. */
+  async authenticateAppLock(): Promise<{ ok: boolean; error?: string } | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.authenticateAppLock) return null;
+    try {
+      return await plugin.authenticateAppLock();
+    } catch (e: any) {
+      return { ok: false, error: e?.message || "failed" };
+    }
+  },
+  /** Builds a PDF from HTML on the phone and opens Android's share sheet (printing needs the counter's print agent). */
+  async sharePdf(html: string, filename: string, widthMm = 72): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.sharePdf) return false;
+    try {
+      return Boolean((await plugin.sharePdf({ html, filename, widthMm })).shared);
+    } catch {
+      return false;
+    }
+  },
+  async listSims(): Promise<Array<{ id: string; label: string }>> {
+    const plugin = getNativePlugin();
+    if (!plugin?.listSims) return [];
+    try {
+      return (await plugin.listSims()).sims ?? [];
+    } catch {
+      return [];
+    }
+  },
+  async getAlerts(): Promise<NativeAlert[]> {
+    const plugin = getNativePlugin();
+    if (!plugin?.getAlerts) return [];
+    try {
+      return (await plugin.getAlerts()).alerts ?? [];
+    } catch {
+      return [];
+    }
+  },
+  async clearAlerts(): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.clearAlerts) return false;
+    try {
+      return Boolean((await plugin.clearAlerts()).cleared);
+    } catch {
+      return false;
+    }
+  },
+  /** Offline customer lookup over the phone's local cache (name, NIC, ID or phone; contacts by phone only). */
+  async searchCustomers(query: string, limit = 15): Promise<{ hits: NativeCustomerHit[]; cachedBriefs: number } | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.searchCustomers) return null;
+    try {
+      return await plugin.searchCustomers({ query, limit });
+    } catch {
+      return null;
+    }
+  },
+  /** Called when the app returns to the foreground: the phone decides if the application must lock or sign out. */
+  async noteAppForeground(): Promise<{ locked: boolean; signedOut: boolean } | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.noteAppForeground) return null;
+    try {
+      return await plugin.noteAppForeground();
+    } catch {
+      return null;
+    }
+  },
+  async setSignedIn(signedIn: boolean): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.setSignedIn) return false;
+    try {
+      return Boolean((await plugin.setSignedIn({ signedIn })).saved);
+    } catch {
+      return false;
+    }
+  },
   async setCredentials(args: {
     deviceId: string;
     deviceToken: string;
