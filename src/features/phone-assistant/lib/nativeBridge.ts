@@ -19,6 +19,8 @@ export interface PhoneAssistantSetupStatus {
   contactSyncEnabled: boolean;
   contactsConsented: boolean;
   contactsSyncedAt: string | null;
+  /** Why the last contact sync failed, or null. Missing on app builds older than this field. */
+  contactsSyncError?: string | null;
   briefsSyncedAt: string | null;
   manufacturer: string;
 }
