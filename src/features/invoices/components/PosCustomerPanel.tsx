@@ -51,7 +51,7 @@ import {
 } from "@/features/phone-assistant/hooks/usePhoneContacts";
 import type { PhoneContactMatch } from "@/features/phone-assistant/api/phoneAssistantApi";
 import { useTranslation } from "react-i18next";
-import { isPhoneSearch } from "@/lib/phoneSearch";
+import { isContactSearch, isPhoneSearch, MIN_CONTACT_SEARCH_DIGITS } from "@/lib/phoneSearch";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
@@ -83,9 +83,10 @@ export function PosCustomerPanel({
 
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
   const isPhoneQuery = isPhoneSearch(inputValue);
+  // Phone contacts stay hidden until the full number is typed (MIN_CONTACT_SEARCH_DIGITS).
   const shouldSearchPhoneContacts =
     canSearchPhoneContacts &&
-    isPhoneQuery &&
+    isContactSearch(inputValue) &&
     !isLoading &&
     searchResults.length === 0;
   const {
@@ -193,6 +194,11 @@ export function PosCustomerPanel({
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
                 <span>{t("invoices.PosCustomerPanel.noClientsFound")}</span>
+                {canSearchPhoneContacts && !isContactSearch(inputValue) && (
+                  <Typography variant="caption" color="text.secondary">
+                    {t("phoneAssistant.posFallback.typeFullNumber", { digits: MIN_CONTACT_SEARCH_DIGITS })}
+                  </Typography>
+                )}
                 {shouldSearchPhoneContacts && (phoneContactsLoading || contactMatches.length > 0) && (
                   <Box
                     onMouseDown={(e) => e.preventDefault()}

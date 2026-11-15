@@ -3530,6 +3530,7 @@
         "posFallback": {
             "fromPhoneContacts": "From phone contacts",
             "searchingContacts": "Searching synced phone contacts…",
+            "typeFullNumber": "Type at least {{digits}} digits to check the shop's phone contacts.",
             "confirmTitle": "Use this contact for this bill?",
             "confirmBody": "Creating a customer from an operator's synced phone contact alerts the shop owner.",
             "confirmAction": "Use contact",
