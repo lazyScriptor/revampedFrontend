@@ -3551,6 +3551,19 @@
         "checklist": {
             "title": "Phone assistant setup",
             "syncNow": "Sync now",
+            "syncing": "Syncing…",
+            "syncDone": "Contacts synced.",
+            "syncStillRunning": "Still syncing in the background. Check again in a minute.",
+            "syncErrors": {
+                "not_paired": "This phone isn't paired. Pair it again from the desktop.",
+                "no_permission": "Contacts permission is off. Allow it in the checklist below.",
+                "unauthorized": "This phone's pairing has expired. Unpair it and pair it again.",
+                "forbidden": "Phone Assistant isn't switched on for this shop.",
+                "rejected": "The server rejected the contact list. Update the GearGrid Phone app.",
+                "server": "The server had a problem. It will try again automatically.",
+                "network": "No internet connection. It will try again when you're back online.",
+                "unknown": "Sync failed."
+            },
             "contactSyncToggleTitle": "Share phone contacts for POS fallback",
             "contactSyncToggleHint": "Only uploads names and phone numbers so staff can find new callers when billing.",
             "callerIdRole": "Caller ID & spam app role",

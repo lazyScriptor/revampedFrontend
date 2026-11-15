@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -19,6 +20,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import SyncIcon from "@mui/icons-material/Sync";
 import SecurityIcon from "@mui/icons-material/Security";
 import { useTranslation } from "react-i18next";
+import { tk } from "@/i18n/marker";
 import {
   nativeBridge,
   registerDeviceWithServer,
@@ -34,12 +36,30 @@ function formatSyncTimestamp(iso: string | null, neverLabel: string): string {
   }
 }
 
+const SYNC_POLL_INTERVAL_MS = 2000;
+const SYNC_POLL_ATTEMPTS = 15;
+const SYNC_ERROR_GRACE_POLLS = 2;
+// Error codes come from the app's ContactSyncWorker.
+const SYNC_ERROR_KEYS: Record<string, string> = {
+  not_paired: tk("phoneAssistant.checklist.syncErrors.not_paired"),
+  no_permission: tk("phoneAssistant.checklist.syncErrors.no_permission"),
+  unauthorized: tk("phoneAssistant.checklist.syncErrors.unauthorized"),
+  forbidden: tk("phoneAssistant.checklist.syncErrors.forbidden"),
+  rejected: tk("phoneAssistant.checklist.syncErrors.rejected"),
+  server: tk("phoneAssistant.checklist.syncErrors.server"),
+  network: tk("phoneAssistant.checklist.syncErrors.network"),
+};
+const SYNC_ERROR_UNKNOWN_KEY = tk("phoneAssistant.checklist.syncErrors.unknown");
+
+type SyncResult = { kind: "done" } | { kind: "running" } | { kind: "error"; code: string };
+
 export function NativeSetupChecklist() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<PhoneAssistantSetupStatus | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [consentOpen, setConsentOpen] = useState(false);
   const [vendorFallbackNote, setVendorFallbackNote] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -63,6 +83,35 @@ export function NativeSetupChecklist() {
       const updated = await fn();
       if (updated) setStatus(updated);
       else await loadStatus();
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  // The native sync runs in the background, so poll the status until it reports a result.
+  const handleSyncNow = async () => {
+    const before = status?.contactsSyncedAt ?? null;
+    setBusyKey("syncNow");
+    setSyncResult(null);
+    try {
+      let latest = await nativeBridge.syncNow();
+      for (let attempt = 1; attempt <= SYNC_POLL_ATTEMPTS; attempt++) {
+        if (latest) setStatus(latest);
+        if (latest?.contactsSyncedAt && latest.contactsSyncedAt !== before) {
+          setSyncResult({ kind: "done" });
+          return;
+        }
+        // An error is only trusted after a few polls, so a stale one from an earlier run is skipped.
+        if (latest?.contactsSyncError && attempt > SYNC_ERROR_GRACE_POLLS) {
+          setSyncResult({ kind: "error", code: latest.contactsSyncError });
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, SYNC_POLL_INTERVAL_MS));
+        latest = await nativeBridge.getSetupStatus();
+      }
+      setSyncResult({ kind: "running" });
+    } catch {
+      setSyncResult({ kind: "error", code: "unknown" });
     } finally {
       setBusyKey(null);
     }
@@ -163,14 +212,36 @@ export function NativeSetupChecklist() {
             size="small"
             variant="outlined"
             color="warning"
-            startIcon={<SyncIcon sx={{ fontSize: 15 }} />}
+            startIcon={
+              busyKey === "syncNow" ? (
+                <CircularProgress size={13} color="inherit" />
+              ) : (
+                <SyncIcon sx={{ fontSize: 15 }} />
+              )
+            }
             disabled={!status.contactSyncEnabled || busyKey === "syncNow"}
-            onClick={() => runAction("syncNow", () => nativeBridge.syncNow())}
+            onClick={() => void handleSyncNow()}
             sx={{ textTransform: "none", fontWeight: 700, minHeight: 32 }}
           >
-            {t("phoneAssistant.checklist.syncNow")}
+            {busyKey === "syncNow"
+              ? t("phoneAssistant.checklist.syncing")
+              : t("phoneAssistant.checklist.syncNow")}
           </Button>
         </Stack>
+
+        {syncResult && (
+          <Alert
+            severity={
+              syncResult.kind === "done" ? "success" : syncResult.kind === "running" ? "info" : "error"
+            }
+            onClose={() => setSyncResult(null)}
+            sx={{ mb: 1.5, borderRadius: 1.5 }}
+          >
+            {syncResult.kind === "done" && t("phoneAssistant.checklist.syncDone")}
+            {syncResult.kind === "running" && t("phoneAssistant.checklist.syncStillRunning")}
+            {syncResult.kind === "error" && t(SYNC_ERROR_KEYS[syncResult.code] ?? SYNC_ERROR_UNKNOWN_KEY)}
+          </Alert>
+        )}
 
         {/* Contact Sync Toggle (off until consented) */}
         <Box
