@@ -3536,12 +3536,6 @@
             "usingContact": "Preparing…",
             "useFailed": "Could not load that contact. Please try again."
         },
-        "invoices": {
-            "fromContactsTab": "From contacts",
-            "fromContactBadge": "From contact",
-            "markReviewed": "Mark reviewed",
-            "reviewedByAt": "Reviewed by {{name}} · {{time}}"
-        },
         "pairedPhones": {
             "nativeApp": "Phone app",
             "browser": "Browser",
@@ -3614,10 +3608,6 @@
             "payment_voided": {
                 "label": "Payment voided / refunded",
                 "description": "Alert when a payment is reversed or refunded."
-            },
-            "contact_used": {
-                "label": "Phone contact used for bill",
-                "description": "Alert when counter staff creates a customer from a synced phone contact."
             },
             "customer_blacklisted": {
                 "label": "Customer blacklisted",

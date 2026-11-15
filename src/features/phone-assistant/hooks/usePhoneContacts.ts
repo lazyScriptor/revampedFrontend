@@ -1,8 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/features/invoices/hooks/usePosSearch";
 import { isPhoneSearch } from "@/lib/phoneSearch";
 import {
-  reviewContactInvoice,
   searchPhoneContacts,
   usePhoneContact,
 } from "../api/phoneAssistantApi";
@@ -24,16 +23,5 @@ export function usePhoneContactSearch(searchTerm: string, enabled = true) {
 export function useUsePhoneContact() {
   return useMutation({
     mutationFn: (contactId: number) => usePhoneContact(contactId),
-  });
-}
-
-export function useReviewContactInvoice() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (invoiceId: number) => reviewContactInvoice(invoiceId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      queryClient.invalidateQueries({ queryKey: ["invoice"] });
-    },
   });
 }

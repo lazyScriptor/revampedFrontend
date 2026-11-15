@@ -43,7 +43,6 @@ vi.mock("../api/phoneAssistantApi", () => ({
   usePhoneContact: (...args: any[]) => state.usePhoneContact(...args),
   listCalls: vi.fn(),
   searchPhoneContacts: vi.fn(),
-  reviewContactInvoice: vi.fn(),
 }));
 
 vi.mock("@/features/customers/components/CustomerFormDialog", () => ({
