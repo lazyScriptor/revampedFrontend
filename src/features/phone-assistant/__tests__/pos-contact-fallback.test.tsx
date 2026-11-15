@@ -174,6 +174,21 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
     expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
   });
 
+  it("a typed name finds nobody and never offers to add a duplicate customer", async () => {
+    const user = userEvent.setup({ delay: null });
+    wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
+
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "Nimal");
+
+    expect(
+      await screen.findByText("Customers are found by phone number only. Type their phone number."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /as new/i })).not.toBeInTheDocument();
+    expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
+  });
+
   it("shows contact matches when empty, confirms before calling /use, and prefills CustomerFormDialog", async () => {
     const user = userEvent.setup({ delay: null });
     wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
