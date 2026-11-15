@@ -346,48 +346,73 @@ describe("Slice 2 Frontend (Part C.1 Brief Policy + Part C.2 Extended Push)", ()
     });
   });
 
-  it("PushSettingsPanel configures hide_customer_name, delivery digest mode, digest interval, and daily summary", async () => {
+  it("PushSettingsPanel grid saves hide name, hide amount, delivery, digest interval and daily summary inline", async () => {
+    // Like the real server: what was saved is what the next read returns.
+    const initial = await mocks.getPushSettings();
+    let saved = initial.settings;
+    mocks.updatePushSettings.mockImplementation(async (s: any) => {
+      saved = s;
+      return { settings: s };
+    });
+    mocks.getPushSettings.mockImplementation(async () => ({ ...initial, settings: saved }));
     wrap(<PushSettingsPanel />);
 
-    expect(await screen.findByText("New invoice created")).toBeInTheDocument();
+    const row = await screen.findByTestId("event-row-invoice_created");
 
-    // Toggle hide customer name on New invoice created
-    const hideNameSwitch = screen.getByRole("switch", {
-      name: /new invoice created hide customer name/i,
-    });
-    fireEvent.click(hideNameSwitch);
-
-    // Switch delivery mode to digest on first card
-    const deliverySelects = screen.getAllByLabelText(/^delivery$/i);
-    selectMuiOption(deliverySelects[0], /batched digest/i);
-
-    // Change digest batch interval to 60 minutes
-    const digestIntervalSelect = screen.getByLabelText(/digest batch interval/i);
-    selectMuiOption(digestIntervalSelect, /every 60 minutes/i);
-
-    // Enable daily shop summary and toggle Overdue section off
-    const dailySwitch = screen.getByRole("switch", { name: /daily shop summary/i });
-    fireEvent.click(dailySwitch);
-
-    const overdueCheckbox = screen.getByRole("checkbox", { name: /overdue/i });
-    fireEvent.click(overdueCheckbox);
-
-    fireEvent.click(screen.getByRole("button", { name: /save push settings/i }));
+    fireEvent.click(within(row).getByRole("checkbox", { name: /new invoice created.*hide name/i }));
     await waitFor(() => {
-      expect(mocks.updatePushSettings).toHaveBeenCalledWith(
+      expect(mocks.updatePushSettings).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          digest_minutes: 60,
           events: expect.objectContaining({
-            invoice_created: expect.objectContaining({
-              hide_customer_name: true,
-              delivery: "digest",
-            }),
+            invoice_created: expect.objectContaining({ hide_customer_name: true }),
           }),
+        }),
+      );
+    });
+
+    fireEvent.click(within(row).getByRole("checkbox", { name: /new invoice created.*hide amount/i }));
+    await waitFor(() => {
+      expect(mocks.updatePushSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          events: expect.objectContaining({
+            invoice_created: expect.objectContaining({ hide_amount: true, hide_customer_name: true }),
+          }),
+        }),
+      );
+    });
+
+    // Delivery select in the same row
+    const comboboxes = within(screen.getByTestId("event-row-invoice_created")).getAllByRole("combobox");
+    selectMuiOption(comboboxes[0], /batched digest/i);
+    await waitFor(() => {
+      expect(mocks.updatePushSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          events: expect.objectContaining({
+            invoice_created: expect.objectContaining({ delivery: "digest" }),
+          }),
+        }),
+      );
+    });
+
+    // Digest interval, daily summary and one of its sections
+    const digestSelect = screen.getAllByRole("combobox").find((el) => /30 min/i.test(el.textContent || ""))!;
+    selectMuiOption(digestSelect, /60 min/i);
+    await waitFor(() => {
+      expect(mocks.updatePushSettings).toHaveBeenLastCalledWith(expect.objectContaining({ digest_minutes: 60 }));
+    });
+
+    fireEvent.click(screen.getByRole("switch", { name: /^daily summary$/i }));
+    await waitFor(() => {
+      expect(mocks.updatePushSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({ daily_summary: expect.objectContaining({ enabled: true }) }),
+      );
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /overdue/i }));
+    await waitFor(() => {
+      expect(mocks.updatePushSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({
           daily_summary: expect.objectContaining({
-            enabled: true,
-            sections: expect.objectContaining({
-              overdue: false,
-            }),
+            sections: expect.objectContaining({ overdue: false }),
           }),
         }),
       );

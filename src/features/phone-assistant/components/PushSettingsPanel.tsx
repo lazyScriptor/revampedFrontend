@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -6,24 +6,30 @@ import {
   Checkbox,
   Chip,
   CircularProgress,
-  Divider,
   FormControl,
-  FormControlLabel,
-  InputAdornment,
-  InputLabel,
+  IconButton,
+  ListItemText,
+  Menu,
   MenuItem,
-  OutlinedInput,
   Paper,
   Select,
   Stack,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
+  Tooltip,
   Typography,
+  useMediaQuery,
   useTheme,
 } from "@mui/material";
-import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
-import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { useTranslation } from "react-i18next";
 import type {
   PushDeliveryMode,
@@ -37,946 +43,598 @@ import {
   useUpdatePushSettings,
 } from "../hooks/usePushSettings";
 
+type EventRule = PushSettingsPayload["events"][string];
+
 const FALLBACK_CATALOG: PushEventCatalogEntry[] = [
   { key: "invoice_created", group: "bills", default_enabled: true, has_amount: true },
   { key: "payment_received", group: "payments", default_enabled: true, has_amount: true },
   { key: "return_processed", group: "returns", default_enabled: true, has_amount: true },
-  { key: "invoice_deleted", group: "bills", default_enabled: true, has_amount: false },
-  { key: "invoice_restored", group: "bills", default_enabled: true, has_amount: false },
-  { key: "payment_voided", group: "payments", default_enabled: true, has_amount: true },
-  { key: "customer_blacklisted", group: "alerts", default_enabled: true, has_amount: false },
+  { key: "invoice_deleted", group: "alerts", default_enabled: true, has_amount: true },
+  { key: "invoice_restored", group: "alerts", default_enabled: false, has_amount: true },
+  { key: "payment_voided", group: "alerts", default_enabled: true, has_amount: true },
+  { key: "customer_blacklisted", group: "alerts", default_enabled: false, has_amount: false },
+  { key: "follow_up_due", group: "alerts", default_enabled: true, has_amount: false },
   { key: "daily_summary", group: "digest", default_enabled: false, has_amount: false },
 ];
 
-const DAILY_SUMMARY_SECTIONS = [
-  "bills",
-  "payments",
-  "returns",
-  "due_tomorrow",
-  "overdue",
-] as const;
+const GROUP_ORDER = ["bills", "payments", "returns", "alerts", "digest"] as const;
+const DAILY_SUMMARY_SECTIONS = ["bills", "payments", "returns", "due_tomorrow", "overdue"] as const;
 
-function buildInitialDraft(source: PushSettingsPayload): PushSettingsPayload {
-  const normalizedEvents: PushSettingsPayload["events"] = {};
-  for (const [key, rule] of Object.entries(source.events ?? {})) {
-    normalizedEvents[key] = {
-      enabled: Boolean(rule?.enabled),
-      min_amount: Number(rule?.min_amount ?? 0),
-      recipient_role_ids: Array.isArray(rule?.recipient_role_ids)
-        ? rule.recipient_role_ids
-        : [],
-      hide_customer_name: Boolean(rule?.hide_customer_name),
-      delivery: rule?.delivery === "digest" ? "digest" : "instant",
-    };
-  }
-  return {
-    ...source,
-    events: normalizedEvents,
-    digest_minutes: source.digest_minutes ?? 30,
-    daily_summary: source.daily_summary ?? {
-      enabled: false,
-      send_time: "20:00",
-      recipient_role_ids: [],
-      sections: {
-        bills: true,
-        payments: true,
-        returns: true,
-        due_tomorrow: true,
-        overdue: true,
-      },
-    },
-  };
-}
+const DEFAULT_RULE: EventRule = {
+  enabled: true,
+  min_amount: 0,
+  recipient_role_ids: [],
+  hide_customer_name: false,
+  hide_amount: false,
+  delivery: "instant",
+};
 
+const ruleOf = (settings: PushSettingsPayload, key: string): EventRule => ({
+  ...DEFAULT_RULE,
+  ...(settings.events?.[key] ?? {}),
+});
+
+// Pushed events that carry no customer, so "Hide name" would do nothing.
+const NO_CUSTOMER_EVENTS = new Set(["daily_summary"]);
+
+/** Compact notifications grid: one row per event, every cell saves by itself on change or blur. */
 export function PushSettingsPanel() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
-
-  const surfaceBg = isDark ? "#0f172a" : "#ffffff";
-  const rowBg = isDark ? "#1e293b" : "#f8fafc";
-  const borderColor = isDark ? "#334155" : "#e2e8f0";
-  const textPrimary = isDark ? "#f8fafc" : "#0f172a";
-  const textSecondary = isDark ? "#94a3b8" : "#475569";
+  const isNarrow = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { data, isLoading, isError } = usePushSettings(true);
   const { data: roles = [] } = usePushRoles(true);
-  const updateSettings = useUpdatePushSettings();
+  const update = useUpdatePushSettings();
   const sendTest = useSendPushTest();
 
-  const [draft, setDraft] = useState<PushSettingsPayload | null>(null);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{
-    severity: "success" | "warning" | "error";
-    text: string;
-  } | null>(null);
+  const [savedKeys, setSavedKeys] = useState<Record<string, number>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ severity: "success" | "warning" | "error"; text: string } | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const latest = useRef<PushSettingsPayload | null>(null);
+  latest.current = data?.settings ?? null;
 
   const catalog = data?.catalog?.length ? data.catalog : FALLBACK_CATALOG;
 
-  useEffect(() => {
-    if (!data?.settings) return;
-    setDraft(buildInitialDraft(data.settings));
-  }, [data?.settings]);
-
-  const roleNameMap = new Map(roles.map((r) => [r.role_id, r.role_name]));
-
-  const updateEventRule = (
-    key: string,
-    patch: Partial<PushSettingsPayload["events"][string]>,
-  ) => {
-    setSaveMessage(null);
-    setSaveError(null);
-    setDraft((prev) => {
-      if (!prev) return prev;
-      const existing = prev.events[key] ?? {
-        enabled: true,
-        min_amount: 0,
-        recipient_role_ids: [],
-      };
-      return {
-        ...prev,
-        events: {
-          ...prev.events,
-          [key]: {
-            ...existing,
-            ...patch,
-          },
-        },
-      };
-    });
-  };
-
-  const handleSave = async () => {
-    if (!draft) return;
-    setSaveMessage(null);
-    setSaveError(null);
-    try {
-      await updateSettings.mutateAsync(draft);
-      setSaveMessage(t("phoneAssistant.pushSettings.savedBanner"));
-    } catch (err: any) {
-      setSaveError(
-        err?.message || t("phoneAssistant.pushSettings.saveFailed"),
-      );
+  const groups = useMemo(() => {
+    const byGroup = new Map<string, PushEventCatalogEntry[]>();
+    for (const entry of catalog) {
+      const g = entry.group && GROUP_ORDER.includes(entry.group as any) ? entry.group : "alerts";
+      byGroup.set(g, [...(byGroup.get(g) ?? []), entry]);
     }
-  };
+    return GROUP_ORDER.filter((g) => byGroup.has(g)).map((g) => ({ group: g, entries: byGroup.get(g)! }));
+  }, [catalog]);
 
-  const handleSendTest = async () => {
+  const flash = useCallback((key: string) => {
+    const stamp = Date.now();
+    setSavedKeys((prev) => ({ ...prev, [key]: stamp }));
+    window.setTimeout(() => {
+      setSavedKeys((prev) => {
+        if (prev[key] !== stamp) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }, 1800);
+  }, []);
+
+  /** Apply one change to the newest settings, save at once, tick the row on success. */
+  const save = useCallback(
+    (mutate: (s: PushSettingsPayload) => PushSettingsPayload, tickKey: string) => {
+      const base = latest.current;
+      if (!base) return;
+      setError(null);
+      update.mutate(mutate(base), {
+        onSuccess: () => flash(tickKey),
+        onError: (e: any) => setError(e?.message || t("phoneAssistant.pushGrid.saveFailed")),
+      });
+    },
+    [flash, t, update],
+  );
+
+  const patchEvent = useCallback(
+    (key: string, patch: Partial<EventRule>) =>
+      save(
+        (s) => ({ ...s, events: { ...s.events, [key]: { ...ruleOf(s, key), ...patch } } }),
+        key,
+      ),
+    [save],
+  );
+
+  const bulk = useCallback(
+    (patch: (rule: EventRule, entry: PushEventCatalogEntry) => Partial<EventRule>) => {
+      setMenuAnchor(null);
+      save((s) => {
+        const events = { ...s.events };
+        for (const entry of catalog) events[entry.key] = { ...ruleOf(s, entry.key), ...patch(ruleOf(s, entry.key), entry) };
+        return { ...s, events };
+      }, "__all");
+    },
+    [catalog, save],
+  );
+
+  const runTest = async () => {
     setTestResult(null);
     try {
       const res = await sendTest.mutateAsync();
-      const reached = Number(res?.reached ?? 0);
-      if (reached > 0) {
-        setTestResult({
-          severity: "success",
-          text: t("phoneAssistant.pushSettings.testSent", { count: reached }),
-        });
-      } else {
-        setTestResult({
-          severity: "warning",
-          text: t("phoneAssistant.pushSettings.testNoDevices"),
-        });
-      }
-    } catch (err: any) {
-      setTestResult({
-        severity: "error",
-        text: err?.message || t("phoneAssistant.pushSettings.testFailed"),
-      });
+      setTestResult(
+        res.reached > 0
+          ? { severity: "success", text: t("phoneAssistant.pushSettings.testSent", { count: res.reached }) }
+          : { severity: "warning", text: t("phoneAssistant.pushSettings.testNoDevices") },
+      );
+    } catch (e: any) {
+      setTestResult({ severity: "error", text: e?.message || t("phoneAssistant.pushSettings.testFailed") });
     }
   };
 
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: { xs: 2, sm: 3 },
-        borderRadius: 2.5,
-        bgcolor: surfaceBg,
-        borderColor,
-      }}
-    >
-      <Stack spacing={2.5}>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
-          sx={{
-            alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "space-between",
-          }}
-        >
-          <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-            <Box
-              sx={{
-                width: 38,
-                height: 38,
-                borderRadius: 2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                bgcolor: isDark
-                  ? "rgba(217, 119, 6, 0.16)"
-                  : "rgba(245, 158, 11, 0.14)",
-                color: "#d97706",
-              }}
-            >
-              <AdminPanelSettingsOutlinedIcon fontSize="small" />
-            </Box>
-            <Box>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 700, fontSize: 16, color: textPrimary }}
-              >
-                {t("phoneAssistant.pushSettings.title")}
-              </Typography>
-              <Typography variant="caption" sx={{ color: textSecondary }}>
-                {t("phoneAssistant.pushSettings.subtitle")}
-              </Typography>
-            </Box>
-          </Stack>
+  if (isLoading) {
+    return (
+      <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
+        <CircularProgress size={28} />
+      </Box>
+    );
+  }
+  if (isError || !data?.settings) {
+    return <Alert severity="error">{t("phoneAssistant.pushSettings.loadFailed")}</Alert>;
+  }
+  const settings = data.settings;
+  const eventName = (key: string) => t(`phoneAssistant.pushEvents.${key}.label`, { defaultValue: key });
+  const Tick = ({ k }: { k: string }) =>
+    savedKeys[k] ? (
+      <CheckRoundedIcon
+        aria-label={t("phoneAssistant.pushGrid.saved")}
+        sx={{ fontSize: 18, color: "success.main", ml: 0.5 }}
+      />
+    ) : null;
 
-          <Button
-            variant="outlined"
-            startIcon={
-              sendTest.isPending ? (
-                <CircularProgress size={16} sx={{ color: "#d97706" }} />
-              ) : (
-                <SendOutlinedIcon fontSize="small" />
-              )
-            }
-            disabled={sendTest.isPending}
-            onClick={handleSendTest}
-            sx={{
-              minHeight: 40,
-              textTransform: "none",
-              fontWeight: 600,
-              borderColor: "#d97706",
-              color: isDark ? "#fbbf24" : "#b45309",
-              "&:hover": {
-                borderColor: "#b45309",
-                bgcolor: "rgba(217, 119, 6, 0.08)",
-              },
-            }}
-          >
-            {sendTest.isPending
-              ? t("phoneAssistant.pushSettings.sendingTest")
-              : t("phoneAssistant.pushSettings.sendTest")}
-          </Button>
-        </Stack>
-
-        {testResult && (
-          <Alert severity={testResult.severity}>{testResult.text}</Alert>
-        )}
-
-        {isLoading || !draft ? (
-          isError ? (
-            <Alert severity="error">
-              {t("phoneAssistant.pushSettings.loadFailed")}
-            </Alert>
+  const roleSelect = (key: string, rule: EventRule) => (
+    <FormControl size="small" fullWidth>
+      <Select
+        multiple
+        displayEmpty
+        value={rule.recipient_role_ids ?? []}
+        onChange={(e) => patchEvent(key, { recipient_role_ids: (e.target.value as number[]).map(Number) })}
+        renderValue={(selected) =>
+          (selected as number[]).length === 0 ? (
+            <Typography variant="caption" color="text.secondary">
+              {t("phoneAssistant.pushGrid.adminsOnly")}
+            </Typography>
           ) : (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-              <CircularProgress size={24} sx={{ color: "#d97706" }} />
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {(selected as number[]).map((id) => (
+                <Chip key={id} size="small" label={roles.find((r) => r.role_id === id)?.role_name ?? `#${id}`} />
+              ))}
             </Box>
           )
-        ) : (
-          <>
-            <Stack spacing={1.5}>
-              {catalog
-                .filter((cat) => cat.key !== "daily_summary")
-                .map((cat) => {
-                  const rule = draft.events[cat.key] ?? {
-                    enabled: cat.default_enabled,
-                    min_amount: 0,
-                    recipient_role_ids: [],
-                    hide_customer_name: false,
-                    delivery: "instant" as PushDeliveryMode,
-                  };
-                const eventLabel = t(
-                  `phoneAssistant.pushEvents.${cat.key}.label`,
-                  { defaultValue: cat.key },
-                );
-                const eventDescription = t(
-                  `phoneAssistant.pushEvents.${cat.key}.description`,
-                  { defaultValue: "" },
-                );
+        }
+        slotProps={{ input: { "aria-label": t("phoneAssistant.pushGrid.colRoles") } as any }}
+      >
+        {roles.map((r) => (
+          <MenuItem key={r.role_id} value={r.role_id} dense>
+            <Checkbox size="small" checked={(rule.recipient_role_ids ?? []).includes(r.role_id)} />
+            <ListItemText primary={r.role_name} />
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
 
-                return (
-                  <Paper
-                    key={cat.key}
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      bgcolor: rowBg,
-                      borderColor,
-                    }}
-                  >
-                    <Stack spacing={1.5}>
-                      <Stack
-                        direction="row"
-                        spacing={2}
-                        sx={{
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 700, color: textPrimary }}
-                          >
-                            {eventLabel}
-                          </Typography>
-                          {eventDescription && (
-                            <Typography
-                              variant="caption"
-                              sx={{ color: textSecondary, display: "block" }}
-                            >
-                              {eventDescription}
-                            </Typography>
-                          )}
-                        </Box>
+  const minAmountField = (key: string, entry: PushEventCatalogEntry, rule: EventRule) =>
+    entry.has_amount ? (
+      <TextField
+        size="small"
+        type="number"
+        defaultValue={rule.min_amount ?? 0}
+        key={`${key}-${rule.min_amount}`}
+        onBlur={(e) => {
+          const n = Math.max(0, Number(e.target.value) || 0);
+          if (n !== Number(rule.min_amount ?? 0)) patchEvent(key, { min_amount: n });
+        }}
+        slotProps={{
+          htmlInput: {
+            min: 0,
+            step: 100,
+            "aria-label": t("phoneAssistant.pushGrid.colMinAmount"),
+            style: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
+          },
+        }}
+        sx={{ width: 110 }}
+      />
+    ) : null;
 
+  const deliverySelect = (key: string, rule: EventRule) => (
+    <Select
+      size="small"
+      value={rule.delivery ?? "instant"}
+      onChange={(e) => patchEvent(key, { delivery: e.target.value as PushDeliveryMode })}
+      slotProps={{ input: { "aria-label": t("phoneAssistant.pushGrid.colDelivery") } as any }}
+      sx={{ minWidth: 104 }}
+    >
+      <MenuItem value="instant">{t("phoneAssistant.pushSettings.deliveryInstant")}</MenuItem>
+      <MenuItem value="digest">{t("phoneAssistant.pushSettings.deliveryDigest")}</MenuItem>
+    </Select>
+  );
+
+  return (
+    <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2.5 }, border: 1, borderColor: "divider", borderRadius: 2.5, bgcolor: "background.paper" }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", mb: 1.5, flexWrap: "wrap", rowGap: 1 }}>
+        <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+            {t("phoneAssistant.pushGrid.title")}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t("phoneAssistant.pushGrid.subtitle")}
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Tick k="__all" />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={sendTest.isPending ? <CircularProgress size={14} /> : <SendOutlinedIcon fontSize="small" />}
+            onClick={runTest}
+            disabled={sendTest.isPending}
+          >
+            {t("phoneAssistant.pushSettings.sendTest")}
+          </Button>
+          <Tooltip title={t("phoneAssistant.pushGrid.bulkMenu")}>
+            <IconButton size="small" aria-label={t("phoneAssistant.pushGrid.bulkMenu")} onClick={(e) => setMenuAnchor(e.currentTarget)}>
+              <MoreVertRoundedIcon />
+            </IconButton>
+          </Tooltip>
+          <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+            <MenuItem onClick={() => bulk(() => ({ enabled: true }))}>{t("phoneAssistant.pushGrid.allOn")}</MenuItem>
+            <MenuItem onClick={() => bulk(() => ({ enabled: false }))}>{t("phoneAssistant.pushGrid.allOff")}</MenuItem>
+            <MenuItem onClick={() => bulk(() => ({ delivery: "digest" }))}>{t("phoneAssistant.pushGrid.allDigest")}</MenuItem>
+            <MenuItem onClick={() => bulk((_r, entry) => (entry.has_amount ? { min_amount: 0 } : {}))}>
+              {t("phoneAssistant.pushGrid.clearMin")}
+            </MenuItem>
+          </Menu>
+        </Stack>
+      </Stack>
+
+      {testResult && (
+        <Alert severity={testResult.severity} sx={{ mb: 1.5 }} onClose={() => setTestResult(null)}>
+          {testResult.text}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {isNarrow ? (
+        <Stack spacing={1.5}>
+          {groups.map(({ group, entries }) => (
+            <Box key={group}>
+              <Typography variant="overline" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: 1 }}>
+                {t(`phoneAssistant.pushGrid.group.${group}`)}
+              </Typography>
+              <Stack spacing={1}>
+                {entries.map((entry) => {
+                  const rule = ruleOf(settings, entry.key);
+                  return (
+                    <Paper key={entry.key} variant="outlined" sx={{ p: 1.5, borderRadius: 2 }} data-testid={`event-card-${entry.key}`}>
+                      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {eventName(entry.key)}
+                          <Tick k={entry.key} />
+                        </Typography>
                         <Switch
                           checked={Boolean(rule.enabled)}
-                          color="warning"
-                          onChange={(_e, checked) =>
-                            updateEventRule(cat.key, { enabled: checked })
-                          }
-                          slotProps={{
-                            input: {
-                              role: "switch",
-                              "aria-label": `${eventLabel} ${t("phoneAssistant.pushSettings.enabledColumn")}`,
-                            },
-                          }}
+                          onChange={(e) => patchEvent(entry.key, { enabled: e.target.checked })}
+                          slotProps={{ input: { role: "switch", "aria-label": `${eventName(entry.key)} – ${t("phoneAssistant.pushGrid.colOn")}` } }}
                         />
                       </Stack>
-
-                      <Stack
-                        direction={{ xs: "column", md: "row" }}
-                        spacing={1.5}
-                        sx={{ alignItems: { xs: "stretch", md: "center" } }}
-                      >
-                        {cat.has_amount && (
-                          <TextField
-                            size="small"
-                            type="number"
-                            label={t("phoneAssistant.pushSettings.minAmountColumn")}
-                            value={rule.min_amount ?? 0}
-                            disabled={!rule.enabled}
-                            onChange={(e) => {
-                              const nextVal = Math.max(
-                                0,
-                                Number(e.target.value || 0),
-                              );
-                              updateEventRule(cat.key, {
-                                min_amount: Number.isFinite(nextVal) ? nextVal : 0,
-                              });
-                            }}
-                            sx={{
-                              width: { xs: "100%", md: 220 },
-                              "& .MuiInputBase-root": {
-                                bgcolor: surfaceBg,
-                                color: textPrimary,
-                              },
-                              "& .MuiInputLabel-root": {
-                                color: textSecondary,
-                              },
-                            }}
-                            slotProps={{
-                              input: {
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    Rs.
-                                  </InputAdornment>
-                                ),
-                              },
-                              htmlInput: {
-                                min: 0,
-                                step: 1,
-                                inputMode: "numeric",
-                                style: { fontVariantNumeric: "tabular-nums" },
-                              },
-                            }}
-                          />
+                      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, mt: 1, alignItems: "center" }}>
+                        {entry.has_amount ? (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">{t("phoneAssistant.pushGrid.colMinAmount")}</Typography>
+                            <Box>{minAmountField(entry.key, entry, rule)}</Box>
+                          </Box>
+                        ) : (
+                          <Box />
                         )}
-
-                        <FormControl
-                          size="small"
-                          sx={{
-                            flex: 1,
-                            minWidth: { xs: "100%", md: 240 },
-                            "& .MuiInputBase-root": {
-                              bgcolor: surfaceBg,
-                              color: textPrimary,
-                            },
-                          }}
-                          disabled={!rule.enabled}
-                        >
-                          <Select
-                            multiple
-                            displayEmpty
-                            value={rule.recipient_role_ids ?? []}
-                            input={<OutlinedInput />}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              const ids = (
-                                Array.isArray(value) ? value : []
-                              ).map((v) => Number(v));
-                              updateEventRule(cat.key, {
-                                recipient_role_ids: ids,
-                              });
-                            }}
-                            renderValue={(selected) => {
-                              const ids = (selected as number[]) ?? [];
-                              if (ids.length === 0) {
-                                return (
-                                  <Typography
-                                    variant="body2"
-                                    sx={{ color: textSecondary }}
-                                  >
-                                    {t("phoneAssistant.pushSettings.adminsOnly")}
-                                  </Typography>
-                                );
-                              }
-                              return (
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: 0.5,
-                                  }}
-                                >
-                                  {ids.map((id) => (
-                                    <Chip
-                                      key={id}
-                                      size="small"
-                                      label={roleNameMap.get(id) ?? `#${id}`}
-                                      sx={{
-                                        height: 22,
-                                        fontSize: 12,
-                                        bgcolor: isDark ? "#334155" : "#fef3c7",
-                                        color: isDark ? "#f8fafc" : "#92400e",
-                                      }}
-                                    />
-                                  ))}
-                                </Box>
-                              );
-                            }}
-                            slotProps={{
-                              input: {
-                                "aria-label": `${eventLabel} ${t("phoneAssistant.pushSettings.rolesColumn")}`,
-                              },
-                            }}
-                          >
-                            {roles.map((role) => (
-                              <MenuItem key={role.role_id} value={role.role_id}>
-                                {role.role_name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-
-                        <FormControl
-                          size="small"
-                          sx={{
-                            minWidth: { xs: "100%", md: 165 },
-                            "& .MuiInputBase-root": {
-                              bgcolor: surfaceBg,
-                              color: textPrimary,
-                            },
-                            "& .MuiInputLabel-root": {
-                              color: textSecondary,
-                            },
-                          }}
-                        >
-                          <InputLabel id={`delivery-${cat.key}-label`}>
-                            {t("phoneAssistant.pushSettings.deliveryMode")}
-                          </InputLabel>
-                          <Select
-                            labelId={`delivery-${cat.key}-label`}
-                            label={t("phoneAssistant.pushSettings.deliveryMode")}
-                            disabled={!rule.enabled}
-                            value={rule.delivery ?? "instant"}
-                            onChange={(e) =>
-                              updateEventRule(cat.key, {
-                                delivery: e.target.value as PushDeliveryMode,
-                              })
-                            }
-                          >
-                            <MenuItem value="instant">
-                              {t("phoneAssistant.pushSettings.deliveryInstant")}
-                            </MenuItem>
-                            <MenuItem value="digest">
-                              {t("phoneAssistant.pushSettings.deliveryDigest")}
-                            </MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Stack>
-
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
-                        <FormControlLabel
-                          control={
-                            <Switch
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">{t("phoneAssistant.pushGrid.colDelivery")}</Typography>
+                          <Box>{deliverySelect(entry.key, rule)}</Box>
+                        </Box>
+                        {!NO_CUSTOMER_EVENTS.has(entry.key) && (
+                          <Stack direction="row" sx={{ alignItems: "center" }}>
+                            <Checkbox
                               size="small"
-                              color="warning"
-                              disabled={!rule.enabled}
                               checked={Boolean(rule.hide_customer_name)}
-                              onChange={(_e, checked) =>
-                                updateEventRule(cat.key, {
-                                  hide_customer_name: checked,
-                                })
-                              }
-                              slotProps={{
-                                input: {
-                                  role: "switch",
-                                  "aria-label": `${eventLabel} ${t("phoneAssistant.pushSettings.hideCustomerName")}`,
-                                },
-                              }}
+                              onChange={(e) => patchEvent(entry.key, { hide_customer_name: e.target.checked })}
                             />
-                          }
-                          label={
-                            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: textSecondary }}>
-                              {t("phoneAssistant.pushSettings.hideCustomerName")}
-                            </Typography>
-                          }
-                          sx={{ m: 0 }}
-                        />
+                            <Typography variant="body2">{t("phoneAssistant.pushGrid.colHideName")}</Typography>
+                          </Stack>
+                        )}
+                        {entry.has_amount && (
+                          <Stack direction="row" sx={{ alignItems: "center" }}>
+                            <Checkbox
+                              size="small"
+                              checked={Boolean(rule.hide_amount)}
+                              onChange={(e) => patchEvent(entry.key, { hide_amount: e.target.checked })}
+                            />
+                            <Typography variant="body2">{t("phoneAssistant.pushGrid.colHideAmount")}</Typography>
+                          </Stack>
+                        )}
                       </Box>
-                    </Stack>
-                  </Paper>
-                );
-              })}
-            </Stack>
-
-            <Divider sx={{ borderColor }} />
-
-            <Paper
-              variant="outlined"
-              sx={{ p: 2, borderRadius: 2, bgcolor: rowBg, borderColor }}
-            >
-              <Stack spacing={2}>
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  sx={{ alignItems: "center", justifyContent: "space-between" }}
-                >
-                  <Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 700, color: textPrimary }}
-                    >
-                      {t("phoneAssistant.pushSettings.quietHoursTitle")}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: textSecondary }}>
-                      {t("phoneAssistant.pushSettings.quietHoursHint")}
-                    </Typography>
-                  </Box>
-                  <Switch
-                    checked={Boolean(draft.quiet_hours.enabled)}
-                    color="warning"
-                    onChange={(_e, checked) => {
-                      setSaveMessage(null);
-                      setDraft((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              quiet_hours: {
-                                ...prev.quiet_hours,
-                                enabled: checked,
-                              },
-                            }
-                          : prev,
-                      );
-                    }}
-                    slotProps={{
-                      input: {
-                        role: "switch",
-                        "aria-label": t(
-                          "phoneAssistant.pushSettings.quietHoursTitle",
-                        ),
-                      },
-                    }}
-                  />
-                </Stack>
-
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                  <TextField
-                    size="small"
-                    type="time"
-                    label={t("phoneAssistant.pushSettings.quietFrom")}
-                    value={draft.quiet_hours.from}
-                    disabled={!draft.quiet_hours.enabled}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSaveMessage(null);
-                      setDraft((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              quiet_hours: { ...prev.quiet_hours, from: val },
-                            }
-                          : prev,
-                      );
-                    }}
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary">{t("phoneAssistant.pushGrid.colRoles")}</Typography>
+                        {roleSelect(entry.key, rule)}
+                      </Box>
+                    </Paper>
+                  );
+                })}
+              </Stack>
+            </Box>
+          ))}
+        </Stack>
+      ) : (
+        <TableContainer sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}>
+          <Table size="small" sx={{ tableLayout: "fixed", minWidth: 860 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: 190, fontWeight: 800 }}>{t("phoneAssistant.pushGrid.colEvent")}</TableCell>
+                <TableCell sx={{ width: 70, fontWeight: 800 }}>{t("phoneAssistant.pushGrid.colOn")}</TableCell>
+                <TableCell sx={{ width: 130, fontWeight: 800 }} align="right">{t("phoneAssistant.pushGrid.colMinAmount")}</TableCell>
+                <TableCell sx={{ width: 130, fontWeight: 800 }}>{t("phoneAssistant.pushGrid.colDelivery")}</TableCell>
+                <TableCell sx={{ width: 90, fontWeight: 800 }} align="center">{t("phoneAssistant.pushGrid.colHideName")}</TableCell>
+                <TableCell sx={{ width: 100, fontWeight: 800 }} align="center">{t("phoneAssistant.pushGrid.colHideAmount")}</TableCell>
+                <TableCell sx={{ fontWeight: 800 }}>{t("phoneAssistant.pushGrid.colRoles")}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {groups.map(({ group, entries }) => [
+                <TableRow key={`g-${group}`}>
+                  <TableCell
+                    colSpan={7}
                     sx={{
-                      width: { xs: "100%", sm: 170 },
-                      "& .MuiInputBase-root": {
-                        bgcolor: surfaceBg,
-                        color: textPrimary,
-                      },
-                      "& .MuiInputLabel-root": { color: textSecondary },
-                    }}
-                    slotProps={{
-                      htmlInput: {
-                        style: { fontVariantNumeric: "tabular-nums" },
-                      },
-                    }}
-                  />
-                  <TextField
-                    size="small"
-                    type="time"
-                    label={t("phoneAssistant.pushSettings.quietTo")}
-                    value={draft.quiet_hours.to}
-                    disabled={!draft.quiet_hours.enabled}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSaveMessage(null);
-                      setDraft((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              quiet_hours: { ...prev.quiet_hours, to: val },
-                            }
-                          : prev,
-                      );
-                    }}
-                    sx={{
-                      width: { xs: "100%", sm: 170 },
-                      "& .MuiInputBase-root": {
-                        bgcolor: surfaceBg,
-                        color: textPrimary,
-                      },
-                      "& .MuiInputLabel-root": { color: textSecondary },
-                    }}
-                    slotProps={{
-                      htmlInput: {
-                        style: { fontVariantNumeric: "tabular-nums" },
-                      },
-                    }}
-                  />
-                </Stack>
-
-                <Divider sx={{ borderColor }} />
-
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  sx={{ alignItems: "center", justifyContent: "space-between" }}
-                >
-                  <Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 700, color: textPrimary }}
-                    >
-                      {t("phoneAssistant.pushSettings.includeAmountsTitle")}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: textSecondary }}>
-                      {t("phoneAssistant.pushSettings.includeAmountsHint")}
-                    </Typography>
-                  </Box>
-                  <Switch
-                    checked={Boolean(draft.include_amounts)}
-                    color="warning"
-                    onChange={(_e, checked) => {
-                      setSaveMessage(null);
-                      setDraft((prev) =>
-                        prev ? { ...prev, include_amounts: checked } : prev,
-                      );
-                    }}
-                    slotProps={{
-                      input: {
-                        role: "switch",
-                        "aria-label": t(
-                          "phoneAssistant.pushSettings.includeAmountsTitle",
-                        ),
-                      },
-                    }}
-                  />
-                </Stack>
-
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  sx={{ alignItems: "center", justifyContent: "space-between" }}
-                >
-                  <Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 700, color: textPrimary }}
-                    >
-                      {t("phoneAssistant.pushSettings.notifyActorTitle")}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: textSecondary }}>
-                      {t("phoneAssistant.pushSettings.notifyActorHint")}
-                    </Typography>
-                  </Box>
-                  <Switch
-                    checked={Boolean(draft.notify_actor)}
-                    color="warning"
-                    onChange={(_e, checked) => {
-                      setSaveMessage(null);
-                      setDraft((prev) =>
-                        prev ? { ...prev, notify_actor: checked } : prev,
-                      );
-                    }}
-                    slotProps={{
-                      input: {
-                        role: "switch",
-                        "aria-label": t(
-                          "phoneAssistant.pushSettings.notifyActorTitle",
-                        ),
-                      },
-                    }}
-                  />
-                </Stack>
-
-                <Divider sx={{ borderColor }} />
-
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  sx={{ alignItems: { xs: "stretch", sm: "center" }, justifyContent: "space-between" }}
-                >
-                  <Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 700, color: textPrimary }}
-                    >
-                      {t("phoneAssistant.pushSettings.digestIntervalLabel")}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: textSecondary }}>
-                      {t("phoneAssistant.pushSettings.digestIntervalHint")}
-                    </Typography>
-                  </Box>
-                  <FormControl
-                    size="small"
-                    sx={{
-                      minWidth: 160,
-                      "& .MuiInputBase-root": {
-                        bgcolor: surfaceBg,
-                        color: textPrimary,
-                      },
-                      "& .MuiInputLabel-root": {
-                        color: textSecondary,
-                      },
+                      position: "sticky",
+                      left: 0,
+                      bgcolor: "action.hover",
+                      fontWeight: 800,
+                      fontSize: 12,
+                      letterSpacing: 1,
+                      textTransform: "uppercase",
+                      color: "text.secondary",
+                      py: 0.5,
                     }}
                   >
-                    <InputLabel id="digest-interval-label">
-                      {t("phoneAssistant.pushSettings.digestIntervalLabel")}
-                    </InputLabel>
-                    <Select
-                      labelId="digest-interval-label"
-                      label={t("phoneAssistant.pushSettings.digestIntervalLabel")}
-                      value={draft.digest_minutes ?? 30}
-                      onChange={(e) => {
-                        setSaveMessage(null);
-                        setDraft((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                digest_minutes: Number(e.target.value) || 30,
-                              }
-                            : prev,
-                        );
-                      }}
-                    >
-                      <MenuItem value={15}>
-                        {t("phoneAssistant.pushSettings.digestMinutesOption", { minutes: 15 })}
-                      </MenuItem>
-                      <MenuItem value={30}>
-                        {t("phoneAssistant.pushSettings.digestMinutesOption", { minutes: 30 })}
-                      </MenuItem>
-                      <MenuItem value={60}>
-                        {t("phoneAssistant.pushSettings.digestMinutesOption", { minutes: 60 })}
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Stack>
-
-                <Divider sx={{ borderColor }} />
-
-                {(() => {
-                  const daily = draft.daily_summary ?? {
-                    enabled: false,
-                    send_time: "20:00",
-                    recipient_role_ids: [],
-                    sections: {
-                      bills: true,
-                      payments: true,
-                      returns: true,
-                      due_tomorrow: true,
-                      overdue: true,
-                    },
-                  };
-                  const updateDaily = (
-                    patch: Partial<NonNullable<PushSettingsPayload["daily_summary"]>>,
-                  ) => {
-                    setSaveMessage(null);
-                    setDraft((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            daily_summary: {
-                              ...daily,
-                              ...patch,
-                            },
-                          }
-                        : prev,
-                    );
-                  };
+                    {t(`phoneAssistant.pushGrid.group.${group}`)}
+                  </TableCell>
+                </TableRow>,
+                ...entries.map((entry) => {
+                  const rule = ruleOf(settings, entry.key);
                   return (
-                    <Stack spacing={1.5}>
-                      <Stack
-                        direction="row"
-                        spacing={2}
-                        sx={{ alignItems: "center", justifyContent: "space-between" }}
-                      >
-                        <Box>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 700, color: textPrimary }}
-                          >
-                            {t("phoneAssistant.pushSettings.dailySummaryTitle")}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: textSecondary }}>
-                            {t("phoneAssistant.pushSettings.dailySummaryHint")}
-                          </Typography>
+                    <TableRow key={entry.key} hover data-testid={`event-row-${entry.key}`}>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          {eventName(entry.key)}
+                          <Tick k={entry.key} />
                         </Box>
+                      </TableCell>
+                      <TableCell>
                         <Switch
-                          checked={Boolean(daily.enabled)}
-                          color="warning"
-                          onChange={(_e, checked) =>
-                            updateDaily({ enabled: checked })
-                          }
-                          slotProps={{
-                            input: {
-                              role: "switch",
-                              "aria-label": t(
-                                "phoneAssistant.pushSettings.dailySummaryTitle",
-                              ),
-                            },
-                          }}
-                        />
-                      </Stack>
-
-                      <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1.5}
-                        sx={{ alignItems: { xs: "stretch", sm: "center" } }}
-                      >
-                        <TextField
                           size="small"
-                          type="time"
-                          label={t("phoneAssistant.pushSettings.dailySummaryTime")}
-                          value={daily.send_time}
-                          disabled={!daily.enabled}
-                          onChange={(e) =>
-                            updateDaily({ send_time: e.target.value || "20:00" })
-                          }
-                          sx={{
-                            width: { xs: "100%", sm: 170 },
-                            "& .MuiInputBase-root": {
-                              bgcolor: surfaceBg,
-                              color: textPrimary,
-                            },
-                            "& .MuiInputLabel-root": {
-                              color: textSecondary,
-                            },
-                          }}
-                          slotProps={{
-                            inputLabel: { shrink: true },
-                            htmlInput: {
-                              style: { fontVariantNumeric: "tabular-nums" },
-                            },
-                          }}
+                          checked={Boolean(rule.enabled)}
+                          onChange={(e) => patchEvent(entry.key, { enabled: e.target.checked })}
+                          slotProps={{ input: { role: "switch", "aria-label": `${eventName(entry.key)} – ${t("phoneAssistant.pushGrid.colOn")}` } }}
                         />
-
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                          {DAILY_SUMMARY_SECTIONS.map((sec) => (
-                            <FormControlLabel
-                              key={sec}
-                              control={
-                                <Checkbox
-                                  size="small"
-                                  color="warning"
-                                  disabled={!daily.enabled}
-                                  checked={Boolean(daily.sections[sec])}
-                                  onChange={(_e, checked) =>
-                                    updateDaily({
-                                      sections: {
-                                        ...daily.sections,
-                                        [sec]: checked,
-                                      },
-                                    })
-                                  }
-                                />
-                              }
-                              label={
-                                <Typography
-                                  sx={{
-                                    fontSize: 12.5,
-                                    fontWeight: 600,
-                                    color: textPrimary,
-                                  }}
-                                >
-                                  {t(
-                                    `phoneAssistant.pushSettings.dailySummarySections.${sec}`,
-                                  )}
-                                </Typography>
-                              }
-                              sx={{ m: 0 }}
-                            />
-                          ))}
-                        </Box>
-                      </Stack>
-                    </Stack>
+                      </TableCell>
+                      <TableCell align="right">{minAmountField(entry.key, entry, rule)}</TableCell>
+                      <TableCell>{deliverySelect(entry.key, rule)}</TableCell>
+                      <TableCell align="center">
+                        {!NO_CUSTOMER_EVENTS.has(entry.key) && (
+                          <Checkbox
+                            size="small"
+                            checked={Boolean(rule.hide_customer_name)}
+                            onChange={(e) => patchEvent(entry.key, { hide_customer_name: e.target.checked })}
+                            slotProps={{ input: { "aria-label": `${eventName(entry.key)} – ${t("phoneAssistant.pushGrid.colHideName")}` } }}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell align="center">
+                        {entry.has_amount && (
+                          <Checkbox
+                            size="small"
+                            checked={Boolean(rule.hide_amount)}
+                            onChange={(e) => patchEvent(entry.key, { hide_amount: e.target.checked })}
+                            slotProps={{ input: { "aria-label": `${eventName(entry.key)} – ${t("phoneAssistant.pushGrid.colHideAmount")}` } }}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>{roleSelect(entry.key, rule)}</TableCell>
+                    </TableRow>
                   );
-                })()}
-              </Stack>
-            </Paper>
+                }),
+              ])}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
-            {saveError && <Alert severity="error">{saveError}</Alert>}
-            {saveMessage && <Alert severity="success">{saveMessage}</Alert>}
-
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button
-                variant="contained"
-                startIcon={
-                  updateSettings.isPending ? (
-                    <CircularProgress size={16} sx={{ color: "#ffffff" }} />
-                  ) : (
-                    <SaveOutlinedIcon fontSize="small" />
-                  )
+      {/* Shop-wide options on one compact row */}
+      <Box
+        sx={{
+          mt: 2,
+          p: 1.5,
+          border: 1,
+          borderColor: "divider",
+          borderRadius: 2,
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Switch
+            size="small"
+            checked={Boolean(settings.quiet_hours?.enabled)}
+            onChange={(e) => save((s) => ({ ...s, quiet_hours: { ...s.quiet_hours, enabled: e.target.checked } }), "__opts")}
+            slotProps={{ input: { role: "switch", "aria-label": t("phoneAssistant.pushGrid.quietHours") } }}
+          />
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("phoneAssistant.pushGrid.quietHours")}</Typography>
+          {(["from", "to"] as const).map((side) => (
+            <TextField
+              key={`${side}-${settings.quiet_hours?.[side]}`}
+              size="small"
+              type="time"
+              defaultValue={settings.quiet_hours?.[side]}
+              disabled={!settings.quiet_hours?.enabled}
+              onBlur={(e) => {
+                const v = e.target.value;
+                if (v && v !== settings.quiet_hours?.[side]) {
+                  save((s) => ({ ...s, quiet_hours: { ...s.quiet_hours, [side]: v } }), "__opts");
                 }
-                disabled={updateSettings.isPending}
-                onClick={handleSave}
-                sx={{
-                  minHeight: 42,
-                  textTransform: "none",
-                  fontWeight: 700,
-                  bgcolor: "#d97706",
-                  color: "#ffffff",
-                  "&:hover": { bgcolor: "#b45309" },
+              }}
+              slotProps={{ htmlInput: { "aria-label": t(`phoneAssistant.pushGrid.quiet_${side}`), style: { fontVariantNumeric: "tabular-nums" } } }}
+              sx={{ width: 118 }}
+            />
+          ))}
+        </Stack>
+
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("phoneAssistant.pushGrid.digestEvery")}</Typography>
+          <Select
+            size="small"
+            value={[15, 30, 60].includes(Number(settings.digest_minutes)) ? Number(settings.digest_minutes) : 30}
+            onChange={(e) => save((s) => ({ ...s, digest_minutes: Number(e.target.value) }), "__opts")}
+            slotProps={{ input: { "aria-label": t("phoneAssistant.pushGrid.digestEvery") } as any }}
+          >
+            {[15, 30, 60].map((m) => (
+              <MenuItem key={m} value={m} sx={{ fontVariantNumeric: "tabular-nums" }}>
+                {t("phoneAssistant.pushGrid.minutes", { count: m })}
+              </MenuItem>
+            ))}
+          </Select>
+        </Stack>
+
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+          <Switch
+            size="small"
+            checked={Boolean(settings.notify_actor)}
+            onChange={(e) => save((s) => ({ ...s, notify_actor: e.target.checked }), "__opts")}
+            slotProps={{ input: { role: "switch", "aria-label": t("phoneAssistant.pushGrid.notifyActor") } }}
+          />
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("phoneAssistant.pushGrid.notifyActor")}</Typography>
+        </Stack>
+
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+          <Switch
+            size="small"
+            checked={settings.include_amounts !== false}
+            onChange={(e) => save((s) => ({ ...s, include_amounts: e.target.checked }), "__opts")}
+            slotProps={{ input: { role: "switch", "aria-label": t("phoneAssistant.pushGrid.includeAmounts") } }}
+          />
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("phoneAssistant.pushGrid.includeAmounts")}</Typography>
+        </Stack>
+
+        <Tick k="__opts" />
+      </Box>
+
+      {/* Daily summary on its own compact row */}
+      {(() => {
+        const daily = settings.daily_summary ?? {
+          enabled: false,
+          send_time: "20:00",
+          recipient_role_ids: [],
+          sections: { bills: true, payments: true, returns: true, due_tomorrow: true, overdue: true },
+        };
+        return (
+          <Box
+            sx={{
+              mt: 1.5,
+              p: 1.5,
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 2,
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Switch
+                size="small"
+                checked={Boolean(daily.enabled)}
+                onChange={(e) => save((s) => ({ ...s, daily_summary: { ...daily, enabled: e.target.checked } }), "__daily")}
+                slotProps={{ input: { role: "switch", "aria-label": t("phoneAssistant.pushGrid.dailySummary") } }}
+              />
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("phoneAssistant.pushGrid.dailySummary")}</Typography>
+              <TextField
+                key={`daily-time-${daily.send_time}`}
+                size="small"
+                type="time"
+                defaultValue={daily.send_time}
+                disabled={!daily.enabled}
+                onBlur={(e) => {
+                  const v = e.target.value;
+                  if (v && v !== daily.send_time) save((s) => ({ ...s, daily_summary: { ...daily, send_time: v } }), "__daily");
                 }}
-              >
-                {updateSettings.isPending
-                  ? t("phoneAssistant.pushSettings.savingButton")
-                  : t("phoneAssistant.pushSettings.saveButton")}
-              </Button>
+                slotProps={{ htmlInput: { "aria-label": t("phoneAssistant.pushGrid.dailyTime"), style: { fontVariantNumeric: "tabular-nums" } } }}
+                sx={{ width: 118 }}
+              />
+            </Stack>
+            <Box sx={{ minWidth: 200, flex: "1 1 200px", maxWidth: 320 }}>
+              <FormControl size="small" fullWidth>
+                <Select
+                  multiple
+                  displayEmpty
+                  disabled={!daily.enabled}
+                  value={daily.recipient_role_ids ?? []}
+                  onChange={(e) =>
+                    save(
+                      (s) => ({ ...s, daily_summary: { ...daily, recipient_role_ids: (e.target.value as number[]).map(Number) } }),
+                      "__daily",
+                    )
+                  }
+                  renderValue={(selected) =>
+                    (selected as number[]).length === 0
+                      ? t("phoneAssistant.pushGrid.adminsOnly")
+                      : (selected as number[]).map((id) => roles.find((r) => r.role_id === id)?.role_name ?? `#${id}`).join(", ")
+                  }
+                  slotProps={{ input: { "aria-label": t("phoneAssistant.pushGrid.dailyRecipients") } as any }}
+                >
+                  {roles.map((r) => (
+                    <MenuItem key={r.role_id} value={r.role_id} dense>
+                      <Checkbox size="small" checked={(daily.recipient_role_ids ?? []).includes(r.role_id)} />
+                      <ListItemText primary={r.role_name} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Box>
-          </>
-        )}
-      </Stack>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {DAILY_SUMMARY_SECTIONS.map((sec) => (
+                <Chip
+                  key={sec}
+                  size="small"
+                  disabled={!daily.enabled}
+                  color={daily.sections?.[sec] ? "primary" : "default"}
+                  variant={daily.sections?.[sec] ? "filled" : "outlined"}
+                  label={t(`phoneAssistant.pushSettings.dailySummarySections.${sec}`, { defaultValue: sec })}
+                  onClick={() =>
+                    save(
+                      (s) => ({
+                        ...s,
+                        daily_summary: { ...daily, sections: { ...daily.sections, [sec]: !daily.sections?.[sec] } },
+                      }),
+                      "__daily",
+                    )
+                  }
+                />
+              ))}
+            </Box>
+            <Tick k="__daily" />
+          </Box>
+        );
+      })()}
     </Paper>
   );
 }

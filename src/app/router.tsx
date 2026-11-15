@@ -32,6 +32,7 @@ import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedS
 import { PhonePhotoPage } from "@/features/equipment/components/PhonePhotoPage";
 import { DeviceInvoicePage } from "@/features/phone-assistant/pages/DeviceInvoicePage";
 import { DeviceNotificationsPage } from "@/features/phone-assistant/pages/DeviceNotificationsPage";
+import PhoneAssistantSettingsPage from "@/features/phone-assistant/pages/PhoneAssistantSettingsPage";
 import { DevicePrivacyPage } from "@/features/phone-assistant/pages/DevicePrivacyPage";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
@@ -290,6 +291,19 @@ const profileRoute = createRoute({
   component: () => <ProfileRoute />,
 });
 
+// Phone assistant settings: phones, call screen designer, notifications, languages and policy grids.
+const PHONE_SETTINGS_TAB_KEYS = ["phones", "call-screen", "notifications", "languages", "contacts-calls", "approvals", "sync-privacy"] as const;
+const phoneAssistantSettingsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/settings/phone-assistant",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (PHONE_SETTINGS_TAB_KEYS as readonly string[]).includes(search.tab as string)
+      ? (search.tab as typeof PHONE_SETTINGS_TAB_KEYS[number])
+      : undefined,
+  }),
+  component: () => <FeatureGate feature="phone_assistant"><PhoneAssistantSettingsPage /></FeatureGate>,
+});
+
 // Permissions Matrix (Admin only)
 const permissionsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -353,6 +367,7 @@ const routeTree = rootRoute.addChildren([
     accountingRoute,
     reportsRoute,
     profileRoute,
+    phoneAssistantSettingsRoute,
     permissionsRoute,
     adminUsersRoute,
     adminRolesRoute,

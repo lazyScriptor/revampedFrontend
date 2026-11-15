@@ -46,6 +46,7 @@ import HandymanIcon from "@mui/icons-material/Handyman";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import PhoneAndroidOutlinedIcon from "@mui/icons-material/PhoneAndroidOutlined";
 import SecurityIcon from "@mui/icons-material/Security";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // Fallback bullet
 import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
@@ -134,6 +135,7 @@ const NAV_FEATURES: Record<string, string | readonly string[]> = {
   Messages: "messages",
   "Cash Locker": "cash_locker",
   Workforce: "workforce",
+  "User Configuration/Phone Assistant": "phone_assistant",
   "Data Arena/Imports": "data.imports",
   "Data Arena/Add Machines": "data.add_machines",
   "Data Arena/Equipment Sheet": "data.equipment_sheet",
@@ -327,6 +329,7 @@ function AuthenticatedLayout() {
         { text: "Locations", label: t("nav.locations"), path: "/admin/locations", icon: <PlaceOutlinedIcon fontSize="small" />, requiredPermission: "warehouse:view" },
         { text: "Roles", label: t("nav.roles"), path: "/admin/roles", icon: <AdminPanelSettingsIcon fontSize="small" /> },
         { text: "Permissions", label: t("nav.permissions"), path: "/permissions", icon: <SecurityIcon fontSize="small" /> },
+        { text: "Phone Assistant", label: t("nav.phoneAssistant"), path: "/settings/phone-assistant", icon: <PhoneAndroidOutlinedIcon fontSize="small" />, requiredPermission: "devices:manage" },
       ],
     },
   ];

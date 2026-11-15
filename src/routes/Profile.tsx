@@ -2,6 +2,7 @@ import { useMemo, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Box,
+  Button,
   Tabs,
   Tab,
   Typography,
@@ -31,8 +32,6 @@ import { SignatureSection } from "@/features/profile/components/SignatureSection
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import { usePlanChecker } from "@/features/plan/usePlan";
 import { MyPushPreferences } from "@/features/phone-assistant/components/MyPushPreferences";
-import { PushSettingsPanel } from "@/features/phone-assistant/components/PushSettingsPanel";
-import { DeviceConsolePage } from "@/features/phone-assistant/pages/DeviceConsolePage";
 
 type TabKey =
   | "profile"
@@ -171,14 +170,24 @@ export default function ProfileRoute() {
       {activeKey === "security"      && <SecuritySection      profile={profile} />}
       {activeKey === "signature"     && <SignatureSection     profile={profile} />}
       {activeKey === "phones"        && canManagePhones && (
-        <DeviceConsolePage canManagePolicy={isAdmin} />
+        <Paper elevation={0} sx={{ p: 3, border: 1, borderColor: "divider", borderRadius: 2.5, bgcolor: "background.paper" }}>
+          <Typography sx={{ fontWeight: 800 }}>{t("phoneAssistant.settings.movedTitle")}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{t("phoneAssistant.settings.movedBody")}</Typography>
+          <Button variant="contained" onClick={() => navigate({ to: "/settings/phone-assistant" })}>
+            {t("phoneAssistant.settings.openSettings")}
+          </Button>
+        </Paper>
       )}
       {activeKey === "preferences"   && <PreferencesSection   profile={profile} />}
       {activeKey === "notifications" && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           <NotificationsSection profile={profile} />
           {hasPhoneAssistant && <MyPushPreferences />}
-          {hasPhoneAssistant && isAdmin && <PushSettingsPanel />}
+          {hasPhoneAssistant && isAdmin && (
+            <Button variant="outlined" onClick={() => navigate({ to: "/settings/phone-assistant", search: { tab: "notifications" } as any })} sx={{ alignSelf: "flex-start" }}>
+              {t("phoneAssistant.settings.openShopNotifications")}
+            </Button>
+          )}
         </Box>
       )}
       {activeKey === "activity"      && <ActivitySection />}

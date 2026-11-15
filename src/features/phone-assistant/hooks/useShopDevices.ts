@@ -12,6 +12,8 @@ import {
   testShopDevicePush,
   updateDeviceSettings,
   updatePhoneAssistantPolicy,
+  patchPhoneAssistantPolicy,
+  type DeviceSettingsBody,
   updateShopDevice,
   wipeShopDevice,
   type CallLoggingScope,
@@ -164,12 +166,7 @@ export function useDevicePolicy(enabled = true) {
 export function useUpdateDeviceSettings() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: {
-      muted?: boolean;
-      contact_sync_mode?: ContactSyncMode;
-      call_logging_scope?: CallLoggingScope;
-      sim_filter?: string | null;
-    }) => updateDeviceSettings(body),
+    mutationFn: (body: DeviceSettingsBody) => updateDeviceSettings(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: shopDeviceQueryKeys.devicePolicy });
     },
@@ -191,6 +188,47 @@ export function useDeleteDeviceCalls() {
   return useMutation({
     mutationFn: () => deleteDeviceCalls(),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: shopDeviceQueryKeys.devicePolicy });
+    },
+  });
+}
+
+/** Set a nested value on a copy of the object, following a dotted path. */
+export function setPathValue<T extends Record<string, any>>(source: T, path: string, value: unknown): T {
+  const parts = path.split(".");
+  const root: any = Array.isArray(source) ? [...source] : { ...source };
+  let node = root;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    node[parts[i]] = { ...(node[parts[i]] ?? {}) };
+    node = node[parts[i]];
+  }
+  node[parts[parts.length - 1]] = value;
+  return root;
+}
+
+/**
+ * Tabs edit one value at a time by path (PATCH /phone-assistant/policy), so a slow tab can never
+ * overwrite another tab's work. Optimistic, with rollback on error.
+ */
+export function usePatchPhoneAssistantPolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (updates: Array<{ path: string; value: unknown }>) => patchPhoneAssistantPolicy(updates),
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: shopDeviceQueryKeys.policy });
+      const previous = queryClient.getQueryData<{ policy: PhoneAssistantPolicy }>(shopDeviceQueryKeys.policy);
+      if (previous) {
+        let next: any = previous.policy;
+        for (const u of updates) next = setPathValue(next, u.path, u.value);
+        queryClient.setQueryData(shopDeviceQueryKeys.policy, { ...previous, policy: next });
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(shopDeviceQueryKeys.policy, context.previous);
+    },
+    onSuccess: (res) => {
+      if (res?.policy) queryClient.setQueryData(shopDeviceQueryKeys.policy, res);
       queryClient.invalidateQueries({ queryKey: shopDeviceQueryKeys.devicePolicy });
     },
   });

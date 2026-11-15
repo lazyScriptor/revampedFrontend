@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement } from "react";
 
@@ -249,35 +249,43 @@ beforeEach(() => {
 });
 
 describe("Slice B Push Notification Settings & Device Pages (B5–B6)", () => {
-  it("renders PushSettingsPanel for all 8 events, saves updates, and sends a test notification", async () => {
+  it("renders the notifications grid, saves each change by itself, and sends a test notification", async () => {
     wrap(<PushSettingsPanel />);
 
     expect(await screen.findByText("New invoice created")).toBeInTheDocument();
     expect(screen.getByText("Customer blacklisted")).toBeInTheDocument();
     expect(screen.getByText("Payment voided / refunded")).toBeInTheDocument();
+    // Grouped rows with their labels
+    expect(screen.getByText("Bills")).toBeInTheDocument();
+    expect(screen.getByText("Alerts")).toBeInTheDocument();
+    // Cells that do not apply are empty, not disabled inputs: no amount field on "Customer blacklisted"
+    const blacklistRow = screen.getByTestId("event-row-customer_blacklisted");
+    expect(within(blacklistRow).queryByRole("spinbutton")).not.toBeInTheDocument();
 
-    expect(
-      screen.getAllByText("Admins only (hierarchy ≥ 100)").length,
-    ).toBeGreaterThan(0);
-
-    // Toggle Quiet hours on
-    const quietSwitch = screen.getByRole("switch", { name: /quiet hours/i });
-    fireEvent.click(quietSwitch);
-
-    // Save shop push settings
-    const saveBtn = screen.getByRole("button", { name: /save push settings/i });
-    fireEvent.click(saveBtn);
-
+    // Quiet hours switch saves at once, with no page-level Save button
+    expect(screen.queryByRole("button", { name: /save push settings/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("switch", { name: /quiet hours/i }));
     await waitFor(() => {
       expect(mocks.updatePushSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ quiet_hours: { enabled: true, from: "21:00", to: "07:00" } }),
+      );
+    });
+    expect((await screen.findAllByLabelText("Saved")).length).toBeGreaterThan(0);
+
+    // Min amount saves on blur
+    const paymentRow = screen.getByTestId("event-row-payment_received");
+    const amount = within(paymentRow).getByRole("spinbutton");
+    fireEvent.change(amount, { target: { value: "1500" } });
+    fireEvent.blur(amount);
+    await waitFor(() => {
+      expect(mocks.updatePushSettings).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          quiet_hours: { enabled: true, from: "21:00", to: "07:00" },
+          events: expect.objectContaining({
+            payment_received: expect.objectContaining({ min_amount: 1500 }),
+          }),
         }),
       );
     });
-    expect(
-      await screen.findByText("Shop push notification settings saved."),
-    ).toBeInTheDocument();
 
     // Send test push
     fireEvent.click(screen.getByRole("button", { name: /send test notification/i }));
@@ -287,6 +295,17 @@ describe("Slice B Push Notification Settings & Device Pages (B5–B6)", () => {
     expect(
       await screen.findByText("Test push delivered to 2 paired phone(s)."),
     ).toBeInTheDocument();
+  });
+
+  it("rolls back a grid change and shows an error when saving fails", async () => {
+    mocks.updatePushSettings.mockRejectedValueOnce(new Error("Server said no"));
+    wrap(<PushSettingsPanel />);
+    const row = await screen.findByTestId("event-row-invoice_created");
+    const toggle = within(row).getByRole("switch", { name: /new invoice created.*on/i });
+    expect(toggle).toBeChecked();
+    fireEvent.click(toggle);
+    expect(await screen.findByText("Server said no")).toBeInTheDocument();
+    await waitFor(() => expect(within(screen.getByTestId("event-row-invoice_created")).getByRole("switch", { name: /new invoice created.*on/i })).toBeChecked());
   });
 
   it("narrows MyPushPreferences to shop_enabled & eligible events and validates personal minimum", async () => {

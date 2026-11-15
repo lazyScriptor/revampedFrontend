@@ -23,6 +23,13 @@ import {
   GetPhoneAssistantPolicyContract,
   UpdatePhoneAssistantPolicyContract,
   GetDevicePolicyContract,
+  PatchPhoneAssistantPolicyContract,
+  GetPushTemplatesContract,
+  PutPushTemplateContract,
+  DeletePushTemplateContract,
+  PreviewPushTemplateContract,
+  SendCallScreenSampleContract,
+  SendPushTemplateTestContract,
   UpdateDeviceSettingsContract,
   DeleteDeviceContactsContract,
   DeleteDeviceCallsContract,
@@ -66,6 +73,8 @@ import {
   type PushDeliveryMode,
   type UserPersonalQuietHours,
   type DevicePolicyResponse,
+  type CallScreen,
+  type PushTemplate,
 } from "@geargrid/contracts";
 import { callDeviceContract } from "../lib/nativeBridge";
 
@@ -331,12 +340,19 @@ export async function getDevicePolicy(): Promise<DevicePolicyResponse> {
   return callDeviceContract(GetDevicePolicyContract);
 }
 
-export async function updateDeviceSettings(body: {
+export interface DeviceSettingsBody {
   muted?: boolean;
   contact_sync_mode?: ContactSyncMode;
   call_logging_scope?: CallLoggingScope;
   sim_filter?: string | null;
-}): Promise<{
+  notification_language?: "en" | "si" | "ta" | "si-Latn" | null;
+  app_language?: "en" | "si" | "ta" | null;
+  call_text_scale?: number | null;
+  app_text_size?: "small" | "default" | "large" | "extra_large" | null;
+  app_lock_enabled?: boolean;
+}
+
+export async function updateDeviceSettings(body: DeviceSettingsBody): Promise<{
   muted: boolean;
   contact_sync_mode: string;
   call_logging_scope: string;
@@ -345,6 +361,59 @@ export async function updateDeviceSettings(body: {
   capability_reasons: Record<string, string | null>;
 }> {
   return callDeviceContract(UpdateDeviceSettingsContract, { body });
+}
+
+/** Partial policy edits by path, so settings tabs never overwrite one another. */
+export async function patchPhoneAssistantPolicy(
+  updates: Array<{ path: string; value: unknown }>,
+): Promise<{ policy: PhoneAssistantPolicy }> {
+  return callContract(PatchPhoneAssistantPolicyContract, { body: { updates } });
+}
+
+export async function getPushTemplates() {
+  return callContract(GetPushTemplatesContract);
+}
+
+export async function savePushTemplate(
+  eventKey: string,
+  language: PushTemplate["language"],
+  body: { title: string; body: string; title_private?: string | null; body_private?: string | null },
+): Promise<{ template: PushTemplate }> {
+  return callContract(PutPushTemplateContract, {
+    params: { event_key: eventKey, language },
+    body,
+  });
+}
+
+export async function resetPushTemplate(eventKey: string, language: PushTemplate["language"]) {
+  return callContract(DeletePushTemplateContract, { params: { event_key: eventKey, language } });
+}
+
+export async function previewPushTemplate(body: {
+  event_key: string;
+  language: PushTemplate["language"];
+  title: string;
+  body: string;
+  title_private?: string | null;
+  body_private?: string | null;
+}) {
+  return callContract(PreviewPushTemplateContract, { body });
+}
+
+export async function sendPushTemplateTest(body: {
+  event_key: string;
+  language: PushTemplate["language"];
+  title: string;
+  body: string;
+  title_private?: string | null;
+  body_private?: string | null;
+  private?: boolean;
+}) {
+  return callContract(SendPushTemplateTestContract, { body });
+}
+
+export async function sendCallScreenSample(profileId?: string): Promise<{ reached: number }> {
+  return callContract(SendCallScreenSampleContract, { body: profileId ? { profile_id: profileId } : {} });
 }
 
 export async function deleteDeviceContacts(): Promise<{ deleted: number }> {
@@ -476,4 +545,6 @@ export type {
   PushDeliveryMode,
   UserPersonalQuietHours,
   DevicePolicyResponse,
+  CallScreen,
+  PushTemplate,
 };
