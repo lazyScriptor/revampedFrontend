@@ -51,7 +51,7 @@ import {
 } from "@/features/phone-assistant/hooks/usePhoneContacts";
 import type { PhoneContactMatch } from "@/features/phone-assistant/api/phoneAssistantApi";
 import { useTranslation } from "react-i18next";
-import { isContactPhoneSearch, isPhoneSearch } from "@/lib/phoneSearch";
+import { isContactSearch, MIN_CONTACT_SEARCH_DIGITS } from "@/lib/phoneSearch";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
@@ -82,10 +82,10 @@ export function PosCustomerPanel({
   const [contactUseError, setContactUseError] = useState<string | null>(null);
 
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
-  const isPhoneQuery = isPhoneSearch(inputValue);
+  // Phone contacts stay hidden until the full number is typed (MIN_CONTACT_SEARCH_DIGITS).
   const shouldSearchPhoneContacts =
     canSearchPhoneContacts &&
-    isContactPhoneSearch(inputValue) &&
+    isContactSearch(inputValue) &&
     !isLoading &&
     searchResults.length === 0;
   const {
@@ -193,11 +193,12 @@ export function PosCustomerPanel({
               t("invoices.PosCustomerPanel.typeToSearch")
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
-                <span>
-                  {!isPhoneQuery
-                    ? t("invoices.PosCustomerPanel.noClientsFoundCheckContacts")
-                    : t("invoices.PosCustomerPanel.noClientsFound")}
-                </span>
+                <span>{t("invoices.PosCustomerPanel.noClientsFound")}</span>
+                {canSearchPhoneContacts && !isContactSearch(inputValue) && (
+                  <Typography variant="caption" color="text.secondary">
+                    {t("phoneAssistant.posFallback.typeFullNumber", { digits: MIN_CONTACT_SEARCH_DIGITS })}
+                  </Typography>
+                )}
                 {shouldSearchPhoneContacts && (phoneContactsLoading || contactMatches.length > 0) && (
                   <Box
                     onMouseDown={(e) => e.preventDefault()}

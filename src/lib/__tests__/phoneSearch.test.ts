@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isContactPhoneSearch, isPhoneSearch } from "../phoneSearch";
+import { isContactSearch, isPhoneSearch } from "../phoneSearch";
 
 describe("isPhoneSearch (phone-contact helper)", () => {
   it("accepts phone numbers in local, international and formatted forms", () => {
@@ -16,11 +16,13 @@ describe("isPhoneSearch (phone-contact helper)", () => {
     expect(isPhoneSearch("077")).toBe(false);
     expect(isPhoneSearch("")).toBe(false);
   });
+});
 
-  it("requires 9+ digits for synced phone-contact fallback", () => {
-    expect(isContactPhoneSearch("07712345")).toBe(false);
-    expect(isContactPhoneSearch("Nimal")).toBe(false);
-    expect(isContactPhoneSearch("077123456")).toBe(true);
-    expect(isContactPhoneSearch("+94 77 123 4567")).toBe(true);
+describe("isContactSearch", () => {
+  it("needs at least 9 typed digits", () => {
+    expect(isContactSearch("07712345")).toBe(false);
+    expect(isContactSearch("077123456")).toBe(true);
+    expect(isContactSearch("077 123 4567")).toBe(true);
+    expect(isContactSearch("Nimal 077123456")).toBe(false);
   });
 });

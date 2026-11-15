@@ -983,7 +983,6 @@
             "linkedWorker": "This customer is linked to a child / worker. Choose who this rental is for.",
             "typeToSearch": "Type to search…",
             "noClientsFound": "No clients found.",
-            "noClientsFoundCheckContacts": "No customer found. To check phone contacts, type the phone number.",
             "noNic": "No NIC",
             "more": " +{{moreEquipCount}} more",
             "asset": "Asset",
@@ -3532,6 +3531,7 @@
         "posFallback": {
             "fromPhoneContacts": "From phone contacts",
             "searchingContacts": "Searching synced phone contacts…",
+            "typeFullNumber": "Type at least {{digits}} digits to check the shop's phone contacts.",
             "confirmTitle": "Use this contact for this bill?",
             "confirmBody": "A new customer will be created from this contact's name and phone number.",
             "confirmAction": "Use contact",

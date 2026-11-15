@@ -196,22 +196,37 @@ describe("POS phone contact fallback (A7)", () => {
     await user.type(input, "UnknownName");
 
     expect(
-      await screen.findByText("No customer found. To check phone contacts, type the phone number."),
+      await screen.findByText("Type at least 9 digits to check the shop's phone contacts."),
     ).toBeInTheDocument();
     expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
   });
 
-  it("shows contact matches only once 9+ digits are typed, confirms before calling /use, and prefills CustomerFormDialog", async () => {
+  it("keeps phone contacts hidden until 9 digits are typed", async () => {
     const user = userEvent.setup({ delay: null });
     wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
 
     const input = screen.getByRole("combobox");
     await user.click(input);
-    await user.type(input, "0771");
-    expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
-    expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
+    await user.type(input, "07712345");
 
-    await user.type(input, "23456");
+    expect(
+      await screen.findByText("Type at least 9 digits to check the shop's phone contacts."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
+    expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
+
+    await user.type(input, "6");
+    expect(await screen.findByText("From phone contacts")).toBeInTheDocument();
+    expect(screen.getByText("Nimal Perera")).toBeInTheDocument();
+  });
+
+  it("shows contact matches when empty, confirms before calling /use, and prefills CustomerFormDialog", async () => {
+    const user = userEvent.setup({ delay: null });
+    wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
+
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "0771234567");
 
     expect(await screen.findByText("From phone contacts")).toBeInTheDocument();
     expect(screen.getByText("Nimal Perera")).toBeInTheDocument();
@@ -229,7 +244,7 @@ describe("POS phone contact fallback (A7)", () => {
 
     // Confirming calls /use and opens CustomerFormDialog prefilled
     await user.click(input);
-    await user.type(input, "077123456");
+    await user.type(input, "0771234567");
     fireEvent.click(await screen.findByText("Nimal Perera"));
     fireEvent.click(await screen.findByRole("button", { name: "Use contact" }));
 

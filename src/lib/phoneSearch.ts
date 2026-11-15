@@ -5,7 +5,10 @@
 /** Fewest phone digits, after a leading 0 / 94 / 0094, for phoneSearchCore. */
 export const MIN_PHONE_SEARCH_DIGITS = 3;
 
-/** Fewest raw digits required before querying synced phone contacts from a paired phone. */
+// FUTURE (super admin setting): synced phone contacts appear at the POS only after this many digits
+// are typed, so staff cannot browse the shop's contacts with a few numbers. The shop owner wants it
+// adjustable per shop from the super admin console; until then it is fixed here and in
+// revampedBackend_Geargrid/src/services/phoneContactService.js. See revampedBackend_Geargrid/docs/FUTURE_SETTINGS.md.
 export const MIN_CONTACT_SEARCH_DIGITS = 9;
 
 /** True when the text is a phone number search: digits and phone formatting only, enough digits. */
@@ -16,8 +19,7 @@ export function isPhoneSearch(text: string): boolean {
   return core.length >= MIN_PHONE_SEARCH_DIGITS;
 }
 
-/** True when the text is a phone number with at least 9 digits (for synced phone-contact lookup). */
-export function isContactPhoneSearch(text: string): boolean {
-  if (!isPhoneSearch(text)) return false;
-  return text.replace(/\D/g, "").length >= MIN_CONTACT_SEARCH_DIGITS;
+/** True when enough digits are typed to look up synced phone contacts. */
+export function isContactSearch(text: string): boolean {
+  return isPhoneSearch(text) && text.replace(/\D/g, "").length >= MIN_CONTACT_SEARCH_DIGITS;
 }
