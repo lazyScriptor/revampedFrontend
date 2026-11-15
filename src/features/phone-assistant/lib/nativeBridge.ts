@@ -94,7 +94,6 @@ interface NativePluginShape {
   getAlerts?: () => Promise<{ alerts: NativeAlert[] }>;
   clearAlerts?: () => Promise<{ cleared: boolean }>;
   searchCustomers?: (args: { query: string; limit?: number }) => Promise<{ hits: NativeCustomerHit[]; cachedBriefs: number }>;
-  noteAppForeground?: () => Promise<{ locked: boolean; signedOut: boolean }>;
   setSignedIn?: (args: { signedIn: boolean }) => Promise<{ saved: boolean }>;
   setCredentials?: (args: {
     deviceId: string;
@@ -329,16 +328,6 @@ export const nativeBridge = {
     if (!plugin?.searchCustomers) return null;
     try {
       return await plugin.searchCustomers({ query, limit });
-    } catch {
-      return null;
-    }
-  },
-  /** Called when the app returns to the foreground: the phone decides if the application must lock or sign out. */
-  async noteAppForeground(): Promise<{ locked: boolean; signedOut: boolean } | null> {
-    const plugin = getNativePlugin();
-    if (!plugin?.noteAppForeground) return null;
-    try {
-      return await plugin.noteAppForeground();
     } catch {
       return null;
     }

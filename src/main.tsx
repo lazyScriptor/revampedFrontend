@@ -20,6 +20,10 @@ import './index.css'; // Make sure Tailwind is imported here!
 // the global i18n instance.
 import "@/i18n";
 import { syncLanguageFromAuth } from "@/i18n";
+import { installNativeAuthBridge } from "@/features/phone-assistant/lib/phoneAppState";
+
+// Inside the GearGrid Phone app, let the phone know whether somebody is signed in to the application.
+installNativeAuthBridge(useAuthStore.subscribe as any, useAuthStore.getState as any);
 
 // If the user was already authenticated from a previous session (zustand
 // persisted), apply their saved language preference right away. Without this,

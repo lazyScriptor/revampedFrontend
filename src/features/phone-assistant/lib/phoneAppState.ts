@@ -161,3 +161,21 @@ export function useSyncStatus(pollMs = 15_000) {
 
   return { status, syncing, result, syncNow, refresh };
 }
+
+let authBridgeInstalled = false;
+
+/**
+ * Tells the phone whether somebody is signed in to the application inside the app, so it can sign them out
+ * after the shop's time limit. Pairing is separate and never affected.
+ */
+export function installNativeAuthBridge(
+  subscribe: (listener: (state: { user: unknown }) => void) => () => void,
+  getState: () => { user: unknown },
+) {
+  if (authBridgeInstalled || !isNativePhoneApp()) return;
+  authBridgeInstalled = true;
+  void nativeBridge.setSignedIn(Boolean(getState().user));
+  subscribe((state) => {
+    void nativeBridge.setSignedIn(Boolean(state.user));
+  });
+}
