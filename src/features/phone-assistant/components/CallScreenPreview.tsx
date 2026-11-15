@@ -151,7 +151,7 @@ export function CallScreenPreview({ design, sample, appearance, locked, phoneSiz
         {shownRows.map((r) => {
           const style = CALL_TOKENS.styles[r.style];
           const fontSize = px(size[style.size as keyof typeof size] as number);
-          const text = r.text.key ? t(r.text.key, r.text.values as any) : r.text.plain ?? "";
+          const text = String(r.text.key ? t(r.text.key, r.text.values as any) : r.text.plain ?? "");
           const labelNode = r.label ? (
             <Box component="span" sx={{ color: palette.muted, fontWeight: 400, mr: 0.75 }}>
               {t(`phoneAssistant.callScreen.fields.${r.field}`)}:
