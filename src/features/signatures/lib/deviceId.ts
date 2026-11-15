@@ -10,6 +10,8 @@
 
 const STORAGE_KEY = "geargrid.device_id";
 const LABEL_KEY = "geargrid.device_label";
+const TOKEN_KEY = "geargrid.device_token";
+const TENANT_DB_KEY = "geargrid.tenant_db";
 
 const safeStorage = () => {
   try {
@@ -60,6 +62,34 @@ export const clearDeviceId = () => {
   if (!storage) return;
   storage.removeItem(STORAGE_KEY);
   storage.removeItem(LABEL_KEY);
+  storage.removeItem(TOKEN_KEY);
+  storage.removeItem(TENANT_DB_KEY);
+};
+
+export const setDeviceToken = (token: string) => {
+  const storage = safeStorage();
+  if (!storage) return;
+  storage.setItem(TOKEN_KEY, token);
+};
+
+export const getDeviceToken = (): string | null => {
+  const storage = safeStorage();
+  if (!storage) return null;
+  const val = storage.getItem(TOKEN_KEY);
+  return val && val.length > 0 ? val : null;
+};
+
+export const setDeviceTenantDb = (tenantDb: string) => {
+  const storage = safeStorage();
+  if (!storage) return;
+  storage.setItem(TENANT_DB_KEY, tenantDb);
+};
+
+export const getDeviceTenantDb = (): string | null => {
+  const storage = safeStorage();
+  if (!storage) return null;
+  const val = storage.getItem(TENANT_DB_KEY);
+  return val && val.length > 0 ? val : null;
 };
 
 export const setDeviceLabel = (label: string) => {

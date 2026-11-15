@@ -30,6 +30,8 @@ import { PairDevicePage } from "@/features/signatures/components/PairDevicePage"
 import { DeviceHomePage } from "@/features/signatures/components/DeviceHomePage";
 import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedSignPage";
 import { PhonePhotoPage } from "@/features/equipment/components/PhonePhotoPage";
+import { DeviceInvoicePage } from "@/features/phone-assistant/pages/DeviceInvoicePage";
+import { DeviceNotificationsPage } from "@/features/phone-assistant/pages/DeviceNotificationsPage";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
 
@@ -125,6 +127,23 @@ const phonePhotoRoute = createRoute({
   },
 });
 
+const deviceNotificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/notifications",
+  component: function DeviceNotificationsComponent() {
+    return <DeviceNotificationsPage />;
+  },
+});
+
+const deviceInvoiceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/invoice/$id",
+  component: function DeviceInvoiceComponent() {
+    const { id } = deviceInvoiceRoute.useParams();
+    return <DeviceInvoicePage invoiceId={Number(id)} />;
+  },
+});
+
 const dashboardRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/dashboard",
@@ -148,11 +167,16 @@ const equipmentCategoryRoute = createRoute({
 const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: (search.mode === "manage" || search.mode === "dispatch")
-      ? (search.mode as "manage" | "dispatch")
-      : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const tab = search.tab === "from-contacts" ? ("from-contacts" as const) : undefined;
+    const mode =
+      search.mode === "manage" || search.mode === "dispatch"
+        ? (search.mode as "manage" | "dispatch")
+        : tab === "from-contacts"
+          ? ("manage" as const)
+          : undefined;
+    return { mode, tab };
+  },
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <Invoices />,
 });
@@ -307,6 +331,8 @@ const routeTree = rootRoute.addChildren([
   deviceHomeRoute,
   signPairedRoute,
   phonePhotoRoute,
+  deviceNotificationsRoute,
+  deviceInvoiceRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,
     equipmentRoute,

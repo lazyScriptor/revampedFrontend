@@ -2034,6 +2034,7 @@
                 "workforce": "Workforce",
                 "cash_locker": "Cash locker",
                 "messages": "Messages screen",
+                "phone_assistant": "Phone Assistant",
                 "data_imports": "Imports",
                 "data_add_machines": "Add Machines",
                 "data_equipment_sheet": "Equipment Sheet",
@@ -2056,6 +2057,7 @@
                 "workforce": "Technicians and their repair work. Needs Maintenance.",
                 "cash_locker": "Daily cash drawer counts and the opening reminder.",
                 "messages": "The WhatsApp worklist, history and templates. Sending from an invoice always stays on.",
+                "phone_assistant": "Android caller-ID briefs, phone contact lookup at POS, and instant push notifications.",
                 "data_imports": "Importing machines and customers from a file.",
                 "data_add_machines": "Adding many machines in a grid.",
                 "data_equipment_sheet": "Editing every machine in one spreadsheet.",
@@ -3521,6 +3523,170 @@
             "accept": "Accept",
             "accepted": "Difference accepted.",
             "empty": "No counts yet."
+        }
+    },
+    "phoneAssistant": {
+        "posFallback": {
+            "fromPhoneContacts": "From phone contacts",
+            "searchingContacts": "Searching synced phone contacts…",
+            "confirmTitle": "Use this contact for this bill?",
+            "confirmBody": "Creating a customer from an operator's synced phone contact alerts the shop owner.",
+            "confirmAction": "Use contact",
+            "usingContact": "Preparing…",
+            "useFailed": "Could not load that contact. Please try again."
+        },
+        "invoices": {
+            "fromContactsTab": "From contacts",
+            "fromContactBadge": "From contact",
+            "markReviewed": "Mark reviewed",
+            "reviewedByAt": "Reviewed by {{name}} · {{time}}"
+        },
+        "pairedPhones": {
+            "nativeApp": "Phone app",
+            "browser": "Browser",
+            "contactsSyncedCount": "{{count}} contacts synced",
+            "contactSyncOff": "Contact sync off",
+            "contactsSyncedAt": "synced {{value}}"
+        },
+        "checklist": {
+            "title": "Phone assistant setup",
+            "syncNow": "Sync now",
+            "contactSyncToggleTitle": "Share phone contacts for POS fallback",
+            "contactSyncToggleHint": "Only uploads names and phone numbers so staff can find new callers when billing.",
+            "callerIdRole": "Caller ID & spam app role",
+            "overlayPermission": "Display over other apps",
+            "notificationsPermission": "Notifications",
+            "contactsPermission": "Read contacts permission",
+            "callLogPermission": "Call log & phone state",
+            "batteryExemption": "Allow unrestricted background battery",
+            "ready": "Ready",
+            "fix": "Fix",
+            "vendorAutostartTitle": "Samsung & Vivo background protection",
+            "vivoSteps": "Vivo Funtouch/OriginOS: enable Autostart and allow High background power consumption so background sync and call popups keep running.",
+            "samsungSteps": "Samsung One UI: set Battery to Unrestricted and remove GearGrid Phone from Sleeping apps.",
+            "genericVendorSteps": "Disable app hibernation/sleeping apps and allow background autostart in system settings.",
+            "vendorIntentFallback": "Open phone Settings → Apps → GearGrid Phone → Battery / Permissions to allow background autostart and unrestricted battery.",
+            "lastContactSync": "Last contact sync: {{value}}",
+            "lastBriefSync": "Last caller brief sync: {{value}}",
+            "never": "Never"
+        },
+        "consent": {
+            "title": "Enable contact sync?",
+            "body": "Contact names and phone numbers from this phone will be uploaded to your shop's GearGrid account so counter staff can find them when creating a bill.",
+            "privacyGuarantee": "Only names and numbers are uploaded — never photos, emails, addresses, or notes. Caller briefs still work with this turned off, and turning it off or unpairing deletes synced contacts.",
+            "accept": "Agree & enable sync"
+        },
+        "pushEvents": {
+            "invoice_created": {
+                "label": "New invoice created",
+                "description": "Alert when a counter operator dispatches a new rental bill."
+            },
+            "payment_received": {
+                "label": "Payment received",
+                "description": "Alert when a cash, card, bank transfer, or deposit payment is recorded."
+            },
+            "return_processed": {
+                "label": "Equipment returned",
+                "description": "Alert when rented machines are returned or settled."
+            },
+            "invoice_deleted": {
+                "label": "Invoice voided / deleted",
+                "description": "Alert when an invoice is moved to bin or deleted."
+            },
+            "invoice_restored": {
+                "label": "Invoice restored",
+                "description": "Alert when a voided invoice is restored."
+            },
+            "payment_voided": {
+                "label": "Payment voided / refunded",
+                "description": "Alert when a payment is reversed or refunded."
+            },
+            "contact_used": {
+                "label": "Phone contact used for bill",
+                "description": "Alert when counter staff creates a customer from a synced phone contact."
+            },
+            "customer_blacklisted": {
+                "label": "Customer blacklisted",
+                "description": "Alert when a customer is flagged as blacklisted."
+            }
+        },
+        "pushSettings": {
+            "title": "Mobile push notifications (Shop rules)",
+            "subtitle": "Choose which rental and cash events trigger Firebase push alerts to paired GearGrid Phone apps.",
+            "sendTest": "Send test notification",
+            "sendingTest": "Sending…",
+            "testSent": "Test push delivered to {{count}} paired phone(s).",
+            "testNoDevices": "No active paired phones with push notifications enabled were reached.",
+            "testFailed": "Failed to send test push notification.",
+            "eventColumn": "Event",
+            "enabledColumn": "Shop enabled",
+            "minAmountColumn": "Minimum bill / payment",
+            "rolesColumn": "Extra recipient roles",
+            "adminsOnly": "Admins only (hierarchy ≥ 100)",
+            "quietHoursTitle": "Quiet hours",
+            "quietHoursHint": "Deliver push notifications silently without sound between these hours.",
+            "quietFrom": "From",
+            "quietTo": "To",
+            "includeAmountsTitle": "Include rupee amounts in notifications",
+            "includeAmountsHint": "When off, lock-screen push messages hide Rs. totals for privacy.",
+            "notifyActorTitle": "Also notify the person who did the action",
+            "notifyActorHint": "When off, the staff member who recorded the bill or payment does not get alerted for their own action.",
+            "saveButton": "Save push settings",
+            "savingButton": "Saving…",
+            "savedBanner": "Shop push notification settings saved.",
+            "saveFailed": "Could not save shop push settings.",
+            "loadFailed": "Could not load shop push notification settings."
+        },
+        "myNotifications": {
+            "title": "Phone push alerts",
+            "subtitle": "Personal notification filters for your paired Android GearGrid Phone app.",
+            "empty": "No mobile push events are enabled for your role by the shop administrator yet.",
+            "loadFailed": "Could not load your push notification preferences.",
+            "saveFailed": "Could not update push notification preferences.",
+            "savedBanner": "Push preferences saved.",
+            "minAmountLabel": "Only alert above",
+            "shopMinHint": "Shop minimum: Rs. {{amount}}",
+            "minAmountValidation": "Must be at least the shop minimum of Rs. {{amount}}.",
+            "saveThreshold": "Save threshold",
+            "pairedPhonesHeading": "Paired phones receiving push alerts",
+            "noPairedNativePhone": "No Android GearGrid Phone app is paired to your account yet. Pair a phone in Linked Phones below to receive push alerts.",
+            "manageOnPhone": "Manage notification alerts"
+        },
+        "deviceNotifications": {
+            "title": "Mobile notification alerts",
+            "subtitle": "Choose which shop events appear on this phone.",
+            "backToDevice": "Back to phone home",
+            "unpairedError": "This phone is not paired yet. Please pair it first."
+        },
+        "deviceInvoice": {
+            "title": "Invoice summary",
+            "backToDevice": "Back to phone home",
+            "loading": "Loading invoice summary…",
+            "forbidden": "Only shop administrators can view full invoice summaries on mobile.",
+            "notFound": "Invoice not found or access denied.",
+            "issuedAt": "Issued {{value}}",
+            "issuedBy": "Issued by {{name}}",
+            "customerHeading": "Customer",
+            "itemsHeading": "Equipment & line totals",
+            "qtyLabel": "Qty {{count}}",
+            "totalAmount": "Total bill",
+            "paidAmount": "Paid so far",
+            "balanceDue": "Balance due"
+        },
+        "calls": {
+            "incomingTitle": "Incoming call",
+            "endedTitle": "Call ended",
+            "viaDevice": "via {{device}}",
+            "fromDeviceContact": "From {{device}} phone",
+            "notInGearGrid": "Not in GearGrid",
+            "blacklistedBanner": "Blacklisted customer",
+            "idRetained": "ID in vault",
+            "openCustomer": "Open customer",
+            "newBill": "New bill",
+            "addAsCustomer": "Add as customer",
+            "dismiss": "Dismiss",
+            "durationSeconds": "{{seconds}}s",
+            "loadingCaller": "Identifying caller…"
         }
     }
 }

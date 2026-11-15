@@ -30,10 +30,12 @@ import {
   useMintPairingCode,
   useUnpairDevice,
 } from '../hooks/useSignatures';
+import { usePlanChecker } from '@/features/plan/usePlan';
 import { useTranslation } from "react-i18next";
 
 export function PairedPhonesSection() {
   const { t } = useTranslation();
+  const hasPhoneAssistant = usePlanChecker()("phone_assistant");
   const devices = useMyDevices();
   const mintMut = useMintPairingCode();
   const unpairMut = useUnpairDevice();
@@ -137,13 +139,40 @@ export function PairedPhonesSection() {
             >
               <SmartphoneIcon sx={{ color: '#475569' }} />
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>
-                  {d.device_label || t("signatures.PairedPhonesSection.unlabelledPhone")}
-                </Typography>
-                <Typography sx={{ fontSize: 12, color: '#64748b' }}>
+                <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>
+                    {d.device_label || t("signatures.PairedPhonesSection.unlabelledPhone")}
+                  </Typography>
+                  {hasPhoneAssistant && (
+                    <Chip
+                      size="small"
+                      label={
+                        d.is_native_app
+                          ? t("phoneAssistant.pairedPhones.nativeApp")
+                          : t("phoneAssistant.pairedPhones.browser")
+                      }
+                      color={d.is_native_app ? "warning" : "default"}
+                      variant={d.is_native_app ? "filled" : "outlined"}
+                      sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }}
+                    />
+                  )}
+                </Stack>
+                <Typography sx={{ fontSize: 12, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
                   {t("signatures.PairedPhonesSection.paired", { value: new Date(d.paired_at).toLocaleString() })}
                   {d.last_seen_at && ` · ${t("signatures.PairedPhonesSection.lastSeen", { value: new Date(d.last_seen_at).toLocaleString() })}`}
                 </Typography>
+                {hasPhoneAssistant && d.is_native_app && (
+                  <Typography sx={{ fontSize: 12, color: '#475569', mt: 0.25, fontVariantNumeric: 'tabular-nums' }}>
+                    {d.contact_sync_enabled
+                      ? t("phoneAssistant.pairedPhones.contactsSyncedCount", { count: d.contact_count ?? 0 })
+                      : t("phoneAssistant.pairedPhones.contactSyncOff")}
+                    {d.contact_sync_enabled && d.contacts_synced_at
+                      ? ` · ${t("phoneAssistant.pairedPhones.contactsSyncedAt", {
+                          value: new Date(d.contacts_synced_at).toLocaleString(),
+                        })}`
+                      : ""}
+                  </Typography>
+                )}
               </Box>
               <IconButton
                 size="small"

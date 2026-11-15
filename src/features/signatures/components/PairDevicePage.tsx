@@ -27,7 +27,14 @@ import {
   suggestDeviceLabel,
   getDeviceLabel,
   setDeviceLabel as persistDeviceLabel,
+  setDeviceToken,
+  setDeviceTenantDb,
 } from '../lib/deviceId';
+import {
+  isNativePhoneApp,
+  nativeBridge,
+  registerDeviceWithServer,
+} from '@/features/phone-assistant/lib/nativeBridge';
 import { useDeviceManifest } from '../lib/deviceShell';
 import { useClaimPairingCode, useDeviceStatus } from '../hooks/useSignatures';
 import { Trans, useTranslation } from "react-i18next";
@@ -70,12 +77,23 @@ export function PairDevicePage() {
     setSubmitError(null);
     if (!canSubmit) return;
     try {
-      await claim.mutateAsync({
+      const paired = await claim.mutateAsync({
         code: normalizedCode,
         device_id: deviceId,
         device_label: label || undefined,
       });
       if (label) persistDeviceLabel(label);
+      if (paired?.device_token) setDeviceToken(paired.device_token);
+      if (paired?.tenant_db_name) setDeviceTenantDb(paired.tenant_db_name);
+      if (isNativePhoneApp() && paired?.device_token && paired?.tenant_db_name) {
+        await nativeBridge.setCredentials({
+          deviceId,
+          deviceToken: paired.device_token,
+          tenantDb: paired.tenant_db_name,
+          apiBaseUrl: import.meta.env.VITE_API_URL,
+        });
+        await registerDeviceWithServer({ app_version: '1.0.0' }).catch(() => null);
+      }
       navigate({ to: '/device', replace: true });
     } catch (err: any) {
       setSubmitError(err?.message || t("signatures.PairDevicePage.couldNotPairThisPhone"));
