@@ -49,6 +49,7 @@ export default function ProfileRoute() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: TabKey };
   const me = useMyProfile();
+  const canPlan = usePlanChecker();
 
   const activeKey: TabKey = useMemo(() => {
     const requested = search.tab;
@@ -83,7 +84,6 @@ export default function ProfileRoute() {
   }
 
   const profile = me.data;
-  const canPlan = usePlanChecker();
   const hasPhoneAssistant = canPlan("phone_assistant");
   const isAdmin = (profile.Roles ?? []).some(
     (r) => Number(r.hierarchy_level) >= 100,
