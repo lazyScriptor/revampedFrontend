@@ -161,7 +161,10 @@ export function IncomingCallToast() {
 
   const handleAddContactAsCustomer = async (contact: ContactMatchLite) => {
     try {
-      const prefill = await useContactMutation.mutateAsync(contact.contact_id);
+      const prefill = await useContactMutation.mutateAsync({
+        contactId: contact.contact_id,
+        phone: contact.phone_e164,
+      });
       setCustomerDialog({
         open: true,
         prefill: {

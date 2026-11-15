@@ -3,11 +3,14 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Divider,
   FormControl,
+  FormControlLabel,
   InputAdornment,
+  InputLabel,
   MenuItem,
   OutlinedInput,
   Paper,
@@ -23,6 +26,7 @@ import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { useTranslation } from "react-i18next";
 import type {
+  PushDeliveryMode,
   PushEventCatalogEntry,
   PushSettingsPayload,
 } from "../api/phoneAssistantApi";
@@ -34,15 +38,56 @@ import {
 } from "../hooks/usePushSettings";
 
 const FALLBACK_CATALOG: PushEventCatalogEntry[] = [
-  { key: "invoice_created", default_enabled: true, has_amount: true },
-  { key: "payment_received", default_enabled: true, has_amount: true },
-  { key: "return_processed", default_enabled: true, has_amount: true },
-  { key: "invoice_deleted", default_enabled: true, has_amount: false },
-  { key: "invoice_restored", default_enabled: true, has_amount: false },
-  { key: "payment_voided", default_enabled: true, has_amount: true },
-  { key: "contact_used", default_enabled: true, has_amount: false },
-  { key: "customer_blacklisted", default_enabled: true, has_amount: false },
+  { key: "invoice_created", group: "bills", default_enabled: true, has_amount: true },
+  { key: "payment_received", group: "payments", default_enabled: true, has_amount: true },
+  { key: "return_processed", group: "returns", default_enabled: true, has_amount: true },
+  { key: "invoice_deleted", group: "bills", default_enabled: true, has_amount: false },
+  { key: "invoice_restored", group: "bills", default_enabled: true, has_amount: false },
+  { key: "payment_voided", group: "payments", default_enabled: true, has_amount: true },
+  { key: "contact_used", group: "alerts", default_enabled: true, has_amount: false },
+  { key: "customer_blacklisted", group: "alerts", default_enabled: true, has_amount: false },
+  { key: "daily_summary", group: "digest", default_enabled: false, has_amount: false },
 ];
+
+const DAILY_SUMMARY_SECTIONS = [
+  "bills",
+  "payments",
+  "returns",
+  "due_tomorrow",
+  "overdue",
+] as const;
+
+function buildInitialDraft(source: PushSettingsPayload): PushSettingsPayload {
+  const normalizedEvents: PushSettingsPayload["events"] = {};
+  for (const [key, rule] of Object.entries(source.events ?? {})) {
+    normalizedEvents[key] = {
+      enabled: Boolean(rule?.enabled),
+      min_amount: Number(rule?.min_amount ?? 0),
+      recipient_role_ids: Array.isArray(rule?.recipient_role_ids)
+        ? rule.recipient_role_ids
+        : [],
+      hide_customer_name: Boolean(rule?.hide_customer_name),
+      delivery: rule?.delivery === "digest" ? "digest" : "instant",
+    };
+  }
+  return {
+    ...source,
+    events: normalizedEvents,
+    digest_minutes: source.digest_minutes ?? 30,
+    daily_summary: source.daily_summary ?? {
+      enabled: false,
+      send_time: "20:00",
+      recipient_role_ids: [],
+      sections: {
+        bills: true,
+        payments: true,
+        returns: true,
+        due_tomorrow: true,
+        overdue: true,
+      },
+    },
+  };
+}
 
 export function PushSettingsPanel() {
   const { t } = useTranslation();
@@ -72,7 +117,7 @@ export function PushSettingsPanel() {
 
   useEffect(() => {
     if (!data?.settings) return;
-    setDraft(data.settings);
+    setDraft(buildInitialDraft(data.settings));
   }, [data?.settings]);
 
   const roleNameMap = new Map(roles.map((r) => [r.role_id, r.role_name]));
@@ -236,12 +281,16 @@ export function PushSettingsPanel() {
         ) : (
           <>
             <Stack spacing={1.5}>
-              {catalog.map((cat) => {
-                const rule = draft.events[cat.key] ?? {
-                  enabled: cat.default_enabled,
-                  min_amount: 0,
-                  recipient_role_ids: [],
-                };
+              {catalog
+                .filter((cat) => cat.key !== "daily_summary")
+                .map((cat) => {
+                  const rule = draft.events[cat.key] ?? {
+                    enabled: cat.default_enabled,
+                    min_amount: 0,
+                    recipient_role_ids: [],
+                    hide_customer_name: false,
+                    delivery: "instant" as PushDeliveryMode,
+                  };
                 const eventLabel = t(
                   `phoneAssistant.pushEvents.${cat.key}.label`,
                   { defaultValue: cat.key },
@@ -427,7 +476,73 @@ export function PushSettingsPanel() {
                             ))}
                           </Select>
                         </FormControl>
+
+                        <FormControl
+                          size="small"
+                          sx={{
+                            minWidth: { xs: "100%", md: 165 },
+                            "& .MuiInputBase-root": {
+                              bgcolor: surfaceBg,
+                              color: textPrimary,
+                            },
+                            "& .MuiInputLabel-root": {
+                              color: textSecondary,
+                            },
+                          }}
+                        >
+                          <InputLabel id={`delivery-${cat.key}-label`}>
+                            {t("phoneAssistant.pushSettings.deliveryMode")}
+                          </InputLabel>
+                          <Select
+                            labelId={`delivery-${cat.key}-label`}
+                            label={t("phoneAssistant.pushSettings.deliveryMode")}
+                            disabled={!rule.enabled}
+                            value={rule.delivery ?? "instant"}
+                            onChange={(e) =>
+                              updateEventRule(cat.key, {
+                                delivery: e.target.value as PushDeliveryMode,
+                              })
+                            }
+                          >
+                            <MenuItem value="instant">
+                              {t("phoneAssistant.pushSettings.deliveryInstant")}
+                            </MenuItem>
+                            <MenuItem value="digest">
+                              {t("phoneAssistant.pushSettings.deliveryDigest")}
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
                       </Stack>
+
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              size="small"
+                              color="warning"
+                              disabled={!rule.enabled}
+                              checked={Boolean(rule.hide_customer_name)}
+                              onChange={(_e, checked) =>
+                                updateEventRule(cat.key, {
+                                  hide_customer_name: checked,
+                                })
+                              }
+                              slotProps={{
+                                input: {
+                                  role: "switch",
+                                  "aria-label": `${eventLabel} ${t("phoneAssistant.pushSettings.hideCustomerName")}`,
+                                },
+                              }}
+                            />
+                          }
+                          label={
+                            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: textSecondary }}>
+                              {t("phoneAssistant.pushSettings.hideCustomerName")}
+                            </Typography>
+                          }
+                          sx={{ m: 0 }}
+                        />
+                      </Box>
                     </Stack>
                   </Paper>
                 );
@@ -625,6 +740,209 @@ export function PushSettingsPanel() {
                     }}
                   />
                 </Stack>
+
+                <Divider sx={{ borderColor }} />
+
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  sx={{ alignItems: { xs: "stretch", sm: "center" }, justifyContent: "space-between" }}
+                >
+                  <Box>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, color: textPrimary }}
+                    >
+                      {t("phoneAssistant.pushSettings.digestIntervalLabel")}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: textSecondary }}>
+                      {t("phoneAssistant.pushSettings.digestIntervalHint")}
+                    </Typography>
+                  </Box>
+                  <FormControl
+                    size="small"
+                    sx={{
+                      minWidth: 160,
+                      "& .MuiInputBase-root": {
+                        bgcolor: surfaceBg,
+                        color: textPrimary,
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: textSecondary,
+                      },
+                    }}
+                  >
+                    <InputLabel id="digest-interval-label">
+                      {t("phoneAssistant.pushSettings.digestIntervalLabel")}
+                    </InputLabel>
+                    <Select
+                      labelId="digest-interval-label"
+                      label={t("phoneAssistant.pushSettings.digestIntervalLabel")}
+                      value={draft.digest_minutes ?? 30}
+                      onChange={(e) => {
+                        setSaveMessage(null);
+                        setDraft((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                digest_minutes: Number(e.target.value) || 30,
+                              }
+                            : prev,
+                        );
+                      }}
+                    >
+                      <MenuItem value={15}>
+                        {t("phoneAssistant.pushSettings.digestMinutesOption", { minutes: 15 })}
+                      </MenuItem>
+                      <MenuItem value={30}>
+                        {t("phoneAssistant.pushSettings.digestMinutesOption", { minutes: 30 })}
+                      </MenuItem>
+                      <MenuItem value={60}>
+                        {t("phoneAssistant.pushSettings.digestMinutesOption", { minutes: 60 })}
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Stack>
+
+                <Divider sx={{ borderColor }} />
+
+                {(() => {
+                  const daily = draft.daily_summary ?? {
+                    enabled: false,
+                    send_time: "20:00",
+                    recipient_role_ids: [],
+                    sections: {
+                      bills: true,
+                      payments: true,
+                      returns: true,
+                      due_tomorrow: true,
+                      overdue: true,
+                    },
+                  };
+                  const updateDaily = (
+                    patch: Partial<NonNullable<PushSettingsPayload["daily_summary"]>>,
+                  ) => {
+                    setSaveMessage(null);
+                    setDraft((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            daily_summary: {
+                              ...daily,
+                              ...patch,
+                            },
+                          }
+                        : prev,
+                    );
+                  };
+                  return (
+                    <Stack spacing={1.5}>
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        sx={{ alignItems: "center", justifyContent: "space-between" }}
+                      >
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 700, color: textPrimary }}
+                          >
+                            {t("phoneAssistant.pushSettings.dailySummaryTitle")}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: textSecondary }}>
+                            {t("phoneAssistant.pushSettings.dailySummaryHint")}
+                          </Typography>
+                        </Box>
+                        <Switch
+                          checked={Boolean(daily.enabled)}
+                          color="warning"
+                          onChange={(_e, checked) =>
+                            updateDaily({ enabled: checked })
+                          }
+                          slotProps={{
+                            input: {
+                              role: "switch",
+                              "aria-label": t(
+                                "phoneAssistant.pushSettings.dailySummaryTitle",
+                              ),
+                            },
+                          }}
+                        />
+                      </Stack>
+
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1.5}
+                        sx={{ alignItems: { xs: "stretch", sm: "center" } }}
+                      >
+                        <TextField
+                          size="small"
+                          type="time"
+                          label={t("phoneAssistant.pushSettings.dailySummaryTime")}
+                          value={daily.send_time}
+                          disabled={!daily.enabled}
+                          onChange={(e) =>
+                            updateDaily({ send_time: e.target.value || "20:00" })
+                          }
+                          sx={{
+                            width: { xs: "100%", sm: 170 },
+                            "& .MuiInputBase-root": {
+                              bgcolor: surfaceBg,
+                              color: textPrimary,
+                            },
+                            "& .MuiInputLabel-root": {
+                              color: textSecondary,
+                            },
+                          }}
+                          slotProps={{
+                            inputLabel: { shrink: true },
+                            htmlInput: {
+                              style: { fontVariantNumeric: "tabular-nums" },
+                            },
+                          }}
+                        />
+
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                          {DAILY_SUMMARY_SECTIONS.map((sec) => (
+                            <FormControlLabel
+                              key={sec}
+                              control={
+                                <Checkbox
+                                  size="small"
+                                  color="warning"
+                                  disabled={!daily.enabled}
+                                  checked={Boolean(daily.sections[sec])}
+                                  onChange={(_e, checked) =>
+                                    updateDaily({
+                                      sections: {
+                                        ...daily.sections,
+                                        [sec]: checked,
+                                      },
+                                    })
+                                  }
+                                />
+                              }
+                              label={
+                                <Typography
+                                  sx={{
+                                    fontSize: 12.5,
+                                    fontWeight: 600,
+                                    color: textPrimary,
+                                  }}
+                                >
+                                  {t(
+                                    `phoneAssistant.pushSettings.dailySummarySections.${sec}`,
+                                  )}
+                                </Typography>
+                              }
+                              sx={{ m: 0 }}
+                            />
+                          ))}
+                        </Box>
+                      </Stack>
+                    </Stack>
+                  );
+                })()}
               </Stack>
             </Paper>
 

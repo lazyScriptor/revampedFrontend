@@ -25,7 +25,9 @@ import AddToHomeScreenIcon from '@mui/icons-material/AddToHomeScreen';
 import { getDeviceId, clearDeviceId } from '../lib/deviceId';
 import { isRequestFinished, isStandalone, useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
 import { isNativePhoneApp, nativeBridge } from '@/features/phone-assistant/lib/nativeBridge';
+import { unpairCurrentDevice } from '@/features/phone-assistant/api/phoneAssistantApi';
 import { NativeSetupChecklist } from '@/features/phone-assistant/components/NativeSetupChecklist';
+import { MissedCallsAndFollowUpsPanel } from '@/features/phone-assistant/components/MissedCallsAndFollowUpsPanel';
 import { useDevicePendingPhotos } from '@/features/equipment/hooks/useEquipmentPhoto';
 import {
   useDeviceStatus,
@@ -46,8 +48,15 @@ export function DeviceHomePage() {
   }, [deviceId, navigate]);
 
   const status = useDeviceStatus(deviceId, { refetchInterval: 30_000 });
-  const pending = useDevicePendingSignatures(deviceId);
-  const pendingPhotos = useDevicePendingPhotos(deviceId, { enabled: status.data?.paired === true });
+  const shopInactive = status.data?.shop_inactive === true;
+  const deviceStatus = status.data?.device_status ?? 'ACTIVE';
+  const isDeviceActive = deviceStatus === 'ACTIVE' && !shopInactive;
+  const pending = useDevicePendingSignatures(deviceId, {
+    enabled: status.data?.paired === true && isDeviceActive,
+  });
+  const pendingPhotos = useDevicePendingPhotos(deviceId, {
+    enabled: status.data?.paired === true && isDeviceActive,
+  });
   useDeviceManifest();
   useScreenWakeLock(!!deviceId);
 
@@ -102,7 +111,8 @@ export function DeviceHomePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: '#f8fafc',
+        bgcolor: 'background.default',
+        color: 'text.primary',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -136,20 +146,42 @@ export function DeviceHomePage() {
       </Box>
 
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+        {deviceStatus === 'PENDING' && (
+          <Alert severity="info" sx={{ borderRadius: 2 }}>
+            {t("phoneAssistant.deviceHome.pendingApprovalBanner")}
+          </Alert>
+        )}
+
+        {deviceStatus === 'SUSPENDED' && (
+          <Alert severity="warning" sx={{ borderRadius: 2 }}>
+            {t("phoneAssistant.deviceHome.suspendedBanner")}
+          </Alert>
+        )}
+
+        {shopInactive && (
+          <Alert severity="warning" sx={{ borderRadius: 2 }}>
+            {t(
+              "signatures.DeviceHomePage.shopInactiveWarning",
+              "Shop subscription is currently inactive. Your phone stays paired and will resume once the shop account is active.",
+            )}
+          </Alert>
+        )}
+
         <Paper
           elevation={0}
           sx={{
             p: 3,
             borderRadius: 2,
-            border: '1px solid #e2e8f0',
-            bgcolor: 'white',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             textAlign: 'center',
           }}
         >
           <Avatar
             sx={{
-              bgcolor: '#dcfce7',
-              color: '#16a34a',
+              bgcolor: isDeviceActive ? '#dcfce7' : '#fef3c7',
+              color: isDeviceActive ? '#16a34a' : '#d97706',
               width: 72,
               height: 72,
               mx: 'auto',
@@ -158,16 +190,20 @@ export function DeviceHomePage() {
           >
             <CheckCircleOutlinedIcon sx={{ fontSize: 44 }} />
           </Avatar>
-          <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#0f172a', mb: 0.5 }}>
-            {t("signatures.DeviceHomePage.readyToSign")}
+          <Typography sx={{ fontWeight: 700, fontSize: 18, color: 'text.primary', mb: 0.5 }}>
+            {deviceStatus === 'PENDING'
+              ? t("phoneAssistant.deviceHome.pendingTitle")
+              : deviceStatus === 'SUSPENDED'
+                ? t("phoneAssistant.deviceHome.suspendedTitle")
+                : t("signatures.DeviceHomePage.readyToSign")}
           </Typography>
-          <Typography sx={{ fontSize: 13, color: '#64748b', mb: 2 }}>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
             {t("signatures.DeviceHomePage.thisPhoneWillOpenAutomatically")}
           </Typography>
 
           <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-            <HourglassBottomIcon sx={{ color: '#64748b', fontSize: 18 }} />
-            <Typography sx={{ fontSize: 12, color: '#64748b' }}>
+            <HourglassBottomIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
               {t("signatures.DeviceHomePage.waitingForSignatureRequests")}
             </Typography>
           </Stack>
@@ -177,7 +213,13 @@ export function DeviceHomePage() {
               size="small"
               icon={<DrawIcon />}
               label={t("signatures.DeviceHomePage.yourSavedSignatureIsActive")}
-              sx={{ mt: 2, bgcolor: '#f0fdf4', color: '#166534' }}
+              sx={{
+                mt: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.18)' : '#f0fdf4',
+                color: (theme) =>
+                  theme.palette.mode === 'dark' ? '#86efac' : '#166534',
+              }}
             />
           )}
         </Paper>
@@ -207,9 +249,9 @@ export function DeviceHomePage() {
                 textTransform: 'none',
                 fontWeight: 700,
                 borderRadius: 2,
-                borderColor: '#d97706',
-                color: '#b45309',
-                bgcolor: 'white',
+                borderColor: 'warning.main',
+                color: 'warning.main',
+                bgcolor: 'background.paper',
               }}
             >
               {t("phoneAssistant.myNotifications.manageOnPhone")}
@@ -217,7 +259,26 @@ export function DeviceHomePage() {
           </>
         )}
 
-        {pending.isError && (
+        <Button
+          fullWidth
+          variant="outlined"
+          onClick={() => navigate({ to: '/device/privacy' })}
+          sx={{
+            minHeight: 44,
+            textTransform: 'none',
+            fontWeight: 700,
+            borderRadius: 2,
+            borderColor: 'divider',
+            color: 'text.primary',
+            bgcolor: 'background.paper',
+          }}
+        >
+          {t("phoneAssistant.devicePrivacy.openPrivacy")}
+        </Button>
+
+        {isDeviceActive && <MissedCallsAndFollowUpsPanel mode="device" />}
+
+        {pending.isError && !shopInactive && (
           <Alert severity="warning">
             <strong>{t("signatures.DeviceHomePage.couldnTFetchPendingRequests")}</strong>
             {' '}
@@ -226,19 +287,20 @@ export function DeviceHomePage() {
         )}
       </Box>
 
-      <Box sx={{ p: 2, borderTop: '1px solid #e2e8f0', bgcolor: 'white' }}>
+      <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Button
           fullWidth
           variant="text"
           size="small"
-          onClick={() => {
+          onClick={async () => {
             if (confirm(t("signatures.DeviceHomePage.unpairThisPhoneYouWill"))) {
+              await unpairCurrentDevice().catch(() => null);
               clearDeviceId();
               void nativeBridge.clearCredentials();
               navigate({ to: '/pair', replace: true });
             }
           }}
-          sx={{ textTransform: 'none', color: '#64748b' }}
+          sx={{ textTransform: 'none', color: 'text.secondary' }}
         >
           {t("signatures.DeviceHomePage.unpairThisPhone")}
         </Button>
@@ -255,7 +317,7 @@ function FullBleedCentered({ children }: { children: React.ReactNode }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#f8fafc',
+        bgcolor: 'background.default',
       }}
     >
       {children}

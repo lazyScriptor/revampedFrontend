@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
@@ -122,8 +122,11 @@ export function NativeSetupChecklist() {
     try {
       const updated = await nativeBridge.setContactSyncEnabled(enabled, consented);
       await registerDeviceWithServer({
-        app_version: "1.0.0",
+        app_version: status?.appVersion || "1.0.0",
         contact_sync_enabled: enabled,
+        ...(status?.deviceModel ? { device_model: status.deviceModel } : {}),
+        ...(status?.osVersion ? { os_version: status.osVersion } : {}),
+        ...(status?.reportedState ? { reported_state: status.reportedState } : {}),
       }).catch(() => null);
       if (updated) setStatus(updated);
       else await loadStatus();
@@ -131,6 +134,28 @@ export function NativeSetupChecklist() {
       setBusyKey(null);
     }
   };
+
+  const capabilityReasons = useMemo<Record<string, string | null>>(() => {
+    if (!status?.capabilityReasonsJson) return {};
+    try {
+      const parsed = JSON.parse(status.capabilityReasonsJson);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }, [status?.capabilityReasonsJson]);
+
+  const effectiveCapabilities = useMemo<Record<string, boolean>>(() => {
+    if (!status?.effectiveCapabilitiesJson) return {};
+    try {
+      const parsed = JSON.parse(status.effectiveCapabilitiesJson);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }, [status?.effectiveCapabilitiesJson]);
+
+  const capabilityEntries = Object.entries(effectiveCapabilities);
 
   const handleToggleContactSync = async (checked: boolean) => {
     if (checked && !status?.contactsConsented) {
@@ -197,14 +222,15 @@ export function NativeSetupChecklist() {
         sx={{
           p: 2.25,
           borderRadius: 2,
-          border: "1px solid #e2e8f0",
-          bgcolor: "#ffffff",
+          border: "1px solid",
+          borderColor: "divider",
+          bgcolor: "background.paper",
         }}
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <SecurityIcon sx={{ color: "#d97706", fontSize: 20 }} />
-            <Typography sx={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
+            <SecurityIcon sx={{ color: "warning.main", fontSize: 20 }} />
+            <Typography sx={{ fontWeight: 700, fontSize: 15, color: "text.primary" }}>
               {t("phoneAssistant.checklist.title")}
             </Typography>
           </Box>
@@ -249,8 +275,11 @@ export function NativeSetupChecklist() {
             p: 1.5,
             mb: 1.5,
             borderRadius: 1.5,
-            border: "1px solid #fde68a",
-            bgcolor: "#fffbeb",
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.35)" : "#fde68a",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "#fffbeb",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -258,10 +287,10 @@ export function NativeSetupChecklist() {
           }}
         >
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 13.5, color: "#0f172a" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 13.5, color: "text.primary" }}>
               {t("phoneAssistant.checklist.contactSyncToggleTitle")}
             </Typography>
-            <Typography sx={{ fontSize: 12, color: "#475569" }}>
+            <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
               {t("phoneAssistant.checklist.contactSyncToggleHint")}
             </Typography>
           </Box>
@@ -297,7 +326,7 @@ export function NativeSetupChecklist() {
                 ) : (
                   <WarningAmberIcon sx={{ color: "#d97706", fontSize: 18, flexShrink: 0 }} />
                 )}
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "text.primary" }}>
                   {row.label}
                 </Typography>
               </Stack>
@@ -328,10 +357,10 @@ export function NativeSetupChecklist() {
           <Box sx={{ pt: 0.75 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
               <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: "text.primary" }}>
                   {t("phoneAssistant.checklist.vendorAutostartTitle")}
                 </Typography>
-                <Typography sx={{ fontSize: 11.5, color: "#475569" }}>
+                <Typography sx={{ fontSize: 11.5, color: "text.secondary" }}>
                   {isVivo
                     ? t("phoneAssistant.checklist.vivoSteps")
                     : isSamsung
@@ -363,17 +392,48 @@ export function NativeSetupChecklist() {
         <Divider sx={{ my: 1.5 }} />
 
         <Stack spacing={0.5}>
-          <Typography sx={{ fontSize: 12, color: "#475569", fontVariantNumeric: "tabular-nums" }}>
+          <Typography sx={{ fontSize: 12, color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
             {t("phoneAssistant.checklist.lastContactSync", {
               value: formatSyncTimestamp(status.contactsSyncedAt, t("phoneAssistant.checklist.never")),
             })}
           </Typography>
-          <Typography sx={{ fontSize: 12, color: "#475569", fontVariantNumeric: "tabular-nums" }}>
+          <Typography sx={{ fontSize: 12, color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
             {t("phoneAssistant.checklist.lastBriefSync", {
               value: formatSyncTimestamp(status.briefsSyncedAt, t("phoneAssistant.checklist.never")),
             })}
           </Typography>
         </Stack>
+
+        {capabilityEntries.length > 0 && (
+          <>
+            <Divider sx={{ my: 1.5 }} />
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: "text.secondary", mb: 0.75 }}>
+              {t("phoneAssistant.checklist.capabilitiesTitle")}
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+              {capabilityEntries.map(([cap, allowed]) => {
+                const reason = capabilityReasons[cap];
+                return (
+                  <Chip
+                    key={cap}
+                    size="small"
+                    color={allowed ? "success" : "default"}
+                    variant={allowed ? "outlined" : "filled"}
+                    label={
+                      allowed || !reason
+                        ? t(`phoneAssistant.capabilities.${cap}`, cap)
+                        : `${t(`phoneAssistant.capabilities.${cap}`, cap)} · ${t(
+                            `phoneAssistant.capabilityReasons.${reason}`,
+                            reason,
+                          )}`
+                    }
+                    sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600 }}
+                  />
+                );
+              })}
+            </Box>
+          </>
+        )}
       </Paper>
 
       <Dialog

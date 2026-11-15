@@ -174,7 +174,16 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
     expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
   });
 
-  it("a typed name finds nobody and never offers to add a duplicate customer", async () => {
+  it("a typed name finds matching customers and never queries phone contacts", async () => {
+    state.customerResults = [
+      {
+        customer_id: 21,
+        first_name: "Nimal",
+        last_name: "Fernando",
+        phone_number: "0779876543",
+        status: "Active",
+      },
+    ];
     const user = userEvent.setup({ delay: null });
     wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
 
@@ -182,20 +191,36 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
     await user.click(input);
     await user.type(input, "Nimal");
 
+    expect(await screen.findByText("Nimal Fernando")).toBeInTheDocument();
+    expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
+    expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
+  });
+
+  it("when a typed name finds no customer, shows the phone-contact hint and never queries phone contacts", async () => {
+    const user = userEvent.setup({ delay: null });
+    wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
+
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "UnknownName");
+
     expect(
-      await screen.findByText("Customers are found by phone number only. Type their phone number."),
+      await screen.findByText("No customer found. To check phone contacts, type the phone number."),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /as new/i })).not.toBeInTheDocument();
     expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
   });
 
-  it("shows contact matches when empty, confirms before calling /use, and prefills CustomerFormDialog", async () => {
+  it("shows contact matches only once 9+ digits are typed, confirms before calling /use, and prefills CustomerFormDialog", async () => {
     const user = userEvent.setup({ delay: null });
     wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
 
     const input = screen.getByRole("combobox");
     await user.click(input);
     await user.type(input, "0771");
+    expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
+    expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
+
+    await user.type(input, "23456");
 
     expect(await screen.findByText("From phone contacts")).toBeInTheDocument();
     expect(screen.getByText("Nimal Perera")).toBeInTheDocument();
@@ -213,12 +238,15 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
 
     // Confirming calls /use and opens CustomerFormDialog prefilled
     await user.click(input);
-    await user.type(input, "0771");
+    await user.type(input, "077123456");
     fireEvent.click(await screen.findByText("Nimal Perera"));
     fireEvent.click(await screen.findByRole("button", { name: "Use contact" }));
 
     await waitFor(() => {
-      expect(state.useContactMutateAsync).toHaveBeenCalledWith(9);
+      expect(state.useContactMutateAsync).toHaveBeenCalledWith({
+        contactId: 9,
+        phone: "0771234567",
+      });
     });
     expect(await screen.findByDisplayValue("0771234567")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Nimal")).toBeInTheDocument();

@@ -215,7 +215,7 @@ describe("IncomingCallToast (D2)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add as customer" }));
 
     await waitFor(() => {
-      expect(state.usePhoneContact).toHaveBeenCalledWith(88);
+      expect(state.usePhoneContact).toHaveBeenCalledWith(88, "94775554444");
     });
     const dialog = await screen.findByTestId("mock-customer-form-dialog");
     expect(dialog).toHaveTextContent("Hardware");

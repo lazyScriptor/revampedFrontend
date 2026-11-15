@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/features/invoices/hooks/usePosSearch";
-import { isPhoneSearch } from "@/lib/phoneSearch";
+import { isContactPhoneSearch } from "@/lib/phoneSearch";
 import {
   reviewContactInvoice,
   searchPhoneContacts,
@@ -14,8 +14,8 @@ export function usePhoneContactSearch(searchTerm: string, enabled = true) {
   return useQuery({
     queryKey: ["phone-contacts", "search", trimmed],
     queryFn: () => searchPhoneContacts(trimmed, 10),
-    // Contacts are found by phone number only, like customers.
-    enabled: enabled && isPhoneSearch(trimmed),
+    // Synced phone contacts are searched by phone number only (9+ digits).
+    enabled: enabled && isContactPhoneSearch(trimmed),
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   });
@@ -23,7 +23,8 @@ export function usePhoneContactSearch(searchTerm: string, enabled = true) {
 
 export function useUsePhoneContact() {
   return useMutation({
-    mutationFn: (contactId: number) => usePhoneContact(contactId),
+    mutationFn: ({ contactId, phone }: { contactId: number; phone: string }) =>
+      usePhoneContact(contactId, phone),
   });
 }
 

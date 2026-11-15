@@ -17,11 +17,15 @@ import {
   Chip,
   Avatar,
   Stack,
+  Checkbox,
+  FormControlLabel,
+  Divider,
 } from '@mui/material';
 import DrawIcon from '@mui/icons-material/Draw';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import SmartphoneIcon from '@mui/icons-material/Smartphone';
 import { useNavigate } from '@tanstack/react-router';
+import type { DeviceCapabilityMap } from '@geargrid/contracts';
 import {
   getOrCreateDeviceId,
   suggestDeviceLabel,
@@ -36,8 +40,23 @@ import {
   registerDeviceWithServer,
 } from '@/features/phone-assistant/lib/nativeBridge';
 import { useDeviceManifest } from '../lib/deviceShell';
-import { useClaimPairingCode, useDeviceStatus } from '../hooks/useSignatures';
+import {
+  useClaimPairingCode,
+  useDeviceStatus,
+  usePairingCodePreview,
+} from '../hooks/useSignatures';
 import { Trans, useTranslation } from "react-i18next";
+
+const SHOP_CAPABILITIES = [
+  'signatures',
+  'photos',
+  'caller_brief',
+  'bill_view',
+  'push',
+  'click_to_call',
+] as const;
+
+const PHONE_SEND_CAPABILITIES = ['contact_sync', 'call_logging'] as const;
 
 export function PairDevicePage() {
   const { t } = useTranslation();
@@ -70,6 +89,21 @@ export function PairDevicePage() {
     [code],
   );
 
+  const previewQuery = usePairingCodePreview(
+    normalizedCode.length === 7 ? normalizedCode : null,
+  );
+  const [consentedCaps, setConsentedCaps] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const req = previewQuery.data?.requested_capabilities;
+    if (!req) return;
+    const initial: Record<string, boolean> = {};
+    for (const [key, val] of Object.entries(req)) {
+      initial[key] = val !== false;
+    }
+    setConsentedCaps(initial);
+  }, [previewQuery.data?.code, previewQuery.data?.requested_capabilities]);
+
   const canSubmit = normalizedCode.length === 7 && !claim.isPending;
 
   const handleSubmit = async (ev: React.FormEvent) => {
@@ -77,10 +111,19 @@ export function PairDevicePage() {
     setSubmitError(null);
     if (!canSubmit) return;
     try {
+      const setup = isNativePhoneApp()
+        ? await nativeBridge.getSetupStatus().catch(() => null)
+        : null;
       const paired = await claim.mutateAsync({
         code: normalizedCode,
         device_id: deviceId,
         device_label: label || undefined,
+        ...(setup?.deviceModel ? { device_model: setup.deviceModel } : {}),
+        ...(setup?.osVersion ? { os_version: setup.osVersion } : {}),
+        ...(setup?.appVersion ? { app_version: setup.appVersion } : {}),
+        ...(previewQuery.data
+          ? { consented_capabilities: consentedCaps as DeviceCapabilityMap }
+          : {}),
       });
       if (label) persistDeviceLabel(label);
       if (paired?.device_token) setDeviceToken(paired.device_token);
@@ -92,7 +135,12 @@ export function PairDevicePage() {
           tenantDb: paired.tenant_db_name,
           apiBaseUrl: import.meta.env.VITE_API_URL,
         });
-        await registerDeviceWithServer({ app_version: '1.0.0' }).catch(() => null);
+        await registerDeviceWithServer({
+          app_version: setup?.appVersion || '1.0.0',
+          ...(setup?.deviceModel ? { device_model: setup.deviceModel } : {}),
+          ...(setup?.osVersion ? { os_version: setup.osVersion } : {}),
+          ...(setup?.reportedState ? { reported_state: setup.reportedState } : {}),
+        }).catch(() => null);
       }
       navigate({ to: '/device', replace: true });
     } catch (err: any) {
@@ -112,7 +160,8 @@ export function PairDevicePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: '#f8fafc',
+        bgcolor: 'background.default',
+        color: 'text.primary',
         display: 'flex',
         flexDirection: 'column',
         px: 2,
@@ -120,14 +169,14 @@ export function PairDevicePage() {
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-        <Avatar sx={{ bgcolor: '#1d4ed8', width: 44, height: 44 }}>
+        <Avatar sx={{ bgcolor: '#1d4ed8', color: '#fff', width: 44, height: 44 }}>
           <DrawIcon />
         </Avatar>
         <Box>
-          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
+          <Typography sx={{ fontSize: 18, fontWeight: 700, color: 'text.primary', lineHeight: 1.1 }}>
             {t("signatures.PairDevicePage.pairThisPhone")}
           </Typography>
-          <Typography sx={{ fontSize: 12, color: '#64748b' }}>
+          <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
             {t("signatures.PairDevicePage.oneTimeSetupToSign")}
           </Typography>
         </Box>
@@ -138,11 +187,12 @@ export function PairDevicePage() {
         sx={{
           p: 2.5,
           borderRadius: 2,
-          border: '1px solid #e2e8f0',
-          bgcolor: 'white',
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
         }}
       >
-        <Typography sx={{ fontSize: 13, color: '#334155', mb: 2 }}>
+        <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 2 }}>
           <Trans i18nKey="signatures.PairDevicePage.openPosInstruction" values={{ path: t("signatures.PairDevicePage.profileSignaturePairAPhone") }} components={{ strong: <strong /> }} />
         </Typography>
 
@@ -186,6 +236,95 @@ export function PairDevicePage() {
             slotProps={{ htmlInput: { maxLength: 100 } }}
           />
 
+          {previewQuery.data && (
+            <Paper
+              elevation={0}
+              sx={{
+                mt: 2,
+                p: 1.75,
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.default',
+              }}
+            >
+              <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: 'text.primary' }}>
+                {previewQuery.data.shop_name || 'GearGrid'}
+                {previewQuery.data.staff_name ? ` · ${previewQuery.data.staff_name}` : ''}
+              </Typography>
+              <Divider sx={{ my: 1 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', mb: 0.5 }}>
+                {t("phoneAssistant.pairingPreview.shopWillBeAbleTo")}
+              </Typography>
+              <Stack spacing={0.25} sx={{ mb: 1 }}>
+                {SHOP_CAPABILITIES.filter(
+                  (k) => previewQuery.data?.requested_capabilities?.[k] !== false,
+                ).map((k) => (
+                  <FormControlLabel
+                    key={k}
+                    control={
+                      <Checkbox
+                        size="small"
+                        color="warning"
+                        checked={consentedCaps[k] !== false}
+                        onChange={(_e, checked) =>
+                          setConsentedCaps((prev) => ({ ...prev, [k]: checked }))
+                        }
+                      />
+                    }
+                    label={
+                      <Typography sx={{ fontSize: 12.5, color: 'text.primary' }}>
+                        {t(`phoneAssistant.capabilities.${k}`)}
+                      </Typography>
+                    }
+                    sx={{ m: 0 }}
+                  />
+                ))}
+              </Stack>
+
+              {PHONE_SEND_CAPABILITIES.some(
+                (k) => previewQuery.data?.requested_capabilities?.[k] !== false,
+              ) && (
+                <>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', mb: 0.5 }}>
+                    {t("phoneAssistant.pairingPreview.phoneWillSend")}
+                  </Typography>
+                  <Stack spacing={0.25}>
+                    {PHONE_SEND_CAPABILITIES.filter(
+                      (k) => previewQuery.data?.requested_capabilities?.[k] !== false,
+                    ).map((k) => (
+                      <FormControlLabel
+                        key={k}
+                        control={
+                          <Checkbox
+                            size="small"
+                            color="warning"
+                            checked={consentedCaps[k] !== false}
+                            onChange={(_e, checked) =>
+                              setConsentedCaps((prev) => ({ ...prev, [k]: checked }))
+                            }
+                          />
+                        }
+                        label={
+                          <Typography sx={{ fontSize: 12.5, color: 'text.primary' }}>
+                            {t(`phoneAssistant.capabilities.${k}`)}
+                          </Typography>
+                        }
+                        sx={{ m: 0 }}
+                      />
+                    ))}
+                  </Stack>
+                </>
+              )}
+
+              {previewQuery.data.will_require_approval && (
+                <Alert severity="info" sx={{ mt: 1.25, py: 0.5, fontSize: 12 }}>
+                  {t("phoneAssistant.pairingPreview.approvalRequiredNotice")}
+                </Alert>
+              )}
+            </Paper>
+          )}
+
           {submitError && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {submitError}
@@ -217,17 +356,20 @@ export function PairDevicePage() {
           mt: 2,
           p: 2,
           borderRadius: 2,
-          bgcolor: '#eef2ff',
-          border: '1px solid #c7d2fe',
+          bgcolor: (theme) =>
+            theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.14)' : '#eef2ff',
+          border: '1px solid',
+          borderColor: (theme) =>
+            theme.palette.mode === 'dark' ? 'rgba(129, 140, 248, 0.35)' : '#c7d2fe',
         }}
       >
         <Stack direction="row" alignItems="flex-start" spacing={1.5}>
-          <SmartphoneIcon sx={{ color: '#4338ca', fontSize: 20, mt: 0.2 }} />
+          <SmartphoneIcon sx={{ color: 'primary.main', fontSize: 20, mt: 0.2 }} />
           <Box>
-            <Typography sx={{ fontSize: 13, color: '#1e293b', fontWeight: 600, mb: 0.5 }}>
+            <Typography sx={{ fontSize: 13, color: 'text.primary', fontWeight: 600, mb: 0.5 }}>
               {t("signatures.PairDevicePage.keepThisAppOnYour")}
             </Typography>
-            <Typography sx={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
+            <Typography sx={{ fontSize: 12, color: 'text.secondary', lineHeight: 1.5 }}>
               {t("signatures.PairDevicePage.oncePairedYouLlTap")}
             </Typography>
           </Box>
@@ -239,7 +381,7 @@ export function PairDevicePage() {
           icon={<CheckCircleOutlinedIcon />}
           label={t("signatures.PairDevicePage.phoneReadyToPair")}
           size="small"
-          sx={{ alignSelf: 'center', mt: 2, bgcolor: '#f1f5f9', color: '#334155' }}
+          sx={{ alignSelf: 'center', mt: 2, bgcolor: 'action.hover', color: 'text.primary' }}
         />
       )}
     </Box>
@@ -254,7 +396,7 @@ function FullBleedCentered({ children }: { children: React.ReactNode }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#f8fafc',
+        bgcolor: 'background.default',
       }}
     >
       {children}

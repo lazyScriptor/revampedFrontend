@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Box,
@@ -16,7 +16,9 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import DrawIcon from "@mui/icons-material/Draw";
+import PhoneAndroidOutlinedIcon from "@mui/icons-material/PhoneAndroidOutlined";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useMyProfile } from "@/features/profile/hooks/useMe";
 import { AvatarBlock } from "@/features/profile/components/AvatarBlock";
 import { ProfileForm } from "@/features/profile/components/ProfileForm";
@@ -30,35 +32,56 @@ import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import { usePlanChecker } from "@/features/plan/usePlan";
 import { MyPushPreferences } from "@/features/phone-assistant/components/MyPushPreferences";
 import { PushSettingsPanel } from "@/features/phone-assistant/components/PushSettingsPanel";
+import { DeviceConsolePage } from "@/features/phone-assistant/pages/DeviceConsolePage";
 
-const buildTabs = (t: (k: string) => string) => [
-  { key: "profile",       label: t("profile.tabs.profile"),       icon: <PersonIcon fontSize="small" /> },
-  { key: "security",      label: t("profile.tabs.security"),      icon: <LockResetIcon fontSize="small" /> },
-  { key: "signature",     label: t("profile.tabs.signature"),       icon: <DrawIcon fontSize="small" /> },
-  { key: "preferences",   label: t("profile.tabs.preferences"),   icon: <TuneIcon fontSize="small" /> },
-  { key: "notifications", label: t("profile.tabs.notifications"), icon: <NotificationsActiveIcon fontSize="small" /> },
-  { key: "activity",      label: t("profile.tabs.activity"),      icon: <TimelineIcon fontSize="small" /> },
-  { key: "access",        label: t("profile.tabs.access"),        icon: <VerifiedUserIcon fontSize="small" /> },
-] as const;
+type TabKey =
+  | "profile"
+  | "security"
+  | "signature"
+  | "phones"
+  | "preferences"
+  | "notifications"
+  | "activity"
+  | "access";
 
-type TabKey = "profile" | "security" | "signature" | "preferences" | "notifications" | "activity" | "access";
+const buildTabs = (t: (k: string) => string, showPhonesConsole: boolean) => {
+  const tabs: Array<{ key: TabKey; label: string; icon: ReactElement }> = [
+    { key: "profile",       label: t("profile.tabs.profile"),       icon: <PersonIcon fontSize="small" /> },
+    { key: "security",      label: t("profile.tabs.security"),      icon: <LockResetIcon fontSize="small" /> },
+    { key: "signature",     label: t("profile.tabs.signature"),     icon: <DrawIcon fontSize="small" /> },
+    ...(showPhonesConsole
+      ? [{ key: "phones" as const, label: t("profile.tabs.phones"), icon: <PhoneAndroidOutlinedIcon fontSize="small" /> }]
+      : []),
+    { key: "preferences",   label: t("profile.tabs.preferences"),   icon: <TuneIcon fontSize="small" /> },
+    { key: "notifications", label: t("profile.tabs.notifications"), icon: <NotificationsActiveIcon fontSize="small" /> },
+    { key: "activity",      label: t("profile.tabs.activity"),      icon: <TimelineIcon fontSize="small" /> },
+    { key: "access",        label: t("profile.tabs.access"),        icon: <VerifiedUserIcon fontSize="small" /> },
+  ];
+  return tabs;
+};
 
 export default function ProfileRoute() {
   const { t } = useTranslation();
-  const TABS = buildTabs(t);
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: TabKey };
   const me = useMyProfile();
   const canPlan = usePlanChecker();
+  const hasPermission = useAuthStore((s) => s.hasPermission);
+
+  const hasPhoneAssistant = canPlan("phone_assistant");
+  const isAdmin = Boolean(
+    me.data && (me.data.Roles ?? []).some((r) => Number(r.hierarchy_level) >= 100),
+  );
+  const canManagePhones = hasPhoneAssistant && (isAdmin || hasPermission("devices:manage"));
+  const TABS = buildTabs(t, canManagePhones);
 
   const activeKey: TabKey = useMemo(() => {
     const requested = search.tab;
     if (requested && TABS.some((tb) => tb.key === requested)) return requested;
     return "profile";
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search.tab]);
+  }, [search.tab, TABS]);
 
-  const activeIdx = TABS.findIndex((tb) => tb.key === activeKey);
+  const activeIdx = Math.max(0, TABS.findIndex((tb) => tb.key === activeKey));
 
   const handleTabChange = (_: any, idx: number) => {
     navigate({
@@ -84,10 +107,6 @@ export default function ProfileRoute() {
   }
 
   const profile = me.data;
-  const hasPhoneAssistant = canPlan("phone_assistant");
-  const isAdmin = (profile.Roles ?? []).some(
-    (r) => Number(r.hierarchy_level) >= 100,
-  );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 4 }}>
@@ -151,6 +170,9 @@ export default function ProfileRoute() {
       )}
       {activeKey === "security"      && <SecuritySection      profile={profile} />}
       {activeKey === "signature"     && <SignatureSection     profile={profile} />}
+      {activeKey === "phones"        && canManagePhones && (
+        <DeviceConsolePage canManagePolicy={isAdmin} />
+      )}
       {activeKey === "preferences"   && <PreferencesSection   profile={profile} />}
       {activeKey === "notifications" && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>

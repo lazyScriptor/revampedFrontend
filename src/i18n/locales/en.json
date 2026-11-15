@@ -645,7 +645,7 @@
         "linkedToParent": "Linked to a Parent",
         "idsInVault": "IDs Currently in Vault",
         "totalAdvanceHeld": "Total Advance Held",
-        "searchPlaceholder": "Search by phone number…",
+        "searchPlaceholder": "Search by name, NIC, phone or customer ID…",
         "individual": "Individual",
         "business": "Business",
         "blacklisted": "Blacklisted",
@@ -717,7 +717,7 @@
             "linkToAParentCustomer": "Link to a parent customer",
             "useWhenAChildRents": "Use when a child rents on behalf of a parent, or a worker on behalf of their company. Both keep their own rental history.",
             "parentCustomer": "Parent customer",
-            "searchByNamePhoneOr": "Search by phone number…",
+            "searchByNamePhoneOr": "Search by name, NIC, phone or customer ID…",
             "requiredForCollateralAndRental": "Required for collateral and rental history",
             "nicPassport": "NIC / Passport",
             "optionalUsefulForDeliveries": "Optional — useful for deliveries",
@@ -779,7 +779,7 @@
         "selectAnInvoice": "Select an invoice",
         "invoiceSearch": "Invoice Search",
         "findOrder": "Find an order",
-        "findOrderPlaceholder": "Search INV # or phone number…",
+        "findOrderPlaceholder": "Search INV #, name, NIC or phone…",
         "invoiceLine": "Line item",
         "lineItem_one": "{{count}} line item",
         "lineItem_other": "{{count}} line items",
@@ -847,7 +847,7 @@
             "exactCutContinuousRoll": "Exact-cut continuous roll",
             "browserPrintFallback": "Browser Print Fallback",
             "dialogPrints": "Dialog prints",
-            "searchByBillCustomerName": "Search by bill #, phone number or staff…",
+            "searchByBillCustomerName": "Search by Bill #, Customer Name, Phone, or Staff…",
             "documentType": "Document Type",
             "allDocuments": "All Documents",
             "printMethod": "Print Method",
@@ -963,7 +963,7 @@
         "PosCustomerPanel": {
             "linkedParent": "This customer is linked to a parent. Choose who this rental is for.",
             "linkedChildWorker": "Linked child / worker",
-            "scanNicPhoneOrName": "Search by phone number…",
+            "scanNicPhoneOrName": "Search by name, NIC, phone or customer ID…",
             "blocked": "Blocked",
             "removeSelection": "Remove selection",
             "trustScore": "Trust Score",
@@ -976,14 +976,14 @@
             "clickForDetails": "Click for details",
             "noPreviousInvoicesForThis": "No previous invoices for this customer.",
             "noClientSelected": "No Client Selected",
-            "scanNicPhoneOrSearch": "Search by phone number above to link a customer to this order.",
+            "scanNicPhoneOrSearch": "Scan NIC, phone, customer ID, or search by client name above to link to this order.",
             "onBehalfOf": "On behalf of {{label}}",
             "dueRs": "Due: Rs. {{bal}}",
             "linkedBoth": "This customer is linked to a parent and a child / worker. Choose who this rental is for.",
             "linkedWorker": "This customer is linked to a child / worker. Choose who this rental is for.",
             "typeToSearch": "Type to search…",
             "noClientsFound": "No clients found.",
-            "phoneOnlyHint": "Customers are found by phone number only. Type their phone number.",
+            "noClientsFoundCheckContacts": "No customer found. To check phone contacts, type the phone number.",
             "noNic": "No NIC",
             "more": " +{{moreEquipCount}} more",
             "asset": "Asset",
@@ -1460,7 +1460,7 @@
             "collectionChannels": "Collection Channels"
         },
         "AccountingFilterBar": {
-            "search": "Search INV # or phone number…",
+            "search": "Search INV #, name, NIC or phone…",
             "allStatuses": "All Statuses",
             "allCategories": "All Categories",
             "allMethods": "All Methods",
@@ -1603,7 +1603,7 @@
             "balance": "Balance",
             "lastRental": "Last Rental",
             "perCustomerRevenuePaidBalance": "Per-customer revenue, paid, balance, and overdue figures for the selected period",
-            "searchNamePhoneNic": "Search by phone number…",
+            "searchNamePhoneNic": "Search by name, NIC, phone or customer ID…",
             "outstandingBalance": "Outstanding Balance",
             "overdueAmount": "Overdue Amount"
         },
@@ -2314,7 +2314,8 @@
             "notifications": "Notifications",
             "activity": "Activity",
             "access": "Access",
-            "signature": "Signature"
+            "signature": "Signature",
+            "phones": "Connected Phones"
         },
         "avatar": "Avatar",
         "uploadAvatar": "Upload avatar",
@@ -2685,6 +2686,7 @@
     },
     "signatures": {
         "DeviceHomePage": {
+            "shopInactiveWarning": "Shop subscription is currently inactive. Your phone stays paired and will resume once the shop account is active.",
             "readyToSign": "Ready to sign",
             "thisPhoneWillOpenAutomatically": "This phone will open automatically the next time a bill needs a signature.",
             "waitingForSignatureRequests": "Waiting for signature requests…",
@@ -3547,7 +3549,9 @@
             "browser": "Browser",
             "contactsSyncedCount": "{{count}} contacts synced",
             "contactSyncOff": "Contact sync off",
-            "contactsSyncedAt": "synced {{value}}"
+            "contactsSyncedAt": "synced {{value}}",
+            "requestedAccessLabel": "Capabilities requested for this phone",
+            "regenerateCode": "Regenerate code with selected access"
         },
         "checklist": {
             "title": "Phone assistant setup",
@@ -3582,7 +3586,8 @@
             "vendorIntentFallback": "Open phone Settings → Apps → GearGrid Phone → Battery / Permissions to allow background autostart and unrestricted battery.",
             "lastContactSync": "Last contact sync: {{value}}",
             "lastBriefSync": "Last caller brief sync: {{value}}",
-            "never": "Never"
+            "never": "Never",
+            "capabilitiesTitle": "Allowed capabilities on this phone"
         },
         "consent": {
             "title": "Enable contact sync?",
@@ -3622,6 +3627,14 @@
             "customer_blacklisted": {
                 "label": "Customer blacklisted",
                 "description": "Alert when a customer is flagged as blacklisted."
+            },
+            "follow_up_due": {
+                "label": "Follow-up reminder due",
+                "description": "Alert when a scheduled customer call follow-up is due."
+            },
+            "daily_summary": {
+                "label": "Daily shop summary",
+                "description": "End-of-day push digest with selected shop totals."
             }
         },
         "pushSettings": {
@@ -3645,6 +3658,23 @@
             "includeAmountsHint": "When off, lock-screen push messages hide Rs. totals for privacy.",
             "notifyActorTitle": "Also notify the person who did the action",
             "notifyActorHint": "When off, the staff member who recorded the bill or payment does not get alerted for their own action.",
+            "deliveryMode": "Delivery",
+            "deliveryInstant": "Instant",
+            "deliveryDigest": "Batched digest",
+            "hideCustomerName": "Hide customer name in notification",
+            "digestIntervalLabel": "Digest batch interval",
+            "digestIntervalHint": "Group digest-mode events into one notification every N minutes.",
+            "digestMinutesOption": "Every {{minutes}} minutes",
+            "dailySummaryTitle": "Daily shop summary",
+            "dailySummaryHint": "Send one end-of-day push digest with selected business totals.",
+            "dailySummaryTime": "Send time",
+            "dailySummarySections": {
+                "bills": "Bills",
+                "payments": "Payments",
+                "returns": "Returns",
+                "due_tomorrow": "Due tomorrow",
+                "overdue": "Overdue"
+            },
             "saveButton": "Save push settings",
             "savingButton": "Saving…",
             "savedBanner": "Shop push notification settings saved.",
@@ -3664,13 +3694,18 @@
             "saveThreshold": "Save threshold",
             "pairedPhonesHeading": "Paired phones receiving push alerts",
             "noPairedNativePhone": "No Android GearGrid Phone app is paired to your account yet. Pair a phone in Linked Phones below to receive push alerts.",
-            "manageOnPhone": "Manage notification alerts"
+            "manageOnPhone": "Manage notification alerts",
+            "personalQuietHoursTitle": "Personal quiet hours",
+            "personalQuietHoursHint": "Deliver alerts to your paired phones silently during these hours.",
+            "saveQuietHours": "Save quiet hours"
         },
         "deviceNotifications": {
             "title": "Mobile notification alerts",
             "subtitle": "Choose which shop events appear on this phone.",
             "backToDevice": "Back to phone home",
-            "unpairedError": "This phone is not paired yet. Please pair it first."
+            "unpairedError": "This phone is not paired yet. Please pair it first.",
+            "muteThisPhone": "Mute notifications on this phone",
+            "muteThisPhoneHint": "Pause all shop push notifications on this handset until unmuted."
         },
         "deviceInvoice": {
             "title": "Invoice summary",
@@ -3701,6 +3736,237 @@
             "dismiss": "Dismiss",
             "durationSeconds": "{{seconds}}s",
             "loadingCaller": "Identifying caller…"
+        },
+        "deviceStatus": {
+            "PENDING": "Pending approval",
+            "ACTIVE": "Active",
+            "SUSPENDED": "Suspended",
+            "REVOKED": "Revoked"
+        },
+        "capabilities": {
+            "signatures": "Digital signatures",
+            "photos": "Equipment photos",
+            "caller_brief": "Caller briefs",
+            "bill_view": "Bill summaries",
+            "push": "Push notifications",
+            "contact_sync": "Contact sync",
+            "call_logging": "Call logging",
+            "click_to_call": "Click to call"
+        },
+        "capabilityReasons": {
+            "plan": "Plan disabled",
+            "shop_policy": "Disabled by shop",
+            "not_granted": "Disabled on phone",
+            "role": "Role restricted",
+            "phone_switch": "Off on phone",
+            "os_permission": "OS permission off",
+            "device_pending": "Awaiting approval",
+            "device_suspended": "Suspended",
+            "device_revoked": "Revoked"
+        },
+        "healthWarnings": {
+            "permission_revoked": "Permission missing",
+            "battery_optimized": "Battery restricted",
+            "sync_stale": "Sync stale",
+            "push_missing": "Push token missing",
+            "outdated_app": "Update app"
+        },
+        "deviceConsole": {
+            "title": "Connected phones",
+            "subtitle": "Approve newly paired phones, control device capabilities, and suspend or wipe phones remotely.",
+            "pendingBannerTitle": "{{count}} phone(s) awaiting administrator approval",
+            "approve": "Approve",
+            "reject": "Reject",
+            "suspend": "Suspend",
+            "resume": "Resume",
+            "wipe": "Wipe cache",
+            "testPush": "Test push",
+            "edit": "Edit",
+            "audit": "Audit log",
+            "revoke": "Revoke",
+            "filters": {
+                "all": "All"
+            },
+            "statusUpdated": "Phone status updated to {{status}}.",
+            "actionFailed": "Action failed. Please try again.",
+            "confirmWipe": "Wipe cached customer briefs on {{name}}? The phone remains paired.",
+            "wipePushed": "Remote cache wipe push sent to phone.",
+            "wipeQueuedOffline": "Cache wipe recorded. The phone will wipe when it next connects.",
+            "testPushSent": "Test push sent to phone.",
+            "testPushNotSent": "Push could not be sent ({{reason}}).",
+            "deviceUpdated": "Device settings updated.",
+            "policySaved": "Shop device trust policy saved.",
+            "policyTitle": "Shop device trust & security policy",
+            "policySubtitle": "Control default approval rules, offline auto-wipe window, inactivity suspension, and shop-wide phone features.",
+            "savePolicy": "Save policy",
+            "approvalModeLabel": "New phone approval rule",
+            "approvalModes": {
+                "admin_approves_all": "Admin approves every new phone",
+                "auto_approve_admin_phones": "Auto-approve admin phones (staff wait)",
+                "auto_approve_all": "Auto-approve all paired phones"
+            },
+            "offlineWipeDaysLabel": "Offline wipe timeout (days)",
+            "autoSuspendDaysLabel": "Auto-suspend inactive (days)",
+            "autoSuspendHint": "0 = never auto-suspend",
+            "shopCapabilitiesLabel": "Shop-wide allowed capabilities",
+            "loadFailed": "Could not load paired shop phones.",
+            "empty": "No phones match this filter.",
+            "countsLine": "{{contacts}} contacts · {{calls}} calls logged",
+            "confirmRevoke": "Revoke {{name}}? All cached data on the phone will be permanently wiped and it must re-pair.",
+            "editDialogTitle": "Edit phone access",
+            "deviceLabelField": "Phone label",
+            "deviceCapabilitiesField": "Allowed capabilities for this phone",
+            "auditDialogTitle": "Audit history — {{name}}",
+            "auditLoadFailed": "Could not load audit history.",
+            "auditEmpty": "No audit events recorded for this phone yet.",
+            "briefPolicyTitle": "Caller brief & overlay policy",
+            "fallbackProfileLabel": "Default caller brief profile",
+            "cacheScopeLabel": "Offline brief sync scope",
+            "cacheScopes": {
+                "all": "All customers",
+                "with_dues_or_active": "Only with dues or active rentals",
+                "active_months_6": "Active in last 6 months"
+            },
+            "overlayPositionLabel": "Overlay card position",
+            "overlayPositions": {
+                "top": "Top of screen",
+                "bottom": "Bottom of screen"
+            },
+            "overlayDismissLabel": "Auto-dismiss after (seconds)",
+            "overlayShowForLabel": "Show overlay for",
+            "overlayShowFor": {
+                "incoming": "Incoming calls only",
+                "incoming_and_outgoing": "Incoming & outgoing calls"
+            },
+            "unknownCallerLabel": "Unknown callers",
+            "unknownCallers": {
+                "show_not_in_geargrid": "Show \"Not in GearGrid\" card",
+                "show_nothing": "Show nothing"
+            },
+            "sharedNumberLabel": "Shared phone numbers",
+            "sharedNumbers": {
+                "list_all": "List all matching customers",
+                "first_only": "Show primary match only"
+            },
+            "briefProfileChip": "Brief: {{profile}}",
+            "mutedBadge": "Muted",
+            "briefProfileField": "Caller brief profile",
+            "briefProfileDefault": "Automatic (by staff role)",
+            "muteNotificationsField": "Mute push notifications on this phone",
+            "contactSyncPolicyTitle": "Contact sync rules",
+            "allowedContactSyncModesLabel": "Allowed phone contact sync modes",
+            "contactSyncModes": {
+                "off": "Off (no contacts synced)",
+                "selected_labels": "Selected contact labels only",
+                "selected_accounts": "Selected phone accounts only",
+                "all": "All phone contacts"
+            },
+            "callLoggingPolicyTitle": "Call logging rules",
+            "allowedCallLoggingScopesLabel": "Allowed call logging scopes",
+            "callLoggingScopes": {
+                "off": "Off (no call logs)",
+                "customers_only": "Existing customers only",
+                "customers_and_contacts": "Customers & synced contacts",
+                "all": "All calls"
+            },
+            "retentionDaysLabel": "Call history retention (days)",
+            "storeUnknownNumbersLabel": "Save full numbers for unknown callers",
+            "businessHoursOnlyLabel": "Log calls during shop business hours only",
+            "businessHoursFromLabel": "Business hours start (Colombo)",
+            "businessHoursToLabel": "Business hours end (Colombo)",
+            "contactSyncModeField": "Contact sync mode",
+            "callLoggingScopeField": "Call logging scope",
+            "simFilterField": "SIM card filter",
+            "simFilterAll": "All SIMs",
+            "afterCallCardTitle": "After-call note card",
+            "afterCallEnabledLabel": "Show after-call card when call ends",
+            "afterCallDismissLabel": "After-call card auto-dismiss (seconds, 0 = manual)",
+            "afterCallTagsLabel": "Quick tags (comma-separated)"
+        },
+        "pairingPreview": {
+            "shopWillBeAbleTo": "This shop will be able to:",
+            "phoneWillSend": "This phone will send (if enabled):",
+            "approvalRequiredNotice": "An administrator must approve this phone after pairing before customer data syncs."
+        },
+        "deviceHome": {
+            "pendingApprovalBanner": "Waiting for an administrator to approve this phone. Customer briefs and push alerts will start right after approval.",
+            "pendingTitle": "Waiting for approval",
+            "suspendedBanner": "This phone has been suspended by an administrator and cached customer records were cleared.",
+            "suspendedTitle": "Phone suspended"
+        },
+        "devicePrivacy": {
+            "openPrivacy": "Privacy & data sharing",
+            "title": "Privacy & data sharing",
+            "subtitle": "See exactly what this phone shares with GearGrid and control your preferences.",
+            "thisPhoneSendsTitle": "This phone sends",
+            "contactsSentSummary": "Phone contacts: {{mode}}",
+            "callsSentSummary": "Call log summary: {{scope}}",
+            "contactsCountLine": "{{count}} contacts on server · Last sync: {{syncedAt}}",
+            "callsCountLine": "{{count}} calls logged this month · Kept for {{days}} days",
+            "retentionNotice": "Kept for {{days}} days",
+            "businessHoursNotice": "Recorded only during shop business hours ({{from}}–{{to}} Colombo time).",
+            "neverSynced": "Never",
+            "neverSentTitle": "Never sent from this phone",
+            "neverSentBody": "Call audio, SMS, WhatsApp messages, photos from your gallery, GPS location, other apps, and contact notes, emails, addresses, or birthdays.",
+            "thisPhoneReceivesTitle": "This phone receives",
+            "activeBriefProfile": "Caller card style: {{profile}}",
+            "briefDetailsLine": "Amounts: {{amounts}} · Lock screen: {{lockScreen}} · Fields: {{fields}}",
+            "manageNotifications": "Notification settings",
+            "switchesTitle": "Your switches",
+            "contactSyncModeLabel": "Contact sync mode",
+            "callLoggingScopeLabel": "Call logging scope",
+            "simFilterLabel": "Which SIM logs work calls",
+            "muteNotifications": "Mute push alerts on this phone",
+            "saveSwitches": "Save privacy settings",
+            "switchesSaved": "Privacy settings saved.",
+            "disabledByPolicy": "Disabled by shop policy",
+            "consentsTitle": "Consents given at pairing",
+            "pairedAtLabel": "Paired at: {{date}}",
+            "actionsTitle": "Delete or unpair",
+            "deleteContactsBtn": "Delete my contacts from GearGrid",
+            "deleteContactsConfirmTitle": "Delete synced contacts?",
+            "deleteContactsConfirmBody": "This permanently removes contacts synced from this phone from GearGrid and turns off contact sync.",
+            "contactsDeletedBanner": "Deleted {{count}} synced contact(s).",
+            "deleteCallsBtn": "Delete my call history from GearGrid",
+            "deleteCallsConfirmTitle": "Delete call history?",
+            "deleteCallsConfirmBody": "This permanently removes call logs recorded by this phone from GearGrid.",
+            "callsDeletedBanner": "Deleted {{count}} call log record(s).",
+            "unpairBtn": "Unpair this phone",
+            "unpairConfirmTitle": "Unpair this phone?",
+            "unpairConfirmBody": "This disconnects this phone from the shop and clears local credentials."
+        },
+        "callsTab": {
+            "detailsTabLabel": "Details & Pricing",
+            "tabLabel": "Calls & Notes",
+            "loadFailed": "Could not load call history for this customer.",
+            "emptyTitle": "No logged calls yet",
+            "emptyHint": "Calls logged by paired phones linked to this customer will appear here.",
+            "addNote": "Add note",
+            "quickTagsLabel": "Quick tags",
+            "noteLabel": "Call note",
+            "followUpDateLabel": "Follow-up date",
+            "saveNote": "Save note",
+            "followUpBadge": "Follow-up {{date}}",
+            "directions": {
+                "INCOMING": "Incoming",
+                "OUTGOING": "Outgoing",
+                "MISSED": "Missed"
+            }
+        },
+        "missedCalls": {
+            "title": "Missed-call queue",
+            "loadFailed": "Could not load missed calls.",
+            "empty": "No unhandled missed calls.",
+            "callBack": "Call back",
+            "markHandled": "Mark handled"
+        },
+        "followUps": {
+            "title": "Follow-ups",
+            "loadFailed": "Could not load follow-ups.",
+            "empty": "No pending follow-ups.",
+            "dueLabel": "Due {{date}}",
+            "snoozeOneDay": "+1d Snooze",
+            "markDone": "Mark done"
         }
     }
 }

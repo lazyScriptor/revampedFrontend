@@ -645,7 +645,7 @@
         "linkedToParent": "මව් සමාගමකට සම්බන්ධ",
         "idsInVault": "ආරක්ෂිත ගබඩාවේ ඇති හැඳුනුම්පත්",
         "totalAdvanceHeld": "රඳවාගත් මුළු අත්තිකාරම",
-        "searchPlaceholder": "දුරකථන අංකයෙන් සොයන්න…",
+        "searchPlaceholder": "නම, ජා.හැ.අ., දුරකථන අංකය හෝ ID අනුව සොයන්න…",
         "individual": "පුද්ගලික",
         "business": "ව්‍යාපාරික",
         "blacklisted": "තහනම් ලැයිස්තුවේ",
@@ -717,7 +717,7 @@
             "linkToAParentCustomer": "මව් පාරිභෝගිකයෙකුට සම්බන්ධ කරන්න",
             "useWhenAChildRents": "දරුවෙකු දෙමාපියන් වෙනුවෙන් හෝ සේවකයෙකු තම සමාගම වෙනුවෙන් කුලියට ගන්නා විට මෙය භාවිතා කරන්න. දෙදෙනාටම තමන්ගේම කුලී ඉතිහාසයක් තිබේ.",
             "parentCustomer": "මව් පාරිභෝගිකයා",
-            "searchByNamePhoneOr": "දුරකථන අංකයෙන් සොයන්න…",
+            "searchByNamePhoneOr": "නම, ජා.හැ.අ., දුරකථන අංකය හෝ ID අනුව සොයන්න…",
             "requiredForCollateralAndRental": "ඇපකරය සහ කුලී ඉතිහාසය සඳහා අවශ්‍යයි",
             "nicPassport": "ජා.හැ.අ. / ගමන් බලපත්‍රය",
             "optionalUsefulForDeliveries": "විකල්ප — බෙදාහැරීම් සඳහා ප්‍රයෝජනවත් වේ",
@@ -779,7 +779,7 @@
         "selectAnInvoice": "ඉන්වොයිසයක් තෝරන්න",
         "invoiceSearch": "ඉන්වොයිස් සෙවුම",
         "findOrder": "ඇණවුමක් සොයන්න",
-        "findOrderPlaceholder": "INV # හෝ දුරකථන අංකය සොයන්න…",
+        "findOrderPlaceholder": "INV #, නම, ජා.හැ.අ. හෝ දුරකථන අංකය සොයන්න…",
         "invoiceLine": "අයිතමය",
         "lineItem_one": "අයිතම {{count}}ක්",
         "lineItem_other": "අයිතම {{count}}ක්",
@@ -847,7 +847,7 @@
             "exactCutContinuousRoll": "අපතේ නොයන සේ කපන අඛණ්ඩ රෝලය",
             "browserPrintFallback": "බ්‍රවුසර මුද්‍රණය (විකල්ප)",
             "dialogPrints": "සංවාද කොටුවෙන් කළ මුද්‍රණ",
-            "searchByBillCustomerName": "බිල්පත් අංකය, දුරකථන අංකය හෝ කාර්ය මණ්ඩලය අනුව සොයන්න…",
+            "searchByBillCustomerName": "බිල්පත් අංකය, පාරිභෝගිකයාගේ නම, දුරකථනය හෝ කාර්ය මණ්ඩලය අනුව සොයන්න…",
             "documentType": "ලේඛන වර්ගය",
             "allDocuments": "සියලු ලේඛන",
             "printMethod": "මුද්‍රණ ක්‍රමය",
@@ -963,7 +963,7 @@
         "PosCustomerPanel": {
             "linkedParent": "මෙම පාරිභෝගිකයා මව් පාරිභෝගිකයෙකුට සම්බන්ධයි. මෙම කුලිය කා වෙනුවෙන්ද යන්න තෝරන්න.",
             "linkedChildWorker": "සම්බන්ධිත දරුවා / සේවකයා",
-            "scanNicPhoneOrName": "දුරකථන අංකයෙන් සොයන්න…",
+            "scanNicPhoneOrName": "නම, ජා.හැ.අ., දුරකථන අංකය හෝ ID අනුව සොයන්න…",
             "blocked": "අවහිර කර ඇත",
             "removeSelection": "තේරීම ඉවත් කරන්න",
             "trustScore": "විශ්වාසනීයත්ව ලකුණු",
@@ -976,14 +976,14 @@
             "clickForDetails": "විස්තර සඳහා ක්ලික් කරන්න",
             "noPreviousInvoicesForThis": "මෙම පාරිභෝගිකයාට පෙර ඉන්වොයිස් නැත.",
             "noClientSelected": "පාරිභෝගිකයෙකු තෝරා නැත",
-            "scanNicPhoneOrSearch": "මෙම ඇණවුමට පාරිභෝගිකයෙකු සම්බන්ධ කිරීමට ඉහළින් දුරකථන අංකයෙන් සොයන්න.",
+            "scanNicPhoneOrSearch": "මෙම ඇණවුමට සම්බන්ධ කිරීමට ජා.හැ.අ., දුරකථන අංකය, ID හෝ පාරිභෝගිකයාගේ නමින් ඉහළින් සොයන්න.",
             "onBehalfOf": "{{label}} වෙනුවෙන්",
             "dueRs": "ගෙවිය යුතු: Rs. {{bal}}",
             "linkedBoth": "මෙම පාරිභෝගිකයා මව් පාරිභෝගිකයෙකුට සහ දරුවෙකුට / සේවකයෙකුට සම්බන්ධයි. මෙම කුලිය කා වෙනුවෙන්ද යන්න තෝරන්න.",
             "linkedWorker": "මෙම පාරිභෝගිකයා දරුවෙකුට / සේවකයෙකුට සම්බන්ධයි. මෙම කුලිය කා වෙනුවෙන්ද යන්න තෝරන්න.",
             "typeToSearch": "සෙවීමට ටයිප් කරන්න…",
             "noClientsFound": "පාරිභෝගිකයන් හමු නොවීය.",
-            "phoneOnlyHint": "පාරිභෝගිකයන් සොයන්නේ දුරකථන අංකයෙන් පමණි. ඔවුන්ගේ දුරකථන අංකය ටයිප් කරන්න.",
+            "noClientsFoundCheckContacts": "පාරිභෝගිකයෙකු හමු නොවීය. දුරකථන සම්බන්ධතා පරීක්ෂා කිරීමට දුරකථන අංකය ටයිප් කරන්න.",
             "noNic": "ජා.හැ.අ. නැත",
             "more": " +තවත් {{moreEquipCount}}",
             "asset": "උපකරණය",
@@ -1460,7 +1460,7 @@
             "collectionChannels": "මුදල් අයකර ගන්නා ක්‍රම"
         },
         "AccountingFilterBar": {
-            "search": "INV # හෝ දුරකථන අංකය සොයන්න…",
+            "search": "INV #, නම, ජා.හැ.අ. හෝ දුරකථන අංකය සොයන්න…",
             "allStatuses": "සියලු තත්ත්ව",
             "allCategories": "සියලු කාණ්ඩ",
             "allMethods": "සියලු ක්‍රම",
@@ -1603,7 +1603,7 @@
             "balance": "ශේෂය",
             "lastRental": "අවසන් කුලිය",
             "perCustomerRevenuePaidBalance": "තෝරාගත් කාලය සඳහා පාරිභෝගිකයෙකු අනුව ආදායම, ගෙවූ මුදල, ශේෂය සහ කල් ඉකුත් මුදල්",
-            "searchNamePhoneNic": "දුරකථන අංකයෙන් සොයන්න…",
+            "searchNamePhoneNic": "නම, ජා.හැ.අ., දුරකථන අංකය හෝ ID අනුව සොයන්න…",
             "outstandingBalance": "ගෙවීමට ඇති ශේෂය",
             "overdueAmount": "කල් ඉකුත් වූ මුදල"
         },
@@ -2314,7 +2314,8 @@
             "notifications": "දැනුම්දීම්",
             "activity": "ක්‍රියාකාරකම්",
             "access": "ප්‍රවේශය",
-            "signature": "අත්සන"
+            "signature": "අත්සන",
+            "phones": "සම්බන්ධිත දුරකථන"
         },
         "avatar": "පැතිකඩ ඡායාරූපය",
         "uploadAvatar": "ඡායාරූපය උඩුගත කරන්න",
@@ -2685,6 +2686,7 @@
     },
     "signatures": {
         "DeviceHomePage": {
+            "shopInactiveWarning": "සාප්පුවේ දායකත්වය දැනට අක්‍රියයි. ඔබේ දුරකථනය යුගලව පවතින අතර සාප්පු ගිණුම සක්‍රිය වූ විට නැවත ක්‍රියා කරයි.",
             "readyToSign": "අත්සන් කිරීමට සූදානම්",
             "thisPhoneWillOpenAutomatically": "ඊළඟ වතාවේ බිල්පතකට අත්සනක් අවශ්‍ය වූ විට මෙම දුරකථනය ස්වයංක්‍රීයව විවෘත වේ.",
             "waitingForSignatureRequests": "අත්සන් ඉල්ලීම් බලාපොරොත්තුවෙන්…",
@@ -3547,7 +3549,9 @@
             "browser": "බ්‍රවුසරය",
             "contactsSyncedCount": "සම්බන්ධතා {{count}}ක් සමමුහුර්තයි",
             "contactSyncOff": "සම්බන්ධතා සමමුහුර්තය අක්‍රියයි",
-            "contactsSyncedAt": "සමමුහුර්ත කළේ {{value}}"
+            "contactsSyncedAt": "සමමුහුර්ත කළේ {{value}}",
+            "requestedAccessLabel": "මෙම දුරකථනය සඳහා ඉල්ලන ප්‍රවේශයන්",
+            "regenerateCode": "තෝරාගත් ප්‍රවේශ සමඟ නව කේතයක් සාදන්න"
         },
         "checklist": {
             "title": "දුරකථන සහායක සැකසුම",
@@ -3582,7 +3586,8 @@
             "vendorIntentFallback": "දුරකථනයේ Settings → Apps → GearGrid Phone → Battery / Permissions වෙත ගොස් background autostart සහ unrestricted battery ලබා දෙන්න.",
             "lastContactSync": "අවසන් සම්බන්ධතා සමමුහුර්තය: {{value}}",
             "lastBriefSync": "අවසන් ඇමතුම් විස්තර සමමුහුර්තය: {{value}}",
-            "never": "කිසිදා නැත"
+            "never": "කිසිදා නැත",
+            "capabilitiesTitle": "මෙම දුරකථනයේ අනුමත ප්‍රවේශයන්"
         },
         "consent": {
             "title": "සම්බන්ධතා සමමුහුර්තය සක්‍රීය කරන්නද?",
@@ -3622,6 +3627,14 @@
             "customer_blacklisted": {
                 "label": "පාරිභෝගිකයා අසාදු ලේඛනගත කළා",
                 "description": "පාරිභෝගිකයෙකු අසාදු ලේඛනගත කළ බව සලකුණු කළ විට දැනුම් දෙන්න."
+            },
+            "follow_up_due": {
+                "label": "පසු විපරම් මතක් කිරීම",
+                "description": "නියමිත පාරිභෝගික ඇමතුම් පසු විපරමක් යෙදී ඇති විට දැනුම් දෙන්න."
+            },
+            "daily_summary": {
+                "label": "දෛනික වෙළඳසැල් සාරාංශය",
+                "description": "තෝරාගත් ව්‍යාපාර සාරාංශ ඇතුළත් දෛනික දැනුම්දීම."
             }
         },
         "pushSettings": {
@@ -3645,6 +3658,23 @@
             "includeAmountsHint": "අක්‍රිය විට, අගුළු තිරයේ දැනුම්දීම්වල මුදල් ප්‍රමාණයන් සඟවයි.",
             "notifyActorTitle": "ක්‍රියාව කළ පුද්ගලයාටත් දැනුම් දෙන්න",
             "notifyActorHint": "අක්‍රිය විට, බිල්පත හෝ ගෙවීම සටහන් කළ කාර්ය මණ්ඩල සාමාජිකයාට තමන්ගේම ක්‍රියාව සඳහා දැනුම්දීමක් නොලැබේ.",
+            "deliveryMode": "බෙදාහැරීම",
+            "deliveryInstant": "ක්ෂණිකව",
+            "deliveryDigest": "එකතු කළ සාරාංශය",
+            "hideCustomerName": "දැනුම්දීමේ පාරිභෝගික නම සඟවන්න",
+            "digestIntervalLabel": "සාරාංශ කාල පරතරය",
+            "digestIntervalHint": "එකතු කළ දැනුම්දීම් සෑම මිනිත්තු ගණනකට වරක් එක් පණිවිඩයක් ලෙස යවන්න.",
+            "digestMinutesOption": "සෑම මිනිත්තු {{minutes}}කට වරක්",
+            "dailySummaryTitle": "දෛනික වෙළඳසැල් සාරාංශය",
+            "dailySummaryHint": "තෝරාගත් ව්‍යාපාර සාරාංශ ඇතුළත් දෛනික දැනුම්දීමක් යවන්න.",
+            "dailySummaryTime": "යවන වේලාව",
+            "dailySummarySections": {
+                "bills": "බිල්පත්",
+                "payments": "ගෙවීම්",
+                "returns": "ආපසු භාරදීම්",
+                "due_tomorrow": "හෙට ගෙවිය යුතු",
+                "overdue": "කල් ඉකුත් වූ"
+            },
             "saveButton": "දැනුම්දීම් සැකසුම් සුරකින්න",
             "savingButton": "සුරකිමින්…",
             "savedBanner": "වෙළඳසැල් ජංගම දැනුම්දීම් සැකසුම් සුරකින ලදී.",
@@ -3664,13 +3694,18 @@
             "saveThreshold": "සීමාව සුරකින්න",
             "pairedPhonesHeading": "දැනුම්දීම් ලැබෙන සම්බන්ධිත දුරකථන",
             "noPairedNativePhone": "ඔබේ ගිණුමට තවම Android GearGrid Phone යෙදුමක් සම්බන්ධ කර නැත. පහත Linked Phones වෙතින් දුරකථනයක් සම්බන්ධ කරන්න.",
-            "manageOnPhone": "දැනුම්දීම් සැකසුම්"
+            "manageOnPhone": "දැනුම්දීම් සැකසුම්",
+            "personalQuietHoursTitle": "පුද්ගලික නිහඬ පැය",
+            "personalQuietHoursHint": "මෙම වේලාවන්හිදී ඔබේ දුරකථන වෙත දැනුම්දීම් නිහඬව ලබා දෙන්න.",
+            "saveQuietHours": "නිහඬ පැය සුරකින්න"
         },
         "deviceNotifications": {
             "title": "ජංගම දැනුම්දීම් සැකසුම්",
             "subtitle": "මෙම දුරකථනයේ පෙන්වන වෙළඳසැල් සිදුවීම් තෝරන්න.",
             "backToDevice": "දුරකථන මුල් තිරයට",
-            "unpairedError": "මෙම දුරකථනය තවම සම්බන්ධ කර නැත. කරුණාකර පළමුව සම්බන්ධ කරන්න."
+            "unpairedError": "මෙම දුරකථනය තවම සම්බන්ධ කර නැත. කරුණාකර පළමුව සම්බන්ධ කරන්න.",
+            "muteThisPhone": "මෙම දුරකථනයේ දැනුම්දීම් නිහඬ කරන්න",
+            "muteThisPhoneHint": "නැවත සක්‍රිය කරන තෙක් මෙම දුරකථනයේ සියලු දැනුම්දීම් නවතන්න."
         },
         "deviceInvoice": {
             "title": "ඉන්වොයිස් සාරාංශය",
@@ -3701,6 +3736,237 @@
             "dismiss": "ඉවත් කරන්න",
             "durationSeconds": "තත්. {{seconds}}",
             "loadingCaller": "ඇමතුම්කරු හඳුනාගනිමින්…"
+        },
+        "deviceStatus": {
+            "PENDING": "අනුමැතිය අපේක්ෂාවෙන්",
+            "ACTIVE": "සක්‍රියයි",
+            "SUSPENDED": "තාවකාලිකව අත්හිටුවා ඇත",
+            "REVOKED": "අවලංගු කළා"
+        },
+        "capabilities": {
+            "signatures": "ඩිජිටල් අත්සන්",
+            "photos": "උපකරණ ඡායාරූප",
+            "caller_brief": "ඇමතුම්කරු විස්තර",
+            "bill_view": "බිල් සාරාංශ",
+            "push": "Push දැනුම්දීම්",
+            "contact_sync": "සම්බන්ධතා සමමුහුර්තය",
+            "call_logging": "ඇමතුම් ලොග් කිරීම",
+            "click_to_call": "ක්ෂණික ඇමතුම්"
+        },
+        "capabilityReasons": {
+            "plan": "සැලසුමේ අක්‍රියයි",
+            "shop_policy": "වෙළඳසැලෙන් අක්‍රියයි",
+            "not_granted": "දුරකථනයේ අක්‍රියයි",
+            "role": "භූමිකාව සීමිතයි",
+            "phone_switch": "දුරකථනයේ අක්‍රියයි",
+            "os_permission": "පද්ධති අවසරය නැත",
+            "device_pending": "අනුමැතිය අපේක්ෂාවෙන්",
+            "device_suspended": "අත්හිටුවා ඇත",
+            "device_revoked": "අවලංගු කළා"
+        },
+        "healthWarnings": {
+            "permission_revoked": "අවසරය අඩුයි",
+            "battery_optimized": "බැටරි සීමාවක් ඇත",
+            "sync_stale": "සමමුහුර්තය පරණයි",
+            "push_missing": "Push ටෝකනය නැත",
+            "outdated_app": "යෙදුම යාවත්කාලීන කරන්න"
+        },
+        "deviceConsole": {
+            "title": "සම්බන්ධිත දුරකථන",
+            "subtitle": "නව දුරකථන අනුමත කරන්න, ප්‍රවේශ පාලනය කරන්න, සහ දුරස්ථව අත්හිටුවීම හෝ දත්ත මකා දැමීම සිදු කරන්න.",
+            "pendingBannerTitle": "පරිපාලක අනුමැතිය අපේක්ෂාවෙන් දුරකථන {{count}}ක් ඇත",
+            "approve": "අනුමත කරන්න",
+            "reject": "ප්‍රතික්ෂේප කරන්න",
+            "suspend": "අත්හිටුවන්න",
+            "resume": "නැවත සක්‍රිය කරන්න",
+            "wipe": "දත්ත මකන්න",
+            "testPush": "පරීක්ෂණ Push",
+            "edit": "සංස්කරණය",
+            "audit": "විගණන ලොගය",
+            "revoke": "අවලංගු කරන්න",
+            "filters": {
+                "all": "සියල්ල"
+            },
+            "statusUpdated": "දුරකථන තත්ත්වය {{status}} ලෙස යාවත්කාලීන විය.",
+            "actionFailed": "ක්‍රියාව අසාර්ථක විය. නැවත උත්සාහ කරන්න.",
+            "confirmWipe": "{{name}} හි ගබඩා කළ පාරිභෝගික විස්තර මකා දමන්නද? දුරකථනය සම්බන්ධව පවතී.",
+            "wipePushed": "දුරස්ථ දත්ත මකාදැමීමේ පණිවිඩය යැවීය.",
+            "wipeQueuedOffline": "දත්ත මකාදැමීම සටහන් කළා. දුරකථනය මීළඟට සම්බන්ධ වූ විට මැකී යයි.",
+            "testPushSent": "පරීක්ෂණ push පණිවිඩය යැවීය.",
+            "testPushNotSent": "Push යැවීමට නොහැකි විය ({{reason}}).",
+            "deviceUpdated": "දුරකථන සැකසුම් යාවත්කාලීන විය.",
+            "policySaved": "වෙළඳසැල් දුරකථන ආරක්ෂක ප්‍රතිපත්තිය සුරකින ලදී.",
+            "policyTitle": "වෙළඳසැල් දුරකථන ආරක්ෂක ප්‍රතිපත්තිය",
+            "policySubtitle": "නව දුරකථන අනුමත කිරීමේ නීති, නොබැඳි මකාදැමීමේ දින ගණන සහ වෙළඳසැල් විශේෂාංග පාලනය කරන්න.",
+            "savePolicy": "ප්‍රතිපත්තිය සුරකින්න",
+            "approvalModeLabel": "නව දුරකථන අනුමත කිරීමේ නීතිය",
+            "approvalModes": {
+                "admin_approves_all": "සෑම නව දුරකථනයක්ම පරිපාලක අනුමත කළ යුතුය",
+                "auto_approve_admin_phones": "පරිපාලක දුරකථන ස්වයංක්‍රියව අනුමත වේ (කාර්ය මණ්ඩලය රැඳේ)",
+                "auto_approve_all": "සියලුම දුරකථන ස්වයංක්‍රියව අනුමත කරන්න"
+            },
+            "offlineWipeDaysLabel": "නොබැඳි දත්ත මකාදැමීමේ සීමාව (දින)",
+            "autoSuspendDaysLabel": "අක්‍රිය දුරකථන ස්වයංක්‍රියව අත්හිටුවීම (දින)",
+            "autoSuspendHint": "0 = කිසිදා ස්වයංක්‍රියව අත්හිටුවන්නේ නැත",
+            "shopCapabilitiesLabel": "වෙළඳසැලේ අවසර දී ඇති ප්‍රවේශයන්",
+            "loadFailed": "සම්බන්ධිත දුරකථන පූරණය කිරීමට නොහැකි විය.",
+            "empty": "මෙම පෙරහනට ගැලපෙන දුරකථන නොමැත.",
+            "countsLine": "සම්බන්ධතා {{contacts}} · ඇමතුම් {{calls}}",
+            "confirmRevoke": "{{name}} සම්බන්ධතාව ස්ථිරවම අවලංගු කරන්නද? සියලු දත්ත මැකී නැවත යුගල කිරීමට සිදු වේ.",
+            "editDialogTitle": "දුරකථන ප්‍රවේශ සංස්කරණය",
+            "deviceLabelField": "දුරකථන නාමය",
+            "deviceCapabilitiesField": "මෙම දුරකථනයට අවසර දෙන ප්‍රවේශයන්",
+            "auditDialogTitle": "විගණන ඉතිහාසය — {{name}}",
+            "auditLoadFailed": "විගණන ඉතිහාසය ලබා ගැනීමට නොහැකි විය.",
+            "auditEmpty": "මෙම දුරකථනය සඳහා විගණන සිදුවීම් තවම නොමැත.",
+            "briefPolicyTitle": "ඇමතුම්කරු විස්තර සහ තිර ප්‍රතිපත්තිය",
+            "fallbackProfileLabel": "පෙරනිමි ඇමතුම් විස්තර පැතිකඩ",
+            "cacheScopeLabel": "නොබැඳි විස්තර සමමුහුර්ත සීමාව",
+            "cacheScopes": {
+                "all": "සියලුම පාරිභෝගිකයින්",
+                "with_dues_or_active": "හිඟ මුදල් හෝ සක්‍රීය කුලී ඇති අය පමණි",
+                "active_months_6": "පසුගිය මාස 6 තුළ සක්‍රීය අය"
+            },
+            "overlayPositionLabel": "තිර කාඩ්පත් පිහිටීම",
+            "overlayPositions": {
+                "top": "තිරයේ ඉහළ",
+                "bottom": "තිරයේ පහළ"
+            },
+            "overlayDismissLabel": "ස්වයංක්‍රියව ඉවත්වන තත්පර",
+            "overlayShowForLabel": "කාඩ්පත පෙන්වන අවස්ථා",
+            "overlayShowFor": {
+                "incoming": "ලැබෙන ඇමතුම් පමණි",
+                "incoming_and_outgoing": "ලැබෙන සහ පිටතට යන ඇමතුම්"
+            },
+            "unknownCallerLabel": "නොදන්නා ඇමතුම්කරුවන්",
+            "unknownCallers": {
+                "show_not_in_geargrid": "\"GearGrid හි නොමැත\" පෙන්වන්න",
+                "show_nothing": "කිසිවක් නොපෙන්වන්න"
+            },
+            "sharedNumberLabel": "පොදු දුරකථන අංක",
+            "sharedNumbers": {
+                "list_all": "ගැලපෙන සියලු පාරිභෝගිකයින් පෙන්වන්න",
+                "first_only": "ප්‍රධාන පාරිභෝගිකයා පමණක් පෙන්වන්න"
+            },
+            "briefProfileChip": "විස්තර: {{profile}}",
+            "mutedBadge": "නිහඬ කර ඇත",
+            "briefProfileField": "ඇමතුම් විස්තර පැතිකඩ",
+            "briefProfileDefault": "ස්වයංක්‍රිය (භූමිකාව අනුව)",
+            "muteNotificationsField": "මෙම දුරකථනයේ දැනුම්දීම් නිහඬ කරන්න",
+            "contactSyncPolicyTitle": "සම්බන්ධතා සමමුහුර්ත නීති",
+            "allowedContactSyncModesLabel": "දුරකථනයේ සම්බන්ධතා යැවීමේ අවසර ක්‍රම",
+            "contactSyncModes": {
+                "off": "අක්‍රියයි (සම්බන්ධතා නොයවයි)",
+                "selected_labels": "තෝරාගත් ලේබල් පමණි",
+                "selected_accounts": "තෝරාගත් ගිණුම් පමණි",
+                "all": "සියලුම සම්බන්ධතා"
+            },
+            "callLoggingPolicyTitle": "ඇමතුම් සටහන් නීති",
+            "allowedCallLoggingScopesLabel": "අවසර දී ඇති ඇමතුම් සටහන් සීමා",
+            "callLoggingScopes": {
+                "off": "අක්‍රියයි (සටහන් නැත)",
+                "customers_only": "පවතින පාරිභෝගිකයින් පමණි",
+                "customers_and_contacts": "පාරිභෝගිකයින් සහ සම්බන්ධතා",
+                "all": "සියලුම ඇමතුම්"
+            },
+            "retentionDaysLabel": "ඇමතුම් ඉතිහාසය තබා ගන්නා දින ගණන",
+            "storeUnknownNumbersLabel": "නොදන්නා අංක සම්පූර්ණයෙන් සුරකින්න",
+            "businessHoursOnlyLabel": "වැඩ කරන වේලාවන්හි පමණක් ඇමතුම් සටහන් කරන්න",
+            "businessHoursFromLabel": "වැඩ ආරම්භක වේලාව (කොළඹ)",
+            "businessHoursToLabel": "වැඩ අවසන් වේලාව (කොළඹ)",
+            "contactSyncModeField": "සම්බන්ධතා සමමුහුර්ත ක්‍රමය",
+            "callLoggingScopeField": "ඇමතුම් සටහන් සීමාව",
+            "simFilterField": "SIM කාඩ්පත් පෙරහන",
+            "simFilterAll": "සියලුම SIM කාඩ්පත්",
+            "afterCallCardTitle": "ඇමතුමෙන් පසු සටහන් කාඩ්පත",
+            "afterCallEnabledLabel": "ඇමතුම අවසන් වූ විට සටහන් කාඩ්පත පෙන්වන්න",
+            "afterCallDismissLabel": "පසු-ඇමතුම් කාඩ්පත ස්වයංක්‍රීයව වැසෙන කාලය (තත්පර, 0 = අතින්)",
+            "afterCallTagsLabel": "ඉක්මන් ටැග් (කොමා වලින් වෙන් කරන්න)"
+        },
+        "pairingPreview": {
+            "shopWillBeAbleTo": "මෙම වෙළඳසැලට කළ හැකි දේ:",
+            "phoneWillSend": "මෙම දුරකථනයෙන් යවන දේ (සක්‍රිය කළහොත්):",
+            "approvalRequiredNotice": "පාරිභෝගික දත්ත සමමුහුර්ත වීමට පෙර පරිපාලකවරයෙකු මෙම දුරකථනය අනුමත කළ යුතුය."
+        },
+        "deviceHome": {
+            "pendingApprovalBanner": "පරිපාලකවරයෙකු මෙම දුරකථනය අනුමත කරන තෙක් රැඳී සිටී. අනුමත කළ විගස ඇමතුම් විස්තර සහ දැනුම්දීම් ආරම්භ වේ.",
+            "pendingTitle": "අනුමැතිය අපේක්ෂාවෙන්",
+            "suspendedBanner": "පරිපාලක විසින් මෙම දුරකථනය තාවකාලිකව අත්හිටුවා ඇති අතර ගබඩා කළ පාරිභෝගික දත්ත මකා දමන ලදී.",
+            "suspendedTitle": "දුරකථනය අත්හිටුවා ඇත"
+        },
+        "devicePrivacy": {
+            "openPrivacy": "පෞද්ගලිකත්වය සහ දත්ත බෙදාගැනීම",
+            "title": "පෞද්ගලිකත්වය සහ දත්ත බෙදාගැනීම",
+            "subtitle": "මෙම දුරකථනය GearGrid වෙත යවන සහ ලබා ගන්නා දත්ත පරීක්ෂා කර පාලනය කරන්න.",
+            "thisPhoneSendsTitle": "මෙම දුරකථනය යවන දත්ත",
+            "contactsSentSummary": "දුරකථන සම්බන්ධතා: {{mode}}",
+            "callsSentSummary": "ඇමතුම් සාරාංශය: {{scope}}",
+            "contactsCountLine": "සේවාදායකයේ සම්බන්ධතා {{count}} · අවසන් සමමුහුර්තය: {{syncedAt}}",
+            "callsCountLine": "මෙම මාසයේ ඇමතුම් {{count}} · දින {{days}}ක් තබා ගනී",
+            "retentionNotice": "දින {{days}}ක් තබා ගනී",
+            "businessHoursNotice": "වැඩ කරන වේලාවන්හිදී පමණක් සටහන් වේ ({{from}}–{{to}}).",
+            "neverSynced": "කිසිදා නැත",
+            "neverSentTitle": "මෙම දුරකථනයෙන් කිසිදා නොයවන දේ",
+            "neverSentBody": "ඇමතුම් හඬපට, SMS, WhatsApp පණිවිඩ, ඡායාරූප, ස්ථාන දත්ත, වෙනත් යෙදුම්, සහ සම්බන්ධතා සටහන් හෝ ඊමේල්.",
+            "thisPhoneReceivesTitle": "මෙම දුරකථනය ලබා ගන්නා දත්ත",
+            "activeBriefProfile": "ඇමතුම්කරු විස්තර කාඩ්පත: {{profile}}",
+            "briefDetailsLine": "මුදල් පෙන්වීම: {{amounts}} · අගුළු තිරය: {{lockScreen}} · ක්ෂේත්‍ර: {{fields}}",
+            "manageNotifications": "දැනුම්දීම් සැකසුම්",
+            "switchesTitle": "ඔබගේ පාලනයන්",
+            "contactSyncModeLabel": "සම්බන්ධතා සමමුහුර්ත ක්‍රමය",
+            "callLoggingScopeLabel": "ඇමතුම් සටහන් සීමාව",
+            "simFilterLabel": "වැඩ ඇමතුම් සටහන් කරන SIM පත",
+            "muteNotifications": "මෙම දුරකථනයේ දැනුම්දීම් නිහඬ කරන්න",
+            "saveSwitches": "පෞද්ගලිකත්ව සැකසුම් සුරකින්න",
+            "switchesSaved": "පෞද්ගලිකත්ව සැකසුම් සුරකින ලදී.",
+            "disabledByPolicy": "වෙළඳසැල් ප්‍රතිපත්තියෙන් අක්‍රියයි",
+            "consentsTitle": "සම්බන්ධ කිරීමේදී දුන් අවසර",
+            "pairedAtLabel": "සම්බන්ධ කළ දිනය: {{date}}",
+            "actionsTitle": "දත්ත මැකීම හෝ විසන්ධි කිරීම",
+            "deleteContactsBtn": "GearGrid වෙතින් මගේ සම්බන්ධතා මකන්න",
+            "deleteContactsConfirmTitle": "සමමුහුර්ත කළ සම්බන්ධතා මකන්නද?",
+            "deleteContactsConfirmBody": "මෙම දුරකථනයෙන් යැවූ සියලු සම්බන්ධතා GearGrid වෙතින් ස්ථිරවම මැකී සමමුහුර්තය අක්‍රිය වේ.",
+            "contactsDeletedBanner": "සම්බන්ධතා {{count}}ක් මකා දමන ලදී.",
+            "deleteCallsBtn": "GearGrid වෙතින් මගේ ඇමතුම් ඉතිහාසය මකන්න",
+            "deleteCallsConfirmTitle": "ඇමතුම් ඉතිහාසය මකන්නද?",
+            "deleteCallsConfirmBody": "මෙම දුරකථනයෙන් සටහන් කළ ඇමතුම් ලොග් ස්ථිරවම මැකේ.",
+            "callsDeletedBanner": "ඇමතුම් සටහන් {{count}}ක් මකා දමන ලදී.",
+            "unpairBtn": "මෙම දුරකථනය විසන්ධි කරන්න",
+            "unpairConfirmTitle": "මෙම දුරකථනය විසන්ධි කරන්නද?",
+            "unpairConfirmBody": "මෙමඟින් දුරකථනය වෙළඳසැලෙන් විසන්ධි වී දත්ත මැකී යයි."
+        },
+        "callsTab": {
+            "detailsTabLabel": "විස්තර සහ මිල ගණන්",
+            "tabLabel": "ඇමතුම් සහ සටහන්",
+            "loadFailed": "මෙම පාරිභෝගිකයාගේ ඇමතුම් ඉතිහාසය පූරණය කළ නොහැක.",
+            "emptyTitle": "තවම ඇමතුම් සටහන් නොමැත",
+            "emptyHint": "සම්බන්ධිත දුරකථනවලින් සටහන් වූ ඇමතුම් මෙහි දිස්වේ.",
+            "addNote": "සටහනක් එක් කරන්න",
+            "quickTagsLabel": "ඉක්මන් ටැග්",
+            "noteLabel": "ඇමතුම් සටහන",
+            "followUpDateLabel": "පසු විපරම් දිනය",
+            "saveNote": "සටහන සුරකින්න",
+            "followUpBadge": "පසු විපරම {{date}}",
+            "directions": {
+                "INCOMING": "ලැබුණු",
+                "OUTGOING": "ගත්",
+                "MISSED": "මඟහැරුණු"
+            }
+        },
+        "missedCalls": {
+            "title": "මඟහැරුණු ඇමතුම් පෝලිම",
+            "loadFailed": "මඟහැරුණු ඇමතුම් පූරණය කළ නොහැක.",
+            "empty": "පියවර ගත යුතු මඟහැරුණු ඇමතුම් නොමැත.",
+            "callBack": "ආපසු අමතන්න",
+            "markHandled": "විසඳූ බව සලකුණු කරන්න"
+        },
+        "followUps": {
+            "title": "පසු විපරම්",
+            "loadFailed": "පසු විපරම් පූරණය කළ නොහැක.",
+            "empty": "ඉතිරි පසු විපරම් නොමැත.",
+            "dueLabel": "නියමිත දිනය {{date}}",
+            "snoozeOneDay": "+1 දිනක් කල් දමන්න",
+            "markDone": "අවසන් බව සලකුණු කරන්න"
         }
     }
 }

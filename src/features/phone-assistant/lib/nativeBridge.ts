@@ -1,6 +1,6 @@
 import axios from "axios";
 import { z } from "zod";
-import { RegisterDeviceContract, type Contract } from "@geargrid/contracts";
+import { RegisterDeviceContract, type Contract, type ReportedState } from "@geargrid/contracts";
 import {
   getDeviceId,
   getDeviceTenantDb,
@@ -17,12 +17,23 @@ export interface PhoneAssistantSetupStatus {
   callLogPermission: boolean;
   batteryOptimizationExempt: boolean;
   contactSyncEnabled: boolean;
+  contactSyncMode?: string;
+  callLoggingScope?: string;
+  simFilter?: string | null;
   contactsConsented: boolean;
   contactsSyncedAt: string | null;
   /** Why the last contact sync failed, or null. Missing on app builds older than this field. */
   contactsSyncError?: string | null;
   briefsSyncedAt: string | null;
   manufacturer: string;
+  deviceModel?: string;
+  osVersion?: string;
+  appVersion?: string;
+  deviceStatus?: "PENDING" | "ACTIVE" | "SUSPENDED" | "REVOKED";
+  offlineWipeDays?: number;
+  effectiveCapabilitiesJson?: string | null;
+  capabilityReasonsJson?: string | null;
+  reportedState?: ReportedState | null;
 }
 
 interface NativePluginShape {
@@ -45,6 +56,15 @@ interface NativePluginShape {
   setContactSyncEnabled?: (args: {
     enabled: boolean;
     consented?: boolean;
+  }) => Promise<PhoneAssistantSetupStatus>;
+  wipeLocalContacts?: () => Promise<{ wiped: boolean }>;
+  updatePrivacySelection?: (args: {
+    contactSyncMode?: string;
+    callLoggingScope?: string;
+    simFilter?: string | null;
+    selectedLabels?: string[];
+    selectedAccounts?: string[];
+    excludedContactKeys?: string[];
   }) => Promise<PhoneAssistantSetupStatus>;
 }
 
@@ -117,6 +137,10 @@ export async function registerDeviceWithServer(body: {
   app_version: string;
   push_token?: string | null;
   contact_sync_enabled?: boolean;
+  device_model?: string | null;
+  os_version?: string | null;
+  reported_state?: ReportedState | null;
+  click_to_call_enabled?: boolean;
 }) {
   if (!getDeviceId() || !getDeviceToken() || !getDeviceTenantDb()) {
     return null;
@@ -200,5 +224,30 @@ export const nativeBridge = {
     const plugin = getNativePlugin();
     if (!plugin?.setContactSyncEnabled) return null;
     return plugin.setContactSyncEnabled({ enabled, consented });
+  },
+  async wipeLocalContacts(): Promise<{ wiped: boolean } | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.wipeLocalContacts) return null;
+    try {
+      return await plugin.wipeLocalContacts();
+    } catch {
+      return null;
+    }
+  },
+  async updatePrivacySelection(args: {
+    contactSyncMode?: string;
+    callLoggingScope?: string;
+    simFilter?: string | null;
+    selectedLabels?: string[];
+    selectedAccounts?: string[];
+    excludedContactKeys?: string[];
+  }): Promise<PhoneAssistantSetupStatus | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.updatePrivacySelection) return null;
+    try {
+      return await plugin.updatePrivacySelection(args);
+    } catch {
+      return null;
+    }
   },
 };

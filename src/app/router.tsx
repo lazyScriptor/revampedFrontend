@@ -32,6 +32,7 @@ import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedS
 import { PhonePhotoPage } from "@/features/equipment/components/PhonePhotoPage";
 import { DeviceInvoicePage } from "@/features/phone-assistant/pages/DeviceInvoicePage";
 import { DeviceNotificationsPage } from "@/features/phone-assistant/pages/DeviceNotificationsPage";
+import { DevicePrivacyPage } from "@/features/phone-assistant/pages/DevicePrivacyPage";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
 
@@ -132,6 +133,14 @@ const deviceNotificationsRoute = createRoute({
   path: "/device/notifications",
   component: function DeviceNotificationsComponent() {
     return <DeviceNotificationsPage />;
+  },
+});
+
+const devicePrivacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/privacy",
+  component: function DevicePrivacyComponent() {
+    return <DevicePrivacyPage />;
   },
 });
 
@@ -332,6 +341,7 @@ const routeTree = rootRoute.addChildren([
   signPairedRoute,
   phonePhotoRoute,
   deviceNotificationsRoute,
+  devicePrivacyRoute,
   deviceInvoiceRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,

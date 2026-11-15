@@ -79,6 +79,11 @@ export const getDeviceToken = (): string | null => {
   return val && val.length > 0 ? val : null;
 };
 
+export const getPublicDeviceHeaders = (): Record<string, string> => {
+  const token = getDeviceToken();
+  return token ? { "x-device-token": token } : {};
+};
+
 export const setDeviceTenantDb = (tenantDb: string) => {
   const storage = safeStorage();
   if (!storage) return;

@@ -18,13 +18,14 @@ import {
   getRentalTerms,
   updateRentalTerms,
   mintPairingCode,
+  getPairingCodePreview,
   claimPairingCode,
   getDeviceStatus,
   getDevicePendingSignatures,
   listMyDevices,
   unpairDevice,
 } from '../api/signatureApi';
-import type { SignatureCheckpoint, SignatureRole } from '@geargrid/contracts';
+import type { DeviceCapabilityMap, SignatureCheckpoint, SignatureRole } from '@geargrid/contracts';
 
 export const useCreateSignatureRequest = () =>
   useMutation({
@@ -104,13 +105,22 @@ export const useUpdateRentalTerms = () => {
 // ── Device pairing ──────────────────────────────────────────────────────
 
 export const useMintPairingCode = () =>
-  useMutation({ mutationFn: () => mintPairingCode() });
+  useMutation({
+    mutationFn: (body?: { requested_capabilities?: DeviceCapabilityMap }) => mintPairingCode(body),
+  });
+
+export const usePairingCodePreview = (code: string | null) =>
+  useQuery({
+    queryKey: ['devices', 'pair-preview', code],
+    queryFn: () => getPairingCodePreview(code!),
+    enabled: !!code && code.length === 7,
+    retry: false,
+  });
 
 export const useClaimPairingCode = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { code: string; device_id: string; device_label?: string }) =>
-      claimPairingCode(body),
+    mutationFn: (body: Parameters<typeof claimPairingCode>[0]) => claimPairingCode(body),
     onSuccess: (data, vars) => {
       // Seed the status cache the moment claim succeeds. Without this,
       // DeviceHomePage reads the stale `paired: false` cached by
@@ -118,6 +128,7 @@ export const useClaimPairingCode = () => {
       // phone right back to /pair before the next 30s refetch can run.
       qc.setQueryData(['devices', 'status', vars.device_id], {
         paired: true,
+        device_status: data.status ?? 'ACTIVE',
         operator: data.operator,
         tenant: data.tenant,
       });

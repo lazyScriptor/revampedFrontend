@@ -3,6 +3,15 @@
 // Typed thin wrappers around callContract for every signature endpoint.
 // Hooks consume these; nothing in app code should touch `api.*` directly.
 import { callContract } from '@/lib/callContract';
+import * as deviceIdLib from '../lib/deviceId';
+
+const publicDeviceHeaders = (): Record<string, string> => {
+  try {
+    return deviceIdLib.getPublicDeviceHeaders?.() ?? {};
+  } catch {
+    return {};
+  }
+};
 import {
   CreateSignatureRequestContract,
   GetSignatureSessionContract,
@@ -14,6 +23,7 @@ import {
   GetRentalTermsContract,
   UpdateRentalTermsContract,
   MintPairingCodeContract,
+  GetPairingCodePreviewContract,
   ClaimPairingCodeContract,
   GetDeviceStatusContract,
   GetDevicePendingSignaturesContract,
@@ -21,6 +31,7 @@ import {
   UnpairDeviceContract,
   type SignatureCheckpoint,
   type SignatureRole,
+  type DeviceCapabilityMap,
 } from '@geargrid/contracts';
 
 export const createSignatureRequest = (
@@ -70,16 +81,30 @@ export const updateRentalTerms = (markdown: string) =>
 
 // ── Device pairing ──────────────────────────────────────────────────────
 
-export const mintPairingCode = () => callContract(MintPairingCodeContract, {});
+export const mintPairingCode = (body?: { requested_capabilities?: DeviceCapabilityMap }) =>
+  callContract(MintPairingCodeContract, body ? { body } : {});
 
-export const claimPairingCode = (body: { code: string; device_id: string; device_label?: string }) =>
-  callContract(ClaimPairingCodeContract, { body });
+export const getPairingCodePreview = (code: string) =>
+  callContract(GetPairingCodePreviewContract, { params: { code } });
+
+export const claimPairingCode = (body: {
+  code: string;
+  device_id: string;
+  device_label?: string;
+  device_model?: string | null;
+  os_version?: string | null;
+  app_version?: string | null;
+  consented_capabilities?: DeviceCapabilityMap;
+}) => callContract(ClaimPairingCodeContract, { body });
 
 export const getDeviceStatus = (device_id: string) =>
   callContract(GetDeviceStatusContract, { params: { device_id } });
 
 export const getDevicePendingSignatures = (device_id: string) =>
-  callContract(GetDevicePendingSignaturesContract, { params: { device_id } });
+  callContract(GetDevicePendingSignaturesContract, {
+    params: { device_id },
+    headers: publicDeviceHeaders(),
+  });
 
 export const listMyDevices = () => callContract(ListMyDevicesContract, {});
 
