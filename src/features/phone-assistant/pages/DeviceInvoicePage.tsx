@@ -49,8 +49,8 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#f8fafc",
-        color: "#0f172a",
+        bgcolor: "background.default",
+        color: "text.primary",
         p: 2,
         pb: 4,
       }}
@@ -65,7 +65,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
               minHeight: 40,
               textTransform: "none",
               fontWeight: 600,
-              color: "#0f172a",
+              color: "text.primary",
             }}
           >
             {t("phoneAssistant.deviceInvoice.backToDevice")}
@@ -84,13 +84,13 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
             sx={{
               p: 4,
               borderRadius: 2.5,
-              bgcolor: "#ffffff",
-              borderColor: "#e2e8f0",
+              bgcolor: "background.paper",
+              borderColor: "divider",
               textAlign: "center",
             }}
           >
-            <CircularProgress size={28} sx={{ color: "#d97706", mb: 1.5 }} />
-            <Typography variant="body2" sx={{ color: "#475569" }}>
+            <CircularProgress size={28} sx={{ color: "warning.main", mb: 1.5 }} />
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
               {t("phoneAssistant.deviceInvoice.loading")}
             </Typography>
           </Paper>
@@ -111,8 +111,8 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
               sx={{
                 p: 2.25,
                 borderRadius: 2.5,
-                bgcolor: "#ffffff",
-                borderColor: "#e2e8f0",
+                bgcolor: "background.paper",
+                borderColor: "divider",
               }}
             >
               <Stack
@@ -130,7 +130,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                       alignItems: "center",
                       justifyContent: "center",
                       bgcolor: "rgba(245, 158, 11, 0.14)",
-                      color: "#d97706",
+                      color: "warning.main",
                     }}
                   >
                     <ReceiptLongOutlinedIcon fontSize="small" />
@@ -141,7 +141,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                       sx={{
                         fontWeight: 800,
                         fontSize: 18,
-                        color: "#0f172a",
+                        color: "text.primary",
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
@@ -150,7 +150,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "#475569",
+                        color: "text.secondary",
                         display: "block",
                         fontVariantNumeric: "tabular-nums",
                       }}
@@ -160,7 +160,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                       })}
                     </Typography>
                     {data.issued_by && (
-                      <Typography variant="caption" sx={{ color: "#64748b" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
                         {t("phoneAssistant.deviceInvoice.issuedBy", {
                           name: data.issued_by,
                         })}
@@ -175,8 +175,8 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                   sx={{
                     fontWeight: 700,
                     textTransform: "capitalize",
-                    bgcolor: "#fef3c7",
-                    color: "#92400e",
+                    bgcolor: "rgba(245, 158, 11, 0.14)",
+                    color: "warning.main",
                   }}
                 />
               </Stack>
@@ -187,8 +187,8 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
               sx={{
                 p: 2.25,
                 borderRadius: 2.5,
-                bgcolor: "#ffffff",
-                borderColor: "#e2e8f0",
+                bgcolor: "background.paper",
+                borderColor: "divider",
               }}
             >
               <Typography
@@ -197,7 +197,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.05em",
-                  color: "#475569",
+                  color: "text.secondary",
                   display: "block",
                   mb: 0.75,
                 }}
@@ -211,7 +211,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
               >
                 <Typography
                   variant="subtitle1"
-                  sx={{ fontWeight: 700, color: "#0f172a" }}
+                  sx={{ fontWeight: 700, color: "text.primary" }}
                 >
                   {data.customer.name}
                 </Typography>
@@ -227,8 +227,8 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                       minHeight: 38,
                       textTransform: "none",
                       fontWeight: 600,
-                      borderColor: "#d97706",
-                      color: "#b45309",
+                      borderColor: "warning.main",
+                      color: "warning.main",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -243,8 +243,8 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
               sx={{
                 p: 2.25,
                 borderRadius: 2.5,
-                bgcolor: "#ffffff",
-                borderColor: "#e2e8f0",
+                bgcolor: "background.paper",
+                borderColor: "divider",
               }}
             >
               <Typography
@@ -253,7 +253,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.05em",
-                  color: "#475569",
+                  color: "text.secondary",
                   display: "block",
                   mb: 1.25,
                 }}
@@ -261,7 +261,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                 {t("phoneAssistant.deviceInvoice.itemsHeading")}
               </Typography>
 
-              <Stack spacing={1.25} divider={<Divider sx={{ borderColor: "#f1f5f9" }} />}>
+              <Stack spacing={1.25} divider={<Divider sx={{ borderColor: "divider" }} />}>
                 {data.items.map((item, idx) => (
                   <Stack
                     key={`${item.name}-${idx}`}
@@ -272,14 +272,14 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: 600, color: "#0f172a" }}
+                        sx={{ fontWeight: 600, color: "text.primary" }}
                       >
                         {item.name}
                       </Typography>
                       <Typography
                         variant="caption"
                         sx={{
-                          color: "#64748b",
+                          color: "text.secondary",
                           fontVariantNumeric: "tabular-nums",
                         }}
                       >
@@ -293,7 +293,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                       variant="body2"
                       sx={{
                         fontWeight: 700,
-                        color: "#0f172a",
+                        color: "text.primary",
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
@@ -303,18 +303,18 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                 ))}
               </Stack>
 
-              <Divider sx={{ my: 1.75, borderColor: "#e2e8f0" }} />
+              <Divider sx={{ my: 1.75, borderColor: "divider" }} />
 
               <Stack spacing={0.85}>
                 <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="body2" sx={{ color: "#475569" }}>
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
                     {t("phoneAssistant.deviceInvoice.totalAmount")}
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{
                       fontWeight: 700,
-                      color: "#0f172a",
+                      color: "text.primary",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -323,14 +323,14 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                 </Stack>
 
                 <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="body2" sx={{ color: "#475569" }}>
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
                     {t("phoneAssistant.deviceInvoice.paidAmount")}
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{
                       fontWeight: 600,
-                      color: "#15803d",
+                      color: "success.main",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -341,11 +341,11 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                 <Stack
                   direction="row"
                   justifyContent="space-between"
-                  sx={{ pt: 0.75, borderTop: "1px dashed #cbd5e1" }}
+                  sx={{ pt: 0.75, borderTop: "1px dashed", borderColor: "divider" }}
                 >
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 800, color: "#0f172a" }}
+                    sx={{ fontWeight: 800, color: "text.primary" }}
                   >
                     {t("phoneAssistant.deviceInvoice.balanceDue")}
                   </Typography>
@@ -354,7 +354,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                     sx={{
                       fontWeight: 800,
                       color:
-                        Number(data.balance_due || 0) > 0 ? "#be123c" : "#15803d",
+                        Number(data.balance_due || 0) > 0 ? "error.main" : "success.main",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >

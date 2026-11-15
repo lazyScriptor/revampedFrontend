@@ -5,6 +5,15 @@ import { api } from "@/lib/api";
 import { connectSocket, getSocket } from "@/lib/socket";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { POS_CATALOG_KEY } from "@/features/invoices/hooks/usePosEquipmentCatalog";
+import * as deviceIdLib from "@/features/signatures/lib/deviceId";
+
+const publicDeviceHeaders = (): Record<string, string> => {
+  try {
+    return deviceIdLib.getPublicDeviceHeaders?.() ?? {};
+  } catch {
+    return {};
+  }
+};
 
 export interface PhotoRequest {
   token: string;
@@ -118,7 +127,10 @@ const devicePath = (deviceId: string) => `/public/devices/${encodeURIComponent(d
 export const useDevicePendingPhotos = (deviceId: string | null, options?: { enabled?: boolean; refetchInterval?: number }) =>
   useQuery({
     queryKey: ["devices", "pending-photos", deviceId],
-    queryFn: () => (api.get(devicePath(deviceId!)) as unknown as Promise<{ data: { pending: PhotoRequest[] } }>).then((r) => r.data),
+    queryFn: () =>
+      (api.get(devicePath(deviceId!), { headers: publicDeviceHeaders() }) as unknown as Promise<{
+        data: { pending: PhotoRequest[] };
+      }>).then((r) => r.data),
     enabled: !!deviceId && (options?.enabled ?? true),
     refetchInterval: options?.refetchInterval ?? 3000,
     retry: 1,
@@ -128,7 +140,9 @@ export const useDevicePhotoRequest = (deviceId: string | null, token: string) =>
   useQuery({
     queryKey: ["devices", "photo-request", deviceId, token],
     queryFn: () =>
-      (api.get(`${devicePath(deviceId!)}/${encodeURIComponent(token)}`) as unknown as Promise<{ data: PhotoRequest }>).then((r) => r.data),
+      (api.get(`${devicePath(deviceId!)}/${encodeURIComponent(token)}`, {
+        headers: publicDeviceHeaders(),
+      }) as unknown as Promise<{ data: PhotoRequest }>).then((r) => r.data),
     enabled: !!deviceId && !!token,
     // notice quickly if the counter cancels while the camera is open
     refetchInterval: (q) => (q.state.data && q.state.data.status !== "PENDING" ? false : 5000),
@@ -139,7 +153,7 @@ export const submitDevicePhoto = (deviceId: string, token: string, blob: Blob, o
   const form = new FormData();
   form.append("image", blob, blob.type === "image/webp" ? "photo.webp" : "photo.jpg");
   return api.post(`${devicePath(deviceId)}/${encodeURIComponent(token)}/photo`, form, {
-    headers: MULTIPART,
+    headers: { ...MULTIPART, ...publicDeviceHeaders() },
     timeout: 120_000,
     onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
   });

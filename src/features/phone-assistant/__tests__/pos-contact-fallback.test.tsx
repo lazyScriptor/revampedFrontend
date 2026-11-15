@@ -23,7 +23,6 @@ const state = vi.hoisted(() => ({
   phoneSearchEnabledCalls: [] as boolean[],
   useContactMutateAsync: vi.fn(),
   createCustomerMutate: vi.fn(),
-  reviewInvoiceMutate: vi.fn(),
   invoiceListCalls: [] as any[],
   invoiceListData: {
     invoices: [
@@ -33,13 +32,11 @@ const state = vi.hoisted(() => ({
         total_amount: 1500,
         amount_paid: 0,
         issued_date: "2026-11-15T10:00:00Z",
-        source_contact_id: 9,
-        contact_reviewed_at: null,
         Customer: { first_name: "Nimal", last_name: "Perera", phone_number: "0771234567" },
       },
     ],
     totalItems: 1,
-    counts: { all: 5, active: 2, completed: 3, from_contacts: 1 },
+    counts: { all: 5, active: 2, completed: 3 },
   },
 }));
 
@@ -87,11 +84,6 @@ vi.mock("@/features/phone-assistant/hooks/usePhoneContacts", () => ({
     mutateAsync: state.useContactMutateAsync,
     isPending: false,
   }),
-  useReviewContactInvoice: () => ({
-    mutate: state.reviewInvoiceMutate,
-    isPending: false,
-    variables: undefined,
-  }),
 }));
 
 vi.mock("@/features/invoices/hooks/useInvoiceHooks", () => ({
@@ -132,10 +124,9 @@ beforeEach(() => {
     phone_number: "0771234567",
   });
   state.createCustomerMutate.mockReset();
-  state.reviewInvoiceMutate.mockReset();
 });
 
-describe("POS phone contact fallback & From contacts tab (A7)", () => {
+describe("POS phone contact fallback (A7)", () => {
   it("hides contact fallback without phone_contacts:view permission or phone_assistant plan", () => {
     state.canPhoneContacts = false;
     wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
@@ -174,7 +165,16 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
     expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
   });
 
-  it("a typed name finds nobody and never offers to add a duplicate customer", async () => {
+  it("a typed name finds matching customers and never queries phone contacts", async () => {
+    state.customerResults = [
+      {
+        customer_id: 21,
+        first_name: "Nimal",
+        last_name: "Fernando",
+        phone_number: "0779876543",
+        status: "Active",
+      },
+    ];
     const user = userEvent.setup({ delay: null });
     wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
 
@@ -182,11 +182,42 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
     await user.click(input);
     await user.type(input, "Nimal");
 
-    expect(
-      await screen.findByText("Customers are found by phone number only. Type their phone number."),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /as new/i })).not.toBeInTheDocument();
+    expect(await screen.findByText("Nimal Fernando")).toBeInTheDocument();
     expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
+    expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
+  });
+
+  it("when a typed name finds no customer, shows the phone-contact hint and never queries phone contacts", async () => {
+    const user = userEvent.setup({ delay: null });
+    wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
+
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "UnknownName");
+
+    expect(
+      await screen.findByText("Type at least 9 digits to check the shop's phone contacts."),
+    ).toBeInTheDocument();
+    expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
+  });
+
+  it("keeps phone contacts hidden until 9 digits are typed", async () => {
+    const user = userEvent.setup({ delay: null });
+    wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
+
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "07712345");
+
+    expect(
+      await screen.findByText("Type at least 9 digits to check the shop's phone contacts."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("From phone contacts")).not.toBeInTheDocument();
+    expect(state.phoneSearchEnabledCalls.some(Boolean)).toBe(false);
+
+    await user.type(input, "6");
+    expect(await screen.findByText("From phone contacts")).toBeInTheDocument();
+    expect(screen.getByText("Nimal Perera")).toBeInTheDocument();
   });
 
   it("shows contact matches when empty, confirms before calling /use, and prefills CustomerFormDialog", async () => {
@@ -195,7 +226,7 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
 
     const input = screen.getByRole("combobox");
     await user.click(input);
-    await user.type(input, "0771");
+    await user.type(input, "0771234567");
 
     expect(await screen.findByText("From phone contacts")).toBeInTheDocument();
     expect(screen.getByText("Nimal Perera")).toBeInTheDocument();
@@ -213,12 +244,15 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
 
     // Confirming calls /use and opens CustomerFormDialog prefilled
     await user.click(input);
-    await user.type(input, "0771");
+    await user.type(input, "0771234567");
     fireEvent.click(await screen.findByText("Nimal Perera"));
     fireEvent.click(await screen.findByRole("button", { name: "Use contact" }));
 
     await waitFor(() => {
-      expect(state.useContactMutateAsync).toHaveBeenCalledWith(9);
+      expect(state.useContactMutateAsync).toHaveBeenCalledWith({
+        contactId: 9,
+        phone: "0771234567",
+      });
     });
     expect(await screen.findByDisplayValue("0771234567")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Nimal")).toBeInTheDocument();
@@ -251,19 +285,13 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
     expect(sentPayload.first_name).toBe("Kamal");
   });
 
-  it("renders From contacts tab with count, switches via initialTab, and calls mark reviewed", () => {
-    wrap(
-      <ManageSearchPanel
-        onSelectInvoice={vi.fn()}
-        initialTab="from-contacts"
-      />,
-    );
+  it("Manage Orders has no From contacts tab or review action", () => {
+    wrap(<ManageSearchPanel onSelectInvoice={vi.fn()} />);
 
-    expect(screen.getByText("From contacts (1)")).toBeInTheDocument();
-    expect(state.invoiceListCalls[0]).toEqual([1, 25, undefined, { contactSourced: true }]);
-
-    const markBtn = screen.getByRole("button", { name: "Mark reviewed" });
-    fireEvent.click(markBtn);
-    expect(state.reviewInvoiceMutate).toHaveBeenCalledWith(501);
+    expect(screen.getByText("All (5)")).toBeInTheDocument();
+    expect(screen.getByText("Completed (3)")).toBeInTheDocument();
+    expect(screen.queryByText(/from contacts/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /mark reviewed/i })).not.toBeInTheDocument();
+    expect(state.invoiceListCalls[0]).toEqual([1, 25, undefined]);
   });
 });

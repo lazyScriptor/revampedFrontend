@@ -9,12 +9,14 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   Paper,
   Stack,
@@ -25,6 +27,7 @@ import SmartphoneIcon from '@mui/icons-material/Smartphone';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
+import type { DeviceCapabilityMap } from '@geargrid/contracts';
 import {
   useMyDevices,
   useMintPairingCode,
@@ -32,6 +35,18 @@ import {
 } from '../hooks/useSignatures';
 import { usePlanChecker } from '@/features/plan/usePlan';
 import { useTranslation } from "react-i18next";
+
+const REQUESTABLE_CAPABILITIES = [
+  'signatures',
+  'photos',
+  'caller_brief',
+  'bill_view',
+  'push',
+  'contact_sync',
+  'call_logging',
+  'click_to_call',
+  'full_app',
+] as const;
 
 export function PairedPhonesSection() {
   const { t } = useTranslation();
@@ -41,11 +56,16 @@ export function PairedPhonesSection() {
   const unpairMut = useUnpairDevice();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+  const [requestedCaps, setRequestedCaps] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(REQUESTABLE_CAPABILITIES.map((k) => [k, true])),
+  );
 
   const handleOpenPair = async () => {
     setNotice(null);
     try {
-      await mintMut.mutateAsync();
+      await mintMut.mutateAsync({
+        requested_capabilities: requestedCaps as DeviceCapabilityMap,
+      });
       setDialogOpen(true);
     } catch (err: any) {
       setNotice({ kind: 'error', text: err?.message || t("signatures.PairedPhonesSection.couldNotGenerateAPairing") });
@@ -156,8 +176,25 @@ export function PairedPhonesSection() {
                       sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }}
                     />
                   )}
+                  {d.status && (
+                    <Chip
+                      size="small"
+                      label={t(`phoneAssistant.deviceStatus.${d.status}`, d.status)}
+                      color={
+                        d.status === "ACTIVE"
+                          ? "success"
+                          : d.status === "PENDING"
+                            ? "warning"
+                            : "error"
+                      }
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: "0.68rem", fontWeight: 700 }}
+                    />
+                  )}
                 </Stack>
                 <Typography sx={{ fontSize: 12, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                  {[d.device_model, d.os_version].filter(Boolean).join(" · ")}
+                  {(d.device_model || d.os_version) ? " · " : ""}
                   {t("signatures.PairedPhonesSection.paired", { value: new Date(d.paired_at).toLocaleString() })}
                   {d.last_seen_at && ` · ${t("signatures.PairedPhonesSection.lastSeen", { value: new Date(d.last_seen_at).toLocaleString() })}`}
                 </Typography>
@@ -247,6 +284,50 @@ export function PairedPhonesSection() {
           >
             {t("signatures.PairedPhonesSection.copyCode")}
           </Button>
+
+          {hasPhoneAssistant && (
+            <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid #e2e8f0' }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#475569', mb: 0.5 }}>
+                {t("phoneAssistant.pairedPhones.requestedAccessLabel")}
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.25 }}>
+                {REQUESTABLE_CAPABILITIES.map((cap) => (
+                  <FormControlLabel
+                    key={cap}
+                    control={
+                      <Checkbox
+                        size="small"
+                        color="warning"
+                        checked={requestedCaps[cap] !== false}
+                        onChange={(_e, checked) =>
+                          setRequestedCaps((prev) => ({ ...prev, [cap]: checked }))
+                        }
+                      />
+                    }
+                    label={
+                      <Typography sx={{ fontSize: 12, color: '#0f172a' }}>
+                        {t(`phoneAssistant.capabilities.${cap}`)}
+                      </Typography>
+                    }
+                    sx={{ m: 0 }}
+                  />
+                ))}
+              </Box>
+              <Button
+                size="small"
+                variant="text"
+                disabled={mintMut.isPending}
+                onClick={() =>
+                  void mintMut.mutateAsync({
+                    requested_capabilities: requestedCaps as DeviceCapabilityMap,
+                  })
+                }
+                sx={{ mt: 0.5, textTransform: 'none', fontWeight: 700 }}
+              >
+                {t("phoneAssistant.pairedPhones.regenerateCode")}
+              </Button>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>

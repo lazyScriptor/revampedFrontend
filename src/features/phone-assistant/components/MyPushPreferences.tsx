@@ -19,7 +19,11 @@ import {
   useMyPushPreferences,
   useUpdateMyPushPreferences,
 } from "../hooks/usePushSettings";
-import type { UserPushPreferenceUpdate } from "../api/phoneAssistantApi";
+import type {
+  UserPersonalQuietHours,
+  UserPushPreferenceUpdate,
+} from "../api/phoneAssistantApi";
+import { PersonalQuietHoursCard } from "./PersonalQuietHoursCard";
 import { PushPreferenceList } from "./PushPreferenceList";
 
 export function MyPushPreferences() {
@@ -49,6 +53,27 @@ export function MyPushPreferences() {
     setSaveSuccess(false);
     try {
       await updatePrefs.mutateAsync(updates);
+      setSaveSuccess(true);
+    } catch (err: any) {
+      setSaveError(
+        err?.message || t("phoneAssistant.myNotifications.saveFailed"),
+      );
+    }
+  };
+
+  const handleSaveQuietHours = async (quiet_hours: UserPersonalQuietHours) => {
+    setSaveError(null);
+    setSaveSuccess(false);
+    try {
+      const currentPrefs = (data?.preferences ?? []).map((item) => ({
+        event_key: item.event_key,
+        enabled: item.enabled,
+        min_amount: item.min_amount,
+      }));
+      await updatePrefs.mutateAsync({
+        preferences: currentPrefs,
+        quiet_hours,
+      });
       setSaveSuccess(true);
     } catch (err: any) {
       setSaveError(
@@ -132,6 +157,14 @@ export function MyPushPreferences() {
           saveSuccess={saveSuccess}
           onSave={handleSave}
         />
+
+        {!isLoading && !isError && (
+          <PersonalQuietHoursCard
+            quietHours={data?.quiet_hours}
+            isSaving={updatePrefs.isPending}
+            onSave={handleSaveQuietHours}
+          />
+        )}
 
         <Box sx={{ pt: 1, borderTop: `1px solid ${borderColor}` }}>
           <Typography

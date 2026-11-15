@@ -51,7 +51,7 @@ import {
 } from "@/features/phone-assistant/hooks/usePhoneContacts";
 import type { PhoneContactMatch } from "@/features/phone-assistant/api/phoneAssistantApi";
 import { useTranslation } from "react-i18next";
-import { isPhoneSearch } from "@/lib/phoneSearch";
+import { isContactSearch, MIN_CONTACT_SEARCH_DIGITS } from "@/lib/phoneSearch";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
@@ -82,10 +82,10 @@ export function PosCustomerPanel({
   const [contactUseError, setContactUseError] = useState<string | null>(null);
 
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
-  const isPhoneQuery = isPhoneSearch(inputValue);
+  // Phone contacts stay hidden until the full number is typed (MIN_CONTACT_SEARCH_DIGITS).
   const shouldSearchPhoneContacts =
     canSearchPhoneContacts &&
-    isPhoneQuery &&
+    isContactSearch(inputValue) &&
     !isLoading &&
     searchResults.length === 0;
   const {
@@ -160,11 +160,15 @@ export function PosCustomerPanel({
 
   const theme = useTheme();
 
-  // Customers are searched by phone only, so the typed phone number pre-fills a new customer.
-  const prefill = useMemo(
-    () => (isPhoneQuery ? { phone_number: inputValue.trim() } : undefined),
-    [isPhoneQuery, inputValue],
-  );
+  // Turn whatever the cashier already typed into form pre-fill: phone, NIC or name.
+  const prefill = useMemo(() => {
+    const q = inputValue.trim();
+    if (!q) return undefined;
+    if (/^\+?\d{9,12}$/.test(q) && !/^\d{12}$/.test(q)) return { phone_number: q };
+    if (/^\d{9}[vVxX]$|^\d{12}$/.test(q)) return { nic_number: q.toUpperCase() };
+    const [first, ...rest] = q.split(/\s+/);
+    return { first_name: first, last_name: rest.join(" ") };
+  }, [inputValue]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
@@ -187,12 +191,14 @@ export function PosCustomerPanel({
           noOptionsText={
             inputValue.length < 2 ? (
               t("invoices.PosCustomerPanel.typeToSearch")
-            ) : !isPhoneQuery ? (
-              // A name finds nobody, so no "add as new" here: it would create duplicate customers.
-              t("invoices.PosCustomerPanel.phoneOnlyHint")
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
                 <span>{t("invoices.PosCustomerPanel.noClientsFound")}</span>
+                {canSearchPhoneContacts && !isContactSearch(inputValue) && (
+                  <Typography variant="caption" color="text.secondary">
+                    {t("phoneAssistant.posFallback.typeFullNumber", { digits: MIN_CONTACT_SEARCH_DIGITS })}
+                  </Typography>
+                )}
                 {shouldSearchPhoneContacts && (phoneContactsLoading || contactMatches.length > 0) && (
                   <Box
                     onMouseDown={(e) => e.preventDefault()}
@@ -314,8 +320,6 @@ export function PosCustomerPanel({
               fullWidth
               slotProps={{
                 ...((params as any).slotProps),
-                // Phone keypad on touch screens, since customers are searched by phone number.
-                htmlInput: { ...((params as any).slotProps?.htmlInput || {}), inputMode: "tel" },
                 input: {
                   ...((params as any).slotProps?.input || {}),
                   startAdornment: (
@@ -505,7 +509,10 @@ export function PosCustomerPanel({
               if (!pendingContact) return;
               setContactUseError(null);
               try {
-                const res = await useContactMut.mutateAsync(pendingContact.contact_id);
+                const res = await useContactMut.mutateAsync({
+                  contactId: pendingContact.contact_id,
+                  phone: inputValue.trim() || pendingContact.raw_phone || pendingContact.phone_e164,
+                });
                 setContactPrefill({
                   first_name: res.first_name,
                   last_name: res.last_name,

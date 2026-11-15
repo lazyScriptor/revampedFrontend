@@ -48,6 +48,14 @@ import { loginUser } from "@/features/auth/api/auth.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 
+const readPairedUsername = (): string => {
+  try {
+    return window.localStorage.getItem("geargrid.paired_username") || "";
+  } catch {
+    return "";
+  }
+};
+
 export default function LoginRoute() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -73,7 +81,8 @@ export default function LoginRoute() {
   } = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      // On a paired phone the staff member's username is filled in (the password never is).
+      email: readPairedUsername(),
       password: "",
     },
   });

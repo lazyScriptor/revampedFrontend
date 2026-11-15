@@ -1,4 +1,6 @@
 // features/invoices/components/ReceiptPrintDialog.tsx
+import { isNativePhoneApp } from "@/features/phone-assistant/lib/nativeBridge";
+import { shareElementAsPdf } from "@/features/phone-assistant/lib/sharePdf";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -104,6 +106,13 @@ export function ReceiptPrintDialog({
   const handlePrint = async () => {
     setPrinting(true);
     setPrintStatus(null);
+    // On the phone there is no print agent: share the receipt as a PDF instead.
+    if (isNativePhoneApp()) {
+      const ok = await shareElementAsPdf(printDomId, `${isDraft ? "quote" : "invoice"}-${invoice?.invoice_id || "receipt"}.pdf`);
+      setPrintStatus({ ok, text: ok ? t("invoices.ReceiptPrintDialog.pdfShared") : t("invoices.ReceiptPrintDialog.pdfFailed") } as any);
+      setPrinting(false);
+      return;
+    }
     try {
       const cust = isDraft ? draftData?.customer : invoice?.Customer || invoice?.customer;
       const custName = cust?.company_name || `${cust?.first_name || ""} ${cust?.last_name || ""}`.trim() || "Walk-in Customer";
@@ -657,7 +666,9 @@ export function ReceiptPrintDialog({
               borderRadius: 2,
             }}
           >
-            {t("invoices.ReceiptPrintDialog.printPosBill", { lng: language, paperWidth })}
+            {isNativePhoneApp()
+              ? t("invoices.ReceiptPrintDialog.sharePdf")
+              : t("invoices.ReceiptPrintDialog.printPosBill", { lng: language, paperWidth })}
           </Button>
         </DialogActions>
       </Dialog>

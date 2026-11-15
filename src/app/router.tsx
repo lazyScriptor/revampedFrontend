@@ -31,7 +31,13 @@ import { DeviceHomePage } from "@/features/signatures/components/DeviceHomePage"
 import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedSignPage";
 import { PhonePhotoPage } from "@/features/equipment/components/PhonePhotoPage";
 import { DeviceInvoicePage } from "@/features/phone-assistant/pages/DeviceInvoicePage";
+import { DeviceCallsPage } from "@/features/phone-assistant/pages/device/DeviceCallsPage";
+import { DeviceAlertsPage } from "@/features/phone-assistant/pages/device/DeviceAlertsPage";
+import { DeviceAppGatePage } from "@/features/phone-assistant/pages/device/DeviceAppGatePage";
+import { DeviceSettingsPage } from "@/features/phone-assistant/pages/device/DeviceSettingsPage";
 import { DeviceNotificationsPage } from "@/features/phone-assistant/pages/DeviceNotificationsPage";
+import PhoneAssistantSettingsPage from "@/features/phone-assistant/pages/PhoneAssistantSettingsPage";
+import { DevicePrivacyPage } from "@/features/phone-assistant/pages/DevicePrivacyPage";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
 
@@ -46,25 +52,26 @@ const requirePermission = (permissionCode: string) => {
 
 // --- 2. Route Definitions ---
 // Add this right above your loginRoute definition
+const APP_LAUNCHED_KEY = "geargrid.app_launched";
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    const user = useAuthStore.getState().user;
-    if (user) {
-      throw redirect({ to: "/dashboard" });
-    }
-    // Paired-PWA fast path: if this is a phone that already has a device_id
-    // in localStorage (installed PWA, previously paired), skip the login
-    // page and go straight to its signature-ready home. Un-paired devices
-    // on /device get re-routed to /pair by DeviceHomePage itself.
+    // Paired-phone start page: a phone that already has a device_id opens on its own home (/device).
+    // This applies to the first visit of a launch only. Choosing the GearGrid tab or following a link
+    // to "/" later in the same session must not bounce back (it used to trap staff on /device).
     try {
-      if (getDeviceId()) {
+      if (getDeviceId() && !window.sessionStorage.getItem(APP_LAUNCHED_KEY)) {
+        window.sessionStorage.setItem(APP_LAUNCHED_KEY, "1");
         throw redirect({ to: "/device" });
       }
     } catch (err: any) {
-      // Rethrow TanStack Router redirects; swallow any localStorage errors.
+      // Rethrow TanStack Router redirects; swallow any storage errors.
       if (err && typeof err === "object" && "to" in err) throw err;
+    }
+    const user = useAuthStore.getState().user;
+    if (user) {
+      throw redirect({ to: "/dashboard" });
     }
     throw redirect({ to: "/login" });
   },
@@ -127,11 +134,49 @@ const phonePhotoRoute = createRoute({
   },
 });
 
+const deviceCallsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/calls",
+  component: () => <DeviceCallsPage />,
+});
+
+const deviceAlertsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/alerts",
+  component: () => <DeviceAlertsPage />,
+});
+
+const deviceAppRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/app",
+  component: () => <DeviceAppGatePage />,
+});
+
+const deviceSettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/settings",
+  component: () => <DeviceSettingsPage />,
+});
+
+const deviceSettingsSectionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/settings/$section",
+  component: () => <DeviceSettingsPage />,
+});
+
 const deviceNotificationsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/device/notifications",
   component: function DeviceNotificationsComponent() {
     return <DeviceNotificationsPage />;
+  },
+});
+
+const devicePrivacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/privacy",
+  component: function DevicePrivacyComponent() {
+    return <DevicePrivacyPage />;
   },
 });
 
@@ -167,16 +212,11 @@ const equipmentCategoryRoute = createRoute({
 const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
-  validateSearch: (search: Record<string, unknown>) => {
-    const tab = search.tab === "from-contacts" ? ("from-contacts" as const) : undefined;
-    const mode =
-      search.mode === "manage" || search.mode === "dispatch"
-        ? (search.mode as "manage" | "dispatch")
-        : tab === "from-contacts"
-          ? ("manage" as const)
-          : undefined;
-    return { mode, tab };
-  },
+  validateSearch: (search: Record<string, unknown>) => ({
+    mode: (search.mode === "manage" || search.mode === "dispatch")
+      ? (search.mode as "manage" | "dispatch")
+      : undefined,
+  }),
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <Invoices />,
 });
@@ -286,6 +326,19 @@ const profileRoute = createRoute({
   component: () => <ProfileRoute />,
 });
 
+// Phone assistant settings: phones, call screen designer, notifications, languages and policy grids.
+const PHONE_SETTINGS_TAB_KEYS = ["phones", "call-screen", "notifications", "languages", "contacts-calls", "approvals", "sync-privacy"] as const;
+const phoneAssistantSettingsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/settings/phone-assistant",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (PHONE_SETTINGS_TAB_KEYS as readonly string[]).includes(search.tab as string)
+      ? (search.tab as typeof PHONE_SETTINGS_TAB_KEYS[number])
+      : undefined,
+  }),
+  component: () => <FeatureGate feature="phone_assistant"><PhoneAssistantSettingsPage /></FeatureGate>,
+});
+
 // Permissions Matrix (Admin only)
 const permissionsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -331,7 +384,13 @@ const routeTree = rootRoute.addChildren([
   deviceHomeRoute,
   signPairedRoute,
   phonePhotoRoute,
+  deviceCallsRoute,
+  deviceAlertsRoute,
+  deviceAppRoute,
+  deviceSettingsRoute,
+  deviceSettingsSectionRoute,
   deviceNotificationsRoute,
+  devicePrivacyRoute,
   deviceInvoiceRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,
@@ -348,6 +407,7 @@ const routeTree = rootRoute.addChildren([
     accountingRoute,
     reportsRoute,
     profileRoute,
+    phoneAssistantSettingsRoute,
     permissionsRoute,
     adminUsersRoute,
     adminRolesRoute,

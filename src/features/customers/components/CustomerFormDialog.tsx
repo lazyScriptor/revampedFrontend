@@ -19,6 +19,8 @@ import {
   Avatar,
   Chip,
   Alert,
+  Tab,
+  Tabs,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -45,6 +47,7 @@ import {
   ParentCustomerOption,
 } from "../hooks/useCustomerHooks";
 import { useDebounce } from "@/features/invoices/hooks/usePosSearch";
+import { CustomerCallsTab } from "./CustomerCallsTab";
 import { Trans, useTranslation } from "react-i18next";
 
 interface CustomerFormDialogProps {
@@ -76,6 +79,11 @@ export function CustomerFormDialog({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isEditing = !!initialData;
+  const [activeTab, setActiveTab] = useState<"details" | "calls">("details");
+
+  useEffect(() => {
+    if (open) setActiveTab("details");
+  }, [open, initialData?.customer_id]);
 
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
@@ -378,6 +386,32 @@ export function CustomerFormDialog({
       </Box>
 
       <DialogContent dividers sx={{ p: 0, borderTop: "none" }}>
+        {isEditing && initialData?.customer_id && (
+          <Box sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0", px: { xs: 2, sm: 3 } }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_e, next: "details" | "calls") => setActiveTab(next)}
+              sx={{ minHeight: 44 }}
+            >
+              <Tab
+                value="details"
+                label={t("phoneAssistant.callsTab.detailsTabLabel")}
+                sx={{ textTransform: "none", fontWeight: 700, minHeight: 44 }}
+              />
+              <Tab
+                value="calls"
+                label={t("phoneAssistant.callsTab.tabLabel")}
+                sx={{ textTransform: "none", fontWeight: 700, minHeight: 44 }}
+              />
+            </Tabs>
+          </Box>
+        )}
+
+        {activeTab === "calls" && isEditing && initialData?.customer_id ? (
+          <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            <CustomerCallsTab customerId={initialData.customer_id} />
+          </Box>
+        ) : (
         <Box
           component="form"
           id="customer-form"
@@ -816,6 +850,7 @@ export function CustomerFormDialog({
             </Box>
           </Box>
         </Box>
+        )}
       </DialogContent>
 
       <DialogActions
@@ -830,30 +865,34 @@ export function CustomerFormDialog({
         }}
       >
         <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}>
-          {Object.keys(errors).length > 0 ? (
-            <Typography variant="caption" color="error" sx={{ fontWeight: 600 }}>
-              {t("customers.CustomerFormDialog.fixHighlightedErrorsBeforeSaving")}
-            </Typography>
-          ) : isDirty ? (
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-              {t("common.unsavedChanges")}
-            </Typography>
-          ) : null}
+          {activeTab === "details" && (
+            Object.keys(errors).length > 0 ? (
+              <Typography variant="caption" color="error" sx={{ fontWeight: 600 }}>
+                {t("customers.CustomerFormDialog.fixHighlightedErrorsBeforeSaving")}
+              </Typography>
+            ) : isDirty ? (
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                {t("common.unsavedChanges")}
+              </Typography>
+            ) : null
+          )}
         </Box>
         <Button onClick={onClose} disabled={isPending} sx={{ borderRadius: 2, textTransform: "none" }}>
-          {t("common.cancel")}
+          {activeTab === "calls" ? t("common.close") : t("common.cancel")}
         </Button>
-        <Button
-          type="submit"
-          form="customer-form"
-          variant="contained"
-          disableElevation
-          disabled={isPending}
-          startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : null}
-          sx={{ borderRadius: 2, textTransform: "none", px: 3, fontWeight: 700 }}
-        >
-          {isPending ? t("common.saving") : isEditing ? t("common.saveChanges") : t("customers.CustomerFormDialog.createCustomer")}
-        </Button>
+        {activeTab === "details" && (
+          <Button
+            type="submit"
+            form="customer-form"
+            variant="contained"
+            disableElevation
+            disabled={isPending}
+            startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : null}
+            sx={{ borderRadius: 2, textTransform: "none", px: 3, fontWeight: 700 }}
+          >
+            {isPending ? t("common.saving") : isEditing ? t("common.saveChanges") : t("customers.CustomerFormDialog.createCustomer")}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

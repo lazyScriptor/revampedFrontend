@@ -31,6 +31,7 @@ export async function callContract<TParams, TQuery, TBody, TData>(
     params?: TParams;
     query?: TQuery;
     body?: TBody;
+    headers?: Record<string, string>;
   } = {},
 ): Promise<TData> {
   // 1. Build the concrete URL by swapping /:name tokens with values.
@@ -53,6 +54,7 @@ export async function callContract<TParams, TQuery, TBody, TData>(
     method: contract.method,
     params: args.query,
     data: args.body,
+    ...(args.headers ? { headers: args.headers } : {}),
   });
 
   // 4. Validate the envelope and return the inner payload.

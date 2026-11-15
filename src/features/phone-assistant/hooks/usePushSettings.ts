@@ -11,6 +11,7 @@ import {
   updatePushSettings,
   type GetPushSettingsResult,
   type PushSettingsPayload,
+  type UserPersonalQuietHours,
   type UserPushPreferenceItem,
   type UserPushPreferenceUpdate,
 } from "../api/phoneAssistantApi";
@@ -110,13 +111,34 @@ export function usePushRoles(enabled = true) {
   });
 }
 
-function mergePreferenceUpdates(
-  current: { preferences: UserPushPreferenceItem[] } | undefined,
-  updates: UserPushPreferenceUpdate[],
-): { preferences: UserPushPreferenceItem[] } | undefined {
+export type UpdatePushPreferencesInput =
+  | UserPushPreferenceUpdate[]
+  | {
+      preferences: UserPushPreferenceUpdate[];
+      quiet_hours?: UserPersonalQuietHours;
+      muted?: boolean;
+    };
+
+function normalizePreferencesInput(input: UpdatePushPreferencesInput): {
+  preferences: UserPushPreferenceUpdate[];
+  quiet_hours?: UserPersonalQuietHours;
+  muted?: boolean;
+} {
+  return Array.isArray(input) ? { preferences: input } : input;
+}
+
+function mergePreferenceUpdates<
+  T extends {
+    preferences: UserPushPreferenceItem[];
+    quiet_hours?: UserPersonalQuietHours;
+    muted?: boolean;
+  },
+>(current: T | undefined, input: UpdatePushPreferencesInput): T | undefined {
   if (!current) return current;
+  const { preferences: updates, quiet_hours, muted } = normalizePreferencesInput(input);
   const byKey = new Map(updates.map((u) => [u.event_key, u]));
   return {
+    ...current,
     preferences: current.preferences.map((item) => {
       const upd = byKey.get(item.event_key);
       if (!upd) return item;
@@ -127,6 +149,8 @@ function mergePreferenceUpdates(
           upd.min_amount !== undefined ? upd.min_amount : item.min_amount,
       };
     }),
+    ...(quiet_hours !== undefined ? { quiet_hours } : {}),
+    ...(muted !== undefined ? { muted } : {}),
   };
 }
 
@@ -143,12 +167,22 @@ export function useUpdateMyPushPreferences() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (preferences: UserPushPreferenceUpdate[]) =>
-      updateMyPushPreferences(preferences),
+    mutationFn: (input: UpdatePushPreferencesInput) => {
+      if (Array.isArray(input)) {
+        return updateMyPushPreferences(input);
+      }
+      return updateMyPushPreferences(
+        input.preferences,
+        input.quiet_hours !== undefined
+          ? { quiet_hours: input.quiet_hours }
+          : undefined,
+      );
+    },
     onMutate: async (updates) => {
       await queryClient.cancelQueries({ queryKey: pushQueryKeys.myPreferences });
       const previous = queryClient.getQueryData<{
         preferences: UserPushPreferenceItem[];
+        quiet_hours?: UserPersonalQuietHours;
       }>(pushQueryKeys.myPreferences);
       const next = mergePreferenceUpdates(previous, updates);
       if (next) {
@@ -185,14 +219,29 @@ export function useUpdateDevicePushPreferences() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (preferences: UserPushPreferenceUpdate[]) =>
-      updateDevicePushPreferences(preferences),
+    mutationFn: (input: UpdatePushPreferencesInput) => {
+      if (Array.isArray(input)) {
+        return updateDevicePushPreferences(input);
+      }
+      const opts =
+        input.quiet_hours !== undefined || input.muted !== undefined
+          ? {
+              ...(input.quiet_hours !== undefined
+                ? { quiet_hours: input.quiet_hours }
+                : {}),
+              ...(input.muted !== undefined ? { muted: input.muted } : {}),
+            }
+          : undefined;
+      return updateDevicePushPreferences(input.preferences, opts);
+    },
     onMutate: async (updates) => {
       await queryClient.cancelQueries({
         queryKey: pushQueryKeys.devicePreferences,
       });
       const previous = queryClient.getQueryData<{
         preferences: UserPushPreferenceItem[];
+        quiet_hours?: UserPersonalQuietHours;
+        muted?: boolean;
       }>(pushQueryKeys.devicePreferences);
       const next = mergePreferenceUpdates(previous, updates);
       if (next) {

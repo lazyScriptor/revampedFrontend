@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { Alert, Box, Button, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Paper, Stack, Switch, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import NotificationsActiveOutlinedIcon from "@mui/icons-material/NotificationsActiveOutlined";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useDeviceManifest } from "@/features/signatures/lib/deviceShell";
-import type { UserPushPreferenceUpdate } from "../api/phoneAssistantApi";
+import type {
+  UserPersonalQuietHours,
+  UserPushPreferenceUpdate,
+} from "../api/phoneAssistantApi";
+import { DeviceShell } from "../components/DeviceShell";
+import { PersonalQuietHoursCard } from "../components/PersonalQuietHoursCard";
 import { PushPreferenceList } from "../components/PushPreferenceList";
 import {
   useDevicePushPreferences,
@@ -38,12 +43,35 @@ export function DeviceNotificationsPage() {
     }
   };
 
+  const handleSaveExtras = async (extras: {
+    muted?: boolean;
+    quiet_hours?: UserPersonalQuietHours;
+  }) => {
+    setSaveError(null);
+    setSaveSuccess(false);
+    try {
+      const currentPrefs = (data?.preferences ?? []).map((item) => ({
+        event_key: item.event_key,
+        enabled: item.enabled,
+        min_amount: item.min_amount,
+      }));
+      await updatePrefs.mutateAsync({
+        preferences: currentPrefs,
+        ...extras,
+      });
+      setSaveSuccess(true);
+    } catch (err: any) {
+      setSaveError(
+        err?.message || t("phoneAssistant.myNotifications.saveFailed"),
+      );
+    }
+  };
+
   return (
+    <DeviceShell active="settings" hideTitle>
     <Box
       sx={{
-        minHeight: "100vh",
-        bgcolor: "#f8fafc",
-        color: "#0f172a",
+        color: "text.primary",
         p: 2,
         pb: 4,
       }}
@@ -53,12 +81,12 @@ export function DeviceNotificationsPage() {
           <Button
             size="small"
             startIcon={<ArrowBackIcon fontSize="small" />}
-            onClick={() => navigate({ to: "/device" })}
+            onClick={() => navigate({ to: "/device/settings" })}
             sx={{
               minHeight: 40,
               textTransform: "none",
               fontWeight: 600,
-              color: "#0f172a",
+              color: "text.primary",
             }}
           >
             {t("phoneAssistant.deviceNotifications.backToDevice")}
@@ -70,8 +98,8 @@ export function DeviceNotificationsPage() {
           sx={{
             p: 2.25,
             borderRadius: 2.5,
-            bgcolor: "#ffffff",
-            borderColor: "#e2e8f0",
+            bgcolor: "background.paper",
+            borderColor: "divider",
           }}
         >
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", mb: 2 }}>
@@ -84,7 +112,7 @@ export function DeviceNotificationsPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 bgcolor: "rgba(245, 158, 11, 0.14)",
-                color: "#d97706",
+                color: "warning.main",
               }}
             >
               <NotificationsActiveOutlinedIcon fontSize="small" />
@@ -92,11 +120,11 @@ export function DeviceNotificationsPage() {
             <Box>
               <Typography
                 variant="h6"
-                sx={{ fontWeight: 700, fontSize: 17, color: "#0f172a" }}
+                sx={{ fontWeight: 700, fontSize: 17, color: "text.primary" }}
               >
                 {t("phoneAssistant.deviceNotifications.title")}
               </Typography>
-              <Typography variant="caption" sx={{ color: "#475569" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 {t("phoneAssistant.deviceNotifications.subtitle")}
               </Typography>
             </Box>
@@ -107,19 +135,69 @@ export function DeviceNotificationsPage() {
               {t("phoneAssistant.deviceNotifications.unpairedError")}
             </Alert>
           ) : (
-            <PushPreferenceList
-              compact
-              preferences={data?.preferences ?? []}
-              isLoading={isLoading}
-              isError={isError}
-              isSaving={updatePrefs.isPending}
-              saveError={saveError}
-              saveSuccess={saveSuccess}
-              onSave={handleSave}
-            />
+            <Stack spacing={2}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
+                  bgcolor: "background.default",
+                  borderColor: "divider",
+                }}
+              >
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ alignItems: "center", justifyContent: "space-between" }}
+                >
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      {t("phoneAssistant.deviceNotifications.muteThisPhone")}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      {t("phoneAssistant.deviceNotifications.muteThisPhoneHint")}
+                    </Typography>
+                  </Box>
+                  <Switch
+                    size="small"
+                    color="warning"
+                    checked={Boolean(data?.muted)}
+                    disabled={updatePrefs.isPending || isLoading}
+                    onChange={(_e, checked) => void handleSaveExtras({ muted: checked })}
+                    slotProps={{
+                      input: {
+                        role: "switch",
+                        "aria-label": t("phoneAssistant.deviceNotifications.muteThisPhone"),
+                      },
+                    }}
+                  />
+                </Stack>
+              </Paper>
+
+              <PushPreferenceList
+                compact
+                preferences={data?.preferences ?? []}
+                isLoading={isLoading}
+                isError={isError}
+                isSaving={updatePrefs.isPending}
+                saveError={saveError}
+                saveSuccess={saveSuccess}
+                onSave={handleSave}
+              />
+
+              {!isLoading && !isError && (
+                <PersonalQuietHoursCard
+                  compact
+                  quietHours={data?.quiet_hours}
+                  isSaving={updatePrefs.isPending}
+                  onSave={(quiet_hours) => handleSaveExtras({ quiet_hours })}
+                />
+              )}
+            </Stack>
           )}
         </Paper>
       </Stack>
     </Box>
+    </DeviceShell>
   );
 }

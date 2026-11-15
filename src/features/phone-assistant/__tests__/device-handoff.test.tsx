@@ -67,6 +67,11 @@ vi.mock("@/features/signatures/hooks/useSignatures", () => ({
     mutateAsync: mocks.claimMutateAsync,
     isPending: false,
   }),
+  usePairingCodePreview: () => ({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+  }),
   useDevicePendingSignatures: () => ({
     data: { pending: [] },
     isError: false,

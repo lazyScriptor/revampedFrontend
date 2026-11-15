@@ -1,0 +1,101 @@
+{
+    "phoneShell": {
+        "navLabel": "தொலைபேசி வழிசெலுத்தல்",
+        "tab_home": "முகப்பு",
+        "tab_calls": "அழைப்புகள்",
+        "tab_alerts": "அறிவிப்புகள்",
+        "tab_app": "GearGrid",
+        "tab_settings": "அமைப்புகள்",
+        "offlineBanner": "இணைப்பு இல்லை – சேமித்த தரவு காட்டப்படுகிறது",
+        "refreshing": "புதுப்பிக்கிறது…",
+        "pullToRefresh": "புதுப்பிக்க கீழே இழுக்கவும்",
+        "backToPhoneHome": "தொலைபேசி முகப்பு",
+        "home": {
+            "paired": "இணைக்கப்பட்டது",
+            "approved": "அங்கீகரிக்கப்பட்டது",
+            "fix": "சரிசெய்",
+            "missed": "தவறிய அழைப்புகள்",
+            "followUps": "பின்தொடர்தல்",
+            "requests": "கோரிக்கைகள்"
+        },
+        "sync": {
+            "title": "இந்த தொலைபேசியில் உள்ள தரவு",
+            "lastBrief": "வாடிக்கையாளர்கள் ஒத்திசைக்கப்பட்டது",
+            "lastContacts": "தொடர்புகள் ஒத்திசைக்கப்பட்டது",
+            "cached": "சேமித்த வாடிக்கையாளர்கள்",
+            "waiting": "பதிவேற்ற காத்திருப்பவை",
+            "never": "ஒருபோதும் இல்லை",
+            "offline": "இணைப்பு இல்லை",
+            "state_fresh": "புதியது",
+            "state_stale": "பழையது",
+            "state_never": "இன்னும் ஒத்திசைக்கவில்லை",
+            "updated": "{{count}} வாடிக்கையாளர்கள் புதுப்பிக்கப்பட்டனர்",
+            "noConnection": "இணைப்பு இல்லை",
+            "failed": "ஒத்திசைவு முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+            "syncNow": "இப்போது ஒத்திசை",
+            "syncing": "ஒத்திசைக்கிறது…"
+        },
+        "search": {
+            "title": "வாடிக்கையாளரைத் தேடு",
+            "placeholder": "பெயர், அடையாள அட்டை, வாடிக்கையாளர் எண் அல்லது தொலைபேசி",
+            "none": "பொருந்தும் வாடிக்கையாளர் இல்லை.",
+            "contact": "தொலைபேசி தொடர்பு",
+            "blacklisted": "தடைசெய்யப்பட்டவர்"
+        },
+        "alerts": {
+            "group_all": "அனைத்தும்",
+            "group_bills": "பில்கள்",
+            "group_payments": "கட்டணங்கள்",
+            "group_returns": "திரும்பப் பெறுதல்",
+            "group_alerts": "எச்சரிக்கைகள்",
+            "group_digest": "சுருக்கங்கள்",
+            "empty": "இன்னும் அறிவிப்புகள் இல்லை.",
+            "clear": "வரலாற்றை அழி"
+        },
+        "settings": {
+            "title": "அமைப்புகள்",
+            "setByShop": "உங்கள் கடை அமைத்தது",
+            "on": "இயக்கத்தில்",
+            "off": "நிறுத்தத்தில்",
+            "group_phone": "இந்த தொலைபேசி",
+            "group_call_screen": "அழைப்புத் திரை",
+            "group_notifications": "அறிவிப்புகள்",
+            "group_privacy": "பகிர்வு & தனியுரிமை",
+            "group_language": "மொழி & எழுத்து",
+            "group_setup": "அமைப்பு சரிபார்ப்பு",
+            "group_app_lock": "செயலி பூட்டு",
+            "group_about": "பற்றி & உதவி",
+            "appLanguage": "செயலி மொழி",
+            "lang_follow": "தொலைபேசியைப் பின்பற்று",
+            "appTextSize": "செயலி எழுத்து அளவு",
+            "textSize_small": "சிறியது",
+            "textSize_default": "இயல்பு",
+            "textSize_large": "பெரியது",
+            "textSize_extra_large": "மிகப் பெரியது"
+        }
+    },
+    "phoneAssistant": {
+        "callScreen": {
+            "footer": {
+                "live": "நேரலை",
+                "synced": "{{minutes}} நிமிடங்களுக்கு முன் ஒத்திசைக்கப்பட்டது",
+                "offline": "இணைப்பு இல்லை · தரவு {{time}} முதல்"
+            },
+            "sample": {
+                "notInGearGrid": "GearGrid இல் இல்லை",
+                "blacklisted": "தடைசெய்யப்பட்ட வாடிக்கையாளர்",
+                "blacklistedBanner": "தடைசெய்யப்பட்டவர்",
+                "hasDues": "நிலுவை உள்ளது",
+                "idKept": "அடையாள அட்டை வைக்கப்பட்டுள்ளது",
+                "overdueDays": "{{count}} நாட்கள் தாமதம்"
+            },
+            "actions": {
+                "dismiss": "மூடு",
+                "add_note": "குறிப்பு சேர்",
+                "open_on_desktop": "கணினியில் திற",
+                "open_app": "செயலியைத் திற",
+                "call_back_later": "பின்னர் அழை"
+            }
+        }
+    }
+}

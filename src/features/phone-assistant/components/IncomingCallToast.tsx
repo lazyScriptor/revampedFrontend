@@ -26,7 +26,20 @@ import { useCallDetails } from "../hooks/useCalls";
 import { useUsePhoneContact } from "../hooks/usePhoneContacts";
 import type { ContactMatchLite } from "../api/phoneAssistantApi";
 
+export const POPUP_SIZE_KEY = "geargrid.popup_size";
+export type PopupSize = "compact" | "standard" | "large";
+const POPUP_ZOOM: Record<PopupSize, number> = { compact: 0.88, standard: 1, large: 1.25 };
+export const readPopupSizeOverride = (): PopupSize | null => {
+  try {
+    const v = window.localStorage.getItem(POPUP_SIZE_KEY);
+    return v === "compact" || v === "standard" || v === "large" ? v : null;
+  } catch {
+    return null;
+  }
+};
+
 interface CallIncomingEvent {
+  popup_size?: PopupSize;
   call_id: number;
   started_at: string;
 }
@@ -101,6 +114,8 @@ export function IncomingCallToast() {
     setEndedDuration(null);
   }, [clearDismissTimer]);
 
+  const [shopPopupSize, setShopPopupSize] = useState<PopupSize>("standard");
+
   useEffect(() => {
     if (!allowed) return;
 
@@ -111,6 +126,7 @@ export function IncomingCallToast() {
       if (!payload?.call_id) return;
       clearDismissTimer();
       setActiveCallId(Number(payload.call_id));
+      setShopPopupSize(payload.popup_size ?? "standard");
       setHasEnded(false);
       setEndedDuration(null);
     };
@@ -161,7 +177,10 @@ export function IncomingCallToast() {
 
   const handleAddContactAsCustomer = async (contact: ContactMatchLite) => {
     try {
-      const prefill = await useContactMutation.mutateAsync(contact.contact_id);
+      const prefill = await useContactMutation.mutateAsync({
+        contactId: contact.contact_id,
+        phone: contact.phone_e164,
+      });
       setCustomerDialog({
         open: true,
         prefill: {
@@ -218,6 +237,7 @@ export function IncomingCallToast() {
           aria-live="polite"
           data-testid="incoming-call-toast"
           elevation={8}
+          style={{ zoom: POPUP_ZOOM[readPopupSizeOverride() ?? shopPopupSize] } as any}
           sx={{
             position: "fixed",
             bottom: { xs: 16, sm: 24 },

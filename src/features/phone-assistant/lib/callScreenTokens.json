@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "_future": "FUTURE (super admin setting): point sizes, the card height cap and the palettes are fixed for every shop. See revampedBackend_Geargrid/docs/FUTURE_SETTINGS.md.",
+  "sizes": {
+    "compact": { "titleSp": 18, "emphasisSp": 16, "bodySp": 13, "captionSp": 11, "rowGapDp": 5 },
+    "standard": { "titleSp": 22, "emphasisSp": 18, "bodySp": 15, "captionSp": 12, "rowGapDp": 7 },
+    "large": { "titleSp": 26, "emphasisSp": 21, "bodySp": 17, "captionSp": 14, "rowGapDp": 9 },
+    "extra_large": { "titleSp": 30, "emphasisSp": 24, "bodySp": 20, "captionSp": 16, "rowGapDp": 11 }
+  },
+  "styles": {
+    "title": { "size": "titleSp", "bold": true },
+    "emphasis": { "size": "emphasisSp", "bold": true },
+    "body": { "size": "bodySp", "bold": false },
+    "caption": { "size": "captionSp", "bold": false, "muted": true },
+    "stars": { "size": "titleSp", "bold": false },
+    "list": { "size": "bodySp", "bold": false },
+    "chip": { "size": "captionSp", "bold": true }
+  },
+  "layout": {
+    "horizontalPaddingDp": 16,
+    "verticalPaddingDp": 14,
+    "insetMarginDp": 12,
+    "maxCardHeightPercent": 70,
+    "defaultCollapsedRows": 2,
+    "footerSizeFactor": 0.85,
+    "minTextScale": 0.8,
+    "maxTextScale": 2.0
+  },
+  "palettes": {
+    "light": { "surface": "#FFFFFF", "text": "#0F172A", "muted": "#475569", "border": "#E2E8F0" },
+    "dark": { "surface": "#1E293B", "text": "#F8FAFC", "muted": "#94A3B8", "border": "#334155" }
+  },
+  "accents": {
+    "brand": "#F59E0B",
+    "neutral": "#64748B",
+    "warning": "#D97706",
+    "danger": "#DC2626"
+  },
+  "footer": { "warningText": "#B45309", "warningTextDark": "#FBBF24" }
+}
