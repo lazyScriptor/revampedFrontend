@@ -44,7 +44,6 @@ const FALLBACK_CATALOG: PushEventCatalogEntry[] = [
   { key: "invoice_deleted", group: "bills", default_enabled: true, has_amount: false },
   { key: "invoice_restored", group: "bills", default_enabled: true, has_amount: false },
   { key: "payment_voided", group: "payments", default_enabled: true, has_amount: true },
-  { key: "contact_used", group: "alerts", default_enabled: true, has_amount: false },
   { key: "customer_blacklisted", group: "alerts", default_enabled: true, has_amount: false },
   { key: "daily_summary", group: "digest", default_enabled: false, has_amount: false },
 ];

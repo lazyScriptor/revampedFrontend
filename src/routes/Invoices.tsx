@@ -59,25 +59,19 @@ export default function InvoicesRoute() {
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const search = useSearch({ strict: false }) as {
-    mode?: "dispatch" | "manage";
-    tab?: "from-contacts";
-  };
+  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" };
 
   const [posMode, setPosMode] = useState<"dispatch" | "manage">(
-    search.mode === "manage" || search.tab === "from-contacts" ? "manage" : "dispatch"
+    search.mode === "manage" ? "manage" : "dispatch"
   );
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   const [activeMobilePane, setActiveMobilePane] = useState(0);
 
   // Sync URL changes (e.g. sidebar nav while already on /invoices) → local state
   useEffect(() => {
-    if ((search.mode === "manage" || search.tab === "from-contacts") && posMode !== "manage") {
-      setPosMode("manage");
-    } else if (search.mode === "dispatch" && search.tab !== "from-contacts" && posMode !== "dispatch") {
-      setPosMode("dispatch");
-    }
-  }, [search.mode, search.tab]);
+    if (search.mode === "manage" && posMode !== "manage") setPosMode("manage");
+    if (search.mode === "dispatch" && posMode !== "dispatch") setPosMode("dispatch");
+  }, [search.mode]);
 
   const refreshInvoiceData = () => {
     queryClient.invalidateQueries({ queryKey: ["invoices"] });
@@ -343,7 +337,6 @@ export default function InvoicesRoute() {
           <ManageSearchPanel
             onSelectInvoice={setSelectedManageInvoiceId}
             selectedInvoiceId={selectedManageInvoiceId}
-            initialTab={search.tab}
           />
         )}
       </Box>

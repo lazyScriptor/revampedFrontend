@@ -65,7 +65,6 @@ const CATALOG = [
   { key: "invoice_deleted", default_enabled: true, has_amount: false },
   { key: "invoice_restored", default_enabled: true, has_amount: false },
   { key: "payment_voided", default_enabled: true, has_amount: true },
-  { key: "contact_used", default_enabled: true, has_amount: false },
   { key: "customer_blacklisted", default_enabled: true, has_amount: false },
 ];
 
@@ -77,7 +76,6 @@ const DEFAULT_SETTINGS = {
     invoice_deleted: { enabled: true, min_amount: 0, recipient_role_ids: [] },
     invoice_restored: { enabled: true, min_amount: 0, recipient_role_ids: [] },
     payment_voided: { enabled: false, min_amount: 0, recipient_role_ids: [] },
-    contact_used: { enabled: true, min_amount: 0, recipient_role_ids: [] },
     customer_blacklisted: { enabled: true, min_amount: 0, recipient_role_ids: [] },
   },
   quiet_hours: { enabled: false, from: "21:00", to: "07:00" },
@@ -151,7 +149,7 @@ beforeEach(() => {
         min_amount: null,
       },
       {
-        event_key: "contact_used",
+        event_key: "invoice_deleted",
         eligible: true,
         shop_enabled: true,
         has_amount: false,
@@ -295,7 +293,7 @@ describe("Slice B Push Notification Settings & Device Pages (B5–B6)", () => {
     wrap(<MyPushPreferences />);
 
     expect(await screen.findByText("New invoice created")).toBeInTheDocument();
-    expect(screen.getByText("Phone contact used for bill")).toBeInTheDocument();
+    expect(screen.getByText("Invoice voided / deleted")).toBeInTheDocument();
     // Disabled or ineligible events must not appear
     expect(screen.queryByText("Payment voided / refunded")).not.toBeInTheDocument();
     expect(screen.queryByText("Customer blacklisted")).not.toBeInTheDocument();

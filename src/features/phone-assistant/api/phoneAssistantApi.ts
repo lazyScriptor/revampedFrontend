@@ -3,7 +3,6 @@ import {
   SearchPhoneContactsContract,
   UsePhoneContactContract,
   UnpairSelfDeviceContract,
-  ReviewContactInvoiceContract,
   GetPushSettingsContract,
   UpdatePushSettingsContract,
   SendPushTestContract,
@@ -83,13 +82,6 @@ export interface UsePhoneContactResult {
   phone_number: string;
 }
 
-export interface ReviewContactInvoiceResult {
-  invoice_id: number;
-  contact_reviewed_at: string;
-  contact_reviewed_by: number;
-  reviewer_name?: string | null;
-}
-
 export async function searchPhoneContacts(
   search: string,
   limit = 10,
@@ -112,14 +104,6 @@ export async function usePhoneContact(
 
 export async function unpairCurrentDevice(): Promise<{ unpaired: boolean }> {
   return callDeviceContract(UnpairSelfDeviceContract);
-}
-
-export async function reviewContactInvoice(
-  invoiceId: number,
-): Promise<ReviewContactInvoiceResult> {
-  return callContract(ReviewContactInvoiceContract, {
-    params: { id: invoiceId },
-  });
 }
 
 export interface GetPushSettingsResult {

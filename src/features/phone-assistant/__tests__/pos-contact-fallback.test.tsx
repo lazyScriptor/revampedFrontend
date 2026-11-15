@@ -23,7 +23,6 @@ const state = vi.hoisted(() => ({
   phoneSearchEnabledCalls: [] as boolean[],
   useContactMutateAsync: vi.fn(),
   createCustomerMutate: vi.fn(),
-  reviewInvoiceMutate: vi.fn(),
   invoiceListCalls: [] as any[],
   invoiceListData: {
     invoices: [
@@ -33,13 +32,11 @@ const state = vi.hoisted(() => ({
         total_amount: 1500,
         amount_paid: 0,
         issued_date: "2026-11-15T10:00:00Z",
-        source_contact_id: 9,
-        contact_reviewed_at: null,
         Customer: { first_name: "Nimal", last_name: "Perera", phone_number: "0771234567" },
       },
     ],
     totalItems: 1,
-    counts: { all: 5, active: 2, completed: 3, from_contacts: 1 },
+    counts: { all: 5, active: 2, completed: 3 },
   },
 }));
 
@@ -87,11 +84,6 @@ vi.mock("@/features/phone-assistant/hooks/usePhoneContacts", () => ({
     mutateAsync: state.useContactMutateAsync,
     isPending: false,
   }),
-  useReviewContactInvoice: () => ({
-    mutate: state.reviewInvoiceMutate,
-    isPending: false,
-    variables: undefined,
-  }),
 }));
 
 vi.mock("@/features/invoices/hooks/useInvoiceHooks", () => ({
@@ -132,10 +124,9 @@ beforeEach(() => {
     phone_number: "0771234567",
   });
   state.createCustomerMutate.mockReset();
-  state.reviewInvoiceMutate.mockReset();
 });
 
-describe("POS phone contact fallback & From contacts tab (A7)", () => {
+describe("POS phone contact fallback (A7)", () => {
   it("hides contact fallback without phone_contacts:view permission or phone_assistant plan", () => {
     state.canPhoneContacts = false;
     wrap(<PosCustomerPanel selectedCustomer={null} onSelectCustomer={vi.fn()} />);
@@ -279,19 +270,13 @@ describe("POS phone contact fallback & From contacts tab (A7)", () => {
     expect(sentPayload.first_name).toBe("Kamal");
   });
 
-  it("renders From contacts tab with count, switches via initialTab, and calls mark reviewed", () => {
-    wrap(
-      <ManageSearchPanel
-        onSelectInvoice={vi.fn()}
-        initialTab="from-contacts"
-      />,
-    );
+  it("Manage Orders has no From contacts tab or review action", () => {
+    wrap(<ManageSearchPanel onSelectInvoice={vi.fn()} />);
 
-    expect(screen.getByText("From contacts (1)")).toBeInTheDocument();
-    expect(state.invoiceListCalls[0]).toEqual([1, 25, undefined, { contactSourced: true }]);
-
-    const markBtn = screen.getByRole("button", { name: "Mark reviewed" });
-    fireEvent.click(markBtn);
-    expect(state.reviewInvoiceMutate).toHaveBeenCalledWith(501);
+    expect(screen.getByText("All (5)")).toBeInTheDocument();
+    expect(screen.getByText("Completed (3)")).toBeInTheDocument();
+    expect(screen.queryByText(/from contacts/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /mark reviewed/i })).not.toBeInTheDocument();
+    expect(state.invoiceListCalls[0]).toEqual([1, 25, undefined]);
   });
 });
