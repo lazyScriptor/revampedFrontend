@@ -51,6 +51,7 @@ import {
 } from "@/features/phone-assistant/hooks/usePhoneContacts";
 import type { PhoneContactMatch } from "@/features/phone-assistant/api/phoneAssistantApi";
 import { useTranslation } from "react-i18next";
+import { isPhoneSearch } from "@/lib/phoneSearch";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
@@ -81,10 +82,10 @@ export function PosCustomerPanel({
   const [contactUseError, setContactUseError] = useState<string | null>(null);
 
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
-  const trimmedSearch = inputValue.trim();
+  const isPhoneQuery = isPhoneSearch(inputValue);
   const shouldSearchPhoneContacts =
     canSearchPhoneContacts &&
-    trimmedSearch.length >= 3 &&
+    isPhoneQuery &&
     !isLoading &&
     searchResults.length === 0;
   const {
@@ -159,15 +160,11 @@ export function PosCustomerPanel({
 
   const theme = useTheme();
 
-  // Turn whatever the cashier already typed into form pre-fill: phone, NIC or name.
-  const prefill = useMemo(() => {
-    const q = inputValue.trim();
-    if (!q) return undefined;
-    if (/^\+?\d{9,12}$/.test(q) && !/^\d{12}$/.test(q)) return { phone_number: q };
-    if (/^\d{9}[vVxX]$|^\d{12}$/.test(q)) return { nic_number: q.toUpperCase() };
-    const [first, ...rest] = q.split(/\s+/);
-    return { first_name: first, last_name: rest.join(" ") };
-  }, [inputValue]);
+  // Customers are searched by phone only, so the typed phone number pre-fills a new customer.
+  const prefill = useMemo(
+    () => (isPhoneQuery ? { phone_number: inputValue.trim() } : undefined),
+    [isPhoneQuery, inputValue],
+  );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
@@ -190,6 +187,9 @@ export function PosCustomerPanel({
           noOptionsText={
             inputValue.length < 2 ? (
               t("invoices.PosCustomerPanel.typeToSearch")
+            ) : !isPhoneQuery ? (
+              // A name finds nobody, so no "add as new" here: it would create duplicate customers.
+              t("invoices.PosCustomerPanel.phoneOnlyHint")
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
                 <span>{t("invoices.PosCustomerPanel.noClientsFound")}</span>
@@ -314,6 +314,8 @@ export function PosCustomerPanel({
               fullWidth
               slotProps={{
                 ...((params as any).slotProps),
+                // Phone keypad on touch screens, since customers are searched by phone number.
+                htmlInput: { ...((params as any).slotProps?.htmlInput || {}), inputMode: "tel" },
                 input: {
                   ...((params as any).slotProps?.input || {}),
                   startAdornment: (
