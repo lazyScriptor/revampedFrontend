@@ -3786,7 +3786,8 @@
             "battery_optimized": "බැටරි සීමාවක් ඇත",
             "sync_stale": "සමමුහුර්තය පරණයි",
             "push_missing": "Push ටෝකනය නැත",
-            "outdated_app": "යෙදුම යාවත්කාලීන කරන්න"
+            "outdated_app": "යෙදුම යාවත්කාලීන කරන්න",
+            "brief_sync_stale": "දිගු කාලයක් සමමුහුර්ත වී නැත"
         },
         "deviceConsole": {
             "title": "සම්බන්ධිත දුරකථන",
@@ -3898,7 +3899,9 @@
             "afterCallCardTitle": "ඇමතුමෙන් පසු සටහන් කාඩ්පත",
             "afterCallEnabledLabel": "ඇමතුම අවසන් වූ විට සටහන් කාඩ්පත පෙන්වන්න",
             "afterCallDismissLabel": "පසු-ඇමතුම් කාඩ්පත ස්වයංක්‍රීයව වැසෙන කාලය (තත්පර, 0 = අතින්)",
-            "afterCallTagsLabel": "ඉක්මන් ටැග් (කොමා වලින් වෙන් කරන්න)"
+            "afterCallTagsLabel": "ඉක්මන් ටැග් (කොමා වලින් වෙන් කරන්න)",
+            "syncLine": "පාරිභෝගිකයන් සමමුහුර්ත කළේ {{brief}} · සම්බන්ධතා {{contacts}} · සුරැකි පාරිභෝගිකයන් {{cached}} · උඩුගත කිරීමට {{queued}}",
+            "updateAppForDesign": "නව ඇමතුම් තිර නිර්මාණය පෙන්වීමට යෙදුම යාවත්කාලීන කරන්න"
         },
         "pairingPreview": {
             "shopWillBeAbleTo": "මෙම වෙළඳසැලට කළ හැකි දේ:",

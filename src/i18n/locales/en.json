@@ -3786,7 +3786,8 @@
             "battery_optimized": "Battery restricted",
             "sync_stale": "Sync stale",
             "push_missing": "Push token missing",
-            "outdated_app": "Update app"
+            "outdated_app": "Update app",
+            "brief_sync_stale": "Not synced for a long time"
         },
         "deviceConsole": {
             "title": "Connected phones",
@@ -3898,7 +3899,9 @@
             "afterCallCardTitle": "After-call note card",
             "afterCallEnabledLabel": "Show after-call card when call ends",
             "afterCallDismissLabel": "After-call card auto-dismiss (seconds, 0 = manual)",
-            "afterCallTagsLabel": "Quick tags (comma-separated)"
+            "afterCallTagsLabel": "Quick tags (comma-separated)",
+            "syncLine": "Customers synced {{brief}} · contacts {{contacts}} · {{cached}} customers saved · {{queued}} waiting to upload",
+            "updateAppForDesign": "Update the app to show the new call screen design"
         },
         "pairingPreview": {
             "shopWillBeAbleTo": "This shop will be able to:",

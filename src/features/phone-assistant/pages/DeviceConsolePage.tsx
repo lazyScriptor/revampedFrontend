@@ -1359,6 +1359,25 @@ export function DeviceConsolePage({ canManagePolicy = true }: DeviceConsolePageP
                           calls: d.calls_logged_count,
                         })}`}
                       </Typography>
+                      {d.is_native_app && (
+                        <Typography
+                          variant="caption"
+                          data-testid={`sync-line-${d.operator_device_id}`}
+                          sx={{ display: "block", mt: 0.25, color: textSecondary, fontVariantNumeric: "tabular-nums" }}
+                        >
+                          {t("phoneAssistant.deviceConsole.syncLine", {
+                            brief: d.briefs_synced_at ? new Date(d.briefs_synced_at).toLocaleString() : t("phoneShell.sync.never"),
+                            contacts: (d.reported_state as any)?.last_contact_sync_at
+                              ? new Date((d.reported_state as any).last_contact_sync_at).toLocaleString()
+                              : t("phoneShell.sync.never"),
+                            cached: (d.reported_state as any)?.cached_briefs ?? 0,
+                            queued: (d.reported_state as any)?.outbox_pending ?? 0,
+                          })}
+                          {(d.reported_state as any)?.call_screen_unsupported
+                            ? ` · ${t("phoneAssistant.deviceConsole.updateAppForDesign")}`
+                            : ""}
+                        </Typography>
+                      )}
 
                       {/* Effective Capabilities */}
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: 1.25 }}>
