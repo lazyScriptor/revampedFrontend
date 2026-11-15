@@ -55,6 +55,8 @@ interface CustomerFormDialogProps {
   onCreated?: (customer: any) => void;
   /** Pre-fill fields when opening the dialog to create a customer. */
   prefill?: Partial<Pick<CustomerFormData, "first_name" | "last_name" | "phone_number" | "nic_number">>;
+  /** Phone contact id when creating a customer from an operator's phone contact. */
+  sourceContactId?: number | null;
 }
 
 const parentLabel = (p: ParentCustomerOption) =>
@@ -68,6 +70,7 @@ export function CustomerFormDialog({
   initialData,
   onCreated,
   prefill,
+  sourceContactId,
 }: CustomerFormDialogProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -167,13 +170,16 @@ export function CustomerFormDialog({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialData, reset]);
+  }, [open, initialData, reset, prefill?.first_name, prefill?.last_name, prefill?.phone_number, prefill?.nic_number]);
 
   const onSubmit = (data: CustomerFormData) => {
     const payload: any = { ...data };
     if (payload.customer_type === "Individual") payload.company_name = null;
     if (!payload.is_worker_for_company) payload.parent_customer_id = null;
     delete payload.is_worker_for_company;
+    if (!isEditing && sourceContactId) {
+      payload.source_contact_id = sourceContactId;
+    }
 
     if (isEditing && initialData?.customer_id) {
       updateMutation.mutate(

@@ -2041,6 +2041,7 @@
                 "workforce": "කාර්ය මණ්ඩලය",
                 "cash_locker": "මුදල් ලොකරය",
                 "messages": "පණිවිඩ තිරය",
+                "phone_assistant": "දුරකථන සහායක (Phone Assistant)",
                 "data_imports": "ආයාත",
                 "data_add_machines": "යන්ත්‍ර එක් කිරීම",
                 "data_equipment_sheet": "උපකරණ පත්‍රිකාව",
@@ -2063,6 +2064,7 @@
                 "workforce": "කාර්මිකයන් සහ ඔවුන්ගේ අලුත්වැඩියා. නඩත්තු අවශ්‍යයි.",
                 "cash_locker": "දෛනික මුදල් ගණන් කිරීම් සහ විවෘත කිරීමේ මතක් කිරීම.",
                 "messages": "WhatsApp වැඩ ලැයිස්තුව, ඉතිහාසය සහ සැකිලි. බිල්පතකින් යැවීම සැමවිටම ක්‍රියාත්මකයි.",
+                "phone_assistant": "ඇමතුම් හඳුනාගැනීම, POS හි දුරකථන සම්බන්ධතා සෙවීම සහ ක්ෂණික දැනුම්දීම්.",
                 "data_imports": "ගොනුවකින් යන්ත්‍ර සහ ගනුදෙනුකරුවන් ආයාත කිරීම.",
                 "data_add_machines": "ජාලයකින් යන්ත්‍ර බොහොමයක් එක් කිරීම.",
                 "data_equipment_sheet": "සියලු යන්ත්‍ර එක් පත්‍රිකාවක සංස්කරණය.",
@@ -3528,6 +3530,170 @@
             "accept": "පිළිගන්න",
             "accepted": "වෙනස පිළිගත්තා.",
             "empty": "තවම ගණන් කිරීම් නැත."
+        }
+    },
+    "phoneAssistant": {
+        "posFallback": {
+            "fromPhoneContacts": "දුරකථන සම්බන්ධතා වලින්",
+            "searchingContacts": "සමමුහුර්ත කළ දුරකථන සම්බන්ධතා සොයමින්…",
+            "confirmTitle": "මෙම බිල්පත සඳහා මෙම සම්බන්ධතාව භාවිතා කරන්නද?",
+            "confirmBody": "ක්‍රියාකරුගේ සමමුහුර්ත දුරකථන සම්බන්ධතාවකින් පාරිභෝගිකයෙකු සෑදීමෙන් වෙළඳසැල් හිමිකරුට දැනුම් දෙනු ලැබේ.",
+            "confirmAction": "සම්බන්ධතාව භාවිතා කරන්න",
+            "usingContact": "සූදානම් කරමින්…",
+            "useFailed": "එම සම්බන්ධතාව ලබා ගත නොහැකි විය. කරුණාකර නැවත උත්සාහ කරන්න."
+        },
+        "invoices": {
+            "fromContactsTab": "සම්බන්ධතා වලින්",
+            "fromContactBadge": "සම්බන්ධතාවෙන්",
+            "markReviewed": "පරීක්ෂා කළ බව සලකුණු කරන්න",
+            "reviewedByAt": "{{name}} විසින් පරීක්ෂා කළා · {{time}}"
+        },
+        "pairedPhones": {
+            "nativeApp": "දුරකථන යෙදුම",
+            "browser": "බ්‍රවුසරය",
+            "contactsSyncedCount": "සම්බන්ධතා {{count}}ක් සමමුහුර්තයි",
+            "contactSyncOff": "සම්බන්ධතා සමමුහුර්තය අක්‍රියයි",
+            "contactsSyncedAt": "සමමුහුර්ත කළේ {{value}}"
+        },
+        "checklist": {
+            "title": "දුරකථන සහායක සැකසුම",
+            "syncNow": "දැන් සමමුහුර්ත කරන්න",
+            "contactSyncToggleTitle": "POS සෙවීම සඳහා දුරකථන සම්බන්ධතා බෙදාගන්න",
+            "contactSyncToggleHint": "බිල් සෑදීමේදී කාර්ය මණ්ඩලයට නව ඇමතුම්කරුවන් සොයා ගැනීමට නම් සහ දුරකථන අංක පමණක් උඩුගත කෙරේ.",
+            "callerIdRole": "Caller ID සහ ඇමතුම් පරීක්ෂණ භූමිකාව",
+            "overlayPermission": "වෙනත් යෙදුම් මත පෙන්වීමේ අවසරය",
+            "notificationsPermission": "දැනුම්දීම්",
+            "contactsPermission": "සම්බන්ධතා කියවීමේ අවසරය",
+            "callLogPermission": "ඇමතුම් ලොගය සහ දුරකථන තත්ත්වය",
+            "batteryExemption": "සීමා රහිත පසුබිම් බැටරි භාවිතය",
+            "ready": "සූදානම්",
+            "fix": "සකසන්න",
+            "vendorAutostartTitle": "Samsung සහ Vivo පසුබිම් ආරක්ෂණය",
+            "vivoSteps": "Vivo Funtouch/OriginOS: පසුබිම් සමමුහුර්තය සහ ඇමතුම් පොප්-අප් ක්‍රියාත්මකව තබා ගැනීමට Autostart සහ High background power consumption සක්‍රීය කරන්න.",
+            "samsungSteps": "Samsung One UI: Battery යටතේ Unrestricted තෝරා Sleeping apps වලින් GearGrid Phone ඉවත් කරන්න.",
+            "genericVendorSteps": "පද්ධති සැකසුම් තුළ background autostart සක්‍රීය කර sleeping apps සීමා ඉවත් කරන්න.",
+            "vendorIntentFallback": "දුරකථනයේ Settings → Apps → GearGrid Phone → Battery / Permissions වෙත ගොස් background autostart සහ unrestricted battery ලබා දෙන්න.",
+            "lastContactSync": "අවසන් සම්බන්ධතා සමමුහුර්තය: {{value}}",
+            "lastBriefSync": "අවසන් ඇමතුම් විස්තර සමමුහුර්තය: {{value}}",
+            "never": "කිසිදා නැත"
+        },
+        "consent": {
+            "title": "සම්බන්ධතා සමමුහුර්තය සක්‍රීය කරන්නද?",
+            "body": "බිල්පත් සෑදීමේදී කවුන්ටරයේ කාර්ය මණ්ඩලයට පාරිභෝගිකයන් සොයා ගැනීමට හැකි වන පරිදි මෙම දුරකථනයේ සම්බන්ධතා නම් සහ දුරකථන අංක ඔබේ වෙළඳසැලේ GearGrid ගිණුමට උඩුගත කෙරේ.",
+            "privacyGuarantee": "නම් සහ අංක පමණක් උඩුගත කෙරේ — ඡායාරූප, ඊමේල්, ලිපින හෝ සටහන් කිසිවිටෙකත් ලබා නොගනී. මෙය අක්‍රිය කර තිබුණද ඇමතුම් විස්තර ක්‍රියා කරන අතර, අක්‍රිය කිරීමෙන් හෝ සම්බන්ධතාව ඉවත් කිරීමෙන් සමමුහුර්ත කළ සම්බන්ධතා මැකී යයි.",
+            "accept": "එකඟ වී සක්‍රීය කරන්න"
+        },
+        "pushEvents": {
+            "invoice_created": {
+                "label": "නව ඉන්වොයිසියක් සාදන ලදී",
+                "description": "කවුන්ටරයේ ක්‍රියාකරුවෙකු නව කුලී බිල්පතක් නිකුත් කළ විට දැනුම් දෙන්න."
+            },
+            "payment_received": {
+                "label": "ගෙවීමක් ලැබුණි",
+                "description": "මුදල්, කාඩ්පත්, බැංකු හෝ තැන්පතු ගෙවීමක් සටහන් කළ විට දැනුම් දෙන්න."
+            },
+            "return_processed": {
+                "label": "උපකරණ ආපසු ලැබුණි",
+                "description": "කුලියට දුන් යන්ත්‍ර ආපසු භාර දුන් විට හෝ පියවූ විට දැනුම් දෙන්න."
+            },
+            "invoice_deleted": {
+                "label": "ඉන්වොයිසිය අවලංගු / මකන ලදී",
+                "description": "ඉන්වොයිසියක් ඉවත් කළ විට හෝ අවලංගු කළ විට දැනුම් දෙන්න."
+            },
+            "invoice_restored": {
+                "label": "ඉන්වොයිසිය ප්‍රතිසාධනය කළා",
+                "description": "ඉවත් කළ ඉන්වොයිසියක් නැවත සක්‍රීය කළ විට දැනුම් දෙන්න."
+            },
+            "payment_voided": {
+                "label": "ගෙවීම අවලංගු / ආපසු ගෙවන ලදී",
+                "description": "ගෙවීමක් අවලංගු කළ විට හෝ ආපසු ගෙවූ විට දැනුම් දෙන්න."
+            },
+            "contact_used": {
+                "label": "දුරකථන සම්බන්ධතාවකින් බිල්පතක් සෑදුවා",
+                "description": "සමමුහුර්ත කළ දුරකථන සම්බන්ධතාවකින් කාර්ය මණ්ඩලය පාරිභෝගිකයෙකු සෑදූ විට දැනුම් දෙන්න."
+            },
+            "customer_blacklisted": {
+                "label": "පාරිභෝගිකයා අසාදු ලේඛනගත කළා",
+                "description": "පාරිභෝගිකයෙකු අසාදු ලේඛනගත කළ බව සලකුණු කළ විට දැනුම් දෙන්න."
+            }
+        },
+        "pushSettings": {
+            "title": "ජංගම දැනුම්දීම් (වෙළඳසැල් නීති)",
+            "subtitle": "සම්බන්ධ කළ GearGrid Phone යෙදුම් වෙත Firebase push දැනුම්දීම් යවන සිදුවීම් තෝරන්න.",
+            "sendTest": "පරීක්ෂණ දැනුම්දීමක් යවන්න",
+            "sendingTest": "යවමින්…",
+            "testSent": "සම්බන්ධ කළ දුරකථන {{count}}ක් වෙත පරීක්ෂණ දැනුම්දීම යවන ලදී.",
+            "testNoDevices": "දැනුම්දීම් සක්‍රීය කළ සම්බන්ධිත දුරකථන හමු නොවීය.",
+            "testFailed": "පරීක්ෂණ දැනුම්දීම යැවීමට නොහැකි විය.",
+            "eventColumn": "සිදුවීම",
+            "enabledColumn": "වෙළඳසැලේ සක්‍රීයයි",
+            "minAmountColumn": "අවම බිල් / ගෙවීම් මුදල",
+            "rolesColumn": "අමතර ලබන්නන්ගේ භූමිකා",
+            "adminsOnly": "පරිපාලකයින් පමණි (මට්ටම ≥ 100)",
+            "quietHoursTitle": "නිහඬ පැය",
+            "quietHoursHint": "මෙම වේලාවන් අතරතුර දැනුම්දීම් ශබ්දයකින් තොරව නිහඬව ලබා දෙන්න.",
+            "quietFrom": "සිට",
+            "quietTo": "දක්වා",
+            "includeAmountsTitle": "දැනුම්දීම්වල රුපියල් මුදල් පෙන්වන්න",
+            "includeAmountsHint": "අක්‍රිය විට, අගුළු තිරයේ දැනුම්දීම්වල මුදල් ප්‍රමාණයන් සඟවයි.",
+            "notifyActorTitle": "ක්‍රියාව කළ පුද්ගලයාටත් දැනුම් දෙන්න",
+            "notifyActorHint": "අක්‍රිය විට, බිල්පත හෝ ගෙවීම සටහන් කළ කාර්ය මණ්ඩල සාමාජිකයාට තමන්ගේම ක්‍රියාව සඳහා දැනුම්දීමක් නොලැබේ.",
+            "saveButton": "දැනුම්දීම් සැකසුම් සුරකින්න",
+            "savingButton": "සුරකිමින්…",
+            "savedBanner": "වෙළඳසැල් ජංගම දැනුම්දීම් සැකසුම් සුරකින ලදී.",
+            "saveFailed": "දැනුම්දීම් සැකසුම් සුරැකීමට නොහැකි විය.",
+            "loadFailed": "වෙළඳසැල් දැනුම්දීම් සැකසුම් ලබා ගැනීමට නොහැකි විය."
+        },
+        "myNotifications": {
+            "title": "දුරකථන දැනුම්දීම්",
+            "subtitle": "ඔබේ සම්බන්ධ කළ Android GearGrid Phone යෙදුම සඳහා පුද්ගලික දැනුම්දීම් පෙරහන්.",
+            "empty": "වෙළඳසැල් පරිපාලක විසින් ඔබේ භූමිකාව සඳහා තවම ජංගම දැනුම්දීම් සක්‍රීය කර නොමැත.",
+            "loadFailed": "ඔබේ දැනුම්දීම් මනාප ලබා ගැනීමට නොහැකි විය.",
+            "saveFailed": "දැනුම්දීම් මනාප යාවත්කාලීන කිරීමට නොහැකි විය.",
+            "savedBanner": "දැනුම්දීම් මනාප සුරකින ලදී.",
+            "minAmountLabel": "මෙයට වැඩි විට පමණක් දැනුම් දෙන්න",
+            "shopMinHint": "වෙළඳසැල් අවමය: රු. {{amount}}",
+            "minAmountValidation": "වෙළඳසැල් අවමය වන රු. {{amount}}ට වඩා අඩු විය නොහැක.",
+            "saveThreshold": "සීමාව සුරකින්න",
+            "pairedPhonesHeading": "දැනුම්දීම් ලැබෙන සම්බන්ධිත දුරකථන",
+            "noPairedNativePhone": "ඔබේ ගිණුමට තවම Android GearGrid Phone යෙදුමක් සම්බන්ධ කර නැත. පහත Linked Phones වෙතින් දුරකථනයක් සම්බන්ධ කරන්න.",
+            "manageOnPhone": "දැනුම්දීම් සැකසුම්"
+        },
+        "deviceNotifications": {
+            "title": "ජංගම දැනුම්දීම් සැකසුම්",
+            "subtitle": "මෙම දුරකථනයේ පෙන්වන වෙළඳසැල් සිදුවීම් තෝරන්න.",
+            "backToDevice": "දුරකථන මුල් තිරයට",
+            "unpairedError": "මෙම දුරකථනය තවම සම්බන්ධ කර නැත. කරුණාකර පළමුව සම්බන්ධ කරන්න."
+        },
+        "deviceInvoice": {
+            "title": "ඉන්වොයිස් සාරාංශය",
+            "backToDevice": "දුරකථන මුල් තිරයට",
+            "loading": "ඉන්වොයිස් සාරාංශය පූරණය වෙමින්…",
+            "forbidden": "ජංගම දුරකථනයෙන් සම්පූර්ණ ඉන්වොයිස් සාරාංශ බැලිය හැක්කේ පරිපාලකයින්ට පමණි.",
+            "notFound": "ඉන්වොයිසිය හමු නොවීය හෝ ප්‍රවේශ අවසර නැත.",
+            "issuedAt": "නිකුත් කළේ {{value}}",
+            "issuedBy": "නිකුත් කළේ {{name}}",
+            "customerHeading": "පාරිභෝගිකයා",
+            "itemsHeading": "උපකරණ සහ මුදල්",
+            "qtyLabel": "ප්‍රමාණය {{count}}",
+            "totalAmount": "මුළු බිල්පත",
+            "paidAmount": "ගෙවූ මුදල",
+            "balanceDue": "ගෙවීමට ඉතිරි මුදල"
+        },
+        "calls": {
+            "incomingTitle": "ලැබෙන ඇමතුමක්",
+            "endedTitle": "ඇමතුම අවසන්",
+            "viaDevice": "{{device}} හරහා",
+            "fromDeviceContact": "{{device}} දුරකථනයෙන්",
+            "notInGearGrid": "GearGrid හි නොමැත",
+            "blacklistedBanner": "අසාදු ලේඛනගත පාරිභෝගිකයෙකි",
+            "idRetained": "හැඳුනුම්පත භාරයේ",
+            "openCustomer": "පාරිභෝගිකයා බලන්න",
+            "newBill": "නව බිල්පතක්",
+            "addAsCustomer": "පාරිභෝගිකයෙකු ලෙස එක් කරන්න",
+            "dismiss": "ඉවත් කරන්න",
+            "durationSeconds": "තත්. {{seconds}}",
+            "loadingCaller": "ඇමතුම්කරු හඳුනාගනිමින්…"
         }
     }
 }

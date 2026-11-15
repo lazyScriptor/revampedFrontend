@@ -71,6 +71,7 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
+import { IncomingCallToast } from "@/features/phone-assistant/components/IncomingCallToast";
 
 const drawerWidth = 260;
 
@@ -725,6 +726,7 @@ function AuthenticatedLayout() {
           <Outlet />
         </Box>
         <PairedSignatureWatcher />
+        <IncomingCallToast />
         <LockerOpeningPrompt />
         <PlanSync />
         <ForcePasswordChange />

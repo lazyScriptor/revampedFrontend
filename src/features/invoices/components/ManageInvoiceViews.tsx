@@ -43,6 +43,9 @@ import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import { usePlanChecker } from "@/features/plan/usePlan";
+import { useCanPerform } from "@/components/auth/Can";
+import { useReviewContactInvoice } from "@/features/phone-assistant/hooks/usePhoneContacts";
 import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
 import { Can } from "@/components/auth/Can";
 import {
@@ -86,22 +89,39 @@ const StatusDot = ({ color }: { color: string }) => (
 export function ManageSearchPanel({
   onSelectInvoice,
   selectedInvoiceId = null,
+  initialTab,
 }: {
   onSelectInvoice: (id: number) => void;
   selectedInvoiceId?: number | null;
+  initialTab?: "from-contacts";
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
+  const canPlan = usePlanChecker();
+  const hasPhoneAssistant = canPlan("phone_assistant");
+  const canReviewContactInvoice = useCanPerform("invoice:edit");
+  const reviewContactMut = useReviewContactInvoice();
+
   const [searchInput, setSearchInput] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed" | "FromContacts">(
+    initialTab === "from-contacts" ? "FromContacts" : "All"
+  );
   const [pageSize, setPageSize] = useState(25);
+
+  useEffect(() => {
+    if (initialTab === "from-contacts" && hasPhoneAssistant) {
+      setStatusFilter("FromContacts");
+      setPageSize(25);
+    }
+  }, [initialTab, hasPhoneAssistant]);
 
   const { data: searchResults = [], isLoading: searching } = useInvoiceSearch(searchInput);
   const { data: listData, isLoading: listLoading, isFetching } = useInvoiceList(
     1,
     pageSize,
-    statusFilter === "All" ? undefined : statusFilter
+    statusFilter === "All" || statusFilter === "FromContacts" ? undefined : statusFilter,
+    statusFilter === "FromContacts" ? { contactSourced: true } : undefined
   );
 
   const isSearchMode = searchInput.length > 0;
@@ -110,13 +130,15 @@ export function ManageSearchPanel({
     : listData?.invoices || [];
   const isLoading = isSearchMode ? searching : listLoading;
 
-  const counts = listData?.counts || { all: 0, active: 0, completed: 0 };
+  const counts = listData?.counts || { all: 0, active: 0, completed: 0, from_contacts: 0 };
   const currentFilterTotal =
     statusFilter === "All"
       ? counts.all
       : statusFilter === "Active"
         ? counts.active
-        : counts.completed;
+        : statusFilter === "Completed"
+          ? counts.completed
+          : (counts.from_contacts ?? 0);
 
   const borderColor = (inv: any) => {
     if (inv.invoice_id === selectedInvoiceId) return "#2563eb";
@@ -161,14 +183,26 @@ export function ManageSearchPanel({
 
       {/* Status filter chips with exact counts */}
       <Box sx={{ px: 2, pb: 1.5, display: "flex", alignItems: "center", gap: 1, flexShrink: 0, overflowX: "auto" }}>
-        {(["All", "Active", "Completed"] as const).map((s) => {
-          const count = s === "All" ? counts.all : s === "Active" ? counts.active : counts.completed;
+        {(hasPhoneAssistant
+          ? (["All", "Active", "Completed", "FromContacts"] as const)
+          : (["All", "Active", "Completed"] as const)
+        ).map((s) => {
+          const count =
+            s === "All"
+              ? counts.all
+              : s === "Active"
+                ? counts.active
+                : s === "Completed"
+                  ? counts.completed
+                  : (counts.from_contacts ?? 0);
           const baseLabel =
             s === "All"
               ? t("common.all")
               : s === "Active"
                 ? t("invoices.active")
-                : t("invoices.completed");
+                : s === "Completed"
+                  ? t("invoices.completed")
+                  : t("phoneAssistant.invoices.fromContactsTab");
           const label = `${baseLabel} (${count})`;
 
           return (
@@ -182,8 +216,16 @@ export function ManageSearchPanel({
                 setPageSize(25);
               }}
               variant={statusFilter === s ? "filled" : "outlined"}
-              color={statusFilter === s ? (s === "Active" ? "warning" : s === "Completed" ? "success" : "primary") : "default"}
-              sx={{ fontWeight: 700, fontSize: "0.72rem", fontVariantNumeric: "tabular-nums" }}
+              color={
+                statusFilter === s
+                  ? s === "Active" || s === "FromContacts"
+                    ? "warning"
+                    : s === "Completed"
+                      ? "success"
+                      : "primary"
+                  : "default"
+              }
+              sx={{ fontWeight: 700, fontSize: "0.72rem", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}
             />
           );
         })}
@@ -302,6 +344,75 @@ export function ManageSearchPanel({
                     {formatDateTime(inv.issued_date || inv.createdAt, dayWords)}
                   </Typography>
                 </Box>
+                {hasPhoneAssistant && Boolean(inv.source_contact_id) && (
+                  <Box
+                    sx={{
+                      mt: 0.75,
+                      pt: 0.75,
+                      borderTop: "1px dashed #e2e8f0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {inv.contact_reviewed_at ? (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#059669",
+                          fontWeight: 600,
+                          fontSize: "0.7rem",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {t("phoneAssistant.invoices.reviewedByAt", {
+                          name:
+                            `${inv.ContactReviewedBy?.first_name || ""} ${inv.ContactReviewedBy?.last_name || ""}`.trim() ||
+                            inv.ContactReviewedBy?.username ||
+                            `#${inv.contact_reviewed_by || ""}`,
+                          time: formatDateTime(inv.contact_reviewed_at, dayWords),
+                        })}
+                      </Typography>
+                    ) : (
+                      <>
+                        <Chip
+                          size="small"
+                          label={t("phoneAssistant.invoices.fromContactBadge")}
+                          color="warning"
+                          variant="outlined"
+                          sx={{ height: 20, fontSize: "0.65rem", fontWeight: 700 }}
+                        />
+                        {canReviewContactInvoice && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            disabled={
+                              reviewContactMut.isPending &&
+                              reviewContactMut.variables === inv.invoice_id
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              reviewContactMut.mutate(inv.invoice_id);
+                            }}
+                            sx={{
+                              py: 0.15,
+                              px: 1,
+                              minHeight: 24,
+                              fontSize: "0.68rem",
+                              fontWeight: 700,
+                              textTransform: "none",
+                            }}
+                          >
+                            {t("phoneAssistant.invoices.markReviewed")}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </Box>
+                )}
               </Box>
             );
           })}

@@ -1,0 +1,351 @@
+import { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Paper,
+  Stack,
+  Switch,
+  Typography,
+} from "@mui/material";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import SyncIcon from "@mui/icons-material/Sync";
+import SecurityIcon from "@mui/icons-material/Security";
+import { useTranslation } from "react-i18next";
+import {
+  nativeBridge,
+  registerDeviceWithServer,
+  type PhoneAssistantSetupStatus,
+} from "../lib/nativeBridge";
+
+function formatSyncTimestamp(iso: string | null, neverLabel: string): string {
+  if (!iso) return neverLabel;
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
+export function NativeSetupChecklist() {
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<PhoneAssistantSetupStatus | null>(null);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [vendorFallbackNote, setVendorFallbackNote] = useState(false);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      const next = await nativeBridge.getSetupStatus();
+      if (next) setStatus(next);
+    } catch {
+      // Ignore bridge read failures cleanly
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  const runAction = async (
+    key: string,
+    fn: () => Promise<PhoneAssistantSetupStatus | null>,
+  ) => {
+    setBusyKey(key);
+    try {
+      const updated = await fn();
+      if (updated) setStatus(updated);
+      else await loadStatus();
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const applyContactSyncToggle = async (enabled: boolean, consented: boolean) => {
+    setBusyKey("contactSync");
+    try {
+      const updated = await nativeBridge.setContactSyncEnabled(enabled, consented);
+      await registerDeviceWithServer({
+        app_version: "1.0.0",
+        contact_sync_enabled: enabled,
+      }).catch(() => null);
+      if (updated) setStatus(updated);
+      else await loadStatus();
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const handleToggleContactSync = async (checked: boolean) => {
+    if (checked && !status?.contactsConsented) {
+      setConsentOpen(true);
+      return;
+    }
+    await applyContactSyncToggle(checked, Boolean(status?.contactsConsented || checked));
+  };
+
+  if (!status) {
+    return null;
+  }
+
+  const checklistRows = [
+    {
+      key: "callerId",
+      label: t("phoneAssistant.checklist.callerIdRole"),
+      done: status.callScreeningRole,
+      onFix: () => runAction("callerId", () => nativeBridge.requestCallScreeningRole()),
+    },
+    {
+      key: "overlay",
+      label: t("phoneAssistant.checklist.overlayPermission"),
+      done: status.overlayPermission,
+      onFix: () => runAction("overlay", () => nativeBridge.requestOverlayPermission()),
+    },
+    {
+      key: "notifications",
+      label: t("phoneAssistant.checklist.notificationsPermission"),
+      done: status.notificationsPermission,
+      onFix: () => runAction("notifications", () => nativeBridge.requestNotificationsPermission()),
+    },
+    ...(status.contactSyncEnabled
+      ? [
+          {
+            key: "contacts",
+            label: t("phoneAssistant.checklist.contactsPermission"),
+            done: status.contactsPermission,
+            onFix: () => runAction("contacts", () => nativeBridge.requestContactsPermission()),
+          },
+        ]
+      : []),
+    {
+      key: "callLog",
+      label: t("phoneAssistant.checklist.callLogPermission"),
+      done: status.callLogPermission,
+      onFix: () => runAction("callLog", () => nativeBridge.requestCallLogPermission()),
+    },
+    {
+      key: "battery",
+      label: t("phoneAssistant.checklist.batteryExemption"),
+      done: status.batteryOptimizationExempt,
+      onFix: () => runAction("battery", () => nativeBridge.requestBatteryExemption()),
+    },
+  ];
+
+  const isSamsung = /samsung/i.test(status.manufacturer || "");
+  const isVivo = /vivo|iqoo/i.test(status.manufacturer || "");
+
+  return (
+    <>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2.25,
+          borderRadius: 2,
+          border: "1px solid #e2e8f0",
+          bgcolor: "#ffffff",
+        }}
+      >
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <SecurityIcon sx={{ color: "#d97706", fontSize: 20 }} />
+            <Typography sx={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
+              {t("phoneAssistant.checklist.title")}
+            </Typography>
+          </Box>
+          <Button
+            size="small"
+            variant="outlined"
+            color="warning"
+            startIcon={<SyncIcon sx={{ fontSize: 15 }} />}
+            disabled={!status.contactSyncEnabled || busyKey === "syncNow"}
+            onClick={() => runAction("syncNow", () => nativeBridge.syncNow())}
+            sx={{ textTransform: "none", fontWeight: 700, minHeight: 32 }}
+          >
+            {t("phoneAssistant.checklist.syncNow")}
+          </Button>
+        </Stack>
+
+        {/* Contact Sync Toggle (off until consented) */}
+        <Box
+          sx={{
+            p: 1.5,
+            mb: 1.5,
+            borderRadius: 1.5,
+            border: "1px solid #fde68a",
+            bgcolor: "#fffbeb",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 13.5, color: "#0f172a" }}>
+              {t("phoneAssistant.checklist.contactSyncToggleTitle")}
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: "#475569" }}>
+              {t("phoneAssistant.checklist.contactSyncToggleHint")}
+            </Typography>
+          </Box>
+          <Switch
+            color="warning"
+            checked={status.contactSyncEnabled}
+            disabled={busyKey === "contactSync"}
+            onChange={(_e, checked) => {
+              void handleToggleContactSync(checked);
+            }}
+            slotProps={{
+              input: {
+                role: "switch",
+                "aria-label": t("phoneAssistant.checklist.contactSyncToggleTitle"),
+              },
+            }}
+          />
+        </Box>
+
+        <Stack spacing={1} divider={<Divider flexItem />}>
+          {checklistRows.map((row) => (
+            <Stack
+              key={row.key}
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              spacing={1.5}
+              sx={{ py: 0.5 }}
+            >
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+                {row.done ? (
+                  <CheckCircleOutlinedIcon sx={{ color: "#16a34a", fontSize: 18, flexShrink: 0 }} />
+                ) : (
+                  <WarningAmberIcon sx={{ color: "#d97706", fontSize: 18, flexShrink: 0 }} />
+                )}
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
+                  {row.label}
+                </Typography>
+              </Stack>
+              {row.done ? (
+                <Chip
+                  size="small"
+                  label={t("phoneAssistant.checklist.ready")}
+                  color="success"
+                  variant="outlined"
+                  sx={{ height: 24, fontWeight: 700, fontSize: "0.7rem" }}
+                />
+              ) : (
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="warning"
+                  disabled={busyKey === row.key}
+                  onClick={() => void row.onFix()}
+                  sx={{ textTransform: "none", fontWeight: 700, minHeight: 32, px: 1.5 }}
+                >
+                  {t("phoneAssistant.checklist.fix")}
+                </Button>
+              )}
+            </Stack>
+          ))}
+
+          {/* Vendor Background & Autostart Row */}
+          <Box sx={{ pt: 0.75 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                  {t("phoneAssistant.checklist.vendorAutostartTitle")}
+                </Typography>
+                <Typography sx={{ fontSize: 11.5, color: "#475569" }}>
+                  {isVivo
+                    ? t("phoneAssistant.checklist.vivoSteps")
+                    : isSamsung
+                      ? t("phoneAssistant.checklist.samsungSteps")
+                      : t("phoneAssistant.checklist.genericVendorSteps")}
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                color="warning"
+                onClick={async () => {
+                  const res = await nativeBridge.openVendorAutostart();
+                  setVendorFallbackNote(res?.opened === false);
+                }}
+                sx={{ textTransform: "none", fontWeight: 700, minHeight: 32, flexShrink: 0 }}
+              >
+                {t("phoneAssistant.checklist.fix")}
+              </Button>
+            </Stack>
+            {vendorFallbackNote && (
+              <Alert severity="info" sx={{ mt: 1, fontSize: 12 }}>
+                {t("phoneAssistant.checklist.vendorIntentFallback")}
+              </Alert>
+            )}
+          </Box>
+        </Stack>
+
+        <Divider sx={{ my: 1.5 }} />
+
+        <Stack spacing={0.5}>
+          <Typography sx={{ fontSize: 12, color: "#475569", fontVariantNumeric: "tabular-nums" }}>
+            {t("phoneAssistant.checklist.lastContactSync", {
+              value: formatSyncTimestamp(status.contactsSyncedAt, t("phoneAssistant.checklist.never")),
+            })}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "#475569", fontVariantNumeric: "tabular-nums" }}>
+            {t("phoneAssistant.checklist.lastBriefSync", {
+              value: formatSyncTimestamp(status.briefsSyncedAt, t("phoneAssistant.checklist.never")),
+            })}
+          </Typography>
+        </Stack>
+      </Paper>
+
+      <Dialog
+        open={consentOpen}
+        onClose={() => {
+          if (busyKey !== "contactSync") setConsentOpen(false);
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {t("phoneAssistant.consent.title")}
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+          <Typography variant="body2" color="text.secondary">
+            {t("phoneAssistant.consent.body")}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {t("phoneAssistant.consent.privacyGuarantee")}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            color="inherit"
+            disabled={busyKey === "contactSync"}
+            onClick={() => setConsentOpen(false)}
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            disabled={busyKey === "contactSync"}
+            onClick={async () => {
+              setConsentOpen(false);
+              await applyContactSyncToggle(true, true);
+            }}
+            sx={{ fontWeight: 700, textTransform: "none" }}
+          >
+            {t("phoneAssistant.consent.accept")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+}
