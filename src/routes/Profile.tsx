@@ -27,6 +27,9 @@ import { ActivitySection } from "@/features/profile/components/ActivitySection";
 import { AccessSection } from "@/features/profile/components/AccessSection";
 import { SignatureSection } from "@/features/profile/components/SignatureSection";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
+import { usePlanChecker } from "@/features/plan/usePlan";
+import { MyPushPreferences } from "@/features/phone-assistant/components/MyPushPreferences";
+import { PushSettingsPanel } from "@/features/phone-assistant/components/PushSettingsPanel";
 
 const buildTabs = (t: (k: string) => string) => [
   { key: "profile",       label: t("profile.tabs.profile"),       icon: <PersonIcon fontSize="small" /> },
@@ -80,6 +83,11 @@ export default function ProfileRoute() {
   }
 
   const profile = me.data;
+  const canPlan = usePlanChecker();
+  const hasPhoneAssistant = canPlan("phone_assistant");
+  const isAdmin = (profile.Roles ?? []).some(
+    (r) => Number(r.hierarchy_level) >= 100,
+  );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pb: 4 }}>
@@ -144,7 +152,13 @@ export default function ProfileRoute() {
       {activeKey === "security"      && <SecuritySection      profile={profile} />}
       {activeKey === "signature"     && <SignatureSection     profile={profile} />}
       {activeKey === "preferences"   && <PreferencesSection   profile={profile} />}
-      {activeKey === "notifications" && <NotificationsSection profile={profile} />}
+      {activeKey === "notifications" && (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <NotificationsSection profile={profile} />
+          {hasPhoneAssistant && <MyPushPreferences />}
+          {hasPhoneAssistant && isAdmin && <PushSettingsPanel />}
+        </Box>
+      )}
       {activeKey === "activity"      && <ActivitySection />}
       {activeKey === "access"        && <AccessSection        profile={profile} />}
     </Box>

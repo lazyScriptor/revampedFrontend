@@ -14,6 +14,13 @@ import {
   Tooltip,
   MenuItem,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItemButton,
+  Alert,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -29,11 +36,20 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import SmartphoneIcon from "@mui/icons-material/Smartphone";
+import { useQueryClient } from "@tanstack/react-query";
 import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
 
 import { usePosCustomerSearch } from "../hooks/usePosSearch";
 import { useCustomerDetails, useCustomerInvoices } from "@/features/customers/hooks/useCustomerHooks";
 import { ReadOnlyInvoiceModal } from "./ReadOnlyInvoiceModal";
+import { useCanPerform } from "@/components/auth/Can";
+import { usePlanChecker } from "@/features/plan/usePlan";
+import {
+  usePhoneContactSearch,
+  useUsePhoneContact,
+} from "@/features/phone-assistant/hooks/usePhoneContacts";
+import type { PhoneContactMatch } from "@/features/phone-assistant/api/phoneAssistantApi";
 import { useTranslation } from "react-i18next";
 
 interface PosCustomerPanelProps {
@@ -50,10 +66,32 @@ export function PosCustomerPanel({
   onChangeOnBehalfOfCustomer,
 }: PosCustomerPanelProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const canPlan = usePlanChecker();
+  const canSearchPhoneContacts = useCanPerform("phone_contacts:view") && canPlan("phone_assistant");
+
   const [inputValue, setInputValue] = useState("");
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [selectedPreviewInvoice, setSelectedPreviewInvoice] = useState<any | null>(null);
+  const [pendingContact, setPendingContact] = useState<PhoneContactMatch | null>(null);
+  const [contactPrefill, setContactPrefill] = useState<
+    { first_name: string; last_name: string; phone_number: string } | undefined
+  >(undefined);
+  const [sourceContactId, setSourceContactId] = useState<number | null>(null);
+  const [contactUseError, setContactUseError] = useState<string | null>(null);
+
   const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
+  const trimmedSearch = inputValue.trim();
+  const shouldSearchPhoneContacts =
+    canSearchPhoneContacts &&
+    trimmedSearch.length >= 3 &&
+    !isLoading &&
+    searchResults.length === 0;
+  const {
+    data: contactMatches = [],
+    isLoading: phoneContactsLoading,
+  } = usePhoneContactSearch(inputValue, shouldSearchPhoneContacts);
+  const useContactMut = useUsePhoneContact();
 
   // Fetch nested parent + workers for the selected customer so we know whether
   // to surface the "rent on behalf of" picker. Skipped until something is
@@ -155,12 +193,110 @@ export function PosCustomerPanel({
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
                 <span>{t("invoices.PosCustomerPanel.noClientsFound")}</span>
+                {shouldSearchPhoneContacts && (phoneContactsLoading || contactMatches.length > 0) && (
+                  <Box
+                    onMouseDown={(e) => e.preventDefault()}
+                    sx={{
+                      mt: 0.5,
+                      p: 1,
+                      borderRadius: 1.5,
+                      border: "1px solid",
+                      borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                      bgcolor: theme.palette.mode === "dark" ? "#0f172a" : "#f8fafc",
+                    }}
+                  >
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        display: "block",
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.06em",
+                        color: "text.secondary",
+                        lineHeight: 1.4,
+                        mb: 0.5,
+                      }}
+                    >
+                      {t("phoneAssistant.posFallback.fromPhoneContacts")}
+                    </Typography>
+                    {phoneContactsLoading ? (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}>
+                        <CircularProgress size={14} color="warning" />
+                        <Typography variant="caption" color="text.secondary">
+                          {t("phoneAssistant.posFallback.searchingContacts")}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <List dense disablePadding>
+                        {contactMatches.map((contact) => {
+                          const formattedPhone =
+                            contact.raw_phone ||
+                            (contact.phone_e164.startsWith("94") && contact.phone_e164.length === 11
+                              ? `0${contact.phone_e164.slice(2)}`
+                              : contact.phone_e164);
+                          return (
+                            <ListItemButton
+                              key={contact.contact_id}
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setContactUseError(null);
+                                setPendingContact(contact);
+                              }}
+                              sx={{
+                                borderRadius: 1,
+                                px: 1,
+                                py: 0.5,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 1,
+                                "&:hover": {
+                                  bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#fffbeb",
+                                },
+                              }}
+                            >
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                                  {contact.display_name}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    fontVariantNumeric: "tabular-nums",
+                                  }}
+                                >
+                                  {formattedPhone}
+                                </Typography>
+                              </Box>
+                              {contact.device_label && (
+                                <Chip
+                                  size="small"
+                                  icon={<SmartphoneIcon sx={{ fontSize: 13 }} />}
+                                  label={contact.device_label}
+                                  color="warning"
+                                  variant="outlined"
+                                  sx={{ height: 22, fontSize: "0.68rem", fontWeight: 700, flexShrink: 0 }}
+                                />
+                              )}
+                            </ListItemButton>
+                          );
+                        })}
+                      </List>
+                    )}
+                  </Box>
+                )}
                 <Button
                   size="small"
                   variant="contained"
                   startIcon={<PersonAddAlt1Icon />}
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => setNewCustomerOpen(true)}
+                  onClick={() => {
+                    setContactPrefill(undefined);
+                    setSourceContactId(null);
+                    setNewCustomerOpen(true);
+                  }}
                   sx={{ textTransform: "none", fontWeight: 700, alignSelf: "flex-start" }}
                 >
                   {t("invoices.PosCustomerPanel.addAsNew", { query: inputValue })}
@@ -276,7 +412,11 @@ export function PosCustomerPanel({
           <Button
             variant="outlined"
             fullWidth
-            onClick={() => setNewCustomerOpen(true)}
+            onClick={() => {
+              setContactPrefill(undefined);
+              setSourceContactId(null);
+              setNewCustomerOpen(true);
+            }}
             startIcon={<PersonAddAlt1Icon />}
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2 }}
           >
@@ -285,11 +425,119 @@ export function PosCustomerPanel({
         </Tooltip>
       </Box>
 
+      <Dialog
+        open={Boolean(pendingContact)}
+        onClose={() => {
+          if (!useContactMut.isPending) {
+            setPendingContact(null);
+            setContactUseError(null);
+          }
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {t("phoneAssistant.posFallback.confirmTitle")}
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Typography variant="body2" color="text.secondary">
+            {t("phoneAssistant.posFallback.confirmBody")}
+          </Typography>
+          {pendingContact && (
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0",
+                bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#f8fafc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1,
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  {pendingContact.display_name}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {pendingContact.raw_phone ||
+                    (pendingContact.phone_e164.startsWith("94") && pendingContact.phone_e164.length === 11
+                      ? `0${pendingContact.phone_e164.slice(2)}`
+                      : pendingContact.phone_e164)}
+                </Typography>
+              </Box>
+              {pendingContact.device_label && (
+                <Chip
+                  size="small"
+                  color="warning"
+                  variant="outlined"
+                  label={pendingContact.device_label}
+                />
+              )}
+            </Box>
+          )}
+          {contactUseError && <Alert severity="error">{contactUseError}</Alert>}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => {
+              setPendingContact(null);
+              setContactUseError(null);
+            }}
+            disabled={useContactMut.isPending}
+            color="inherit"
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            disabled={useContactMut.isPending || !pendingContact}
+            onClick={async () => {
+              if (!pendingContact) return;
+              setContactUseError(null);
+              try {
+                const res = await useContactMut.mutateAsync(pendingContact.contact_id);
+                setContactPrefill({
+                  first_name: res.first_name,
+                  last_name: res.last_name,
+                  phone_number: res.phone_number,
+                });
+                setSourceContactId(res.contact_id);
+                setPendingContact(null);
+                setNewCustomerOpen(true);
+              } catch (err: any) {
+                setContactUseError(err?.message || t("phoneAssistant.posFallback.useFailed"));
+              }
+            }}
+            sx={{ fontWeight: 700, textTransform: "none" }}
+          >
+            {useContactMut.isPending
+              ? t("phoneAssistant.posFallback.usingContact")
+              : t("phoneAssistant.posFallback.confirmAction")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <CustomerFormDialog
         open={newCustomerOpen}
-        onClose={() => setNewCustomerOpen(false)}
-        prefill={prefill}
+        onClose={() => {
+          setNewCustomerOpen(false);
+          setContactPrefill(undefined);
+          setSourceContactId(null);
+        }}
+        prefill={contactPrefill ?? prefill}
+        sourceContactId={sourceContactId}
         onCreated={(c) => {
+          setContactPrefill(undefined);
+          setSourceContactId(null);
+          queryClient.invalidateQueries({ queryKey: ["phone-contacts"] });
           if (c?.customer_id) {
             onSelectCustomer(c);
             setInputValue("");

@@ -24,6 +24,8 @@ import { useNavigate } from '@tanstack/react-router';
 import AddToHomeScreenIcon from '@mui/icons-material/AddToHomeScreen';
 import { getDeviceId, clearDeviceId } from '../lib/deviceId';
 import { isRequestFinished, isStandalone, useDeviceManifest, useScreenWakeLock } from '../lib/deviceShell';
+import { isNativePhoneApp, nativeBridge } from '@/features/phone-assistant/lib/nativeBridge';
+import { NativeSetupChecklist } from '@/features/phone-assistant/components/NativeSetupChecklist';
 import { useDevicePendingPhotos } from '@/features/equipment/hooks/useEquipmentPhoto';
 import {
   useDeviceStatus,
@@ -59,6 +61,7 @@ export function DeviceHomePage() {
     const t = setTimeout(() => {
       if (status.data?.paired === false) {
         clearDeviceId();
+        void nativeBridge.clearCredentials();
         navigate({ to: '/pair', replace: true });
       }
     }, 1000);
@@ -179,7 +182,7 @@ export function DeviceHomePage() {
           )}
         </Paper>
 
-        {!isStandalone() && (
+        {!isStandalone() && !isNativePhoneApp() && (
           <Alert
             severity="info"
             icon={<AddToHomeScreenIcon />}
@@ -190,6 +193,28 @@ export function DeviceHomePage() {
               {t("signatures.DeviceHomePage.addToHomeHint")}
             </Box>
           </Alert>
+        )}
+
+        {isNativePhoneApp() && (
+          <>
+            <NativeSetupChecklist />
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => navigate({ to: '/device/notifications' })}
+              sx={{
+                minHeight: 44,
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                borderColor: '#d97706',
+                color: '#b45309',
+                bgcolor: 'white',
+              }}
+            >
+              {t("phoneAssistant.myNotifications.manageOnPhone")}
+            </Button>
+          </>
         )}
 
         {pending.isError && (
@@ -209,6 +234,7 @@ export function DeviceHomePage() {
           onClick={() => {
             if (confirm(t("signatures.DeviceHomePage.unpairThisPhoneYouWill"))) {
               clearDeviceId();
+              void nativeBridge.clearCredentials();
               navigate({ to: '/pair', replace: true });
             }
           }}
