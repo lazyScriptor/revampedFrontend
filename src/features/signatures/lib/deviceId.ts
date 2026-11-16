@@ -66,6 +66,21 @@ export const clearDeviceId = () => {
   storage.removeItem(TENANT_DB_KEY);
 };
 
+/**
+ * Start a new pairing with a brand-new device id, dropping the old id, token and shop. A phone that
+ * reused its id across pairings could be wiped by a late "revoked" message meant for the old
+ * pairing (for example after moving to another shop), so every pairing gets its own id.
+ */
+export const startNewPairingDeviceId = (): string => {
+  const storage = safeStorage();
+  if (storage) {
+    storage.removeItem(STORAGE_KEY);
+    storage.removeItem(TOKEN_KEY);
+    storage.removeItem(TENANT_DB_KEY);
+  }
+  return getOrCreateDeviceId();
+};
+
 export const setDeviceToken = (token: string) => {
   const storage = safeStorage();
   if (!storage) return;
