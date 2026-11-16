@@ -156,6 +156,26 @@ describe("Native phone pairing handoff & setup checklist (A8)", () => {
     expect(getDeviceTenantDb()).toBeNull();
   });
 
+  it("pairs with a fresh device id that the page and the native app share, never the old shop's", async () => {
+    // A phone previously paired to another shop.
+    window.localStorage.setItem("geargrid.device_id", "gg-old-shop-device");
+    window.localStorage.setItem("geargrid.device_token", "old-token");
+    window.localStorage.setItem("geargrid.tenant_db", "geargrid_old_shop");
+
+    wrap(<PairDevicePage />);
+    fireEvent.change(screen.getByLabelText(/pairing code/i), { target: { value: "ABCXYZ" } });
+    fireEvent.click(screen.getByRole("button", { name: /pair this phone/i }));
+    await waitFor(() => expect(mocks.bridge.setCredentials).toHaveBeenCalled());
+
+    const claimedId = mocks.claimMutateAsync.mock.calls[0][0].device_id;
+    expect(claimedId).not.toBe("gg-old-shop-device");
+    expect(getDeviceId()).toBe(claimedId);
+    expect(getDeviceTenantDb()).toBe("geargrid_shop1");
+    expect(mocks.bridge.setCredentials).toHaveBeenCalledWith(
+      expect.objectContaining({ deviceId: claimedId, tenantDb: "geargrid_shop1" }),
+    );
+  });
+
   it("requires privacy consent before enabling contact sync and hides contacts permission row while sync is off", async () => {
     wrap(<NativeSetupChecklist />);
 

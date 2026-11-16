@@ -33,6 +33,7 @@ import {
   setDeviceLabel as persistDeviceLabel,
   setDeviceToken,
   setDeviceTenantDb,
+  startNewPairingDeviceId,
 } from '../lib/deviceId';
 import {
   isNativePhoneApp,
@@ -115,9 +116,12 @@ export function PairDevicePage() {
       const setup = isNativePhoneApp()
         ? await nativeBridge.getSetupStatus().catch(() => null)
         : null;
+      // Each pairing gets its own id, stored before the claim so the page and the native app use
+      // the same one. A reused id could be wiped by a late "revoked" for an earlier pairing.
+      const pairingDeviceId = startNewPairingDeviceId();
       const paired = await claim.mutateAsync({
         code: normalizedCode,
-        device_id: deviceId,
+        device_id: pairingDeviceId,
         device_label: label || undefined,
         ...(setup?.deviceModel ? { device_model: setup.deviceModel } : {}),
         ...(setup?.osVersion ? { os_version: setup.osVersion } : {}),
@@ -131,7 +135,7 @@ export function PairDevicePage() {
       if (paired?.tenant_db_name) setDeviceTenantDb(paired.tenant_db_name);
       if (isNativePhoneApp() && paired?.device_token && paired?.tenant_db_name) {
         await nativeBridge.setCredentials({
-          deviceId,
+          deviceId: pairingDeviceId,
           deviceToken: paired.device_token,
           tenantDb: paired.tenant_db_name,
           apiBaseUrl: import.meta.env.VITE_API_URL,
