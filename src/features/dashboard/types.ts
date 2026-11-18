@@ -136,6 +136,8 @@ export interface OpenInvoiceRow {
   items_out: OpenInvoiceItemOut[];
   earliest_due_date: string | null;
   days_overdue: number;
+  /** All lines still out are open-ended rentals (no due date to be late against). */
+  open_ended?: boolean;
   is_unpaid: boolean;
   has_items_out: boolean;
 }

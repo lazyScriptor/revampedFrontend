@@ -6,6 +6,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { useDashboardMoney } from "@/features/accounting/utils/currency";
 import { useOpenInvoices } from "@/features/dashboard/hooks/useDashboardHooks";
 import type { OpenInvoiceAgeDays, OpenInvoiceRow } from "@/features/dashboard/types";
 import { SkeletonListRows } from "@/components/ui/loading";
@@ -18,6 +19,7 @@ import { OpenInvoiceQuickModal } from "./openInvoices/OpenInvoiceQuickModal";
 
 const OpenMoneyWidget: React.FC = () => {
   const { t } = useTranslation();
+  const money = useDashboardMoney();
   const navigate = useNavigate();
   const [olderThanDays, setOlderThanDays] = useState<OpenInvoiceAgeDays>(7);
   const [selectedInvoice, setSelectedInvoice] = useState<OpenInvoiceRow | null>(null);
@@ -130,7 +132,7 @@ const OpenMoneyWidget: React.FC = () => {
                   fontSize: "1rem",
                 }}
               >
-                Rs. {data.summary.money.owed.toLocaleString()}
+                {money.full(data.summary.money.owed)}
               </Typography>
             )}
           </Box>
@@ -157,8 +159,8 @@ const OpenMoneyWidget: React.FC = () => {
               <Chip
                 size="small"
                 label={t("dashboard.openInvoices.withItemsOutAmount", {
-                  amount: data.summary.money.owedWithItemsOut.toLocaleString(),
-                  defaultValue: `Rs. ${data.summary.money.owedWithItemsOut.toLocaleString()} with items out`,
+                  amount: money.full(data.summary.money.owedWithItemsOut),
+                  defaultValue: `${money.full(data.summary.money.owedWithItemsOut)} with items out`,
                 })}
                 sx={{
                   height: 20,

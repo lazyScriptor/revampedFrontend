@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useDashboardMoney } from "@/features/accounting/utils/currency";
 import type {
   OpenInvoiceAgeDays,
   OpenInvoiceBucket,
@@ -30,6 +31,7 @@ export const AgingBar: React.FC<AgingBarProps> = ({
   onSelectBucket,
 }) => {
   const { t } = useTranslation();
+  const money = useDashboardMoney();
   const totalOwed = buckets.reduce((sum, b) => sum + (b.owed || 0), 0);
 
   if (!buckets.length || totalOwed <= 0) return null;
@@ -61,7 +63,7 @@ export const AgingBar: React.FC<AgingBarProps> = ({
           const pct = Math.max(4, (bucket.owed / totalOwed) * 100);
           const isSelected = activeAgeFilter === meta.filterDays;
           const label = t(meta.labelKey, meta.fallback);
-          const tip = `${label}: Rs. ${bucket.owed.toLocaleString()} (${bucket.count})`;
+          const tip = `${label}: ${money.full(bucket.owed)} (${bucket.count})`;
 
           return (
             <Tooltip key={bucket.key} title={tip}>
@@ -136,7 +138,7 @@ export const AgingBar: React.FC<AgingBarProps> = ({
                   whiteSpace: "nowrap",
                 }}
               >
-                {t(meta.labelKey, meta.fallback)} · Rs. {bucket.owed.toLocaleString()} ({bucket.count})
+                {t(meta.labelKey, meta.fallback)} · {money.full(bucket.owed)} ({bucket.count})
               </Typography>
             </Box>
           );

@@ -3,6 +3,7 @@ import { Box, Tooltip, Typography } from "@mui/material";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { useTranslation } from "react-i18next";
+import { useDashboardMoney } from "@/features/accounting/utils/currency";
 import { dashboardTones } from "../../_tokens";
 
 interface PaymentReturnIconsProps {
@@ -19,11 +20,12 @@ export const PaymentReturnIcons: React.FC<PaymentReturnIconsProps> = ({
   owed,
 }) => {
   const { t } = useTranslation();
+  const money = useDashboardMoney();
 
   const moneyTooltip = isUnpaid
     ? t("dashboard.openInvoices.statusUnpaid", {
-        amount: owed.toLocaleString(),
-        defaultValue: `Unpaid: Rs. ${owed.toLocaleString()}`,
+        amount: money.full(owed),
+        defaultValue: `Unpaid: ${money.full(owed)}`,
       })
     : t("dashboard.openInvoices.statusPaid", "Fully paid");
 

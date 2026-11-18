@@ -8,6 +8,7 @@ import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplateForOpenInvoice } from "@/features/whatsapp/lib/whatsapp";
 import { dashboardTokens as dt, dashboardTones } from "../../_tokens";
 import { PaymentReturnIcons } from "./PaymentReturnIcons";
+import { useDashboardMoney } from "@/features/accounting/utils/currency";
 
 interface OpenInvoiceRowProps {
   row: OpenInvoiceRow;
@@ -31,6 +32,7 @@ export const OpenInvoiceRowItem: React.FC<OpenInvoiceRowProps> = ({
   onRowClick,
 }) => {
   const { t } = useTranslation();
+  const money = useDashboardMoney();
   const isHighRisk = row.is_unpaid && row.has_items_out;
   const isOverdue = row.days_overdue > 0;
   const hasPhone = Boolean(row.customer.phone_number);
@@ -159,8 +161,8 @@ export const OpenInvoiceRowItem: React.FC<OpenInvoiceRowProps> = ({
                 }}
               >
                 {t("dashboard.openInvoices.chargesSoFar", {
-                  amount: row.accrued_charges.toLocaleString(),
-                  defaultValue: `+ Rs. ${row.accrued_charges.toLocaleString()} charges so far`,
+                  amount: money.full(row.accrued_charges),
+                  defaultValue: `+ ${money.full(row.accrued_charges)} charges so far`,
                 })}
               </Typography>
             )}
@@ -191,7 +193,9 @@ export const OpenInvoiceRowItem: React.FC<OpenInvoiceRowProps> = ({
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              {isOverdue
+              {row.open_ended
+                ? t("dashboard.openInvoices.openEnded", "Open-ended")
+                : isOverdue
                 ? t("dashboard.openInvoices.daysOverdueLabel", {
                     count: row.days_overdue,
                     defaultValue: `${row.days_overdue} days overdue`,
@@ -229,7 +233,7 @@ export const OpenInvoiceRowItem: React.FC<OpenInvoiceRowProps> = ({
               whiteSpace: "nowrap",
             }}
           >
-            Rs. {row.owed.toLocaleString()}
+            {money.full(row.owed)}
           </Typography>
         )}
 
