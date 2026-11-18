@@ -1538,7 +1538,14 @@
         },
         "InvoicesTab": {
             "days": "දින",
-            "outstanding": "ගෙවීමට ඇති"
+            "outstanding": "ගෙවීමට ඇති",
+            "stillOwed": "තවම ගෙවීමට ඇති",
+            "chargesSoFar": "මෙතෙක් ගාස්තු {{amount}} ඇතුළුව",
+            "chargesSoFarColumn": "මෙතෙක් ගාස්තු",
+            "chargesSoFarHint": "තවම ආපසු නොලැබුණු යන්ත්‍ර සඳහා අමතර සහ ප්‍රමාද දින, එකතුවට සහ ගෙවීමට ඇති මුදලට දැනටමත් ඇතුළත් කර ඇත.",
+            "grandTotals_one": "මුළු එකතුව (ඉන්වොයිස {{count}})",
+            "grandTotals_other": "මුළු එකතුව (ඉන්වොයිස {{count}})",
+            "totalPaid": "මුළු ගෙවීම"
         },
         "JournalTab": {
             "ref": "යොමුව",
