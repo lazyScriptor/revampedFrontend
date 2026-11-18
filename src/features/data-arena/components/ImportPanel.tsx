@@ -1,22 +1,24 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  ToggleButtonGroup,
-  ToggleButton,
   Alert,
-  Stack,
-  CircularProgress,
+  Box,
+  Button,
+  Paper,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import { useStartImport } from "../hooks/useBulkJobs";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import { Trans, useTranslation } from "react-i18next";
-import { tk } from "@/i18n/marker";
 
-const ENTITIES: { key: string; label: string; description: string }[] = [
+import { tk } from "@/i18n/marker";
+import { useStartImport } from "../hooks/useBulkJobs";
+import { EquipmentImportWizard } from "../import/EquipmentImportWizard";
+
+type ImportEntity = "equipment" | "customers";
+
+const ENTITIES: { key: ImportEntity; label: string; description: string }[] = [
   {
     key: "equipment",
     label: tk("nav.equipment"),
@@ -31,15 +33,21 @@ const ENTITIES: { key: string; label: string; description: string }[] = [
 
 export function ImportPanel() {
   const { t } = useTranslation();
-  const [entity, setEntity] = useState<string>("equipment");
+  const [entity, setEntity] = useState<ImportEntity>("equipment");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successJobId, setSuccessJobId] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const startImport = useStartImport();
+  const current = ENTITIES.find((e) => e.key === entity) ?? ENTITIES[0];
 
-  const current = ENTITIES.find((e) => e.key === entity)!;
+  const handleFile = (picked: File | null) => {
+    setError(null);
+    setSuccessJobId(null);
+    setFile(picked);
+  };
 
   const handleSubmit = async () => {
     if (!file) {
@@ -49,10 +57,10 @@ export function ImportPanel() {
     setError(null);
     setSuccessJobId(null);
     try {
-      const job = await startImport.mutateAsync({ entity, file });
-      setSuccessJobId(job.job_id);
+      const res: any = await startImport.mutateAsync({ entity, file });
+      const id = res?.job?.job_id ?? res?.data?.job?.job_id ?? res?.job_id ?? null;
+      if (id != null) setSuccessJobId(Number(id));
       setFile(null);
-      if (inputRef.current) inputRef.current.value = "";
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || t("dataArena.ImportPanel.importFailedToStart"));
     }
@@ -62,131 +70,143 @@ export function ImportPanel() {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        border: "1px solid #e2e8f0",
+        p: { xs: 2, sm: 2.5 },
+        border: 1,
+        borderColor: "divider",
         borderRadius: 2.5,
-        bgcolor: "white",
+        bgcolor: "background.paper",
         display: "flex",
         flexDirection: "column",
         gap: 2,
       }}
     >
-      <Box>
-        <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: 1.5, color: "#64748b" }}>
-          {t("dataArena.ImportPanel.uploadCsv")}
-        </Typography>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a" }}>
-          {t("dataArena.ImportPanel.bulkImportTo", { label: current.label })}
-        </Typography>
-      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
+        <Box>
+          {entity === "customers" && (
+            <Typography
+              variant="overline"
+              sx={{ fontWeight: 800, letterSpacing: 1.4, color: "text.secondary", display: "block", lineHeight: 1.2 }}
+            >
+              {t("dataArena.ImportPanel.uploadCsv")}
+            </Typography>
+          )}
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
+            {t("dataArena.ImportPanel.bulkImportTo", { label: t(current.label) })}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t(current.description)}
+          </Typography>
+        </Box>
 
-      {/* Entity picker */}
-      <Box>
-        <Typography variant="caption" sx={{ display: "block", mb: 0.5, color: "#475569" }}>
-          {t("dataArena.ExportPanel.entity")}
-        </Typography>
         <ToggleButtonGroup
-          exclusive
           size="small"
+          exclusive
           value={entity}
-          onChange={(_, v) => v && setEntity(v)}
-          sx={{
-            flexWrap: "wrap",
-            gap: 0.5,
-            "& .MuiToggleButton-root": {
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: "999px !important",
-              border: "1px solid #e2e8f0",
-              px: 2,
-            },
+          onChange={(_, v) => {
+            if (!v) return;
+            setEntity(v);
+            setFile(null);
+            setError(null);
+            setSuccessJobId(null);
           }}
         >
-          {ENTITIES.map((e) => (
-            <ToggleButton key={e.key} value={e.key}>
-              {t(e.label)}
+          {ENTITIES.map((item) => (
+            <ToggleButton key={item.key} value={item.key} sx={{ textTransform: "none", fontWeight: 700, px: 2 }}>
+              {t(item.label)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
       </Box>
 
-      <Alert severity="info" variant="outlined" sx={{ alignItems: "flex-start" }}>
-        {t(current.description)}
-      </Alert>
+      {entity === "equipment" ? (
+        <EquipmentImportWizard />
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            hidden
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              const f = e.target.files?.[0] ?? null;
+              e.target.value = "";
+              handleFile(f);
+            }}
+          />
 
-      {/* File dropzone */}
-      <Box
-        onClick={() => inputRef.current?.click()}
-        sx={{
-          border: "2px dashed #cbd5e1",
-          borderRadius: 2,
-          p: 4,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 1,
-          cursor: "pointer",
-          bgcolor: "#f8fafc",
-          "&:hover": { borderColor: "primary.main", bgcolor: "#f1f5f9" },
-        }}
-      >
-        <CloudUploadIcon sx={{ fontSize: 36, color: "#94a3b8" }} />
-        <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }}>
-          {file ? file.name : t("dataArena.ImportPanel.clickToChooseACsv")}
-        </Typography>
-        <Typography variant="caption" sx={{ color: "#64748b" }}>
-          .csv up to 50 MB
-        </Typography>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".csv,text/csv"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0] || null;
-            setFile(f);
-            setError(null);
-          }}
-        />
-      </Box>
+          <Box
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(e: DragEvent<HTMLDivElement>) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e: DragEvent<HTMLDivElement>) => {
+              e.preventDefault();
+              setDragging(false);
+              handleFile(e.dataTransfer.files?.[0] ?? null);
+            }}
+            sx={{
+              p: 3.5,
+              border: "2px dashed",
+              borderColor: dragging ? "primary.main" : "divider",
+              borderRadius: 2,
+              bgcolor: dragging ? "action.hover" : "background.default",
+              textAlign: "center",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            {file ? <InsertDriveFileOutlinedIcon color="primary" fontSize="large" /> : <CloudUploadIcon color="action" fontSize="large" />}
+            <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+              {file ? file.name : t("dataArena.ImportPanel.clickToChooseACsv")}
+            </Typography>
+          </Box>
 
-      {error && <Alert severity="error">{error}</Alert>}
-      {successJobId && (
-        <Alert severity="success">
-          <Trans i18nKey="dataArena.ImportPanel.jobQueued" values={{ id: successJobId }} components={{ strong: <strong /> }} />
-        </Alert>
+          {error && <Alert severity="error">{error}</Alert>}
+          {successJobId != null && (
+            <Alert severity="success">
+              <Trans
+                i18nKey="dataArena.ImportPanel.jobQueued"
+                values={{ id: successJobId }}
+                components={{ strong: <strong /> }}
+              />
+            </Alert>
+          )}
+
+          <Box sx={{ display: "flex", gap: 1.5, justifyContent: "flex-end" }}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              disabled={!file && !error}
+              onClick={() => handleFile(null)}
+              sx={{ textTransform: "none", fontWeight: 700 }}
+            >
+              {t("common.reset", { defaultValue: "Reset" })}
+            </Button>
+            <Button
+              variant="contained"
+              disableElevation
+              disabled={!file || startImport.isPending}
+              onClick={handleSubmit}
+              sx={{ textTransform: "none", fontWeight: 800 }}
+            >
+              {startImport.isPending ? t("dataArena.ExportPanel.queueing") : t("dataArena.ImportPanel.queueImport")}
+            </Button>
+          </Box>
+        </Box>
       )}
-
-      <Stack direction="row" justifyContent="flex-end" spacing={1}>
-        <Button
-          onClick={() => {
-            setFile(null);
-            setError(null);
-            setSuccessJobId(null);
-            if (inputRef.current) inputRef.current.value = "";
-          }}
-          color="inherit"
-          disabled={startImport.isPending}
-        >
-          {t("common.reset")}
-        </Button>
-        <Button
-          variant="contained"
-          disableElevation
-          onClick={handleSubmit}
-          disabled={!file || startImport.isPending}
-          startIcon={
-            startImport.isPending ? (
-              <CircularProgress size={14} sx={{ color: "white" }} />
-            ) : (
-              <InsertDriveFileIcon />
-            )
-          }
-          sx={{ fontWeight: 800 }}
-        >
-          {startImport.isPending ? t("dataArena.ExportPanel.queueing") : t("dataArena.ImportPanel.queueImport")}
-        </Button>
-      </Stack>
     </Paper>
   );
 }
