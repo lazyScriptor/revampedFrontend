@@ -20,7 +20,9 @@ const SHEET_EN_LABELS: Record<Field, string> = {
   base_rental_price: "Base price",
   extra_daily_rate: "Extra/day",
   minimum_rental_days: "Min days",
-  is_bulk_item: "Qty",
+  // The sheet labels this column "Qty" (quantity-tracked), but in a shop's file "Qty" almost always
+  // means how many they own, so the Bulk flag only matches by its own name.
+  is_bulk_item: "Bulk item",
   total_owned_qty: "Total",
   purchase_cost: "Cost",
   warranty_period_months: "Warr. mo",
@@ -36,7 +38,7 @@ const SHEET_SI_LABELS: Record<Field, string> = {
   base_rental_price: "මූලික ගාස්තුව",
   extra_daily_rate: "අමතර/දින",
   minimum_rental_days: "අවම දින",
-  is_bulk_item: "ප්‍රමාණ",
+  is_bulk_item: "තොග භාණ්ඩය",
   total_owned_qty: "මුළු",
   purchase_cost: "මිල",
   warranty_period_months: "වගකීම් මාස",
@@ -92,7 +94,8 @@ const scoreHeaderAgainstField = (
 
   const enLabel = SHEET_EN_LABELS[field];
   const siLabel = SHEET_SI_LABELS[field];
-  const dynLabel = translatedLabels?.[field];
+  // The on-screen label for the Bulk flag is "Qty"/"ප්‍රමාණ", which would steal quantity columns.
+  const dynLabel = field === "is_bulk_item" ? undefined : translatedLabels?.[field];
 
   // 1. Exact Sheet English label
   if (exact === normalizeText(enLabel) || (ascii && ascii === cleanAsciiKey(enLabel))) {

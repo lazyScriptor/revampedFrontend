@@ -904,7 +904,8 @@ export const buildImportPayload = (state: ImportState): ImportSavePayload => {
       for (const field of fieldsToSend) {
         if (field === "serial_number") continue;
         const val = row.values[field];
-        if (val !== "" || row.touchedFields.includes(field)) {
+        // A blank cell in the file never clears what the machine already has.
+        if (val.trim() !== "") {
           changes[field] = serializeFieldValue(field, val, true);
         }
       }

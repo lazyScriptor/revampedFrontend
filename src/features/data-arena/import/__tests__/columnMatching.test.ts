@@ -66,3 +66,11 @@ describe("columnMatching", () => {
     expect(loadSavedColumnMapping(["Different", "Headers"])).toBeNull();
   });
 });
+
+describe("quantity columns", () => {
+  it("maps a Qty column to Total, never to the Bulk flag", () => {
+    const labels = { is_bulk_item: "Qty", total_owned_qty: "Total" } as any;
+    expect(autoMatchColumns(["Name", "Qty", "Rate"], labels)).toEqual(["equipment_name", "total_owned_qty", "base_rental_price"]);
+    expect(autoMatchColumns(["Name", "Bulk", "Quantity"], labels)).toEqual(["equipment_name", "is_bulk_item", "total_owned_qty"]);
+  });
+});

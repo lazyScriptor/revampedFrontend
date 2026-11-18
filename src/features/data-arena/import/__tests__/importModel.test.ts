@@ -165,6 +165,22 @@ describe("importModel", () => {
     expect(payload.newCategories).toEqual([]);
   });
 
+  it("never clears an existing machine's value from a blank cell when updating", () => {
+    const mapping = autoMatchColumns(["Name", "EQ No.", "Category", "Location", "Base price", "Cost"]);
+    let state = buildInitialImportState({
+      dataRows: [["Scaffold Frame", "EQ-001", "Power Tools", "Colombo", "800", ""]],
+      sourceRowNumbers: [2],
+      mapping,
+      sameForAll: {},
+      lookups: LOOKUPS,
+      existingEquipment: EXISTING,
+    });
+    state = setRowExistingAction(state, [state.rows[0].key], "update");
+    const changes = buildImportPayload(state).updates[0].changes;
+    expect(changes.base_rental_price).toBe(800);
+    expect("purchase_cost" in changes).toBe(false);
+  });
+
   it("supports clean-up menu transforms: fill down, find & replace, clear numbers, copy rate to extra, remove empty/selected", () => {
     const mapping = autoMatchColumns(["Name", "EQ No.", "Category", "Location", "Base price", "Extra/day"]);
     let state = buildInitialImportState({
