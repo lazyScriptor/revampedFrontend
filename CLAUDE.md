@@ -88,7 +88,10 @@ revampedFrontend/
 ### Rule 2: POS Customer Search, Caching & Read-Only Invoice Modal
 - **Instant Customer Pre-Loading (`usePosCustomerSearch` in `src/features/invoices/hooks/usePosSearch.ts`):**
   - Pre-loads the top 15 customers immediately on POS mount even when the search input is empty (`""`).
-  - Uses `200ms` debounce on typing, passes `skip_count: true` to skip backend `COUNT(*)` overhead, and sets `staleTime: 5 * 60 * 1000` (5 minutes) + `placeholderData: (prev) => prev`.
+  - Uses `150ms` debounce on typing, passes `skip_count: true` to skip backend `COUNT(*)` overhead, and sets `staleTime: 5 * 60 * 1000` (5 minutes) + `placeholderData: (prev) => prev`.
+  - Also keeps up to 150 recent customers (`['pos-customer-index']`) and shows instant matches from them (`matchCustomersLocally`, same rules as the server) until the server answers; `isLoading` stays true until then, so the phone-contact fallback still waits for the real answer.
+- **Loading UI:** use the shared components in `src/components/ui/loading` (`TopProgressBar`, `SearchProgress`, `PageSkeleton`, `SkeletonListRows`, ...) instead of one-off spinners.
+- **Page loading:** Invoicing, Customers and Equipment are bundled up front; other pages are lazy (`src/app/lazyPages.ts`) and preloaded in the background after sign-in. The page opened after login comes from `start_page` (`src/app/startPage.ts`, default Invoicing).
 - **Customer Invoice History & Stats (`useCustomerInvoices` in `src/features/customers/hooks/useCustomerHooks.ts`):**
   - Calls `GET /api/customers/:id/invoices` with `staleTime: 5 * 60 * 1000`.
   - Powers the 3-column KPI strip (`Invoices`, `Pending`, `Completed`) and the clickable past-invoices list inside `PosCustomerPanel.tsx`.

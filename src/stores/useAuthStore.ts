@@ -29,6 +29,8 @@ interface User {
     //   user.language → tenant.default_language → "si"
     // and ships this at login. Frontend i18n picks it up in syncLanguageFromAuth.
     language?: string | null;
+    // Page to open after signing in (Profile → Preferences); null means Invoicing.
+    start_page?: string | null;
     // What this shop's plan includes; kept current by PlanSync.
     // undefined: not known yet. null: the server couldn't say, so nothing is hidden.
     plan?: TenantPlan | null;

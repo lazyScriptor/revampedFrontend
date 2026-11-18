@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import GridOnIcon from "@mui/icons-material/GridOn";
 import { createRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { Route as rootRoute } from "./__root";
+import { preloadSecondaryPages } from "@/app/lazyPages";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUiStore } from "@/stores/useUiStore";
 import { useTranslation } from "react-i18next";
@@ -188,6 +189,11 @@ function AuthenticatedLayout() {
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Once signed in, fetch the non-critical pages in the background so they open instantly later.
+  React.useEffect(() => {
+    preloadSecondaryPages();
+  }, []);
 
   const config = (user as any)?.configData ?? null;
   const businessName: string =

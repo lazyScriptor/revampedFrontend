@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isNativePhoneApp, nativeBridge } from "./nativeBridge";
+import { startPathFor } from "@/app/startPage";
 
 /** The sign-in screen is shown with this phone's staff member filled in (never the password). */
 export const rememberPairedUsername = (username?: string | null) => {
@@ -23,7 +24,7 @@ export async function startFullApp(navigate: (opts: any) => unknown): Promise<bo
       if (res && !res.ok) return false;
     }
   }
-  const signedIn = Boolean(useAuthStore.getState().user);
-  navigate({ to: signedIn ? "/dashboard" : "/login", replace: true });
+  const user = useAuthStore.getState().user;
+  navigate({ to: user ? startPathFor(user) : "/login", replace: true });
   return true;
 }

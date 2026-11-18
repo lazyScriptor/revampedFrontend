@@ -10,8 +10,9 @@ import { HistoryTab } from "@/features/whatsapp/components/HistoryTab";
 import { TemplatesTab } from "@/features/whatsapp/components/TemplatesTab";
 import { WorklistTab } from "@/features/whatsapp/components/WorklistTab";
 
-export const MESSAGE_TABS = ["today", "templates", "history"] as const;
-export type MessageTab = (typeof MESSAGE_TABS)[number];
+import { MESSAGE_TABS, type MessageTab } from "@/app/routeTabs";
+
+export { MESSAGE_TABS, type MessageTab };
 
 // Messages: the free WhatsApp hub. Staff press Send in WhatsApp themselves; the system writes
 // the message, finds the number, keeps the history and shows who to chase today.

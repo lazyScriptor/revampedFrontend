@@ -41,6 +41,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
 
 import { usePosCustomerSearch } from "../hooks/usePosSearch";
+import { SearchProgress, SkeletonListRows } from "@/components/ui/loading";
 import { useCustomerDetails, useCustomerInvoices } from "@/features/customers/hooks/useCustomerHooks";
 import { ReadOnlyInvoiceModal } from "./ReadOnlyInvoiceModal";
 import { useCanPerform } from "@/components/auth/Can";
@@ -81,7 +82,7 @@ export function PosCustomerPanel({
   const [sourceContactId, setSourceContactId] = useState<number | null>(null);
   const [contactUseError, setContactUseError] = useState<string | null>(null);
 
-  const { data: searchResults = [], isLoading } = usePosCustomerSearch(inputValue);
+  const { data: searchResults = [], isLoading, isFetching: searchFetching } = usePosCustomerSearch(inputValue);
   // Phone contacts stay hidden until the full number is typed (MIN_CONTACT_SEARCH_DIGITS).
   const shouldSearchPhoneContacts =
     canSearchPhoneContacts &&
@@ -188,6 +189,10 @@ export function PosCustomerPanel({
           includeInputInList
           filterSelectedOptions
           value={selectedCustomer}
+          // While the first answer for the typed text is on its way and nothing matches locally yet,
+          // show skeleton rows instead of "No clients found".
+          loading={isLoading && searchResults.length === 0 && inputValue.trim().length >= 2}
+          loadingText={<SkeletonListRows rows={3} dense sx={{ py: 0.5 }} />}
           noOptionsText={
             inputValue.length < 2 ? (
               t("invoices.PosCustomerPanel.typeToSearch")
@@ -313,39 +318,39 @@ export function PosCustomerPanel({
           onChange={(_, newValue) => onSelectCustomer(newValue)}
           onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
           renderInput={(params) => (
-            <TextField
-              {...(params as any)}
-              placeholder={t("invoices.PosCustomerPanel.scanNicPhoneOrName")}
-              size="medium"
-              fullWidth
-              slotProps={{
-                ...((params as any).slotProps),
-                input: {
-                  ...((params as any).slotProps?.input || {}),
-                  startAdornment: (
-                    <SearchIcon sx={{ color: "text.secondary", ml: 0.5, mr: 0.5, fontSize: 18 }} />
-                  ),
-                  endAdornment: (
-                    <>
-                      {isLoading && <CircularProgress size={16} />}
-                      {((params as any).slotProps?.input as any)?.endAdornment}
-                    </>
-                  ),
-                  sx: {
-                    borderRadius: 2,
-                    bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
-                    "& .MuiInputBase-input": {
-                      color: theme.palette.mode === "dark" ? "#f8fafc" : "#0f172a",
-                      fontWeight: 500,
-                      fontSize: "0.95rem",
+            <Box sx={{ position: "relative" }}>
+              <TextField
+                {...(params as any)}
+                placeholder={t("invoices.PosCustomerPanel.scanNicPhoneOrName")}
+                size="medium"
+                fullWidth
+                slotProps={{
+                  ...((params as any).slotProps),
+                  input: {
+                    ...((params as any).slotProps?.input || {}),
+                    startAdornment: (
+                      <SearchIcon sx={{ color: "text.secondary", ml: 0.5, mr: 0.5, fontSize: 18 }} />
+                    ),
+                    endAdornment: (
+                      <>{((params as any).slotProps?.input as any)?.endAdornment}</>
+                    ),
+                    sx: {
+                      borderRadius: 2,
+                      bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+                      "& .MuiInputBase-input": {
+                        color: theme.palette.mode === "dark" ? "#f8fafc" : "#0f172a",
+                        fontWeight: 500,
+                        fontSize: "0.95rem",
+                      },
+                      "& fieldset": { borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0" },
+                      "&:hover fieldset": { borderColor: theme.palette.mode === "dark" ? "#475569" : "#cbd5e1" },
+                      "&.Mui-focused fieldset": { borderColor: "primary.main" },
                     },
-                    "& fieldset": { borderColor: theme.palette.mode === "dark" ? "#334155" : "#e2e8f0" },
-                    "&:hover fieldset": { borderColor: theme.palette.mode === "dark" ? "#475569" : "#cbd5e1" },
-                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
                   },
-                },
-              }}
-            />
+                }}
+              />
+              <SearchProgress active={searchFetching && inputValue.trim().length > 0} />
+            </Box>
           )}
           renderOption={(props, option: any) => {
             const { key, ...rest } = props as any;
@@ -1050,11 +1055,7 @@ export function PosCustomerPanel({
             </Box>
 
             <Box sx={{ maxHeight: 220, overflowY: "auto", p: 1, display: "flex", flexDirection: "column", gap: 1 }}>
-              {loadingInvoices && (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                  <CircularProgress size={18} />
-                </Box>
-              )}
+              {loadingInvoices && <SkeletonListRows rows={3} avatar={false} dense />}
 
               {!loadingInvoices && pastInvoices.length === 0 && (
                 <Typography variant="caption" color="text.secondary" sx={{ p: 2, textAlign: "center", display: "block" }}>
