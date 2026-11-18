@@ -101,6 +101,72 @@ export interface MaintenanceQueueData {
   pendingCount: number;
 }
 
+export type OpenInvoicesView = 'money' | 'returns';
+
+export type OpenInvoiceAgeDays = 0 | 7 | 14 | 30 | 90;
+
+export type OpenInvoiceBucketKey = '0_7' | '8_14' | '15_30' | '31_90' | '90_plus';
+
+export interface OpenInvoiceBucket {
+  key: OpenInvoiceBucketKey;
+  count: number;
+  owed: number;
+}
+
+export interface OpenInvoiceItemOut {
+  name: string;
+  qty: number;
+}
+
+export interface OpenInvoiceRow {
+  invoice_id: number;
+  issued_date: string | null;
+  age_days: number;
+  status: string;
+  customer: {
+    customer_id: number;
+    name: string;
+    phone_number: string | null;
+  };
+  live_total: number;
+  paid: number;
+  owed: number;
+  accrued_charges: number;
+  units_out: number;
+  items_out: OpenInvoiceItemOut[];
+  earliest_due_date: string | null;
+  days_overdue: number;
+  /** All lines still out are open-ended rentals (no due date to be late against). */
+  open_ended?: boolean;
+  is_unpaid: boolean;
+  has_items_out: boolean;
+}
+
+export interface OpenInvoicesSummary {
+  money: {
+    count: number;
+    owed: number;
+    owedWithItemsOut: number;
+    accruedCharges: number;
+  };
+  returns: {
+    count: number;
+    unitsOut: number;
+    overdueCount: number;
+  };
+  both: {
+    count: number;
+    owed: number;
+  };
+}
+
+export interface OpenInvoicesData {
+  summary: OpenInvoicesSummary;
+  buckets: OpenInvoiceBucket[];
+  rows: OpenInvoiceRow[];
+  totalCount: number;
+}
+
 // ============================================================================
 // TEMPLATES
 // ============================================================================

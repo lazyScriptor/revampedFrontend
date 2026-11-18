@@ -4,6 +4,7 @@ import { Box, Typography, Switch, Divider, IconButton, Drawer, Button, Tooltip }
 import { Close, Check } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useDashboardStore } from "@/stores/useDashboardStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 const EditModePanel: React.FC = () => {
   const { t } = useTranslation();
@@ -13,6 +14,7 @@ const EditModePanel: React.FC = () => {
   const toggleWidget = useDashboardStore((s) => s.toggleWidget);
   const widgetCatalog = useDashboardStore((s) => s.widgetCatalog);
   const maintenanceOn = useFeature("maintenance");
+  const hasPermission = useAuthStore((s) => s.hasPermission);
 
   return (
     <Drawer
@@ -94,7 +96,13 @@ const EditModePanel: React.FC = () => {
           "&::-webkit-scrollbar-thumb": { bgcolor: "#cbd5e1", borderRadius: 4 },
         }}
       >
-        {widgetCatalog.filter((widget) => widget.widget_key !== "maintenance_queue" || maintenanceOn).map((widget) => {
+        {widgetCatalog
+          .filter(
+            (widget) =>
+              (widget.widget_key !== "maintenance_queue" || maintenanceOn) &&
+              (!widget.required_permission || hasPermission(widget.required_permission)),
+          )
+          .map((widget) => {
           const isEnabled = layout.some((item) => item.i === widget.widget_key);
 
           return (

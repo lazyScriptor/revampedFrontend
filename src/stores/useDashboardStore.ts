@@ -23,6 +23,8 @@ const FRONTEND_WIDGET_CATALOG: WidgetDefinition[] = [
   { widget_key: 'revenue_trend_chart', display_name: tk('dashboard.widgetCatalog.revenueTrend'), description: 'Chart', required_permission: null, default_w: 2, default_h: 2, min_w: 2, min_h: 2 },
   { widget_key: 'utilization_sparkline', display_name: tk('dashboard.widgetCatalog.utilizationTrend'), description: 'Chart', required_permission: null, default_w: 2, default_h: 2, min_w: 2, min_h: 2 },
   { widget_key: 'returns_today', display_name: tk('dashboard.widgetCatalog.returnsToday'), description: 'Table', required_permission: null, default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
+  { widget_key: 'open_money', display_name: tk('dashboard.widgetCatalog.openMoney'), description: 'Open invoices owing money', required_permission: 'inventory_permission', default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
+  { widget_key: 'open_returns', display_name: tk('dashboard.widgetCatalog.openReturns'), description: 'Open invoices with equipment out', required_permission: null, default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
   { widget_key: 'maintenance_queue', display_name: tk('dashboard.widgetCatalog.maintenanceQueue'), description: 'Table', required_permission: null, default_w: 2, default_h: 3, min_w: 2, min_h: 2 },
 ];
 
@@ -34,7 +36,9 @@ const FRONTEND_DEFAULT_LAYOUT: LayoutItem[] = [
   { i: 'revenue_trend_chart', x: 0, y: 1, w: 2, h: 2 },
   { i: 'utilization_sparkline', x: 2, y: 1, w: 2, h: 2 },
   { i: 'returns_today', x: 0, y: 3, w: 2, h: 3 },
-  { i: 'maintenance_queue', x: 2, y: 3, w: 2, h: 3 },
+  { i: 'open_money', x: 2, y: 3, w: 2, h: 3 },
+  { i: 'open_returns', x: 0, y: 6, w: 2, h: 3 },
+  { i: 'maintenance_queue', x: 2, y: 6, w: 2, h: 3 },
 ];
 
 function collides(a: LayoutItem, b: LayoutItem): boolean {

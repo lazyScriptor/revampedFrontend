@@ -1,7 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import * as dashboardApi from '@/features/dashboard/api/dashboard.api';
 import { useDashboardStore } from '@/stores/useDashboardStore';
-import type { KPIData, UtilizationData, ReturnsData, MaintenanceQueueData } from '@/features/dashboard/types';
+import type {
+  KPIData,
+  UtilizationData,
+  ReturnsData,
+  MaintenanceQueueData,
+  OpenInvoicesData,
+  OpenInvoicesView,
+  OpenInvoiceAgeDays,
+} from '@/features/dashboard/types';
 
 export const useDashboardConfig = () => {
   const loadConfig = useDashboardStore((s) => s.loadConfig);
@@ -56,5 +64,25 @@ export const useMaintenanceQueue = () => {
     queryKey: ['dashboard', 'maintenance', warehouseId],
     queryFn: () => dashboardApi.fetchMaintenanceQueue(warehouseId),
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useOpenInvoices = (
+  view: OpenInvoicesView,
+  olderThanDays: OpenInvoiceAgeDays,
+  onlyOverdue = false,
+) => {
+  const warehouseId = useDashboardStore((s) => s.globalFilters.warehouseId);
+  return useQuery<OpenInvoicesData>({
+    queryKey: ['dashboard', 'open-invoices', view, olderThanDays, onlyOverdue ? 1 : 0, warehouseId],
+    queryFn: () =>
+      dashboardApi.fetchOpenInvoices({
+        view,
+        olderThanDays,
+        onlyOverdue,
+        warehouseId,
+      }),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 };

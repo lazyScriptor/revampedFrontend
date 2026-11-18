@@ -65,6 +65,7 @@ export const useProcessReturn = () => {
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
             queryClient.invalidateQueries({ queryKey: ['equipment'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'open-invoices'] });
         },
     });
 };
@@ -80,6 +81,7 @@ export const useAddPayment = () => {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'open-invoices'] });
         },
     });
 };
@@ -143,6 +145,7 @@ export const useUpdateFees = () => {
         onSuccess: (_, variables) => {
             // Instantly refresh the right pane when the fee saves!
             queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'open-invoices'] });
         },
     });
 };
@@ -163,6 +166,7 @@ export const useCompleteInvoice = () => {
             queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
             queryClient.invalidateQueries({ queryKey: ['customer-invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'open-invoices'] });
         },
     });
 };
@@ -178,6 +182,7 @@ export const useReopenInvoice = () => {
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ['invoice', id] });
             queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'open-invoices'] });
         },
     });
 };

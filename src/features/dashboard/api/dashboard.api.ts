@@ -37,6 +37,25 @@ export const fetchMaintenanceQueue = async (warehouseId: number | null) => {
   return res?.data ?? res;
 };
 
+export const fetchOpenInvoices = async (params: {
+  view: 'money' | 'returns';
+  olderThanDays: number;
+  onlyOverdue?: boolean;
+  warehouseId?: number | null;
+  limit?: number;
+}) => {
+  const res: any = await api.get('/dashboard/open-invoices', {
+    params: {
+      view: params.view,
+      olderThanDays: params.olderThanDays,
+      onlyOverdue: params.onlyOverdue ? 1 : 0,
+      ...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
+      ...(params.limit ? { limit: params.limit } : {}),
+    },
+  });
+  return res?.data ?? res;
+};
+
 export const fetchTemplates = async () => {
   const res: any = await api.get('/dashboard/templates');
   return res?.data ?? res;

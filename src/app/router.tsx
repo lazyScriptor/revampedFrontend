@@ -220,11 +220,16 @@ const equipmentCategoryRoute = createRoute({
 const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: "/invoices",
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: (search.mode === "manage" || search.mode === "dispatch")
-      ? (search.mode as "manage" | "dispatch")
-      : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const mode =
+      search.mode === "manage" || search.mode === "dispatch"
+        ? (search.mode as "manage" | "dispatch")
+        : undefined;
+    const rawInvoiceId = Number(search.invoiceId);
+    const invoiceId =
+      Number.isInteger(rawInvoiceId) && rawInvoiceId > 0 ? rawInvoiceId : undefined;
+    return { mode, invoiceId };
+  },
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <Invoices />,
 });

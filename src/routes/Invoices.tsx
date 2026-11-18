@@ -59,7 +59,7 @@ export default function InvoicesRoute() {
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" };
+  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage"; invoiceId?: number };
 
   const [posMode, setPosMode] = useState<"dispatch" | "manage">(
     search.mode === "manage" ? "manage" : "dispatch"
@@ -79,6 +79,7 @@ export default function InvoicesRoute() {
     queryClient.invalidateQueries({ queryKey: ["customer-invoices"] });
     queryClient.invalidateQueries({ queryKey: ["customers"] });
     queryClient.invalidateQueries({ queryKey: ["equipment"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard", "open-invoices"] });
     queryClient.invalidateQueries({ queryKey: POS_CATALOG_KEY });
   };
 
@@ -118,6 +119,15 @@ export default function InvoicesRoute() {
   const [selectedManageInvoiceId, setSelectedManageInvoiceId] = useState<number | null>(null);
   const { data: activeInvoice } = useInvoiceDetails(selectedManageInvoiceId);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+
+  // Deep-link from Dashboard Open Invoices: ?mode=manage&invoiceId=123
+  useEffect(() => {
+    if (typeof search.invoiceId === "number" && search.invoiceId > 0) {
+      setPosMode("manage");
+      setSelectedManageInvoiceId(search.invoiceId);
+      navigate({ to: "/invoices", search: { mode: "manage" } as any, replace: true });
+    }
+  }, [search.invoiceId, navigate]);
 
   // ── UX State ──────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState({

@@ -24,9 +24,11 @@ import {
   useMediaQuery,
   Avatar,
   Stack,
+  Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PersonIcon from "@mui/icons-material/Person";
 import BusinessIcon from "@mui/icons-material/Business";
 import LockIcon from "@mui/icons-material/Lock";
@@ -39,18 +41,23 @@ import HistoryIcon from "@mui/icons-material/History";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
 import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
+import type { TemplateKey } from "@/features/whatsapp/api/whatsapp.api";
 import { useTranslation } from "react-i18next";
 
 export interface ReadOnlyInvoiceModalProps {
   open: boolean;
   onClose: () => void;
   invoice: any | null;
+  onOpenInvoice?: () => void;
+  whatsAppTemplate?: TemplateKey;
 }
 
 export function ReadOnlyInvoiceModal({
   open,
   onClose,
   invoice,
+  onOpenInvoice,
+  whatsAppTemplate,
 }: ReadOnlyInvoiceModalProps) {
   const { t } = useTranslation();
   const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
@@ -549,9 +556,41 @@ export function ReadOnlyInvoiceModal({
             >
               {t("invoices.ReadOnlyInvoiceModal.printReceipt")}
             </Button>
-            {invoice?.invoice_id && (
-              <WhatsAppButton variant="button" size="small" invoiceId={Number(invoice.invoice_id)} templateKey={suggestedTemplate(invoice.status)} />
+            {onOpenInvoice && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<OpenInNewIcon />}
+                onClick={onOpenInvoice}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 700,
+                  textTransform: "none",
+                  borderColor: "#f59e0b",
+                  color: "#b45309",
+                  "&:hover": { bgcolor: "#fef3c7", borderColor: "#d97706" },
+                }}
+              >
+                {t("dashboard.openInvoices.openInvoice", "Open invoice")}
+              </Button>
             )}
+            {invoice?.invoice_id && (() => {
+              const hasPhone = Boolean(customer?.phone_number);
+              const btn = (
+                <WhatsAppButton
+                  variant="button"
+                  size="small"
+                  invoiceId={Number(invoice.invoice_id)}
+                  templateKey={whatsAppTemplate ?? suggestedTemplate(invoice.status)}
+                  disabled={onOpenInvoice ? !hasPhone : false}
+                />
+              );
+              return onOpenInvoice && !hasPhone ? (
+                <Tooltip title={t("dashboard.openInvoices.noPhoneTooltip", "No phone number on file")}>
+                  <span>{btn}</span>
+                </Tooltip>
+              ) : btn;
+            })()}
           </Box>
 
           <Button
