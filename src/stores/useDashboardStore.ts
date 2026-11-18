@@ -59,7 +59,21 @@ function findFirstAvailableSlot(layout: LayoutItem[], w: number, h: number, cols
   return { x: 0, y: 0 };
 }
 
-export function compactAndPackLayout(items: LayoutItem[]): LayoutItem[] {
+/**
+ * Heights are not user-resizable (only the width buttons are), so every known widget always gets
+ * its canonical height. The server's widget catalog still uses the old 12-column sizes (a KPI is
+ * 3 wide × 2 tall), so a widget removed and added again, or a layout saved that way, came back
+ * twice as tall and stayed tall at width 1. Width is kept between 1 and 4 columns.
+ */
+export function normalizeLayoutItem(item: LayoutItem): LayoutItem {
+  const canonical = FRONTEND_DEFAULT_LAYOUT.find((d) => d.i === item.i);
+  const w = Math.min(4, Math.max(1, Math.round(Number(item.w) || canonical?.w || 1)));
+  const h = canonical ? canonical.h : Math.max(1, Math.round(Number(item.h) || 1));
+  return { ...item, w, h };
+}
+
+export function compactAndPackLayout(rawItems: LayoutItem[]): LayoutItem[] {
+  const items = rawItems.map(normalizeLayoutItem);
   const canonicalOrder = FRONTEND_DEFAULT_LAYOUT.map((d) => d.i);
   // Sort items primarily by canonical ordering (KPIs -> Charts -> Tables), or by (y, x)
   const sorted = [...items].sort((a, b) => {
@@ -152,8 +166,9 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         i: def.widget_key,
         x: defaultDef?.x ?? 0,
         y: defaultDef?.y ?? 0,
-        w: def.default_w,
-        h: def.default_h,
+        // Frontend sizes, not the catalog's: the server catalog is still in 12-column units.
+        w: defaultDef?.w ?? Math.min(4, def.default_w),
+        h: defaultDef?.h ?? def.default_h,
       };
       newLayout = compactAndPackLayout([...layout, added]);
     }
