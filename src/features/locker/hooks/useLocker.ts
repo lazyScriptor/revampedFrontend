@@ -27,6 +27,7 @@ const useLockerMutation = <TVars, TData>(fn: (v: TVars) => Promise<TData>) => {
       qc.invalidateQueries({ queryKey: ["locker"] });
       qc.invalidateQueries({ queryKey: ["accounting-expenses"] });
       qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["dashboard", "open-invoices"] });
     },
   });
 };

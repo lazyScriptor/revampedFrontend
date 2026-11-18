@@ -55,6 +55,22 @@ export const suggestedTemplate = (invoiceStatus?: string | null): TemplateKey =>
   }
 };
 
+/** Picks the best WhatsApp template for an open invoice row/modal based on payment & return state. */
+export const suggestedTemplateForOpenInvoice = ({
+  hasItemsOut,
+  daysOverdue,
+  isUnpaid,
+}: {
+  hasItemsOut: boolean;
+  daysOverdue: number;
+  isUnpaid: boolean;
+}): TemplateKey => {
+  if (hasItemsOut && daysOverdue > 0) return "overdue_return";
+  if (isUnpaid) return "payment_reminder";
+  if (hasItemsOut) return daysOverdue === 0 ? "return_due_today" : "receipt";
+  return "receipt";
+};
+
 export const INVOICE_TEMPLATES: TemplateKey[] = [
   "receipt",
   "payment_reminder",

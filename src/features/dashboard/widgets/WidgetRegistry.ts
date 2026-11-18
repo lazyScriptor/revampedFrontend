@@ -10,5 +10,7 @@ export const WIDGET_COMPONENTS: Record<string, React.LazyExoticComponent<React.C
   revenue_trend_chart:  lazy(() => import('./RevenueTrendChart')),
   utilization_sparkline:lazy(() => import('./UtilizationSparkline')),
   returns_today:        lazy(() => import('./ActionableReturnsTable')),
+  open_money:           lazy(() => import('./OpenMoneyWidget')),
+  open_returns:         lazy(() => import('./OpenReturnsWidget')),
   maintenance_queue:    lazy(() => import('./MaintenanceQueueWidget')),
 };
