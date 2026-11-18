@@ -31,6 +31,8 @@ const syncAuthStore = (profile: any) => {
     username: profile.username,
     email: profile.email,
     permissions: profile.permissions || useAuthStore.getState().user?.permissions || [],
+    // So the next visit to "/" or the phone app's GearGrid tab opens the newly chosen page.
+    ...(profile.start_page !== undefined ? { start_page: profile.start_page } : {}),
   });
 };
 

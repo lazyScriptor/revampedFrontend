@@ -2434,6 +2434,8 @@
             "localisationFormat": "Localisation & format",
             "24Hour1430": "24-hour (14:30)",
             "12Hour230Pm": "12-hour (2:30 PM)",
+            "startPage": "Start page after login",
+            "startPageHint": "The page that opens when you sign in. Only pages your role can open are listed.",
             "preferencesSaved": "Preferences saved.",
             "savePreferences": "Save preferences"
         },

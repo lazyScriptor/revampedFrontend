@@ -1,45 +1,53 @@
 import { createRouter, createRoute, redirect } from "@tanstack/react-router";
 import { Route as rootRoute } from "@/routes/__root";
 import { authenticatedRoute } from "@/routes/_authenticated";
-import DashboardEngine from "@/features/dashboard/DashboardEngine";
 import LoginRoute from "@/routes/login";
-import Equipment from "@/routes/Equipment";
-import Categories from "@/routes/Categories";
-import DataArena from "@/routes/DataArena";
-import Invoices from "@/routes/Invoices";
-import RentalHistoryRoute from "@/routes/RentalHistory";
 import { useAuthStore } from "@/stores/useAuthStore";
-import CustomersRoute from "@/routes/Customers";
-import MaintenanceRoute from "@/routes/Maintenance";
-import WorkforceRoute from "@/routes/Workforce";
-import AccountingRoute from "@/routes/Accounting";
-import ReportsRoute from "@/routes/Reports";
-import MessagesRoute, { MESSAGE_TABS } from "@/routes/Messages";
-import LockerRoute, { LOCKER_TABS } from "@/routes/Locker";
-import ProfileRoute, { PROFILE_TAB_KEYS } from "@/routes/Profile";
+import { MESSAGE_TABS, LOCKER_TABS, PROFILE_TAB_KEYS } from "@/app/routeTabs";
 import { adminUsersRoute } from "@/routes/admin/users";
 import { adminRolesRoute } from "@/routes/admin/roles";
 import { adminLocationsRoute } from "@/routes/admin/locations";
 import { FeatureGate } from "@/features/plan/usePlan";
-import PermissionsPage from "@/routes/Permissions";
-import SuperAdminLogin from "@/routes/SuperAdminLogin";
-import SuperAdminDashboard from "@/routes/SuperAdmin";
 import { useSuperAdminStore } from "@/stores/useSuperAdminStore";
-import { MobileSignPage } from "@/features/signatures/components/MobileSignPage";
-import { PairDevicePage } from "@/features/signatures/components/PairDevicePage";
-import { DeviceHomePage } from "@/features/signatures/components/DeviceHomePage";
-import { SimplifiedSignPage } from "@/features/signatures/components/SimplifiedSignPage";
-import { PhonePhotoPage } from "@/features/equipment/components/PhonePhotoPage";
-import { DeviceInvoicePage } from "@/features/phone-assistant/pages/DeviceInvoicePage";
-import { DeviceCallsPage } from "@/features/phone-assistant/pages/device/DeviceCallsPage";
-import { DeviceAlertsPage } from "@/features/phone-assistant/pages/device/DeviceAlertsPage";
-import { DeviceAppGatePage } from "@/features/phone-assistant/pages/device/DeviceAppGatePage";
-import { DeviceSettingsPage } from "@/features/phone-assistant/pages/device/DeviceSettingsPage";
-import { DeviceNotificationsPage } from "@/features/phone-assistant/pages/DeviceNotificationsPage";
-import PhoneAssistantSettingsPage from "@/features/phone-assistant/pages/PhoneAssistantSettingsPage";
-import { DevicePrivacyPage } from "@/features/phone-assistant/pages/DevicePrivacyPage";
+import { PageSkeleton } from "@/components/ui/loading";
+
+// Critical counter pages arrive with the first download so they open instantly. Every other page
+// loads in the background right after sign-in (see app/lazyPages.ts).
+import Invoices from "@/routes/Invoices";
+import CustomersRoute from "@/routes/Customers";
+import Equipment from "@/routes/Equipment";
+import {
+  DashboardEngine,
+  Categories,
+  DataArena,
+  RentalHistoryRoute,
+  MaintenanceRoute,
+  WorkforceRoute,
+  AccountingRoute,
+  ReportsRoute,
+  MessagesRoute,
+  LockerRoute,
+  ProfileRoute,
+  PermissionsPage,
+  SuperAdminLogin,
+  SuperAdminDashboard,
+  PhoneAssistantSettingsPage,
+  MobileSignPage,
+  PairDevicePage,
+  DeviceHomePage,
+  SimplifiedSignPage,
+  PhonePhotoPage,
+  DeviceInvoicePage,
+  DeviceCallsPage,
+  DeviceAlertsPage,
+  DeviceAppGatePage,
+  DeviceSettingsPage,
+  DeviceNotificationsPage,
+  DevicePrivacyPage,
+} from "@/app/lazyPages";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
+import { startPathFor } from "@/app/startPage";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -71,7 +79,7 @@ const indexRoute = createRoute({
     }
     const user = useAuthStore.getState().user;
     if (user) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: startPathFor(user) });
     }
     throw redirect({ to: "/login" });
   },
@@ -435,6 +443,13 @@ const NotFoundComponent = () => { const { t } = useTranslation(); return (
 export const router = createRouter({
   routeTree,
   defaultNotFoundComponent: NotFoundComponent,
+  // Fetch a page's code as soon as the pointer rests on (or a finger touches) a link to it.
+  defaultPreload: "intent",
+  // A page that loads quickly shows no placeholder; a slower one shows its skeleton for at least
+  // a short moment, so it never flickers in and out.
+  defaultPendingComponent: () => <PageSkeleton />,
+  defaultPendingMs: 150,
+  defaultPendingMinMs: 300,
 });
 
 declare module "@tanstack/react-router" {

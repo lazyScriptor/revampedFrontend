@@ -20,6 +20,8 @@ export interface MyProfile {
   date_format: string;
   time_format: "12h" | "24h";
   notification_prefs: Record<string, any> | null;
+  /** Page opened after signing in; null means Invoicing. */
+  start_page?: string | null;
   last_login_at: string | null;
   last_login_ip: string | null;
   password_changed_at: string | null;
@@ -57,7 +59,7 @@ export const updateMyProfile = async (payload: ProfileUpdatePayload): Promise<My
 export type PreferencesPayload = Partial<
   Pick<
     MyProfile,
-    "language" | "timezone" | "date_format" | "time_format" | "notification_prefs"
+    "language" | "timezone" | "date_format" | "time_format" | "notification_prefs" | "start_page"
   >
 >;
 
