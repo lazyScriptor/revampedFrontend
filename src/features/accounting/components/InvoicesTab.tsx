@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Box, Typography, Chip } from "@mui/material";
+import { Box, Typography, Chip, Tooltip } from "@mui/material";
 import { DataGrid, GridColDef, GridFooterContainer, GridPagination } from "@mui/x-data-grid";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -34,12 +34,15 @@ interface InvoicesTableFooterProps {
     total_amount: number;
     total_paid: number;
     outstanding: number;
+    accrued_charges?: number;
   };
   totalCount: number;
 }
 
 function InvoicesTableFooter({ summary, totalCount }: InvoicesTableFooterProps) {
   const { format } = useCurrencyFormatter();
+  const { t } = useTranslation();
+  const accrued = summary?.accrued_charges || 0;
 
   return (
     <GridFooterContainer
@@ -76,7 +79,7 @@ function InvoicesTableFooter({ summary, totalCount }: InvoicesTableFooterProps) 
               color: "text.secondary",
             }}
           >
-            Grand Totals ({totalCount} Matching {totalCount === 1 ? "Invoice" : "Invoices"}):
+            {t("accounting.InvoicesTab.grandTotals", { count: totalCount })}
           </Typography>
         </Box>
 
@@ -93,22 +96,39 @@ function InvoicesTableFooter({ summary, totalCount }: InvoicesTableFooterProps) 
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em" }}
+              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}
             >
-              TOTAL BILLED
+              {t("common.total")}
             </Typography>
             <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "inherit" }}>
               {format(summary?.total_amount || 0)}
             </span>
           </Box>
 
+          {accrued > 0 && (
+            <Tooltip title={t("accounting.InvoicesTab.chargesSoFarHint")}>
+              <Box sx={{ textAlign: "right", cursor: "help" }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}
+                >
+                  {t("accounting.InvoicesTab.chargesSoFarColumn")}
+                </Typography>
+                <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#b45309" }}>
+                  {format(accrued)}
+                </span>
+              </Box>
+            </Tooltip>
+          )}
+
           <Box sx={{ textAlign: "right" }}>
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em" }}
+              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}
             >
-              TOTAL PAID
+              {t("accounting.InvoicesTab.totalPaid")}
             </Typography>
             <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#16a34a" }}>
               {format(summary?.total_paid || 0)}
@@ -119,9 +139,9 @@ function InvoicesTableFooter({ summary, totalCount }: InvoicesTableFooterProps) 
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em" }}
+              sx={{ display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}
             >
-              OUTSTANDING
+              {t("accounting.InvoicesTab.outstanding")}
             </Typography>
             <span
               style={{
@@ -161,11 +181,13 @@ export default function InvoicesTab() {
       return data.summary;
     }
     const rows = data?.rows || [];
-    if (rows.length === 0) return { total_amount: 0, total_paid: 0, outstanding: 0 };
+    if (rows.length === 0) return { total_amount: 0, total_paid: 0, outstanding: 0, accrued_charges: 0 };
     const totalAmount = rows.reduce((s: number, r: any) => s + (Number(r.total_amount) || 0), 0);
     const totalPaid = rows.reduce((s: number, r: any) => s + (Number(r.total_paid) || 0), 0);
     const outstanding = rows.reduce((s: number, r: any) => s + (Number(r.outstanding) || 0), 0);
+    const accrued = rows.reduce((s: number, r: any) => s + (Number(r.accrued_charges) || 0), 0);
     return {
+      accrued_charges: Math.round(accrued * 100) / 100,
       total_amount: Math.round(totalAmount * 100) / 100,
       total_paid: Math.round(totalPaid * 100) / 100,
       outstanding: Math.round(outstanding * 100) / 100,
@@ -217,11 +239,25 @@ export default function InvoicesTab() {
       width: 130,
       align: "right",
       headerAlign: "right",
-      renderCell: (p) => (
-        <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-          {format(p.value)}
-        </span>
-      ),
+      renderCell: (p) => {
+        const accrued = Number(p.row.accrued_charges) || 0;
+        return (
+          <Box sx={{ textAlign: "right", lineHeight: 1.25 }}>
+            <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{format(p.value)}</span>
+            {accrued > 0 && (
+              <Tooltip title={t("accounting.InvoicesTab.chargesSoFarHint")}>
+                <Typography
+                  component="div"
+                  variant="caption"
+                  sx={{ color: "#b45309", fontSize: "0.68rem", fontVariantNumeric: "tabular-nums", cursor: "help" }}
+                >
+                  {t("accounting.InvoicesTab.chargesSoFar", { amount: format(accrued) })}
+                </Typography>
+              </Tooltip>
+            )}
+          </Box>
+        );
+      },
     },
     {
       field: "total_paid",
@@ -278,7 +314,11 @@ export default function InvoicesTab() {
           <KpiTile
             label={t("common.total")}
             value={format(summary.total_amount)}
-            hint={`${data?.totalCount || 0} ${t("accounting.invoices").toLowerCase()}`}
+            hint={
+              (summary.accrued_charges || 0) > 0
+                ? `${data?.totalCount || 0} ${t("accounting.invoices").toLowerCase()} · ${t("accounting.InvoicesTab.chargesSoFar", { amount: format(summary.accrued_charges || 0) })}`
+                : `${data?.totalCount || 0} ${t("accounting.invoices").toLowerCase()}`
+            }
             icon={<ReceiptLongIcon />}
             tone="default"
           />
@@ -292,7 +332,7 @@ export default function InvoicesTab() {
           <KpiTile
             label={t("accounting.InvoicesTab.outstanding")}
             value={format(summary.outstanding)}
-            hint={t("invoices.overdue")}
+            hint={t("accounting.InvoicesTab.stillOwed")}
             icon={<WarningAmberIcon />}
             tone={summary.outstanding > 0 ? "error" : "success"}
           />

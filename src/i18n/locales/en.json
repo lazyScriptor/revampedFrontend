@@ -1538,7 +1538,14 @@
         },
         "InvoicesTab": {
             "days": "Days",
-            "outstanding": "Outstanding"
+            "outstanding": "Outstanding",
+            "stillOwed": "Still owed",
+            "chargesSoFar": "incl. {{amount}} charges so far",
+            "chargesSoFarColumn": "Charges so far",
+            "chargesSoFarHint": "Extra and late days for machines still out, already counted in the total and outstanding.",
+            "grandTotals_one": "Grand totals ({{count}} invoice)",
+            "grandTotals_other": "Grand totals ({{count}} invoices)",
+            "totalPaid": "Total paid"
         },
         "JournalTab": {
             "ref": "Ref",
