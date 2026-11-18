@@ -183,8 +183,11 @@ export type RowErrors = Partial<Record<Field | "row", string>>;
 const isAmount = (v: string) => v.trim() !== "" && Number.isFinite(Number(v)) && Number(v) >= 0;
 const isWhole = (v: string, min: number) => /^\d+$/.test(v.trim()) && Number(v) >= min;
 
-/** Problems in edited and added rows, by row key. Rows nobody touched are never flagged. */
-export const validateRows = (rows: SheetRow[]): Record<string, RowErrors> => {
+/** Problems in edited and added rows, by row key. Rows nobody touched are never flagged unless flagUnnamedNewRows is true. */
+export const validateRows = (
+  rows: SheetRow[],
+  opts: { flagUnnamedNewRows?: boolean } = {},
+): Record<string, RowErrors> => {
   const out: Record<string, RowErrors> = {};
   const serials = new Map<string, number>();
   for (const r of rows) {
@@ -195,7 +198,7 @@ export const validateRows = (rows: SheetRow[]): Record<string, RowErrors> => {
     if (r.isDeleted || (!r.isNew && !Object.keys(r.edited).length)) continue;
     const v = r.values;
     // A new row stays calm until a name goes in; saving it blank still comes back as a problem.
-    if (r.isNew && !v.equipment_name.trim()) continue;
+    if (r.isNew && !opts.flagUnnamedNewRows && !v.equipment_name.trim()) continue;
     const e: RowErrors = {};
     if (v.equipment_name.trim().length < 2) e.equipment_name = "name_required";
     if (!r.isNew && !v.serial_number.trim()) e.serial_number = "number_required";
