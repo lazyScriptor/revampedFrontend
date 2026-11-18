@@ -9,8 +9,9 @@ import { LockerToday } from "@/features/locker/components/LockerToday";
 import { LockerHistory } from "@/features/locker/components/LockerHistory";
 import { StartLockerPanel } from "@/features/locker/components/StartLockerPanel";
 
-export const LOCKER_TABS = ["today", "history"] as const;
-export type LockerTab = (typeof LOCKER_TABS)[number];
+import { LOCKER_TABS, type LockerTab } from "@/app/routeTabs";
+
+export { LOCKER_TABS, type LockerTab };
 
 // Cash locker: the shop's one cash drawer. Float + cash advances for open invoices stay;
 // everything else goes home each evening.

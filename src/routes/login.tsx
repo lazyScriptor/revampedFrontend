@@ -47,6 +47,7 @@ import {
 import { loginUser } from "@/features/auth/api/auth.api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
+import { startPathFor } from "@/app/startPage";
 
 const readPairedUsername = (): string => {
   try {
@@ -99,7 +100,7 @@ export default function LoginRoute() {
         data?.data?.accessToken ||
         null;
       setAuth(user, token);
-      navigate({ to: "/dashboard" });
+      navigate({ to: startPathFor(user) });
     },
   });
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Badge, Box, Button, Chip, CircularProgress, IconButton, LinearProgress, Skeleton, TextField, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { SearchProgress } from "@/components/ui/loading";
 import { useTranslation } from "react-i18next";
 import AppsIcon from "@mui/icons-material/Apps";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -50,60 +51,62 @@ export function EquipmentSearchBar({ value, onChange, open, onOpen, onClose, loa
   const k = useTokens();
 
   return (
-    <TextField
-      value={value}
-      onChange={(e) => {
-        onChange(e.target.value);
-        if (!open) onOpen();
-      }}
-      onFocus={() => {
-        if (!open) onOpen();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          onSubmit();
-        } else if (e.key === "Escape") {
-          onClose();
-        }
-      }}
-      placeholder={t("invoices.PosLedgerPanel.addEquipmentByNameOr")}
-      fullWidth
-      slotProps={{
-        htmlInput: { "aria-label": t("invoices.PosLedgerPanel.addEquipmentByNameOr"), enterKeyHint: "search", autoComplete: "off" },
-        input: {
-          startAdornment: <SearchIcon sx={{ color: k.muted, ml: 0.5, mr: 0.75, fontSize: 22 }} />,
-          endAdornment: (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
-              {loading && <CircularProgress size={16} sx={{ mr: 0.5 }} />}
-              {value && (
-                <IconButton size="small" aria-label={t("common.clear")} onClick={() => onChange("")} sx={{ color: k.muted }}>
-                  <CloseIcon sx={{ fontSize: 18 }} />
+    <Box sx={{ position: "relative" }}>
+      <TextField
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          if (!open) onOpen();
+        }}
+        onFocus={() => {
+          if (!open) onOpen();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSubmit();
+          } else if (e.key === "Escape") {
+            onClose();
+          }
+        }}
+        placeholder={t("invoices.PosLedgerPanel.addEquipmentByNameOr")}
+        fullWidth
+        slotProps={{
+          htmlInput: { "aria-label": t("invoices.PosLedgerPanel.addEquipmentByNameOr"), enterKeyHint: "search", autoComplete: "off" },
+          input: {
+            startAdornment: <SearchIcon sx={{ color: k.muted, ml: 0.5, mr: 0.75, fontSize: 22 }} />,
+            endAdornment: (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
+                {value && (
+                  <IconButton size="small" aria-label={t("common.clear")} onClick={() => onChange("")} sx={{ color: k.muted }}>
+                    <CloseIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                )}
+                <IconButton
+                  size="small"
+                  aria-label={open ? t("common.close") : t("invoices.EquipmentCatalog.browse")}
+                  onClick={open ? onClose : onOpen}
+                  sx={{ color: open ? "primary.main" : k.muted, bgcolor: open ? "action.selected" : "transparent" }}
+                >
+                  {open ? <KeyboardArrowUpIcon sx={{ fontSize: 22 }} /> : <GridViewRoundedIcon sx={{ fontSize: 20 }} />}
                 </IconButton>
-              )}
-              <IconButton
-                size="small"
-                aria-label={open ? t("common.close") : t("invoices.EquipmentCatalog.browse")}
-                onClick={open ? onClose : onOpen}
-                sx={{ color: open ? "primary.main" : k.muted, bgcolor: open ? "action.selected" : "transparent" }}
-              >
-                {open ? <KeyboardArrowUpIcon sx={{ fontSize: 22 }} /> : <GridViewRoundedIcon sx={{ fontSize: 20 }} />}
-              </IconButton>
-            </Box>
-          ),
-          sx: {
-            borderRadius: 3.5,
-            height: { xs: 48, sm: 44 },
-            bgcolor: k.card,
-            pr: 0.75,
-            "& .MuiInputBase-input": { color: k.text, fontWeight: 500, fontSize: "0.9rem" },
-            "& fieldset": { borderColor: k.border },
-            "&:hover fieldset": { borderColor: k.dark ? "#475569" : "#cbd5e1" },
-            "&.Mui-focused fieldset": { borderColor: "primary.main" },
+              </Box>
+            ),
+            sx: {
+              borderRadius: 3.5,
+              height: { xs: 48, sm: 44 },
+              bgcolor: k.card,
+              pr: 0.75,
+              "& .MuiInputBase-input": { color: k.text, fontWeight: 500, fontSize: "0.9rem" },
+              "& fieldset": { borderColor: k.border },
+              "&:hover fieldset": { borderColor: k.dark ? "#475569" : "#cbd5e1" },
+              "&.Mui-focused fieldset": { borderColor: "primary.main" },
+            },
           },
-        },
-      }}
-    />
+        }}
+      />
+    <SearchProgress active={loading} />
+    </Box>
   );
 }
 

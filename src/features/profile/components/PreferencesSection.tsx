@@ -15,6 +15,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import { MyProfile } from "../api/me.api";
 import { useUpdatePreferences } from "../hooks/useMe";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { DEFAULT_START_PAGE, startPageOptionsFor } from "@/app/startPage";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -52,11 +54,17 @@ const COMMON_TIMEZONES = [
 export function PreferencesSection({ profile }: { profile: MyProfile }) {
   const { t } = useTranslation();
   const update = useUpdatePreferences();
+  const authUser = useAuthStore((st) => st.user);
+  const startOptions = startPageOptionsFor(authUser);
+  // A saved page the user can no longer open falls back to the default in the picker.
+  const initialStart = (saved: string | null | undefined) =>
+    startOptions.some((o) => o.key === saved) ? (saved as string) : DEFAULT_START_PAGE;
   const [form, setForm] = useState({
     language: profile.language || "en",
     timezone: profile.timezone || "Asia/Colombo",
     date_format: profile.date_format || "YYYY-MM-DD",
     time_format: profile.time_format || "24h",
+    start_page: initialStart(profile.start_page),
   });
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +75,9 @@ export function PreferencesSection({ profile }: { profile: MyProfile }) {
       timezone: profile.timezone || "Asia/Colombo",
       date_format: profile.date_format || "YYYY-MM-DD",
       time_format: profile.time_format || "24h",
+      start_page: initialStart(profile.start_page),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   const handleSubmit = async () => {
@@ -147,6 +157,22 @@ export function PreferencesSection({ profile }: { profile: MyProfile }) {
         >
           <MenuItem value="24h">{t("profile.PreferencesSection.24Hour1430")}</MenuItem>
           <MenuItem value="12h">{t("profile.PreferencesSection.12Hour230Pm")}</MenuItem>
+        </TextField>
+
+        <TextField
+          select
+          size="small"
+          label={t("profile.PreferencesSection.startPage")}
+          helperText={t("profile.PreferencesSection.startPageHint")}
+          value={form.start_page}
+          onChange={(e) => setForm((f) => ({ ...f, start_page: e.target.value }))}
+          fullWidth
+        >
+          {startOptions.map((o) => (
+            <MenuItem key={o.key} value={o.key}>
+              {t(o.labelKey)}
+            </MenuItem>
+          ))}
         </TextField>
       </Box>
 

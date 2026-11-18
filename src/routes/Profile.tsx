@@ -34,17 +34,9 @@ import { usePlanChecker } from "@/features/plan/usePlan";
 import { DesktopPopupSizeCard } from "@/features/phone-assistant/components/DesktopPopupSizeCard";
 import { MyPushPreferences } from "@/features/phone-assistant/components/MyPushPreferences";
 
-/** Every Profile tab. The router validates `?tab=` against this list, so add new tabs here. */
-export const PROFILE_TAB_KEYS = [
-  "profile",
-  "security",
-  "signature",
-  "phones",
-  "preferences",
-  "notifications",
-  "activity",
-  "access",
-] as const;
+import { PROFILE_TAB_KEYS } from "@/app/routeTabs";
+
+export { PROFILE_TAB_KEYS };
 
 type TabKey = (typeof PROFILE_TAB_KEYS)[number];
 
