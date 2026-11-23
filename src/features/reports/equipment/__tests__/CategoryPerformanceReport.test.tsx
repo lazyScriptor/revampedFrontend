@@ -11,7 +11,6 @@ const group = (over: object) => ({
   purchaseCost: 0, lifetimeRevenue: 300, utilizationPct: 10, paybackPct: null, ...over,
 });
 
-vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("../../hooks/useReportsHooks", () => ({
   useEquipmentPerformance: () => ({
     isLoading: false,
@@ -26,14 +25,13 @@ vi.mock("../../hooks/useReportsHooks", () => ({
 vi.mock("@/features/warehouses/hooks/useWarehouseOptions", () => ({ useWarehouseOptions: () => ({ data: [] }) }));
 
 describe("CategoryPerformanceReport", () => {
-  it("answers first, then drills from family to size to machine with a way back", () => {
+  it("lists families and opens a row to show its sizes, then its machines", async () => {
     render(<CategoryPerformanceReport />);
-    expect(screen.getAllByText("Grinder").length).toBeGreaterThan(0); // best earner card + ranking row
+    expect(await screen.findByText("Grinder")).toBeTruthy();
     expect(screen.queryByText("4 inch")).toBeNull();
-    fireEvent.click(screen.getAllByText("Grinder").slice(-1)[0]);
-    fireEvent.click(screen.getByText("4 inch"));
-    expect(screen.getByText("Grinder ( 4 inch ) -4")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /back/i }));
-    expect(screen.getByText("4 inch")).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: /show what is inside/i })[0]);
+    fireEvent.click(await screen.findByText("4 inch"));
+    expect(await screen.findByText("Grinder ( 4 inch ) -4")).toBeTruthy();
+    expect(screen.getByText("Grinder ( 4 inch ) -7")).toBeTruthy(); // idle machine is still listed
   });
 });

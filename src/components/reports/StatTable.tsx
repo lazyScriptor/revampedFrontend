@@ -23,6 +23,9 @@ interface StatTableProps {
   pageSizeOptions?: number[];
   height?: number | string | "fill";
   initialPageSize?: number;
+  /** Defaults to the pagination mode. Set to "server" when the caller sorts the rows itself (e.g. keeps a tree together). */
+  sortingMode?: "client" | "server";
+  getRowClassName?: (params: { row: any }) => string;
   checkboxSelection?: boolean;
   rowSelectionModel?: GridRowSelectionModel;
   onRowSelectionModelChange?: (model: GridRowSelectionModel) => void;
@@ -43,6 +46,8 @@ export function StatTable({
   height = 560,
   initialPageSize,
   checkboxSelection,
+  sortingMode,
+  getRowClassName,
   rowSelectionModel,
   onRowSelectionModelChange,
 }: StatTableProps) {
@@ -113,7 +118,8 @@ export function StatTable({
         paginationMode={paginationMode}
         paginationModel={effectiveModel}
         onPaginationModelChange={handleModelChange}
-        sortingMode={paginationMode}
+        sortingMode={sortingMode ?? paginationMode}
+        getRowClassName={getRowClassName}
         sortModel={sortModel}
         onSortModelChange={onSortModelChange}
         pageSizeOptions={safeOptions}
@@ -157,6 +163,8 @@ export function StatTable({
               },
             },
           },
+          "& .MuiDataGrid-row.row-level-1": { bgcolor: isDark ? "rgba(148, 163, 184, 0.06)" : "#f8fafc" },
+          "& .MuiDataGrid-row.row-level-2": { bgcolor: isDark ? "rgba(148, 163, 184, 0.12)" : "#f1f5f9" },
           "& .MuiDataGrid-cell": {
             borderColor: isDark ? "rgba(51, 65, 85, 0.4)" : "#f1f5f9",
             py: { xs: 1, sm: 1.25 },
