@@ -309,7 +309,8 @@ export default function InvoicesRoute() {
     ? mixedCartTotals(subTotal, saleSubTotal, fees).total
     : Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
-  const discountGate = useBillDiscountGate(Number(fees.discount) || 0, subTotal + saleSubTotal + (Number(fees.transport) || 0));
+  // The limit is measured on rent + goods, as the server does (transport is not discountable stock).
+  const discountGate = useBillDiscountGate(Number(fees.discount) || 0, subTotal + saleSubTotal);
 
   const requestDispatch = async () => {
     if (isMixedCart && !(await discountGate.ensureApproved())) return;

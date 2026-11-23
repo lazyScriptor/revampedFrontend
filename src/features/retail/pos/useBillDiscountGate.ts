@@ -7,7 +7,7 @@ import { computeDiscountPct } from "./posPricing";
 
 /**
  * The bill-discount approval rule, for checkouts that don't use SaleCheckoutSection (mixed bills).
- * `base` is everything the discount applies to (the whole bill: rent + items + transport).
+ * `base` is everything the discount applies to (rent + items, without transport, matching the server).
  * `ensureApproved()` resolves true when no approval is needed or one was granted (the token is kept
  * in the cart store and sent with the bill), false when the cashier cancelled.
  */
