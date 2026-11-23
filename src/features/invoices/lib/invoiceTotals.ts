@@ -7,6 +7,8 @@
  * Late fees (days past a set due date) are the only thing between the two besides transport and
  * discount. `billed_total_amount` / `billed_sub_total` are the parts already billed.
  */
+import { normalizeSaleLines } from "@/features/retail/api/pos.api";
+
 const round = (n: number) => Math.round(n * 100) / 100;
 
 export interface InvoiceTotals {
@@ -18,13 +20,30 @@ export interface InvoiceTotals {
   /** Already billed (excludes the running charges of machines still out). */
   billed: number;
   total: number;
+  /** Mixed bills only: the rent part and the goods part of `subTotal`, before transport and discount. */
+  mixed: boolean;
+  rent: number;
+  items: number;
 }
 
 export function invoiceTotals(inv: any): InvoiceTotals {
   const rentalSub = Number(inv?.sub_total) || 0;
   const saleSub = Number(inv?.sale_total) || 0;
-  const subTotal =
-    inv?.bill_kind === "sale" || (rentalSub === 0 && saleSub > 0)
+  // A mixed bill's sub_total already holds both parts (rent + goods before the bill discount), so it is
+  // used as it is; goods are split out by adding back each line's share of the bill discount.
+  const mixed = inv?.bill_kind === "mixed";
+  const itemsGross = mixed
+    ? round(
+        normalizeSaleLines(inv).length > 0
+          ? normalizeSaleLines(inv)
+              .filter((l) => l.status !== "voided")
+              .reduce((sum, l) => sum + l.line_total + l.bill_discount_share, 0)
+          : saleSub,
+      )
+    : 0;
+  const subTotal = mixed
+    ? rentalSub
+    : inv?.bill_kind === "sale" || (rentalSub === 0 && saleSub > 0)
       ? saleSub || rentalSub
       : rentalSub + saleSub;
   const transport = Number(inv?.transport_fee) || 0;
@@ -38,6 +57,9 @@ export function invoiceTotals(inv: any): InvoiceTotals {
     lateFees: Math.max(0, round(total - (subTotal + transport - discount))),
     billed,
     total,
+    mixed,
+    rent: mixed ? Math.max(0, round(subTotal - itemsGross)) : subTotal,
+    items: itemsGross,
   };
 }
 

@@ -53,6 +53,11 @@ export function DeleteInvoiceDialog({ open, onClose, invoice, onDeleted }: Props
   const paidTotal = payments.reduce((s, p) => s + Number(p.payment_amount || 0), 0);
   const hasMoney = payments.length > 0 || Number(invoice?.advance_paid || 0) > 0;
   const blocked = hasMoney && !canDeleteAny;
+  const hasGoods =
+    invoice?.bill_kind === "sale" ||
+    invoice?.bill_kind === "mixed" ||
+    Number(invoice?.sale_total || 0) > 0 ||
+    (invoice?.SaleLines || invoice?.sale_lines || []).length > 0;
   const needsNote = reason === "Other";
   const canSubmit = !!reason && (!needsNote || note.trim().length >= 3) && !blocked && !mutation.isPending;
 
@@ -88,6 +93,7 @@ export function DeleteInvoiceDialog({ open, onClose, invoice, onDeleted }: Props
               </Typography>
               <ul style={{ margin: 0, paddingLeft: 18 }}>
                 <li>{t("invoices.delete.effectStock")}</li>
+                {hasGoods && <li data-testid="delete-goods-effect">{t("invoices.delete.effectGoodsBack")}</li>}
                 {hasMoney && (
                   <li>{t("invoices.delete.effectMoney", { amount: paidTotal.toLocaleString() })}</li>
                 )}

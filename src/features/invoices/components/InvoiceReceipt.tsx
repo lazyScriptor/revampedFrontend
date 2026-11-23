@@ -687,8 +687,10 @@ export const InvoiceReceipt = ({
     const rawSub = Number(invoice.sub_total ?? invoice.fees?.subtotal ?? 0);
     const rawSale = Number(invoice.sale_total ?? 0);
     const isSaleOnlyBill = invoice.bill_kind === "sale" || (invLines.length === 0 && soldLines.length > 0);
+    // A mixed bill's sub_total already holds the rent and the goods (before the bill discount).
+    const isMixedBill = invoice.bill_kind === "mixed";
     const subtotal =
-      (isSaleOnlyBill ? rawSale || rawSub : rawSale > 0 ? rawSub + rawSale : rawSub) ||
+      (isMixedBill ? rawSub : isSaleOnlyBill ? rawSale || rawSub : rawSale > 0 ? rawSub + rawSale : rawSub) ||
       computedLinesSubtotal;
     const transport = Number(
       invoice.transport_fee ?? invoice.fees?.transportFee ?? invoice.fees?.transport ?? 0
