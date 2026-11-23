@@ -77,6 +77,9 @@ import { isNativePhoneApp } from "@/features/phone-assistant/lib/nativeBridge";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
 import { IncomingCallToast } from "@/features/phone-assistant/components/IncomingCallToast";
+import { OverlayProvider } from "@/components/overlay";
+import { CommandBarHost } from "@/components/command/CommandBarHost";
+import { RetailTopBar } from "@/features/retail/RetailTopBar";
 
 const drawerWidth = 260;
 
@@ -619,6 +622,7 @@ function AuthenticatedLayout() {
   );
 
   return (
+    <OverlayProvider>
     <Box
       sx={{
         display: "flex",
@@ -695,6 +699,7 @@ function AuthenticatedLayout() {
           )}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <SinhalaTypingToggle />
+            <RetailTopBar />
             <NotificationBellSafe />
             <Typography
               variant="body2"
@@ -754,7 +759,9 @@ function AuthenticatedLayout() {
         <LockerOpeningPrompt />
         <PlanSync />
         <ForcePasswordChange />
+        <CommandBarHost />
       </Box>
     </Box>
+    </OverlayProvider>
   );
 }
