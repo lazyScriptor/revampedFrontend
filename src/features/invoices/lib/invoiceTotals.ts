@@ -21,7 +21,12 @@ export interface InvoiceTotals {
 }
 
 export function invoiceTotals(inv: any): InvoiceTotals {
-  const subTotal = Number(inv?.sub_total) || 0;
+  const rentalSub = Number(inv?.sub_total) || 0;
+  const saleSub = Number(inv?.sale_total) || 0;
+  const subTotal =
+    inv?.bill_kind === "sale" || (rentalSub === 0 && saleSub > 0)
+      ? saleSub || rentalSub
+      : rentalSub + saleSub;
   const transport = Number(inv?.transport_fee) || 0;
   const discount = Number(inv?.discount_amount) || 0;
   const total = Number(inv?.total_amount) || 0;

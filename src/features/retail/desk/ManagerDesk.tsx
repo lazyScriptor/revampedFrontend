@@ -27,7 +27,8 @@ import { Overlay, registerOverlay, type OverlayComponentProps } from "@/componen
 import { useDensity } from "@/features/preferences/useDensity";
 import { formatDateTime } from "@/lib/dates";
 import { EXCEPTION_TYPES, type CounterException, type ExceptionType } from "../api/types";
-import { useDecide, useDeskList } from "./useDesk";
+import { ToSortTab } from "./ToSortTab";
+import { useCanDecideApprovals, useCanSortUnlisted, useDecide, useDeskList, useToSortList } from "./useDesk";
 
 export const MANAGER_DESK_ID = "manager-desk";
 
@@ -230,13 +231,21 @@ function RecordsTab() {
 
 function ManagerDesk(_props: OverlayComponentProps) {
   const { t } = useTranslation();
+  const canDecide = useCanDecideApprovals();
+  const canSort = useCanSortUnlisted();
   const [tab, setTab] = useState<DeskTab>("waiting");
-  const waiting = useDeskList({ tab: "waiting", limit: 1 });
+  const waiting = useDeskList({ tab: "waiting", limit: 1 }, canDecide);
+  const toSort = useToSortList(canSort);
+  const sortTotal = toSort.data?.total ?? 0;
 
   return (
     <Overlay title={t("desk.title")} width={760}>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ mb: 2, minHeight: 40, borderBottom: 1, borderColor: "divider" }}>
-        <Tab value="sort" label={t("desk.tabSort")} sx={{ minHeight: 40, textTransform: "none" }} />
+        <Tab
+          value="sort"
+          label={`${t("desk.tabSort")}${sortTotal > 0 ? ` (${sortTotal})` : ""}`}
+          sx={{ minHeight: 40, textTransform: "none", fontVariantNumeric: "tabular-nums" }}
+        />
         <Tab
           value="waiting"
           label={`${t("desk.tabWaiting")}${waiting.data ? ` (${waiting.data.total})` : ""}`}
@@ -244,7 +253,7 @@ function ManagerDesk(_props: OverlayComponentProps) {
         />
         <Tab value="records" label={t("desk.tabRecords")} sx={{ minHeight: 40, textTransform: "none" }} />
       </Tabs>
-      {tab === "sort" && <Empty text={t("desk.sortLater")} />}
+      {tab === "sort" && <ToSortTab />}
       {tab === "waiting" && <WaitingTab />}
       {tab === "records" && <RecordsTab />}
     </Overlay>

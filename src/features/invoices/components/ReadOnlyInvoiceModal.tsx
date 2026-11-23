@@ -43,6 +43,8 @@ import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import type { TemplateKey } from "@/features/whatsapp/api/whatsapp.api";
 import { useTranslation } from "react-i18next";
+import { normalizeSaleLines } from "@/features/retail/api/pos.api";
+import { ItemsSoldSection } from "./ItemsSoldSection";
 
 export interface ReadOnlyInvoiceModalProps {
   open: boolean;
@@ -72,6 +74,8 @@ export function ReadOnlyInvoiceModal({
     invoice.invoice_lines ||
     invoice.lines ||
     [];
+  const saleLines = normalizeSaleLines(invoice);
+  const isSaleOnly = invoice.bill_kind === "sale" || (lines.length === 0 && saleLines.length > 0);
   const payments: any[] =
     invoice.Payments ||
     invoice.payments ||
@@ -157,6 +161,19 @@ export function ReadOnlyInvoiceModal({
                 borderRadius: 1,
               }}
             />
+            {invoice.bill_kind === "sale" && (
+              <Chip
+                size="small"
+                color="warning"
+                label={t("invoices.sale.saleChip")}
+                sx={{
+                  fontWeight: 800,
+                  fontSize: "0.7rem",
+                  height: 22,
+                  borderRadius: 1,
+                }}
+              />
+            )}
             {Boolean(invoice.id_card_status) && (
               <Chip
                 size="small"
@@ -291,6 +308,7 @@ export function ReadOnlyInvoiceModal({
           </Box>
 
           {/* Equipment Items Table */}
+          {(lines.length > 0 || !isSaleOnly) && (
           <Box
             sx={{
               bgcolor: "#ffffff",
@@ -370,6 +388,9 @@ export function ReadOnlyInvoiceModal({
               </Table>
             </Box>
           </Box>
+          )}
+
+          <ItemsSoldSection invoice={invoice} />
 
           {/* Financial Breakdown Card */}
           <Box

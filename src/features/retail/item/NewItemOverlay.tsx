@@ -43,19 +43,37 @@ interface Row {
   cost: string;
   barcode: string;
 }
-const blankRow = (): Row => ({ sell: "", contractor: "", cost: "", barcode: "" });
 const num = (v: string): number | null => (v.trim() === "" || !Number.isFinite(Number(v)) ? null : Number(v));
 const NO_SIZE = "_";
 
 interface Props extends OverlayComponentProps {
   /** Words typed in the finder: pre-selects the brand, category and sizes they name. */
   prefillWords?: string;
+  /** Pre-fills sell price when creating from Manager Desk unlisted items. */
+  prefillPrice?: number | null;
+  /** Pre-fills scanned barcode when creating from Manager Desk unlisted items. */
+  prefillBarcode?: string | null;
+  /** Shows optional opening stock quantity field (for To sort -> Create). */
+  showOpeningQty?: boolean;
+  /** Optional custom submit handler (used by To sort -> Create). */
+  onSubmitPayload?: (payload: {
+    item: ProductInput | FamilyInput;
+    isFamily: boolean;
+    opening_qty?: number | null;
+  }) => Promise<CatalogProduct[]>;
   /** Called with the saved items just before the overlay closes. */
   onCreated?: (products: CatalogProduct[]) => void;
 }
 
 /** New item / new family as a step-by-tile overlay (plan §7.2): category, brand, sizes, prices, extras. */
-function NewItemOverlay({ prefillWords, onCreated }: Props) {
+function NewItemOverlay({
+  prefillWords,
+  prefillPrice = null,
+  prefillBarcode = null,
+  showOpeningQty = false,
+  onSubmitPayload,
+  onCreated,
+}: Props) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const overlay = useOverlay();
@@ -79,6 +97,7 @@ function NewItemOverlay({ prefillWords, onCreated }: Props) {
   const [serialCapture, setSerialCapture] = useState<SerialCapture>("receive");
   const [warranty, setWarranty] = useState("");
   const [reorder, setReorder] = useState("");
+  const [openingQty, setOpeningQty] = useState("");
   const [baseUnit, setBaseUnit] = useState<string>("pcs");
   const [unitTouched, setUnitTouched] = useState(false);
   const [packs, setPacks] = useState<Array<{ unit_name: string; factor: string }>>([]);
@@ -138,8 +157,14 @@ function NewItemOverlay({ prefillWords, onCreated }: Props) {
   }, [leaf, top, unitTouched]);
 
   const rowKeys = sizes.length ? sizes : [NO_SIZE];
-  const rowOf = (k: string): Row => rows[k] ?? blankRow();
-  const setRow = (k: string, patch: Partial<Row>) => setRows((r) => ({ ...r, [k]: { ...(r[k] ?? blankRow()), ...patch } }));
+  const defaultRow = (k: string): Row => ({
+    sell: prefillPrice != null ? String(prefillPrice) : "",
+    contractor: "",
+    cost: "",
+    barcode: k === rowKeys[0] && prefillBarcode ? prefillBarcode : "",
+  });
+  const rowOf = (k: string): Row => rows[k] ?? defaultRow(k);
+  const setRow = (k: string, patch: Partial<Row>) => setRows((r) => ({ ...r, [k]: { ...(r[k] ?? defaultRow(k)), ...patch } }));
 
   const nameParts = {
     brand: brand?.name,
@@ -228,7 +253,13 @@ function NewItemOverlay({ prefillWords, onCreated }: Props) {
           }),
           shared: { ...shared, units },
         };
-        created = (await createFamilyMut.mutateAsync(input)).products;
+        created = onSubmitPayload
+          ? await onSubmitPayload({
+              item: input,
+              isFamily: true,
+              opening_qty: showOpeningQty ? num(openingQty) : undefined,
+            })
+          : (await createFamilyMut.mutateAsync(input)).products;
       } else {
         const r = rowOf(NO_SIZE);
         const input: ProductInput = {
@@ -242,7 +273,13 @@ function NewItemOverlay({ prefillWords, onCreated }: Props) {
           ...(r.barcode.trim() ? { barcode: r.barcode.trim() } : {}),
           units,
         };
-        created = [await createProductMut.mutateAsync(input)];
+        created = onSubmitPayload
+          ? await onSubmitPayload({
+              item: input,
+              isFamily: false,
+              opening_qty: showOpeningQty ? num(openingQty) : undefined,
+            })
+          : [await createProductMut.mutateAsync(input)];
       }
       toast.showSuccess(t("retail.item.created", { count: created.length || sizes.length || 1 }));
       await overlay.close();
@@ -508,6 +545,16 @@ function NewItemOverlay({ prefillWords, onCreated }: Props) {
                 </Stack>
               );
             })}
+            {showOpeningQty && (
+              <TextField
+                size="small"
+                label={t("retail.count.openingQty")}
+                value={openingQty}
+                onChange={(e) => setOpeningQty(e.target.value.replace(/[^0-9.]/g, ""))}
+                slotProps={{ htmlInput: { inputMode: "decimal", "aria-label": t("retail.count.openingQty"), style: { fontVariantNumeric: "tabular-nums" } } }}
+                sx={{ maxWidth: 200, mt: 0.5 }}
+              />
+            )}
           </Box>
         )}
 
@@ -598,6 +645,16 @@ function NewItemOverlay({ prefillWords, onCreated }: Props) {
             </Box>
 
             <TextField size="small" label={t("retail.item.reorder")} value={reorder} onChange={(e) => setReorder(e.target.value)} slotProps={{ htmlInput: { inputMode: "decimal", style: { fontVariantNumeric: "tabular-nums" } } }} sx={{ maxWidth: 200 }} />
+            {showOpeningQty && (
+              <TextField
+                size="small"
+                label={t("retail.count.openingQty")}
+                value={openingQty}
+                onChange={(e) => setOpeningQty(e.target.value.replace(/[^0-9.]/g, ""))}
+                slotProps={{ htmlInput: { inputMode: "decimal", "aria-label": t("retail.count.openingQty"), style: { fontVariantNumeric: "tabular-nums" } } }}
+                sx={{ maxWidth: 200 }}
+              />
+            )}
           </Box>
         )}
       </Box>

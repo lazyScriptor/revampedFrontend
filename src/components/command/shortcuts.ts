@@ -21,8 +21,8 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
   { id: "stock-in", label: "shortcuts.stockIn", defaultCombo: "F2" },
   { id: "find-item", label: "shortcuts.findItem", defaultCombo: "F3" },
   { id: "correct-stock", label: "shortcuts.correctStock", defaultCombo: "F4" },
-  { id: "walk-in", label: "shortcuts.walkIn", defaultCombo: "F8", pending: true },
-  { id: "sell-print", label: "shortcuts.sellPrint", defaultCombo: "F9", pending: true },
+  { id: "walk-in", label: "shortcuts.walkIn", defaultCombo: "F8" },
+  { id: "sell-print", label: "shortcuts.sellPrint", defaultCombo: "F9" },
   { id: "qty-up", label: "shortcuts.qtyUp", defaultCombo: "Plus", pending: true },
   { id: "qty-down", label: "shortcuts.qtyDown", defaultCombo: "Minus", pending: true },
 ];
