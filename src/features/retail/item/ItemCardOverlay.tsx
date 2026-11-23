@@ -2,37 +2,55 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Box, Button, Chip, CircularProgress, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import HistoryIcon from "@mui/icons-material/History";
+import ExposureIcon from "@mui/icons-material/Exposure";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { useTranslation } from "react-i18next";
-import { Overlay, type OverlayComponentProps } from "@/components/overlay";
+import { Overlay, useOverlay, type OverlayComponentProps } from "@/components/overlay";
 import { useToast } from "@/components/ui/AppToast";
 import { errorMessage } from "../api/http";
 import type { CatalogProduct } from "../api/catalog.types";
+import type { ProductLocationStock } from "../api/stock.types";
 import { CatIcon } from "../components/CategoryIcon";
-import { formatRs } from "../format";
+import { STOCK_STATUS_LABEL, StockDot } from "../components/StockDot";
+import { formatQty, formatRs, formatSignedQty } from "../format";
 import { categoryPath } from "../catalog/catalogModel";
 import { diffProduct, fieldValue, type EditableField, type FieldEdits } from "../catalog/diff";
 import { formatVariant } from "../catalog/names";
 import { useArchiveProduct, useLearnBarcode, useProductDetail, useUpdateProduct } from "../catalog/mutations";
+import { CORRECT_OVERLAY_ID, HISTORY_OVERLAY_ID } from "../catalog/overlayIds";
 import { useScanDetector } from "../catalog/scanDetector";
 import { useRetailCatalog, useRetailPermissions } from "../catalog/useRetailCatalog";
+import { isTrackableProduct, statusForProduct } from "../stock/levelsModel";
+import { useUpdateStockThresholds } from "../stock/stockMutations";
+import { useStockLevels } from "../stock/useStockLevels";
 
 interface Props extends OverlayComponentProps {
   productId: number;
+  warehouseId?: number | null;
 }
 
 const NUM_SX = { fontVariantNumeric: "tabular-nums" } as const;
 
-/** Item card (plan §7.2): picture, name, size chips, prices, barcodes, tracking. Stock comes with R2. */
-function ItemCardOverlay({ productId }: Props) {
+const fmtTime = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+/** Item card (plan §7.2): picture, name, size chips, prices, barcodes, stock per location with quick ± & reorder levels, last 20 movements. */
+function ItemCardOverlay({ productId, warehouseId }: Props) {
   const { t } = useTranslation();
+  const overlay = useOverlay();
   const toast = useToast();
-  const { canManage, canCost, canLearnBarcode } = useRetailPermissions();
+  const { canManage, canCost, canLearnBarcode, canAdjust } = useRetailPermissions();
   const { catalog, index } = useRetailCatalog();
+  const levels = useStockLevels(warehouseId);
   const [currentId, setCurrentId] = useState(productId);
   const detail = useProductDetail(currentId);
   const local = index.byId.get(currentId);
@@ -41,6 +59,7 @@ function ItemCardOverlay({ productId }: Props) {
   const update = useUpdateProduct();
   const archive = useArchiveProduct();
   const learn = useLearnBarcode();
+  const updateThresholds = useUpdateStockThresholds();
 
   const [editing, setEditing] = useState(false);
   const [edits, setEdits] = useState<FieldEdits>({});
@@ -48,11 +67,17 @@ function ItemCardOverlay({ productId }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [barcode, setBarcode] = useState("");
 
+  // Per-location reorder level/qty inline editor
+  const [editingLocId, setEditingLocId] = useState<number | null>(null);
+  const [locReorderLevel, setLocReorderLevel] = useState("");
+  const [locReorderQty, setLocReorderQty] = useState("");
+
   useEffect(() => {
     setEditing(false);
     setEdits({});
     setErrors({});
     setMessage(null);
+    setEditingLocId(null);
   }, [currentId]);
 
   const addBarcode = async (raw: string) => {
@@ -74,8 +99,47 @@ function ItemCardOverlay({ productId }: Props) {
 
   const siblings = useMemo(() => {
     if (!product || product.family_id == null) return [];
-    return catalog.products.filter((p) => p.family_id === product.family_id).sort((a, b) => (parseFloat(a.variant_label ?? "") || 0) - (parseFloat(b.variant_label ?? "") || 0) || a.product_id - b.product_id);
+    return catalog.products
+      .filter((p) => p.family_id === product.family_id)
+      .sort((a, b) => (parseFloat(a.variant_label ?? "") || 0) - (parseFloat(b.variant_label ?? "") || 0) || a.product_id - b.product_id);
   }, [catalog.products, product]);
+
+  const locationRows = useMemo<ProductLocationStock[]>(() => {
+    const map = new Map<number, ProductLocationStock>();
+    for (const w of levels.warehouses) {
+      map.set(w.warehouse_id, {
+        warehouse_id: w.warehouse_id,
+        location_name: w.location_name,
+        qty_on_hand: 0,
+        counted_at: null,
+        reorder_level: null,
+        reorder_qty: null,
+      });
+    }
+    for (const l of levels.levelsForProduct(currentId)) {
+      const existing = map.get(l.warehouse_id);
+      map.set(l.warehouse_id, {
+        warehouse_id: l.warehouse_id,
+        location_name: existing?.location_name ?? `#${l.warehouse_id}`,
+        qty_on_hand: l.qty_on_hand,
+        counted_at: l.counted_at,
+        reorder_level: l.reorder_level,
+        reorder_qty: l.reorder_qty,
+      });
+    }
+    for (const s of detail.data?.stock ?? []) {
+      const existing = map.get(s.warehouse_id);
+      map.set(s.warehouse_id, {
+        warehouse_id: s.warehouse_id,
+        location_name: s.location_name || existing?.location_name || `#${s.warehouse_id}`,
+        qty_on_hand: s.qty_on_hand,
+        counted_at: s.counted_at,
+        reorder_level: s.reorder_level,
+        reorder_qty: s.reorder_qty,
+      });
+    }
+    return [...map.values()].sort((a, b) => a.warehouse_id - b.warehouse_id);
+  }, [levels, currentId, detail.data?.stock]);
 
   if (!product) {
     return (
@@ -91,6 +155,7 @@ function ItemCardOverlay({ productId }: Props) {
   const category = product.category_id != null ? index.ctx.categories.get(product.category_id) : undefined;
   const topCategory = category?.parent_id != null ? index.ctx.categories.get(category.parent_id) : category;
   const archived = product.is_active === false;
+  const trackable = isTrackableProduct(product);
 
   const startEdit = () => {
     setEdits({
@@ -131,6 +196,32 @@ function ItemCardOverlay({ productId }: Props) {
     }
   };
 
+  const beginLocReorderEdit = (loc: ProductLocationStock) => {
+    setEditingLocId(loc.warehouse_id);
+    setLocReorderLevel(loc.reorder_level != null ? String(loc.reorder_level) : "");
+    setLocReorderQty(loc.reorder_qty != null ? String(loc.reorder_qty) : "");
+  };
+
+  const saveLocReorder = async (whId: number) => {
+    const rLevel = locReorderLevel.trim() === "" ? null : Number(locReorderLevel);
+    const rQty = locReorderQty.trim() === "" ? null : Number(locReorderQty);
+    if ((rLevel !== null && (!Number.isFinite(rLevel) || rLevel < 0)) || (rQty !== null && (!Number.isFinite(rQty) || rQty < 0))) {
+      setMessage(t("retail.sheet.badNumber"));
+      return;
+    }
+    try {
+      await updateThresholds.mutateAsync({
+        productId: currentId,
+        warehouseId: whId,
+        input: { reorder_level: rLevel, reorder_qty: rQty },
+      });
+      setEditingLocId(null);
+      toast.showSuccess(t("retail.item.saved"));
+    } catch (err) {
+      setMessage(errorMessage(err, t("retail.item.saveFailed")));
+    }
+  };
+
   const field = (f: EditableField, label: string, numeric = true) => (
     <TextField
       size="small"
@@ -157,6 +248,7 @@ function ItemCardOverlay({ productId }: Props) {
 
   const units = product.units ?? [];
   const barcodes = product.barcodes ?? [];
+  const movements = detail.data?.recent_movements ?? [];
 
   const footer =
     canManage || editing ? (
@@ -182,7 +274,7 @@ function ItemCardOverlay({ productId }: Props) {
     ) : undefined;
 
   return (
-    <Overlay title={t("retail.item.title")} width={520} onConfirm={editing ? () => void saveEdit() : undefined} footer={footer}>
+    <Overlay title={t("retail.item.title")} width={540} onConfirm={editing ? () => void saveEdit() : undefined} footer={footer}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <Box sx={{ width: 64, height: 64, borderRadius: 2, border: 1, borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "center", color: "text.secondary", overflow: "hidden", flexShrink: 0 }}>
@@ -225,6 +317,116 @@ function ItemCardOverlay({ productId }: Props) {
             ))}
           </Stack>
         )}
+
+        {/* Stock per location */}
+        <Box>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 800, lineHeight: 1.5 }}>
+              {t("retail.item.stock")}
+            </Typography>
+            {canAdjust && trackable && (
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<ExposureIcon />}
+                onClick={() => overlay.open(CORRECT_OVERLAY_ID, { productId: currentId, warehouseId: warehouseId ?? locationRows[0]?.warehouse_id ?? null })}
+                sx={{ minHeight: 34, fontWeight: 700 }}
+              >
+                {t("retail.stock.correct")}
+              </Button>
+            )}
+          </Stack>
+          {!trackable ? (
+            <Typography variant="body2" color="text.secondary">
+              {t(`retail.item.tracking_${product.tracking ?? "untracked"}`)}
+            </Typography>
+          ) : locationRows.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              {t("retail.stock.statusNotCounted")}
+            </Typography>
+          ) : (
+            <Stack spacing={0.75}>
+              {locationRows.map((loc) => {
+                const st = statusForProduct(product, {
+                  product_id: currentId,
+                  warehouse_id: loc.warehouse_id,
+                  qty_on_hand: loc.qty_on_hand,
+                  counted_at: loc.counted_at,
+                  reorder_level: loc.reorder_level,
+                  reorder_qty: loc.reorder_qty,
+                  updatedAt: null,
+                });
+                const isEditingLoc = editingLocId === loc.warehouse_id;
+                return (
+                  <Box key={loc.warehouse_id} data-testid={`item-loc-${loc.warehouse_id}`} sx={{ p: 1, borderRadius: 1.5, border: 1, borderColor: "divider" }}>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                      <StockDot status={st} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                          {loc.location_name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={NUM_SX}>
+                          {t(STOCK_STATUS_LABEL[st])}
+                          {loc.reorder_level != null ? ` · ${t("retail.item.reorderMin", { value: formatQty(loc.reorder_level) })}` : ""}
+                          {loc.reorder_qty != null ? ` · ${t("retail.item.reorderQty", { value: formatQty(loc.reorder_qty) })}` : ""}
+                        </Typography>
+                      </Box>
+                      <Typography variant="subtitle1" color={st === "out" ? "error.main" : st === "not_counted" ? "text.disabled" : "text.primary"} sx={{ fontWeight: 800, ...NUM_SX }}>
+                        {st === "not_counted" ? "—" : `${formatQty(loc.qty_on_hand, product.allow_decimal !== false)} ${product.base_unit ?? ""}`.trim()}
+                      </Typography>
+                      {canManage && !isEditingLoc && (
+                        <Tooltip title={t("retail.item.editReorder")}>
+                          <IconButton size="small" onClick={() => beginLocReorderEdit(loc)} aria-label={t("retail.item.editReorder")}>
+                            <EditOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canAdjust && (
+                        <Tooltip title={t("retail.item.quickAdjust", { location: loc.location_name })}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => overlay.open(CORRECT_OVERLAY_ID, { productId: currentId, warehouseId: loc.warehouse_id })}
+                            aria-label={t("retail.item.quickAdjust", { location: loc.location_name })}
+                            sx={{ minWidth: 44, minHeight: 36, fontWeight: 800, px: 1 }}
+                          >
+                            ±
+                          </Button>
+                        </Tooltip>
+                      )}
+                    </Stack>
+                    {isEditingLoc && (
+                      <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
+                        <TextField
+                          size="small"
+                          label={t("retail.item.reorder")}
+                          value={locReorderLevel}
+                          onChange={(e) => setLocReorderLevel(e.target.value)}
+                          slotProps={{ htmlInput: { inputMode: "decimal", style: NUM_SX, "aria-label": t("retail.item.reorder") } }}
+                          sx={{ flex: 1 }}
+                        />
+                        <TextField
+                          size="small"
+                          label={t("retail.item.reorderOrderQty")}
+                          value={locReorderQty}
+                          onChange={(e) => setLocReorderQty(e.target.value)}
+                          slotProps={{ htmlInput: { inputMode: "decimal", style: NUM_SX, "aria-label": t("retail.item.reorderOrderQty") } }}
+                          sx={{ flex: 1 }}
+                        />
+                        <IconButton size="small" color="primary" onClick={() => void saveLocReorder(loc.warehouse_id)} disabled={updateThresholds.isPending} aria-label={t("common.save")}>
+                          <CheckIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => setEditingLocId(null)} aria-label={t("common.cancel")}>
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    )}
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </Box>
 
         {/* Prices */}
         <Box>
@@ -311,18 +513,60 @@ function ItemCardOverlay({ productId }: Props) {
           {(product.tracking === "serial" || editing) && (editing ? field("warranty_months", t("retail.item.warrantyMonths")) : value(t("retail.item.warranty"), product.warranty_months != null ? t("retail.item.months", { count: product.warranty_months }) : "—"))}
         </Stack>
 
-        {/* Stock and history arrive with the next step. */}
-        {["stock", "history"].map((k) => (
-          <Stack key={k} direction="row" spacing={1} sx={{ alignItems: "center", p: 1.25, borderRadius: 2, border: 1, borderColor: "divider", borderStyle: "dashed", color: "text.secondary" }}>
-            {k === "stock" ? <Inventory2OutlinedIcon fontSize="small" /> : <HistoryIcon fontSize="small" />}
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              {k === "stock" ? t("retail.item.stock") : t("retail.item.history")}
+        {/* Last 20 movements */}
+        <Box>
+          <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 800, lineHeight: 1.5 }}>
+              {t("retail.item.history")}
             </Typography>
-            <Typography variant="caption" sx={{ flex: 1, textAlign: "right" }}>
-              {t("retail.stock.comesNext")}
-            </Typography>
+            <Button size="small" onClick={() => overlay.open(HISTORY_OVERLAY_ID, { initialProductId: currentId })}>
+              {t("retail.history.seeAll")}
+            </Button>
           </Stack>
-        ))}
+          {movements.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              {t("retail.history.empty")}
+            </Typography>
+          ) : (
+            <Stack spacing={0.5} data-testid="item-movements">
+              {movements.map((m) => {
+                const positive = m.qty_change > 0;
+                return (
+                  <Stack key={m.movement_id} direction="row" spacing={1} sx={{ alignItems: "center", py: 0.5, px: 1, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                    {positive ? <ArrowUpwardIcon fontSize="small" color="success" /> : <ArrowDownwardIcon fontSize="small" color="error" />}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }} noWrap>
+                        {t(`retail.history.type_${m.type}`, { defaultValue: m.type })}
+                        {m.reason ? ` · ${t(`retail.correct.reason_${m.reason}`, { defaultValue: m.reason })}` : ""}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {[m.location_name, m.user_name, fmtTime(m.occurred_at)].filter(Boolean).join(" · ")}
+                      </Typography>
+                    </Box>
+                    {m.doc_id && m.doc_no && (
+                      <Chip
+                        size="small"
+                        clickable
+                        variant="outlined"
+                        label={m.doc_no}
+                        onClick={() => overlay.open(HISTORY_OVERLAY_ID, { initialDocId: m.doc_id })}
+                        sx={{ height: 24, ...NUM_SX }}
+                      />
+                    )}
+                    <Box sx={{ textAlign: "right", minWidth: 68 }}>
+                      <Typography variant="body2" color={positive ? "success.main" : "error.main"} sx={{ fontWeight: 800, ...NUM_SX }}>
+                        {formatSignedQty(m.qty_change, product.allow_decimal !== false)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", ...NUM_SX }}>
+                        {t("retail.history.afterShort", { qty: formatQty(m.qty_after, product.allow_decimal !== false) })}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                );
+              })}
+            </Stack>
+          )}
+        </Box>
       </Box>
     </Overlay>
   );
