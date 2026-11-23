@@ -25,6 +25,10 @@ export interface RetailSettings {
   askManagerRemote: boolean;
   negativeStock: "warn" | "block";
   discountLimitPct: number;
+  /** Name pattern for generated item names, e.g. "{brand} {subCategory} {itemWord} {variant}{unit}". */
+  namePattern?: string;
+  codePrefix?: string;
+  units?: string[];
 }
 
 export const DEFAULT_RETAIL_SETTINGS: RetailSettings = {

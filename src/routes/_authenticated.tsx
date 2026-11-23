@@ -72,6 +72,8 @@ import { PaymentNotice } from "@/features/plan/PaymentNotice";
 import { ForcePasswordChange } from "@/features/auth/ForcePasswordChange";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import { canOpenStock } from "@/features/retail/stockAccess";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import { isNativePhoneApp } from "@/features/phone-assistant/lib/nativeBridge";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
@@ -235,6 +237,8 @@ function AuthenticatedLayout() {
     path?: string;
     search?: Record<string, string>;
     requiredPermission?: string;
+    /** Shown only when the shop has the retail feature (and the user has requiredPermission). */
+    retailOnly?: boolean;
     children?: NavChild[];
   };
 
@@ -254,6 +258,14 @@ function AuthenticatedLayout() {
         { text: "Categories", label: t("nav.categories"), path: "/equipment-category", icon: <CategoryIcon fontSize="small" /> },
         { text: "Maintenance", label: t("nav.maintenance"), path: "/maintenance", icon: <HandymanIcon fontSize="small" /> },
       ],
+    },
+    {
+      text: "Stock",
+      label: t("nav.stock"),
+      icon: <StorefrontOutlinedIcon />,
+      path: "/stock",
+      requiredPermission: "retail:view",
+      retailOnly: true,
     },
     {
       text: "Customers",
@@ -354,6 +366,8 @@ function AuthenticatedLayout() {
     return !keys || planCheck(keys);
   };
   const visibleNavItems = allNavItems.filter((item) => {
+    // Stock: retail shops only, and strictly retail:view (no fallback to the legacy inventory flag).
+    if (item.retailOnly) return canOpenStock(user);
     if (!planAllowsNav(item.text)) return false;
     // A section with nothing left in it goes too.
     if (item.children && !item.children.some((c) => planAllowsNav(item.text, c.text))) return false;

@@ -13,6 +13,7 @@ export const WorkforceRoute = lazyRouteComponent(() => import("@/routes/Workforc
 export const AccountingRoute = lazyRouteComponent(() => import("@/routes/Accounting"));
 export const ReportsRoute = lazyRouteComponent(() => import("@/routes/Reports"));
 export const MessagesRoute = lazyRouteComponent(() => import("@/routes/Messages"));
+export const StockRoute = lazyRouteComponent(() => import("@/routes/Stock"));
 export const LockerRoute = lazyRouteComponent(() => import("@/routes/Locker"));
 export const ProfileRoute = lazyRouteComponent(() => import("@/routes/Profile"));
 export const PermissionsPage = lazyRouteComponent(() => import("@/routes/Permissions"));

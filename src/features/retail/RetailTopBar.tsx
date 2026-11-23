@@ -8,6 +8,7 @@ import { formatCombo } from "@/components/command/shortcuts";
 import { useRetailEnabled } from "./useRetailEnabled";
 import { MANAGER_DESK_ID } from "./desk/ManagerDesk";
 import { useWaitingCount } from "./desk/useDesk";
+import { RetailCatalogHost } from "./catalog/RetailCatalogHost";
 
 /** Top-bar additions for retail shops: the command bar button and the manager desk badge. */
 export function RetailTopBar() {
@@ -18,6 +19,7 @@ export function RetailTopBar() {
   if (!retail) return null;
   return (
     <>
+      <RetailCatalogHost />
       <Tooltip title={`${t("command.title")} (${formatCombo("Mod+K")})`}>
         <IconButton size="small" onClick={() => open(COMMAND_BAR_ID)} aria-label={t("command.title")} sx={{ width: 40, height: 40 }}>
           <SearchIcon />
