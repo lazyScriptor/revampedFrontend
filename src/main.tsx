@@ -10,6 +10,7 @@ import {
 
 import { router } from "@/app/router";
 import { queryClient } from "@/app/queryClient";
+import { QueryPersistence } from "@/app/QueryPersistence";
 import { DynamicThemeProvider } from "@/app/DynamicThemeProvider";
 import { ToastProvider } from "@/components/ui/AppToast";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -62,6 +63,7 @@ window.addEventListener('vite:preloadError', () => {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
+      <QueryPersistence />
       <DynamicThemeProvider>
         <CssBaseline />
         <ToastProvider>

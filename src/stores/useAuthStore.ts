@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { syncLanguageFromAuth } from '@/i18n';
+import { cacheScopeFor, clearPersistedQueryCache } from '@/lib/queryPersist';
 
 // 1. Updated to match your exact backend payload from the console
 import type { PaymentNoticeData } from "@/features/plan/paymentNoticeText";
@@ -60,6 +61,13 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             token: null,
             setAuth: (user, token) => {
+                // A different user or shop signing in must never see the previous one's cached data.
+                const before = get();
+                const prevScope = cacheScopeFor(before.user, before.token);
+                const nextScope = cacheScopeFor(user, token !== undefined ? token : before.token);
+                if (prevScope && (prevScope.tenant !== nextScope?.tenant || prevScope.userId !== nextScope?.userId)) {
+                    clearPersistedQueryCache().catch(() => {});
+                }
                 set((state) => ({
                     isAuthenticated: true,
                     user,
@@ -95,8 +103,17 @@ export const useAuthStore = create<AuthState>()(
                 // 1. Wipe the Zustand state
                 set({ isAuthenticated: false, user: null, token: null });
 
-                // 2. Hard redirect to the login page (cleans out the browser memory)
-                window.location.href = '/login';
+                // 2. Drop the on-device copy of cached queries (customer list, catalogue), then
+                //    hard redirect to the login page (cleans out the browser memory). The redirect
+                //    never waits more than a moment for the storage to answer.
+                let redirected = false;
+                const leave = () => {
+                    if (redirected) return;
+                    redirected = true;
+                    window.location.href = '/login';
+                };
+                clearPersistedQueryCache().then(leave, leave);
+                setTimeout(leave, 800);
             },
 
             /**

@@ -4636,5 +4636,104 @@
             "licences": "Open-source licences are listed on geargrid.live."
         },
         "backToPhoneHome": "Phone home"
+    },
+    "command": {
+        "title": "Quick find",
+        "placeholder": "Type a page or an invoice number",
+        "empty": "Nothing found",
+        "findInvoice": "Find invoice {{number}}"
+    },
+    "shortcuts": {
+        "title": "Shortcuts",
+        "commandBar": "Quick find",
+        "stockIn": "Stock in",
+        "findItem": "Find item",
+        "correctStock": "Correct ±",
+        "walkIn": "Walk-in",
+        "sellPrint": "Sell & print",
+        "qtyUp": "Quantity +",
+        "qtyDown": "Quantity −",
+        "pressKey": "Press a key…",
+        "soon": "Soon",
+        "hint": "Shortcuts do not work while you type in a box, except Ctrl/⌘ K."
+    },
+    "density": {
+        "title": "Density",
+        "compact": "Compact",
+        "comfortable": "Comfortable"
+    },
+    "approval": {
+        "title": "Manager approval",
+        "manager": "Manager",
+        "pin": "PIN",
+        "password": "Password",
+        "showPassword": "Show password",
+        "backspace": "Delete digit",
+        "approve": "Approve",
+        "askManager": "Ask manager",
+        "waiting": "Waiting for approval…",
+        "waitingHint": "You can close this and keep working; it stays open for 5 minutes.",
+        "cancelWait": "Cancel",
+        "declined": "The manager declined this.",
+        "timeout": "No answer in 5 minutes.",
+        "requestFailed": "Could not ask the manager.",
+        "noToken": "Approved, but no approval code came back. Try again.",
+        "noManagers": "No manager is set up to approve.",
+        "locked": "PIN locked for about {{minutes}} min.",
+        "wrongPin": "Wrong PIN.",
+        "wrongPassword": "Wrong password.",
+        "self": "You cannot approve your own request.",
+        "methodNotAllowed": "This shop does not allow that way of approving.",
+        "failed": "Approval failed."
+    },
+    "approvalPin": {
+        "title": "Approval PIN",
+        "hint": "4 to 6 digits. Used to approve price changes and other counter actions.",
+        "newPin": "New PIN",
+        "confirmPin": "Confirm PIN",
+        "save": "Save PIN",
+        "saved": "PIN saved.",
+        "digitsOnly": "Use 4 to 6 digits only.",
+        "mismatch": "The PINs do not match.",
+        "failed": "Could not save the PIN."
+    },
+    "desk": {
+        "title": "Manager desk",
+        "tabSort": "To sort",
+        "tabWaiting": "Waiting",
+        "tabRecords": "Records",
+        "sortLater": "Nothing to sort yet.",
+        "noneWaiting": "No requests waiting.",
+        "noRecords": "No records.",
+        "loadFailed": "Could not load.",
+        "decideFailed": "Could not save the decision.",
+        "approve": "Approve",
+        "decline": "Decline",
+        "filterType": "Type",
+        "allTypes": "All",
+        "from": "From",
+        "to": "To",
+        "col": {
+            "type": "Type",
+            "item": "Item / bill",
+            "change": "Change",
+            "impact": "Rs impact",
+            "cashier": "Cashier",
+            "approver": "Approver",
+            "time": "Time"
+        },
+        "types": {
+            "unlisted_item": "Unlisted item",
+            "price_change": "Price change",
+            "discount_over_limit": "Discount",
+            "below_cost": "Below cost",
+            "negative_stock": "Below zero stock",
+            "return_no_bill": "Return, no bill",
+            "line_removed": "Line removed",
+            "bill_void_after_print": "Void after print",
+            "credit_over_limit": "Credit limit",
+            "backdated_bill": "Back-dated",
+            "drawer_open": "Drawer open"
+        }
     }
 }

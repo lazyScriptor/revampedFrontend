@@ -75,6 +75,7 @@ export const usePosCustomerSearch = (searchTerm: string) => {
         queryFn: ({ signal }) => fetchCustomers({ limit: LOCAL_INDEX_SIZE, skip_count: true }, signal),
         staleTime: 5 * 60 * 1000,
         gcTime: 30 * 60 * 1000,
+        meta: { persist: true },
     });
 
     const server = useQuery({
