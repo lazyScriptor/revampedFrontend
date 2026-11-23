@@ -33,6 +33,7 @@ export interface OutOfStockItem {
 export type SaleCheckoutError =
   | { kind: "price_changed"; message: string; changes: PriceChangeItem[] }
   | { kind: "out_of_stock"; message: string; items: OutOfStockItem[] }
+  | { kind: "needs_customer"; message: string }
   | { kind: "other"; message: string };
 
 export interface ToSortBillRef {
@@ -112,6 +113,11 @@ export const parseSaleCheckoutError = (err: any): SaleCheckoutError => {
     raw && typeof raw === "object" && "data" in raw && raw.data && typeof raw.data === "object" ? raw.data : raw;
   const code = String(inner?.code ?? raw?.code ?? "").toLowerCase();
   const message = String(raw?.message ?? inner?.message ?? err?.message ?? "Failed to complete sale.");
+
+  // R4: a bill with machines needs a named customer (the walk-in can't rent).
+  if (status === 422 && /customer to rent|walk.?in/i.test(`${code} ${message}`)) {
+    return { kind: "needs_customer", message };
+  }
 
   if (status === 409) {
     const rawChanges =

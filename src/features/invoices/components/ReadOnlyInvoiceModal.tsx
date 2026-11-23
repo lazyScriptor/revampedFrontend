@@ -161,11 +161,11 @@ export function ReadOnlyInvoiceModal({
                 borderRadius: 1,
               }}
             />
-            {invoice.bill_kind === "sale" && (
+            {(invoice.bill_kind === "sale" || invoice.bill_kind === "mixed") && (
               <Chip
                 size="small"
                 color="warning"
-                label={t("invoices.sale.saleChip")}
+                label={t(invoice.bill_kind === "sale" ? "invoices.sale.saleChip" : "invoices.sale.mixedChip")}
                 sx={{
                   fontWeight: 800,
                   fontSize: "0.7rem",
@@ -409,12 +409,29 @@ export function ReadOnlyInvoiceModal({
               <Typography variant="caption" sx={{ fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5 }}>
                 {t("invoices.ReadOnlyInvoiceModal.orderSummary")}
               </Typography>
+              {totals.mixed ? (
+                <>
+                  <Box data-testid="totals-rent" sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2" color="text.secondary">{t("retail.pos.groupRent")}</Typography>
+                    <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                      Rs. {totals.rent.toLocaleString()}
+                    </Typography>
+                  </Box>
+                  <Box data-testid="totals-items" sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2" color="text.secondary">{t("retail.pos.groupItems")}</Typography>
+                    <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                      Rs. {totals.items.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </>
+              ) : (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">{t("common.subtotal")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {totals.subTotal.toLocaleString()}
                 </Typography>
               </Box>
+              )}
               {totals.lateFees > 0 && (
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="body2" color="text.secondary">{t("invoices.ManageInvoiceViews.lateFees")}</Typography>

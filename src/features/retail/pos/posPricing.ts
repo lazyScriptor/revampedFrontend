@@ -226,3 +226,39 @@ export function buildSaleInvoicePayload(opts: {
     ...(Object.keys(approvalTokens).length > 0 ? { approval_tokens: approvalTokens } : {}),
   };
 }
+
+/**
+ * POST /api/invoices body for a mixed bill (machines + goods on one bill). One payment (fees.advance with
+ * its method, recorded once as for rentals), no settle_now: a bill with machines out can't close.
+ */
+export function buildMixedInvoicePayload(opts: {
+  customerId: number;
+  onBehalfCustomerId?: number | null;
+  rentalItems: unknown[];
+  saleLines: SaleCartLine[];
+  fees: CartFees;
+  paymentMethod: string;
+  jobSite?: string;
+  customerPo?: string;
+  issuedDateIso?: string | null;
+  billDiscountApprovalToken?: string | null;
+}) {
+  const base = buildSaleInvoicePayload({
+    customerId: opts.customerId,
+    saleLines: opts.saleLines,
+    fees: opts.fees,
+    paymentAmount: opts.fees.advance || 0,
+    paymentMethod: opts.paymentMethod,
+    settleNow: false,
+    jobSite: opts.jobSite,
+    customerPo: opts.customerPo,
+    issuedDateIso: opts.issuedDateIso,
+    billDiscountApprovalToken: opts.billDiscountApprovalToken,
+  });
+  const { payment: _payment, settle_now: _settleNow, ...rest } = base;
+  return {
+    ...rest,
+    items: opts.rentalItems,
+    borrowed_on_behalf_of_customer_id: opts.onBehalfCustomerId ?? null,
+  };
+}

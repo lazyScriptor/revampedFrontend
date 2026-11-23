@@ -108,7 +108,15 @@ export interface PosCartState {
   customerPo: string;
   idempotencyKey: string;
   billDiscountApprovalToken: string | null;
+  /** A machine picked while the walk-in is selected; added once a named customer is chosen. */
+  pendingRental: RentalCartLine | null;
+  /** True while the customer search should be open asking for a named customer (D2). */
+  customerPrompt: boolean;
 
+  /** Walk-in can't rent: keeps the machine aside and opens the customer search. */
+  holdRentalForCustomer: (item: CartItem | RentalCartLine) => void;
+  /** Cancels the prompt and drops the held machine. */
+  cancelCustomerPrompt: () => void;
   setSelectedCustomer: (c: any | null) => void;
   setOnBehalfOfCustomer: (c: any | null) => void;
   setLines: (action: SetStateAction<CartLine[]>) => void;
@@ -153,8 +161,27 @@ export const usePosCartStore = create<PosCartState>((set) => ({
   customerPo: "",
   idempotencyKey: newIdempotencyKey(),
   billDiscountApprovalToken: null,
+  pendingRental: null,
+  customerPrompt: false,
 
-  setSelectedCustomer: (selectedCustomer) => set({ selectedCustomer }),
+  holdRentalForCustomer: (item) => set({ pendingRental: tagRental(item), customerPrompt: true }),
+  cancelCustomerPrompt: () => set({ pendingRental: null, customerPrompt: false }),
+  setSelectedCustomer: (selectedCustomer) =>
+    set((s) => {
+      const walkIn = Boolean(selectedCustomer?.is_walk_in);
+      // The walk-in can't take machines out: keep the current customer while any are in the cart.
+      if (walkIn && selectRentalLines(s.lines).length > 0) return s;
+      if (selectedCustomer && !walkIn && s.pendingRental) {
+        return {
+          selectedCustomer,
+          lines: [...selectRentalLines(s.lines), s.pendingRental, ...selectSaleLines(s.lines)],
+          pendingRental: null,
+          customerPrompt: false,
+        };
+      }
+      // Picking the walk-in (or nobody) leaves a held machine waiting, a named customer clears the prompt.
+      return { selectedCustomer, ...(selectedCustomer && !walkIn ? { customerPrompt: false } : {}) };
+    }),
   setOnBehalfOfCustomer: (onBehalfOfCustomer) => set({ onBehalfOfCustomer }),
   setLines: (action) => set((s) => ({ lines: resolve(action, s.lines) })),
   setRentalLines: (action) =>
@@ -310,6 +337,8 @@ export const usePosCartStore = create<PosCartState>((set) => ({
       jobSite: "",
       customerPo: "",
       billDiscountApprovalToken: null,
+      pendingRental: null,
+      customerPrompt: false,
       idempotencyKey: newIdempotencyKey(),
     }),
   resetAll: () =>
@@ -322,6 +351,8 @@ export const usePosCartStore = create<PosCartState>((set) => ({
       jobSite: "",
       customerPo: "",
       billDiscountApprovalToken: null,
+      pendingRental: null,
+      customerPrompt: false,
       idempotencyKey: newIdempotencyKey(),
     }),
 }));

@@ -99,7 +99,7 @@ export function ManageSearchPanel({
   const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
-  const [billKind, setBillKind] = useState<"all" | "rental" | "sale">("all");
+  const [billKind, setBillKind] = useState<"all" | "rental" | "sale" | "mixed">("all");
   const [pageSize, setPageSize] = useState(25);
 
   const { data: searchResults = [], isLoading: searching } = useInvoiceSearch(searchInput);
@@ -215,12 +215,21 @@ export function ManageSearchPanel({
 
       {retailEnabled && !isSearchMode && (
         <Box sx={{ px: 2, pb: 1.25, display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0, overflowX: "auto" }} role="group" aria-label={t("invoices.sale.billKindFilter")}>
-          {(["all", "rental", "sale"] as const).map((k) => (
+          {(["all", "rental", "sale", "mixed"] as const).map((k) => (
             <Chip
               key={k}
               size="small"
               clickable
-              label={k === "all" ? t("common.all") : k === "rental" ? t("retail.pos.tabRent") : t("invoices.sale.saleChip")}
+              label={
+                k === "all"
+                  ? t("common.all")
+                  : k === "rental"
+                    ? t("retail.pos.tabRent")
+                    : k === "sale"
+                      ? t("invoices.sale.saleChip")
+                      : t("invoices.sale.mixedChip")
+              }
+              data-testid={`bill-kind-${k}`}
               color={billKind === k ? "primary" : "default"}
               variant={billKind === k ? "filled" : "outlined"}
               onClick={() => {
@@ -310,6 +319,15 @@ export function ManageSearchPanel({
                         label={t(inv.bill_kind === "sale" ? "invoices.sale.saleChip" : "invoices.sale.mixedChip")}
                         sx={{ fontWeight: 800, fontSize: "0.62rem", height: 18 }}
                       />
+                    )}
+                    {(inv.bill_kind === "sale" || inv.bill_kind === "mixed") && Number(inv.items_sold_count) > 0 && (
+                      <Typography
+                        variant="caption"
+                        data-testid="items-sold-count"
+                        sx={{ fontWeight: 700, color: "text.secondary", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}
+                      >
+                        {t("invoices.sale.itemsSoldCount", { count: Number(inv.items_sold_count) })}
+                      </Typography>
                     )}
                   </Box>
                   <Typography
@@ -417,8 +435,13 @@ export function ManageLedgerPanel({
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
               {isSaleOnly ? t("invoices.sale.itemsSold") : t("orders.assetTrackingBoard")}
             </Typography>
-            {invoice.bill_kind === "sale" && (
-              <Chip size="small" color="warning" label={t("invoices.sale.saleChip")} sx={{ height: 20, fontWeight: 800, fontSize: "0.68rem" }} />
+            {(invoice.bill_kind === "sale" || invoice.bill_kind === "mixed") && (
+              <Chip
+                size="small"
+                color="warning"
+                label={t(invoice.bill_kind === "sale" ? "invoices.sale.saleChip" : "invoices.sale.mixedChip")}
+                sx={{ height: 20, fontWeight: 800, fontSize: "0.68rem" }}
+              />
             )}
           </Box>
           <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>

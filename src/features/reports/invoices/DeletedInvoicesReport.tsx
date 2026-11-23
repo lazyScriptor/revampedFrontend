@@ -52,6 +52,7 @@ export default function DeletedInvoicesReport() {
   const rows = data?.invoices || [];
   const voidedTotal = rows.reduce((s, r) => s + Number(r.voided_amount || 0), 0);
 
+  // A restore the server refuses (for example "Cannot restore: not enough stock for ...") is shown as it is.
   const doRestore = (row: DeletedInvoiceRow) =>
     restore.mutate(row.invoice_id, {
       onSuccess: () => toast.showSuccess(t("invoices.delete.restored", { id: row.invoice_id })),
@@ -66,11 +67,25 @@ export default function DeletedInvoicesReport() {
       field: "invoice_id",
       headerName: t("invoices.invoiceNumber"),
       width: 120,
-      renderCell: (p) => (
-        <Typography sx={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums", fontWeight: 800, fontSize: "0.82rem", color: text }}>
-          INV-{p.value}
-        </Typography>
-      ),
+      renderCell: (p) => {
+        const kind = (p.row as DeletedInvoiceRow).bill_kind;
+        return (
+          <Box sx={{ py: 0.5, display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
+            <Typography sx={{ fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums", fontWeight: 800, fontSize: "0.82rem", color: text }}>
+              INV-{p.value}
+            </Typography>
+            {(kind === "sale" || kind === "mixed") && (
+              <Chip
+                size="small"
+                color="warning"
+                data-testid={`deleted-kind-${p.value}`}
+                label={t(kind === "sale" ? "invoices.sale.saleChip" : "invoices.sale.mixedChip")}
+                sx={{ height: 18, fontWeight: 800, fontSize: "0.65rem" }}
+              />
+            )}
+          </Box>
+        );
+      },
     },
     {
       field: "customer",
@@ -89,6 +104,18 @@ export default function DeletedInvoicesReport() {
       width: 135,
       type: "number",
       renderCell: (p) => <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: text }}>{money(Number(p.value))}</span>,
+    },
+    {
+      field: "sale_total",
+      headerName: t("invoices.delete.goodsTotal"),
+      width: 130,
+      type: "number",
+      renderCell: (p) =>
+        Number(p.value) > 0 ? (
+          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: text }}>{money(Number(p.value))}</span>
+        ) : (
+          <span style={{ color: sub }}>-</span>
+        ),
     },
     {
       field: "voided_amount",
