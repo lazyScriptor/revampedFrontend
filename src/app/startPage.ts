@@ -29,7 +29,7 @@ export const START_PAGE_OPTIONS: StartPageOption[] = [
   { key: "locker", path: "/locker", labelKey: "nav.cashLocker", permission: "locker:count", feature: "cash_locker" },
 ];
 
-type StartPageUser = {
+export type StartPageUser = {
   start_page?: string | null;
   permissions?: string[] | null;
   plan?: TenantPlan | null;

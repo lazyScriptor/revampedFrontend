@@ -14,10 +14,16 @@ interface StackEntry {
   key: number;
   id: string;
   props: Record<string, any>;
+  onClosed?: () => void;
+}
+
+export interface OpenOptions {
+  /** Called once when this overlay leaves the screen for any reason (close, Esc, Back, replaced). */
+  onClosed?: () => void;
 }
 
 interface OverlayApi {
-  open: (id: string, props?: Record<string, any>) => void;
+  open: (id: string, props?: Record<string, any>, options?: OpenOptions) => void;
   /** Closes the top overlay. Resolves once the browser history entry is gone, so a navigation that follows is safe. */
   close: () => Promise<void>;
   closeAll: () => Promise<void>;
@@ -56,21 +62,23 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     list.forEach((fn) => fn());
   };
 
-  const open = useCallback((id: string, props: Record<string, any> = {}) => {
+  const open = useCallback((id: string, props: Record<string, any> = {}, options: OpenOptions = {}) => {
     if (!getOverlayComponent(id)) {
       if (import.meta.env?.DEV) console.warn(`[overlay] "${id}" is not registered`);
       return;
     }
     const current = stackRef.current;
-    const entry: StackEntry = { key: ++keyRef.current, id, props };
+    const entry: StackEntry = { key: ++keyRef.current, id, props, onClosed: options.onClosed };
     let next: StackEntry[];
     let pushHistory = true;
     if (current.length >= MAX_OVERLAY_DEPTH) {
       // Keep two levels: the new one takes the place of the top one (its history entry is reused).
       next = [...current.slice(0, MAX_OVERLAY_DEPTH - 1), entry];
+      current[current.length - 1].onClosed?.();
       pushHistory = false;
     } else if (current.length > 0 && current[current.length - 1].id === id) {
       next = [...current.slice(0, -1), entry];
+      current[current.length - 1].onClosed?.();
       pushHistory = false;
     } else {
       next = [...current, entry];
@@ -92,6 +100,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     const next = current.slice(0, -1);
     stackRef.current = next;
     setStack(next);
+    current[current.length - 1].onClosed?.();
     if (!viaUi) return Promise.resolve();
     return new Promise<void>((resolve) => {
       ignorePops.current += 1;

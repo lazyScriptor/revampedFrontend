@@ -135,3 +135,26 @@ describe("overlay manager", () => {
     }
   });
 });
+
+describe("overlay onClosed", () => {
+  it("fires once when closed by Esc, by Back and when replaced", async () => {
+    const closed = vi.fn();
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <OverlayProvider>
+          <Probe />
+        </OverlayProvider>
+      </ThemeProvider>,
+    );
+    window.history.replaceState(null, "");
+    act(() => api.open("test-b", {}, { onClosed: closed }));
+    fireEvent.keyDown(screen.getByText("b body"), { key: "Escape" });
+    await waitFor(() => expect(closed).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50)); // let the history pop land before reopening
+    });
+    act(() => api.open("test-b", {}, { onClosed: closed }));
+    act(() => window.history.back());
+    await waitFor(() => expect(closed).toHaveBeenCalledTimes(2));
+  });
+});
