@@ -25,7 +25,7 @@ import { fetchProduct, finderBrowse, finderSearch, lookupProduct } from "../api/
 import type { CatalogProduct, CatalogUnit, FinderGroup } from "../api/catalog.types";
 import { CatIcon } from "../components/CategoryIcon";
 import { Tile } from "../components/Tile";
-import { formatRs } from "../format";
+import { formatQty, formatRs } from "../format";
 import {
   browseView,
   lookupLocal,
@@ -38,12 +38,15 @@ import { formatVariant } from "../catalog/names";
 import { useLearnBarcode } from "../catalog/mutations";
 import { useRetailCatalog, useRetailPermissions } from "../catalog/useRetailCatalog";
 import { useScanDetector } from "../catalog/scanDetector";
+import { StockDot } from "../components/StockDot";
+import { statusForProduct } from "../stock/levelsModel";
+import { useStockLevels } from "../stock/useStockLevels";
 
 import { NEW_ITEM_OVERLAY_ID } from "../catalog/overlayIds";
 
 export interface ItemFinderProps {
   /** Called with the chosen item (and the pack unit when a pack barcode was scanned). */
-  onPick: (product: CatalogProduct, unit?: CatalogUnit | null) => void;
+  onPick: (product: CatalogProduct, unit?: CatalogUnit | null, meta?: { viaScan?: boolean }) => void;
   /** 'browse' shows prices and codes (Stock page); 'pick' is the compact chooser (Stock in, POS). */
   mode?: "browse" | "pick";
   /** Offer "Create here" when nothing matches. */
@@ -52,6 +55,7 @@ export interface ItemFinderProps {
   initialScan?: string;
   initialQuery?: string;
   autoFocus?: boolean;
+  warehouseId?: number | null;
 }
 
 /** One row of results, whether it came from the local index or the server fallback. */
@@ -82,12 +86,13 @@ const rowFromServer = (g: FinderGroup, i: number): Row => ({
   variants: g.variants.map((v) => ({ id: v.product_id, label: v.variant_label ?? "", price: v.sell_price, code: v.code, matched: true })),
 });
 
-export function ItemFinder({ onPick, mode = "pick", allowCreate = true, initialScan, initialQuery = "", autoFocus = true }: ItemFinderProps) {
+export function ItemFinder({ onPick, mode = "pick", allowCreate = true, initialScan, initialQuery = "", autoFocus = true, warehouseId }: ItemFinderProps) {
   const { t } = useTranslation();
   const overlay = useOverlay();
   const toast = useToast();
   const { canManage, canLearnBarcode } = useRetailPermissions();
   const { catalog, index, ready, isError } = useRetailCatalog();
+  const levels = useStockLevels(warehouseId);
   const learn = useLearnBarcode();
 
   const [query, setQuery] = useState(initialQuery);
@@ -144,9 +149,9 @@ export function ItemFinder({ onPick, mode = "pick", allowCreate = true, initialS
   }, [ready, catalog.products]);
 
   // ── Choosing ───────────────────────────────────────────────────────────────
-  const finish = (product: CatalogProduct, unit?: CatalogUnit | null) => {
+  const finish = (product: CatalogProduct, unit?: CatalogUnit | null, viaScan = false) => {
     setLearning(null);
-    onPick(product, unit ?? null);
+    onPick(product, unit ?? null, { viaScan });
   };
 
   const learnInto = async (product: CatalogProduct, unit: CatalogUnit | null) => {
@@ -156,7 +161,7 @@ export function ItemFinder({ onPick, mode = "pick", allowCreate = true, initialS
     try {
       await learn.mutateAsync({ barcode: learning.barcode, product_id: product.product_id, unit_id: unit?.unit_id ?? null });
       toast.showSuccess(t("retail.finder.barcodeSaved", { name: product.name }));
-      finish(product, unit);
+      finish(product, unit, true);
     } catch (err: any) {
       // 409: the barcode is already on another item; the server names it.
       const other = err?.response?.data?.product_name ?? err?.response?.data?.data?.name;
@@ -206,7 +211,7 @@ export function ItemFinder({ onPick, mode = "pick", allowCreate = true, initialS
         return;
       }
     }
-    if (found) finish(found.product, found.unit);
+    if (found) finish(found.product, found.unit, true);
     else if (canLearnBarcode) setLearning({ barcode: code });
     else setNotFound(code);
   };
@@ -256,24 +261,36 @@ export function ItemFinder({ onPick, mode = "pick", allowCreate = true, initialS
         )}
       </Stack>
       <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: "wrap" }}>
-        {r.variants.map((v) => (
-          <Tooltip key={v.id} title={[formatRs(v.price), v.code].filter(Boolean).join(" · ")}>
-            <Chip
-              clickable
-              disabled={busy}
-              onClick={() => void choose(v.id)}
-              color={v.matched ? "primary" : "default"}
-              variant={v.matched ? "filled" : "outlined"}
-              label={
-                <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {v.label || formatRs(v.price)}
-                  {mode === "browse" && v.label ? <span style={{ opacity: 0.75 }}>{`  ${formatRs(v.price)}`}</span> : null}
-                </span>
-              }
-              sx={{ minHeight: 32, fontWeight: 700 }}
-            />
-          </Tooltip>
-        ))}
+        {r.variants.map((v) => {
+          const prod = index.byId.get(v.id);
+          const lvl = levels.ready ? levels.levelFor(v.id) : undefined;
+          const st = levels.ready && prod ? statusForProduct(prod, lvl) : null;
+          const badgeText = st && st !== "untracked" ? (st === "not_counted" ? "—" : formatQty(lvl?.qty_on_hand ?? 0, prod?.allow_decimal !== false)) : null;
+          return (
+            <Tooltip key={v.id} title={[formatRs(v.price), v.code].filter(Boolean).join(" · ")}>
+              <Chip
+                clickable
+                disabled={busy}
+                onClick={() => void choose(v.id)}
+                color={v.matched ? "primary" : "default"}
+                variant={v.matched ? "filled" : "outlined"}
+                label={
+                  <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, fontVariantNumeric: "tabular-nums" }}>
+                    <span>{v.label || formatRs(v.price)}</span>
+                    {mode === "browse" && v.label ? <span style={{ opacity: 0.75 }}>{formatRs(v.price)}</span> : null}
+                    {st && badgeText != null && (
+                      <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.4, opacity: 0.9 }}>
+                        <StockDot status={st} size={6} />
+                        <span style={{ fontSize: "0.72rem" }}>{badgeText}</span>
+                      </Box>
+                    )}
+                  </Box>
+                }
+                sx={{ minHeight: 32, fontWeight: 700 }}
+              />
+            </Tooltip>
+          );
+        })}
       </Stack>
     </Box>
   );

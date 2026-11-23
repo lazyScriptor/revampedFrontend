@@ -4,3 +4,7 @@ export const NEW_ITEM_OVERLAY_ID = "retail-new-item";
 export const CATEGORIES_OVERLAY_ID = "retail-categories";
 export const BRANDS_OVERLAY_ID = "retail-brands";
 export const WORDS_OVERLAY_ID = "retail-words";
+export const STOCK_IN_OVERLAY_ID = "retail-stock-in";
+export const CORRECT_OVERLAY_ID = "retail-correct";
+export const COUNT_OVERLAY_ID = "retail-count";
+export const HISTORY_OVERLAY_ID = "retail-history";

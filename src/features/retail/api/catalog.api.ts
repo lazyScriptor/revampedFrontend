@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { unwrapData } from "./http";
+import { normalizeProductLocationStock, normalizeStockMovement } from "./stock.api";
 import type {
   BrowseResult,
   CatalogBarcode,
@@ -7,6 +8,7 @@ import type {
   CatalogProduct,
   CatalogUnit,
   FamilyInput,
+  FamilyVariantInput,
   FinderGroup,
   LookupResult,
   ProductDetail,
@@ -112,16 +114,19 @@ export const fetchProducts = async (params: ProductListParams = {}): Promise<Pro
   return { rows, total: Number(total) };
 };
 
-// GET /api/retail/products/:id -> product + units + barcodes + family + category path + brand (stock: null until R2)
+// GET /api/retail/products/:id -> product + units + barcodes + family + category path + brand + stock + recent_movements
 export const fetchProduct = async (id: number): Promise<ProductDetail> => {
   const d = unwrapData<any>(await api.get(`/retail/products/${id}`)) ?? {};
   const p = d.product ?? d;
+  const rawStock = p.stock ?? d.stock;
+  const rawMovements = p.recent_movements ?? d.recent_movements;
   return {
     ...normalizeProduct(p),
     family: p.family ?? p.RetailFamily ?? d.family ?? null,
     category_path: p.category_path ?? d.category_path ?? [],
     brand: p.brand ?? p.RetailBrand ?? d.brand ?? null,
-    stock: p.stock ?? d.stock ?? null,
+    stock: Array.isArray(rawStock) ? rawStock.map(normalizeProductLocationStock) : null,
+    recent_movements: Array.isArray(rawMovements) ? rawMovements.map(normalizeStockMovement) : [],
   };
 };
 
@@ -158,6 +163,17 @@ export const archiveProduct = async (id: number) => unwrapData<any>(await api.po
 // POST /api/retail/families -> the family and its N products, created in one transaction
 export const createFamily = async (input: FamilyInput): Promise<{ family: RetailFamily | null; products: CatalogProduct[] }> => {
   const d = unwrapData<any>(await api.post("/retail/families", input)) ?? {};
+  const products = asArray(d, "products", "variants", "items").map(normalizeProduct);
+  const family = d.family ? normalizeFamily(d.family) : null;
+  return { family, products };
+};
+
+// POST /api/retail/families/:id/variants -> adds new variant sizes to an existing family
+export const addFamilyVariants = async (
+  familyId: number,
+  variants: FamilyVariantInput[],
+): Promise<{ family: RetailFamily | null; products: CatalogProduct[] }> => {
+  const d = unwrapData<any>(await api.post(`/retail/families/${familyId}/variants`, { variants })) ?? {};
   const products = asArray(d, "products", "variants", "items").map(normalizeProduct);
   const family = d.family ? normalizeFamily(d.family) : null;
   return { family, products };

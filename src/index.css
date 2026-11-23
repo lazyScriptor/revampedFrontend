@@ -7,3 +7,12 @@ body {
   margin: 0;
   font-family: "Inter", "Noto Sans Sinhala", system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
+
+@media print {
+  body.retail-printing > *:not(.retail-print-portal) {
+    display: none !important;
+  }
+  body.retail-printing > .retail-print-portal {
+    display: block !important;
+  }
+}

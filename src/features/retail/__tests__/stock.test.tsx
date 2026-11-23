@@ -25,7 +25,28 @@ vi.mock("../api/catalog.api", async (orig) => ({
 }));
 vi.mock("../api/retail.api", async (orig) => ({
   ...(await orig<typeof import("../api/retail.api")>()),
-  fetchRetailSettings: vi.fn(async () => ({ approvalMethod: "either" })),
+  fetchRetailSettings: vi.fn(async () => ({ approvalMethod: "either", defaultWarehouseId: 1 })),
+}));
+const stockApi = {
+  fetchStockLevels: vi.fn(),
+  fetchStockSummary: vi.fn(),
+  updateStockThresholds: vi.fn(),
+  fetchStockMovements: vi.fn(),
+  fetchStockDocuments: vi.fn(),
+  fetchStockDocument: vi.fn(),
+};
+vi.mock("../api/stock.api", async (orig) => ({
+  ...(await orig<typeof import("../api/stock.api")>()),
+  fetchStockLevels: (...a: any[]) => stockApi.fetchStockLevels(...a),
+  fetchStockSummary: (...a: any[]) => stockApi.fetchStockSummary(...a),
+  updateStockThresholds: (...a: any[]) => stockApi.updateStockThresholds(...a),
+  fetchStockMovements: (...a: any[]) => stockApi.fetchStockMovements(...a),
+  fetchStockDocuments: (...a: any[]) => stockApi.fetchStockDocuments(...a),
+  fetchStockDocument: (...a: any[]) => stockApi.fetchStockDocument(...a),
+}));
+vi.mock("@/features/warehouses/hooks/useWarehouseOptions", () => ({
+  useWarehouseOptions: () => ({ data: [{ warehouse_id: 1, location_name: "Main Store" }] }),
+  useSingleLocation: () => ({ single: true, only: { warehouse_id: 1, location_name: "Main Store" } }),
 }));
 const prefs: Record<string, unknown> = {};
 vi.mock("@/features/retail/api/preferences.api", () => ({
@@ -48,26 +69,49 @@ import { ALL_RETAIL_PERMISSIONS, renderCatalogUi, signIn } from "./catalogTestUt
 
 beforeEach(() => {
   Object.values(api).forEach((m) => m.mockReset());
+  Object.values(stockApi).forEach((m) => m.mockReset());
   Object.keys(prefs).forEach((k) => delete prefs[k]);
   api.fetchCatalogPayload.mockResolvedValue(payload());
   api.fetchProducts.mockResolvedValue({ rows: [{ ...sali(10), product_id: 7777, family_id: null, name: "Old SALI bit", is_active: false }], total: 1 });
   api.updateProduct.mockImplementation(async (id: number, input: any) => ({ ...products.find((p) => p.product_id === id)!, ...input }));
+  stockApi.fetchStockLevels.mockResolvedValue({
+    server_time: "2026-11-24T10:00:00Z",
+    levels: [
+      { product_id: 1003, warehouse_id: 1, qty_on_hand: 15, reorder_level: 5, reorder_qty: 20, counted_at: "2026-11-24T09:00:00Z", updatedAt: "2026-11-24T09:00:00Z" },
+      { product_id: 1004, warehouse_id: 1, qty_on_hand: 3, reorder_level: 5, reorder_qty: 20, counted_at: "2026-11-24T09:00:00Z", updatedAt: "2026-11-24T09:00:00Z" },
+      { product_id: 2006, warehouse_id: 1, qty_on_hand: 0, reorder_level: 2, reorder_qty: 10, counted_at: "2026-11-24T09:00:00Z", updatedAt: "2026-11-24T09:00:00Z" },
+    ],
+  });
+  stockApi.fetchStockSummary.mockResolvedValue({
+    items_counted: 3,
+    items_not_counted: 4,
+    low_stock_count: 2,
+    out_of_stock_count: 1,
+    stock_value: 45000,
+  });
   window.history.replaceState(null, "");
   signIn({ permissions: ALL_RETAIL_PERMISSIONS });
 });
 
 describe("stock page", () => {
-  it("groups by family with size chips and a grey stock dash, and shows the KPIs", async () => {
+  it("groups by family with size chips and real stock dots/numbers, and shows the R2 KPIs", async () => {
     renderCatalogUi(<StockPage />);
     const rows = await screen.findAllByTestId("stock-row");
     expect(rows).toHaveLength(3); // SALI family, Tolsen family, hose
     const first = rows.find((r) => within(r).queryByText("SALI Steel Drill Bit"))!;
     for (const size of ["3mm", "4mm", "5mm", "6mm", "8mm"]) expect(within(first).getByText(size)).toBeTruthy();
-    expect(within(first).getByLabelText("Stock comes next")).toBeTruthy();
-    // KPIs: 7 items, 2 families, 7 without a barcode, and the archived count comes from the server (1)
-    expect(screen.getByText("Families")).toBeTruthy();
+    expect(within(first).getByTestId("stock-dot-low")).toBeTruthy();
+    expect(within(first).getByText("18 pcs")).toBeTruthy();
+    const tolsen = rows.find((r) => within(r).queryByText("Tolsen Wood Drill Bit"))!;
+    expect(within(tolsen).getByTestId("stock-dot-out")).toBeTruthy();
+    const hose = rows.find((r) => within(r).queryByText("Garden Hose 15m"))!;
+    expect(within(hose).getByTestId("stock-dot-not_counted")).toBeTruthy();
+    // KPIs from GET /stock/summary: Items (3+4=7), Low stock (2), Not counted (4), Stock value (Rs 45,000)
+    await waitFor(() => expect(screen.getByText("Rs 45,000")).toBeTruthy());
+    expect(screen.getAllByText("Low stock").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not counted").length).toBeGreaterThan(0);
     expect(screen.getAllByText("7").length).toBeGreaterThan(0);
-    await waitFor(() => expect(screen.getAllByText("1").length).toBeGreaterThan(0));
+    expect(screen.getAllByText("4").length).toBeGreaterThan(0);
   });
 
   it("filters by the category rail and by typed words", async () => {

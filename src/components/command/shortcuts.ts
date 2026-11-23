@@ -18,9 +18,9 @@ export interface ShortcutDef {
 
 export const SHORTCUT_DEFS: ShortcutDef[] = [
   { id: "command-bar", label: "shortcuts.commandBar", defaultCombo: "Mod+K", allowWhileTyping: true },
-  { id: "stock-in", label: "shortcuts.stockIn", defaultCombo: "F2", pending: true },
+  { id: "stock-in", label: "shortcuts.stockIn", defaultCombo: "F2" },
   { id: "find-item", label: "shortcuts.findItem", defaultCombo: "F3" },
-  { id: "correct-stock", label: "shortcuts.correctStock", defaultCombo: "F4", pending: true },
+  { id: "correct-stock", label: "shortcuts.correctStock", defaultCombo: "F4" },
   { id: "walk-in", label: "shortcuts.walkIn", defaultCombo: "F8", pending: true },
   { id: "sell-print", label: "shortcuts.sellPrint", defaultCombo: "F9", pending: true },
   { id: "qty-up", label: "shortcuts.qtyUp", defaultCombo: "Plus", pending: true },

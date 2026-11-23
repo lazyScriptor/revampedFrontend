@@ -1,3 +1,5 @@
+import type { ProductLocationStock, StockMovement } from "./stock.types";
+
 // Shapes assumed from the R1-backend prompt (docs/RETAIL_POS_BUILD_PROMPTS.md). The backend is built
 // in parallel; if it differs, adjust the normalisers in catalog.api.ts and nothing else.
 
@@ -146,8 +148,8 @@ export interface ProductDetail extends CatalogProduct {
   family?: RetailFamily | null;
   category_path?: Array<{ category_id: number; name: string }>;
   brand?: RetailBrand | null;
-  /** null until the stock step (R2). */
-  stock?: unknown;
+  stock?: ProductLocationStock[] | null;
+  recent_movements?: StockMovement[];
 }
 
 export interface ProductInput {

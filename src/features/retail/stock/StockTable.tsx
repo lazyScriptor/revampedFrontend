@@ -4,10 +4,13 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { useTranslation } from "react-i18next";
 import type { CatalogProduct } from "../api/catalog.types";
+import type { StockLevel } from "../api/stock.types";
 import { CatIcon } from "../components/CategoryIcon";
-import { formatRs } from "../format";
+import { STOCK_STATUS_LABEL, StockDot } from "../components/StockDot";
+import { formatQty, formatRs } from "../format";
 import type { CatalogCtx, ProductGroup } from "../catalog/catalogModel";
 import { formatVariant } from "../catalog/names";
+import { effectiveReorderLevel, groupStockSummary, statusForProduct } from "./levelsModel";
 
 const NUM = { fontVariantNumeric: "tabular-nums" } as const;
 const MAX_CHIPS = 8;
@@ -16,6 +19,7 @@ interface Props {
   groups: ProductGroup[];
   ctx: CatalogCtx;
   rowHeight: number;
+  levelFor: (productId: number) => StockLevel | undefined;
   onOpen: (productId: number) => void;
 }
 
@@ -30,18 +34,94 @@ const priceText = (products: CatalogProduct[], pick: (p: CatalogProduct) => numb
 const packsOf = (products: CatalogProduct[]) => [...new Set(products.flatMap((p) => (p.units ?? []).map((u) => u.unit_name)))];
 const barcodeCount = (products: CatalogProduct[]) => products.reduce((n, p) => n + (p.barcodes?.length ?? 0), 0);
 
-const StockCell = () => {
+function SingleStockCell({ product, level }: { product: CatalogProduct; level: StockLevel | undefined }) {
   const { t } = useTranslation();
+  const status = statusForProduct(product, level);
+  if (status === "untracked") {
+    return (
+      <Tooltip title={t(STOCK_STATUS_LABEL.untracked)}>
+        <Typography variant="body2" color="text.disabled" sx={NUM}>
+          —
+        </Typography>
+      </Tooltip>
+    );
+  }
+  const threshold = effectiveReorderLevel(product, level);
+  const tip =
+    status === "not_counted"
+      ? t("retail.stock.notCountedTip")
+      : threshold != null
+        ? `${t(STOCK_STATUS_LABEL[status])} · ${t("retail.item.reorder")}: ${formatQty(threshold, product.allow_decimal !== false)}`
+        : t(STOCK_STATUS_LABEL[status]);
+
   return (
-    <Tooltip title={t("retail.stock.comesNext")}>
-      <Typography variant="body2" color="text.disabled" sx={NUM} aria-label={t("retail.stock.comesNext")}>
-        —
-      </Typography>
+    <Tooltip title={tip}>
+      <Box component="span" sx={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 0.75, ...NUM }}>
+        <StockDot status={status} />
+        <Typography
+          component="span"
+          variant="body2"
+          color={status === "not_counted" ? "text.disabled" : status === "out" ? "error.main" : "text.primary"}
+          sx={{ fontWeight: status === "not_counted" ? 500 : 700, ...NUM }}
+        >
+          {status === "not_counted" ? "—" : `${formatQty(level?.qty_on_hand ?? 0, product.allow_decimal !== false)} ${product.base_unit ?? ""}`.trim()}
+        </Typography>
+      </Box>
     </Tooltip>
   );
-};
+}
 
-const GroupRows = memo(function GroupRows({ group, ctx, rowHeight, onOpen }: { group: ProductGroup; ctx: CatalogCtx; rowHeight: number; onOpen: (id: number) => void }) {
+function GroupStockCell({ group, levelFor }: { group: ProductGroup; levelFor: (id: number) => StockLevel | undefined }) {
+  const { t } = useTranslation();
+  if (group.products.length === 1) {
+    return <SingleStockCell product={group.products[0]} level={levelFor(group.products[0].product_id)} />;
+  }
+  const summary = groupStockSummary(group.products, levelFor);
+  if (summary.status === "untracked") {
+    return (
+      <Typography variant="body2" color="text.disabled" sx={NUM}>
+        —
+      </Typography>
+    );
+  }
+  const first = group.products[0];
+  const parts = [
+    summary.inStockCount > 0 ? `${summary.inStockCount} ${t(STOCK_STATUS_LABEL.in_stock)}` : "",
+    summary.lowCount > 0 ? `${summary.lowCount} ${t(STOCK_STATUS_LABEL.low)}` : "",
+    summary.outCount > 0 ? `${summary.outCount} ${t(STOCK_STATUS_LABEL.out)}` : "",
+    summary.notCountedCount > 0 ? `${summary.notCountedCount} ${t(STOCK_STATUS_LABEL.not_counted)}` : "",
+  ].filter(Boolean);
+  const tip = parts.join(" · ") || t(STOCK_STATUS_LABEL[summary.status]);
+  return (
+    <Tooltip title={tip}>
+      <Box component="span" sx={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 0.75, ...NUM }}>
+        <StockDot status={summary.status} />
+        <Typography
+          component="span"
+          variant="body2"
+          color={summary.status === "not_counted" ? "text.disabled" : summary.status === "out" ? "error.main" : "text.primary"}
+          sx={{ fontWeight: summary.status === "not_counted" ? 500 : 700, ...NUM }}
+        >
+          {summary.status === "not_counted" ? "—" : `${formatQty(summary.totalQty, first.allow_decimal !== false)} ${first.base_unit ?? ""}`.trim()}
+        </Typography>
+      </Box>
+    </Tooltip>
+  );
+}
+
+const GroupRows = memo(function GroupRows({
+  group,
+  ctx,
+  rowHeight,
+  levelFor,
+  onOpen,
+}: {
+  group: ProductGroup;
+  ctx: CatalogCtx;
+  rowHeight: number;
+  levelFor: (productId: number) => StockLevel | undefined;
+  onOpen: (id: number) => void;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const multi = group.products.length > 1 || group.familyId != null;
@@ -122,8 +202,8 @@ const GroupRows = memo(function GroupRows({ group, ctx, rowHeight, onOpen }: { g
         <TableCell align="right" sx={{ ...cellSx, ...NUM }}>
           {barcodeCount(group.products) || <Typography component="span" variant="body2" color="text.disabled">0</Typography>}
         </TableCell>
-        <TableCell align="right" sx={cellSx}>
-          <StockCell />
+        <TableCell align="right" sx={{ ...cellSx, whiteSpace: "nowrap" }}>
+          <GroupStockCell group={group} levelFor={levelFor} />
         </TableCell>
       </TableRow>
       {open &&
@@ -157,8 +237,8 @@ const GroupRows = memo(function GroupRows({ group, ctx, rowHeight, onOpen }: { g
             <TableCell align="right" sx={{ ...cellSx, ...NUM }}>
               {p.barcodes?.length ?? 0}
             </TableCell>
-            <TableCell align="right" sx={cellSx}>
-              <StockCell />
+            <TableCell align="right" sx={{ ...cellSx, whiteSpace: "nowrap" }}>
+              <SingleStockCell product={p} level={levelFor(p.product_id)} />
             </TableCell>
           </TableRow>
         ))}
@@ -167,7 +247,7 @@ const GroupRows = memo(function GroupRows({ group, ctx, rowHeight, onOpen }: { g
 });
 
 /** Compact table, one row per family (size chips expand into variant rows); stand-alone items are single rows. */
-export function StockTable({ groups, ctx, rowHeight, onOpen }: Props) {
+export function StockTable({ groups, ctx, rowHeight, levelFor, onOpen }: Props) {
   const { t } = useTranslation();
   const head = { fontWeight: 800, py: 0.5, whiteSpace: "nowrap", bgcolor: "background.paper" } as const;
   return (
@@ -193,7 +273,7 @@ export function StockTable({ groups, ctx, rowHeight, onOpen }: Props) {
       </TableHead>
       <TableBody>
         {groups.map((g) => (
-          <GroupRows key={g.key} group={g} ctx={ctx} rowHeight={rowHeight} onOpen={onOpen} />
+          <GroupRows key={g.key} group={g} ctx={ctx} rowHeight={rowHeight} levelFor={levelFor} onOpen={onOpen} />
         ))}
       </TableBody>
     </Table>
