@@ -29,6 +29,7 @@ export interface PerfTotals {
   lifetimeRevenue: number;
   utilizationPct: number;
   paybackPct: number | null;
+  daysRented?: number;
   repairCost?: number;
 }
 
