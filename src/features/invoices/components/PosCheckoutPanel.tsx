@@ -21,6 +21,9 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 import { useTranslation } from "react-i18next";
 import { BillDateControl } from "./BillDateControl";
+import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
+import { selectSaleLines, selectSaleSubtotal, usePosCartStore } from "../store/posCartStore";
+import { SaleCheckoutSection, type SaleSubmitParams } from "@/features/retail/pos/SaleCheckoutSection";
 
 interface PosCheckoutPanelProps {
   cartItems: CartItem[];
@@ -30,6 +33,7 @@ interface PosCheckoutPanelProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onConfirmDispatch: () => void;
+  onConfirmSale?: (params: SaleSubmitParams) => void;
   onPrintEstimate?: () => void;
   isSubmitting: boolean;
   billDate?: string | null;
@@ -45,6 +49,7 @@ export function PosCheckoutPanel({
   isCollapsed,
   onToggleCollapse,
   onConfirmDispatch,
+  onConfirmSale,
   onPrintEstimate,
   isSubmitting,
   billDate = null,
@@ -52,10 +57,17 @@ export function PosCheckoutPanel({
   onApplyBillDateToLines,
 }: PosCheckoutPanelProps) {
   const { t } = useTranslation();
-  const subTotal = useMemo(
+  const retailEnabled = useRetailEnabled();
+  const allStoreLines = usePosCartStore((s) => s.lines);
+  const saleLines = useMemo(() => (retailEnabled ? selectSaleLines(allStoreLines) : []), [retailEnabled, allStoreLines]);
+  const saleSubTotal = useMemo(() => (retailEnabled ? selectSaleSubtotal(allStoreLines) : 0), [retailEnabled, allStoreLines]);
+  const isSaleOnly = retailEnabled && cartItems.length === 0 && saleLines.length > 0;
+
+  const rentalSubTotal = useMemo(
     () => cartItems.reduce((total, item) => total + calculateLineMath(item).lineCost, 0),
     [cartItems]
   );
+  const subTotal = isSaleOnly ? saleSubTotal : rentalSubTotal;
   const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
 
@@ -168,6 +180,15 @@ export function PosCheckoutPanel({
         </IconButton>
       </Box>
 
+      {isSaleOnly ? (
+        <SaleCheckoutSection
+          isSubmitting={isSubmitting}
+          billDate={billDate}
+          onBillDateChange={onBillDateChange}
+          onSellAndPrint={(params) => onConfirmSale?.(params)}
+        />
+      ) : (
+        <>
       {/* Scrollable body */}
       <Box
         sx={{
@@ -523,6 +544,8 @@ export function PosCheckoutPanel({
           {isSubmitting ? t("invoices.PosCheckoutPanel.processing") : t("invoices.PosCheckoutPanel.placeDispatchOrder")}
         </Button>
       </Box>
+        </>
+      )}
     </Box>
   );
 }

@@ -9,6 +9,7 @@ import { tk } from "@/i18n/marker";
 import { RECEIPT_SINHALA_FAMILY, ensureReceiptFontInApp } from "../lib/receiptFont";
 import { getReceiptDesign, getShowIdStatus, type ReceiptDesign } from "../lib/receiptPrefs";
 import { printableSignatureStyle, usePrintableSignature } from "../lib/printableSignature";
+import { normalizeSaleLines } from "@/features/retail/api/pos.api";
 
 ensureReceiptFontInApp();
 
@@ -548,6 +549,7 @@ export const InvoiceReceipt = ({
           pricingText,
           status: "Draft",
           returnedDate: null,
+          isSale: false,
         };
       });
 
@@ -623,7 +625,7 @@ export const InvoiceReceipt = ({
       (invoice.status || "").toLowerCase() === "completed" ||
       invoice.status === "Returned";
 
-    const lines = invLines.map((line: any, idx: number) => {
+    const rentalLines = invLines.map((line: any, idx: number) => {
       // A machine kept past its due date (or one with no due date) is billed for the days it was really
       // out, so the bill shows the actual return day instead of the original due day.
       const backDate = line.returned_date || line.actual_return_date || null;
@@ -660,12 +662,34 @@ export const InvoiceReceipt = ({
         pricingText,
         status: line.line_status || "Active",
         returnedDate: line.returned_date || line.actual_return_date || null,
+        isSale: false,
       };
     });
 
+    const soldLines = normalizeSaleLines(invoice).map((l, idx) => ({
+      id: `sale-${l.sale_line_id || idx}`,
+      name: l.description,
+      code: "",
+      qty: l.qty,
+      start: "",
+      end: "",
+      days: 0,
+      lineTotal: l.line_total,
+      pricingText: `${l.qty} ${l.unit_label} × ${fmtMoney(l.unit_price, currencyCode)}`,
+      status: l.status || "sold",
+      returnedDate: null,
+      isSale: true,
+    }));
+
+    const lines = [...rentalLines, ...soldLines];
+
     const computedLinesSubtotal = lines.reduce((acc: number, l: any) => acc + l.lineTotal, 0);
+    const rawSub = Number(invoice.sub_total ?? invoice.fees?.subtotal ?? 0);
+    const rawSale = Number(invoice.sale_total ?? 0);
+    const isSaleOnlyBill = invoice.bill_kind === "sale" || (invLines.length === 0 && soldLines.length > 0);
     const subtotal =
-      Number(invoice.sub_total ?? invoice.fees?.subtotal ?? 0) || computedLinesSubtotal;
+      (isSaleOnlyBill ? rawSale || rawSub : rawSale > 0 ? rawSub + rawSale : rawSub) ||
+      computedLinesSubtotal;
     const transport = Number(
       invoice.transport_fee ?? invoice.fees?.transportFee ?? invoice.fees?.transport ?? 0
     );
@@ -759,10 +783,12 @@ export const InvoiceReceipt = ({
       totalPaid,
       balanceDue,
       vaultStatus:
-        invoice.id_card_status || cust.is_id_retained_currently
-          ? t.vaultHeld
-          : t.vaultReleased,
-      idHeld: Boolean(invoice.id_card_status || cust.is_id_retained_currently),
+        invoice.bill_kind === "sale"
+          ? t.vaultReleased
+          : invoice.id_card_status || cust.is_id_retained_currently
+            ? t.vaultHeld
+            : t.vaultReleased,
+      idHeld: invoice.bill_kind === "sale" ? false : Boolean(invoice.id_card_status || cust.is_id_retained_currently),
       statusDisplay: isCompleted ? t.statusCompleted : t.statusActive,
     };
   }, [invoice, isDraft, draftData, currencyCode, activeLang, t]);
@@ -1023,23 +1049,25 @@ export const InvoiceReceipt = ({
                 </div>
               </div>
 
-              {/* Row 2: Rental duration & Qty */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: is58mm ? "8.5px" : "9.5px",
-                  color: "#000000",
-                  fontWeight: 500,
-                  paddingLeft: "8px",
-                  marginTop: "0.5px",
-                }}
-              >
-                <span>
-                  {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{t.daysSuffix})
-                </span>
-                <span style={{ fontWeight: 600 }}>{t.qty}: {line.qty}</span>
-              </div>
+              {/* Row 2: Rental duration & Qty (skipped on sale lines) */}
+              {!line.isSale && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: is58mm ? "8.5px" : "9.5px",
+                    color: "#000000",
+                    fontWeight: 500,
+                    paddingLeft: "8px",
+                    marginTop: "0.5px",
+                  }}
+                >
+                  <span>
+                    {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{t.daysSuffix})
+                  </span>
+                  <span style={{ fontWeight: 600 }}>{t.qty}: {line.qty}</span>
+                </div>
+              )}
 
               {/* Row 3: Pricing math details */}
               <div
@@ -1050,7 +1078,7 @@ export const InvoiceReceipt = ({
                   paddingLeft: "8px",
                 }}
               >
-                {t.rate}: {line.pricingText}
+                {line.isSale ? line.pricingText : `${t.rate}: ${line.pricingText}`}
               </div>
 
               {/* Line Status Badge (if Returned) */}
@@ -1333,6 +1361,7 @@ interface MinimalLine {
   lineTotal: number;
   pricingText: string;
   returnedDate?: string | null;
+  isSale?: boolean;
 }
 
 interface MinimalReceiptBodyProps {
@@ -1469,7 +1498,7 @@ function MinimalReceiptBody({
               <span style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{fmtMoney(line.lineTotal, currency)}</span>
             </div>
             <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>
-              {shortDate(line.start)} → {shortDate(line.end)} · {line.pricingText}
+              {line.isSale ? line.pricingText : `${shortDate(line.start)} → ${shortDate(line.end)} · ${line.pricingText}`}
             </div>
             {line.returnedDate && (
               <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>✓ {t.mReturned(shortDate(line.returnedDate))}</div>

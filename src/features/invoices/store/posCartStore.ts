@@ -2,6 +2,14 @@ import { create } from "zustand";
 import type { SetStateAction } from "react";
 import { addDaysLocal } from "@/lib/dates";
 import { calculateLineMath, type CartItem } from "../components/PosLedgerPanel";
+import type { CatalogProduct, CatalogUnit, SerialCapture, Tracking } from "@/features/retail/api/catalog.types";
+import type { OutOfStockItem, PriceChangeItem } from "@/features/retail/api/pos.api";
+import {
+  computeSaleLineTotal,
+  resolveCatalogPrice,
+  round3,
+  type CustomerPriceLevel,
+} from "@/features/retail/pos/posPricing";
 
 // ─── Line types ───────────────────────────────────────────────────────────────
 // A rental line is exactly today's CartItem plus a `kind` tag. The tag is
@@ -9,8 +17,7 @@ import { calculateLineMath, type CartItem } from "../components/PosLedgerPanel";
 // the API or a receipt, so rental requests stay byte-for-byte what they were.
 export type RentalCartLine = CartItem & { kind: "rental" };
 
-// Mirrors INVOICE_SALE_LINES (retail plan §4.3). Declared for the retail steps;
-// nothing creates sale lines yet.
+// Mirrors INVOICE_SALE_LINES (retail plan §4.3) plus transient POS checkout metadata.
 export interface SaleCartLine {
   kind: "sale";
   cart_id: string;
@@ -25,10 +32,27 @@ export interface SaleCartLine {
   qty: number;
   base_qty: number;
   unit_price: number;
-  price_source: "retail" | "contractor" | "manual";
+  price_source: "retail" | "contractor" | "trade" | "manual";
   line_discount: number;
   bill_discount_share: number;
   line_total: number;
+  // R3 UI & validation metadata (not persisted directly to SQL columns)
+  image_url?: string | null;
+  variant_label?: string | null;
+  tracking?: Tracking;
+  serial_capture?: SerialCapture | null;
+  allow_decimal?: boolean;
+  base_unit?: string;
+  units?: CatalogUnit[];
+  catalog_unit_price?: number;
+  avg_cost?: number | null;
+  serials?: string[];
+  price_approval_token?: string | null;
+  discount_approval_token?: string | null;
+  stock_approval_token?: string | null;
+  unlisted_approval_token?: string | null;
+  out_of_stock?: boolean;
+  available_qty?: number | null;
 }
 
 export type CartLine = RentalCartLine | SaleCartLine;
@@ -41,6 +65,11 @@ export interface CartFees {
 }
 
 const EMPTY_FEES: CartFees = { transport: 0, discount: 0, advance: 0 };
+
+const newIdempotencyKey = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `cart-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 // ─── Pure helpers / selectors ─────────────────────────────────────────────────
 export const isRentalLine = (l: CartLine): l is RentalCartLine => l.kind === "rental";
@@ -75,14 +104,37 @@ export interface PosCartState {
   fees: CartFees;
   /** Optional bill date/time (local "YYYY-MM-DDTHH:mm"); null means dated now. */
   billDate: string | null;
+  jobSite: string;
+  customerPo: string;
+  idempotencyKey: string;
+  billDiscountApprovalToken: string | null;
 
   setSelectedCustomer: (c: any | null) => void;
   setOnBehalfOfCustomer: (c: any | null) => void;
   setLines: (action: SetStateAction<CartLine[]>) => void;
   /** React-style setter over the rental lines only; sale lines are left alone. */
   setRentalLines: (action: SetStateAction<CartItem[]>) => void;
+  /** React-style setter over the sale lines only; rental lines are left alone. */
+  setSaleLines: (action: SetStateAction<SaleCartLine[]>) => void;
+  addSaleLine: (line: SaleCartLine) => void;
+  updateSaleLine: (
+    cartId: string,
+    patch: Partial<SaleCartLine> | ((prev: SaleCartLine) => SaleCartLine),
+  ) => void;
+  removeSaleLine: (cartId: string) => void;
   setFees: (action: SetStateAction<any>) => void;
   setBillDate: (v: string | null) => void;
+  setJobSite: (v: string) => void;
+  setCustomerPo: (v: string) => void;
+  setBillDiscountApprovalToken: (token: string | null) => void;
+  /** Updates catalog prices on non-manual sale lines when customer price_level changes. */
+  applyCustomerPriceLevel: (
+    byId: Map<number, CatalogProduct>,
+    priceLevel: CustomerPriceLevel,
+    showContractorPrice?: boolean,
+  ) => void;
+  applyServerPriceChanges: (changes: PriceChangeItem[]) => void;
+  markLinesOutOfStock: (items: OutOfStockItem[]) => void;
   /** Moves every rental line's out date to `day`, keeping each line's length. */
   applyBillDateToLines: (day: string) => void;
   /** Clears lines, fees and bill date (keeps the customer), like "Clear cart". */
@@ -97,6 +149,10 @@ export const usePosCartStore = create<PosCartState>((set) => ({
   lines: [],
   fees: EMPTY_FEES,
   billDate: null,
+  jobSite: "",
+  customerPo: "",
+  idempotencyKey: newIdempotencyKey(),
+  billDiscountApprovalToken: null,
 
   setSelectedCustomer: (selectedCustomer) => set({ selectedCustomer }),
   setOnBehalfOfCustomer: (onBehalfOfCustomer) => set({ onBehalfOfCustomer }),
@@ -108,8 +164,129 @@ export const usePosCartStore = create<PosCartState>((set) => ({
       if (next === prev) return s;
       return { lines: [...next.map(tagRental), ...selectSaleLines(s.lines)] };
     }),
+  setSaleLines: (action) =>
+    set((s) => {
+      const prev = selectSaleLines(s.lines);
+      const next = resolve<SaleCartLine[]>(action, prev);
+      if (next === prev) return s;
+      return { lines: [...selectRentalLines(s.lines), ...next] };
+    }),
+  addSaleLine: (line) =>
+    set((s) => {
+      const rentals = selectRentalLines(s.lines);
+      const sales = selectSaleLines(s.lines);
+      const mergeable =
+        line.line_kind === "item" &&
+        line.product_id != null &&
+        line.tracking !== "serial";
+      if (mergeable) {
+        const idx = sales.findIndex(
+          (existing) =>
+            existing.line_kind === "item" &&
+            existing.product_id === line.product_id &&
+            (existing.unit_id ?? null) === (line.unit_id ?? null) &&
+            (existing.warehouse_id ?? null) === (line.warehouse_id ?? null) &&
+            existing.price_source !== "manual",
+        );
+        if (idx >= 0) {
+          const cur = sales[idx];
+          const nextQty = round3(cur.qty + line.qty);
+          const nextFactor = cur.unit_factor || 1;
+          const updated: SaleCartLine = {
+            ...cur,
+            qty: nextQty,
+            base_qty: round3(nextQty * nextFactor),
+            line_total: computeSaleLineTotal(nextQty, cur.unit_price, cur.line_discount),
+            out_of_stock: false,
+            available_qty: undefined,
+            stock_approval_token: null,
+          };
+          const nextSales = sales.map((x, i) => (i === idx ? updated : x));
+          return { lines: [...rentals, ...nextSales] };
+        }
+      }
+      return { lines: [...rentals, ...sales, line] };
+    }),
+  updateSaleLine: (cartId, patch) =>
+    set((s) => ({
+      lines: s.lines.map((line) => {
+        if (!isSaleLine(line) || line.cart_id !== cartId) return line;
+        const next = typeof patch === "function" ? patch(line) : { ...line, ...patch };
+        const qty = Math.max(0, Number(next.qty) || 0);
+        const factor = Number(next.unit_factor) || 1;
+        return {
+          ...next,
+          qty,
+          base_qty: round3(qty * factor),
+          line_total: computeSaleLineTotal(qty, next.unit_price, next.line_discount),
+        };
+      }),
+    })),
+  removeSaleLine: (cartId) =>
+    set((s) => ({
+      lines: s.lines.filter((l) => !(isSaleLine(l) && l.cart_id === cartId)),
+    })),
   setFees: (action) => set((s) => ({ fees: resolve(action, s.fees) })),
   setBillDate: (billDate) => set({ billDate }),
+  setJobSite: (jobSite) => set({ jobSite }),
+  setCustomerPo: (customerPo) => set({ customerPo }),
+  setBillDiscountApprovalToken: (billDiscountApprovalToken) => set({ billDiscountApprovalToken }),
+  applyCustomerPriceLevel: (byId, priceLevel, showContractorPrice = true) =>
+    set((s) => ({
+      lines: s.lines.map((line) => {
+        if (!isSaleLine(line) || line.line_kind !== "item" || line.product_id == null) return line;
+        if (line.price_source === "manual" || line.price_approval_token) return line;
+        const product = byId.get(line.product_id);
+        if (!product) return line;
+        const unit = (product.units ?? line.units ?? []).find((u) => (u.unit_id ?? null) === (line.unit_id ?? null)) ?? null;
+        const { unit_price, price_source } = resolveCatalogPrice(product, unit, priceLevel, showContractorPrice);
+        return {
+          ...line,
+          unit_price,
+          catalog_unit_price: unit_price,
+          price_source,
+          line_total: computeSaleLineTotal(line.qty, unit_price, line.line_discount),
+        };
+      }),
+    })),
+  applyServerPriceChanges: (changes) =>
+    set((s) => ({
+      lines: s.lines.map((line) => {
+        if (!isSaleLine(line) || line.product_id == null) return line;
+        const hit = changes.find(
+          (c) =>
+            Number(c.product_id) === Number(line.product_id) &&
+            (c.unit_id === undefined || c.unit_id === null ? (line.unit_id ?? null) === null : Number(c.unit_id) === Number(line.unit_id)),
+        ) ?? changes.find((c) => Number(c.product_id) === Number(line.product_id));
+        if (!hit) return line;
+        const nextPrice = Number(hit.to);
+        return {
+          ...line,
+          unit_price: nextPrice,
+          catalog_unit_price: nextPrice,
+          price_source: line.price_source === "manual" ? "retail" : line.price_source,
+          price_approval_token: null,
+          line_total: computeSaleLineTotal(line.qty, nextPrice, line.line_discount),
+        };
+      }),
+    })),
+  markLinesOutOfStock: (items) =>
+    set((s) => ({
+      lines: s.lines.map((line) => {
+        if (!isSaleLine(line) || line.product_id == null) return line;
+        const hit = items.find(
+          (i) =>
+            Number(i.product_id) === Number(line.product_id) &&
+            (i.warehouse_id == null || line.warehouse_id == null || Number(i.warehouse_id) === Number(line.warehouse_id)),
+        );
+        if (!hit) return line;
+        return {
+          ...line,
+          out_of_stock: true,
+          available_qty: hit.available_qty,
+        };
+      }),
+    })),
   applyBillDateToLines: (day) =>
     set((s) => ({
       lines: s.lines.map((item) => {
@@ -125,7 +302,16 @@ export const usePosCartStore = create<PosCartState>((set) => ({
         };
       }),
     })),
-  clearCart: () => set({ lines: [], fees: { ...EMPTY_FEES }, billDate: null }),
+  clearCart: () =>
+    set({
+      lines: [],
+      fees: { ...EMPTY_FEES },
+      billDate: null,
+      jobSite: "",
+      customerPo: "",
+      billDiscountApprovalToken: null,
+      idempotencyKey: newIdempotencyKey(),
+    }),
   resetAll: () =>
     set({
       selectedCustomer: null,
@@ -133,5 +319,9 @@ export const usePosCartStore = create<PosCartState>((set) => ({
       lines: [],
       fees: { ...EMPTY_FEES },
       billDate: null,
+      jobSite: "",
+      customerPo: "",
+      billDiscountApprovalToken: null,
+      idempotencyKey: newIdempotencyKey(),
     }),
 }));

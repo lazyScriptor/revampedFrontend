@@ -5,15 +5,19 @@ import { VaultToggleContract } from '@geargrid/contracts';
 import { useDebounce } from './usePosSearch';
 
 // features/invoices/hooks/useInvoiceHooks.ts
-export const useInvoiceList = (page: number, limit: number, status?: string) => {
+export const useInvoiceList = (page: number, limit: number, status?: string, ...billKindRest: [billKind?: string]) => {
+    const [billKind] = billKindRest;
     return useQuery({
-        // CRITICAL: Add status to the queryKey so changing tabs triggers a refetch
-        queryKey: ['invoices', page, limit, status],
+        // CRITICAL: Add status / billKind to the queryKey so changing tabs triggers a refetch
+        queryKey: ['invoices', page, limit, status, billKind],
         queryFn: async () => {
-            // Build the params object. If status is "All", we just don't send it.
+            // Build the params object. If status/billKind is "All", we just don't send it.
             const params: any = { page, limit };
             if (status && status !== 'All') {
                 params.status = status;
+            }
+            if (billKind && billKind !== 'all' && billKind !== 'All') {
+                params.bill_kind = billKind;
             }
 
             const response: any = await api.get('/invoices', { params });

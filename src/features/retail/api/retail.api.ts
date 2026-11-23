@@ -17,7 +17,11 @@ import {
 export const fetchRetailSettings = async (): Promise<RetailSettings> => {
   const data = unwrapData<any>(await api.get("/retail/settings"));
   const s = data?.settings ?? data ?? {};
-  return { ...DEFAULT_RETAIL_SETTINGS, ...s };
+  return {
+    ...DEFAULT_RETAIL_SETTINGS,
+    ...s,
+    exceptions: { ...DEFAULT_RETAIL_SETTINGS.exceptions, ...(s?.exceptions ?? {}) },
+  };
 };
 
 // ── Approvals ─────────────────────────────────────────────────────────────────

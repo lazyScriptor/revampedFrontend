@@ -18,6 +18,8 @@ export type ExceptionType = (typeof EXCEPTION_TYPES)[number];
 
 export type ApprovalMethod = "pin" | "password" | "either";
 
+export type ExceptionPolicyMode = "off" | "record" | "approve";
+
 export interface RetailSettings {
   approvalMethod: ApprovalMethod;
   /** Minutes one approval stays valid for more lines on the same bill; 0 = single use. */
@@ -25,10 +27,14 @@ export interface RetailSettings {
   askManagerRemote: boolean;
   negativeStock: "warn" | "block";
   discountLimitPct: number;
+  exceptions?: Partial<Record<ExceptionType, ExceptionPolicyMode>>;
+  quickPad?: number[];
+  showContractorPrice?: boolean;
+  belowCostWarning?: boolean;
   /** Name pattern for generated item names, e.g. "{brand} {subCategory} {itemWord} {variant}{unit}". */
   namePattern?: string;
   codePrefix?: string;
-  units?: string[];
+  units?: string[] | { base?: string[]; pack?: string[] };
   defaultWarehouseId?: number | null;
   booksClosedUntil?: string | null;
 }
@@ -39,6 +45,16 @@ export const DEFAULT_RETAIL_SETTINGS: RetailSettings = {
   askManagerRemote: true,
   negativeStock: "warn",
   discountLimitPct: 10,
+  quickPad: [],
+  showContractorPrice: true,
+  belowCostWarning: true,
+  exceptions: {
+    unlisted_item: "record",
+    price_change: "approve",
+    discount_over_limit: "approve",
+    below_cost: "record",
+    negative_stock: "approve",
+  },
 };
 
 export interface Approver {

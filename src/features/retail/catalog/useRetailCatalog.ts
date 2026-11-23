@@ -27,6 +27,11 @@ export function useRetailPermissions() {
       canReceive: retail && hasPermission("retail:stock_receive"),
       canAdjust: retail && hasPermission("retail:stock_adjust"),
       canBackdate: retail && hasPermission("retail:backdate"),
+      canSell: retail && hasPermission("retail:sell"),
+      canPriceOverride: retail && hasPermission("retail:price_override"),
+      canDiscount: retail && hasPermission("retail:discount"),
+      canAddUnlisted: retail && hasPermission("retail:add_unlisted"),
+      canConfirmUnlisted: retail && hasPermission("retail:confirm_unlisted"),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [retail, user, hasPermission],

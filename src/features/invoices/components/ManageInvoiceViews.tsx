@@ -60,6 +60,9 @@ import { useTranslation } from "react-i18next";
 import { summariseInvoice, type LineToday } from "../lib/lineCost";
 import { iterationsFor, lastBackAt } from "../lib/lineTimes";
 import { invoiceStatusColor, invoiceStatusLabel } from "../lib/invoiceStatus";
+import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
+import { normalizeSaleLines } from "@/features/retail/api/pos.api";
+import { ItemsSoldSection } from "./ItemsSoldSection";
 
 const scroll = {
   "&::-webkit-scrollbar": { width: "5px" },
@@ -92,16 +95,21 @@ export function ManageSearchPanel({
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const retailEnabled = useRetailEnabled();
   const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
+  const [billKind, setBillKind] = useState<"all" | "rental" | "sale">("all");
   const [pageSize, setPageSize] = useState(25);
 
   const { data: searchResults = [], isLoading: searching } = useInvoiceSearch(searchInput);
+  const statusArg = statusFilter === "All" ? undefined : statusFilter;
+  const billKindArgs: [string?] = retailEnabled && billKind !== "all" ? [billKind] : [];
   const { data: listData, isLoading: listLoading, isFetching } = useInvoiceList(
     1,
     pageSize,
-    statusFilter === "All" ? undefined : statusFilter
+    statusArg,
+    ...billKindArgs
   );
 
   const isSearchMode = searchInput.length > 0;
@@ -205,6 +213,26 @@ export function ManageSearchPanel({
         )}
       </Box>
 
+      {retailEnabled && !isSearchMode && (
+        <Box sx={{ px: 2, pb: 1.25, display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0, overflowX: "auto" }} role="group" aria-label={t("invoices.sale.billKindFilter")}>
+          {(["all", "rental", "sale"] as const).map((k) => (
+            <Chip
+              key={k}
+              size="small"
+              clickable
+              label={k === "all" ? t("common.all") : k === "rental" ? t("retail.pos.tabRent") : t("invoices.sale.saleChip")}
+              color={billKind === k ? "primary" : "default"}
+              variant={billKind === k ? "filled" : "outlined"}
+              onClick={() => {
+                setBillKind(k);
+                setPageSize(25);
+              }}
+              sx={{ fontWeight: 700, fontSize: "0.7rem" }}
+            />
+          ))}
+        </Box>
+      )}
+
       <Divider />
 
       {/* Invoice list */}
@@ -275,6 +303,14 @@ export function ManageSearchPanel({
                       variant={isSelected ? "filled" : "outlined"}
                       sx={{ fontWeight: 800, fontSize: "0.65rem", height: 18 }}
                     />
+                    {(inv.bill_kind === "sale" || inv.bill_kind === "mixed") && (
+                      <Chip
+                        size="small"
+                        color="warning"
+                        label={t(inv.bill_kind === "sale" ? "invoices.sale.saleChip" : "invoices.sale.mixedChip")}
+                        sx={{ fontWeight: 800, fontSize: "0.62rem", height: 18 }}
+                      />
+                    )}
                   </Box>
                   <Typography
                     variant="caption"
@@ -363,6 +399,8 @@ export function ManageLedgerPanel({
     );
 
   const rawLines = invoice.InvoiceLines || invoice.invoice_lines || invoice.lines || [];
+  const saleLines = normalizeSaleLines(invoice);
+  const isSaleOnly = invoice.bill_kind === "sale" || (rawLines.length === 0 && saleLines.length > 0);
   const rawTraces = invoice.InvoiceTraces || invoice.InvoiceTrace || invoice.invoice_traces || invoice.traces || [];
   const returnTraces = rawTraces.filter((tr: any) => tr.event_action === "RETURN_PROCESSED");
   const summary = summariseInvoice(rawLines, undefined, {
@@ -375,14 +413,19 @@ export function ManageLedgerPanel({
       {/* Board header */}
       <Box sx={{ flexShrink: 0, px: 3, py: 2, bgcolor: "white", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
         <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            {t("orders.assetTrackingBoard")}
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              {isSaleOnly ? t("invoices.sale.itemsSold") : t("orders.assetTrackingBoard")}
+            </Typography>
+            {invoice.bill_kind === "sale" && (
+              <Chip size="small" color="warning" label={t("invoices.sale.saleChip")} sx={{ height: 20, fontWeight: 800, fontSize: "0.68rem" }} />
+            )}
+          </Box>
           <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
-            {t("invoices.lineItem", { count: rawLines.length })} · INV-{invoice.invoice_id}
+            {t("invoices.lineItem", { count: isSaleOnly ? saleLines.length : rawLines.length })} · INV-{invoice.invoice_id}
           </Typography>
         </Box>
-        {invoice.status === "Active" && (
+        {invoice.status === "Active" && !isSaleOnly && (
           <Button variant="contained" color="primary" size="small" startIcon={<AssignmentReturnedIcon />} disableElevation onClick={onOpenReturn} sx={{ fontWeight: 700, borderRadius: 2 }}>
             {t("invoices.ManageInvoiceViews.processHandover")}
           </Button>
@@ -390,34 +433,40 @@ export function ManageLedgerPanel({
       </Box>
 
       <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: "auto", p: 2.5, display: "flex", flexDirection: "column", gap: 1.5, ...scroll, "& > *": { flexShrink: 0 } }}>
-        {/* Cost for today */}
-        <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-          <Box>
-            <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", fontSize: "0.68rem" }}>
-              {t("orders.ledger.costToday")}
-            </Typography>
-            <Typography sx={{ color: "text.primary", fontWeight: 900, fontSize: { xs: "1.6rem", md: "1.9rem" }, lineHeight: 1.15, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
-              Rs. {money(summary.costToday)}
-            </Typography>
-            {summary.earliestOut && (
-              <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
-                {t("orders.ledger.outSince", { date: formatDisplayDate(summary.earliestOut) })}
+        {!isSaleOnly && (
+          <>
+            {/* Cost for today */}
+            <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", fontSize: "0.68rem" }}>
+                  {t("orders.ledger.costToday")}
+                </Typography>
+                <Typography sx={{ color: "text.primary", fontWeight: 900, fontSize: { xs: "1.6rem", md: "1.9rem" }, lineHeight: 1.15, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}>
+                  Rs. {money(summary.costToday)}
+                </Typography>
+                {summary.earliestOut && (
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+                    {t("orders.ledger.outSince", { date: formatDisplayDate(summary.earliestOut) })}
+                  </Typography>
+                )}
+              </Box>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {summary.outCount > 0 && <Chip size="small" color="warning" label={t("orders.ledger.machinesOut", { count: summary.outCount })} sx={{ fontWeight: 800 }} />}
+                {summary.returnedCount > 0 && <Chip size="small" color="success" variant="outlined" label={t("orders.ledger.machinesReturned", { count: summary.returnedCount })} sx={{ fontWeight: 800 }} />}
+                {summary.overdueCount > 0 && <Chip size="small" color="error" label={t("orders.ledger.overdueCount", { count: summary.overdueCount })} sx={{ fontWeight: 800 }} />}
+              </Box>
+            </Box>
+            {summary.lateFeeToday > 0 && (
+              <Typography variant="caption" sx={{ color: "#92400e", bgcolor: "#fffbeb", border: "1px solid #fde68a", borderRadius: 1.5, px: 1.5, py: 0.75, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                {t("orders.ledger.lateFeeNote", { amount: money(summary.lateFeeToday) })}
               </Typography>
             )}
-          </Box>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            {summary.outCount > 0 && <Chip size="small" color="warning" label={t("orders.ledger.machinesOut", { count: summary.outCount })} sx={{ fontWeight: 800 }} />}
-            {summary.returnedCount > 0 && <Chip size="small" color="success" variant="outlined" label={t("orders.ledger.machinesReturned", { count: summary.returnedCount })} sx={{ fontWeight: 800 }} />}
-            {summary.overdueCount > 0 && <Chip size="small" color="error" label={t("orders.ledger.overdueCount", { count: summary.overdueCount })} sx={{ fontWeight: 800 }} />}
-          </Box>
-        </Box>
-        {summary.lateFeeToday > 0 && (
-          <Typography variant="caption" sx={{ color: "#92400e", bgcolor: "#fffbeb", border: "1px solid #fde68a", borderRadius: 1.5, px: 1.5, py: 0.75, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-            {t("orders.ledger.lateFeeNote", { amount: money(summary.lateFeeToday) })}
-          </Typography>
+
+            <LedgerTable lines={rawLines} infos={summary.lines} returnTraces={returnTraces} issuedAt={invoice.issued_date || invoice.createdAt} />
+          </>
         )}
 
-        <LedgerTable lines={rawLines} infos={summary.lines} returnTraces={returnTraces} issuedAt={invoice.issued_date || invoice.createdAt} />
+        <ItemsSoldSection invoice={invoice} hideHeading={isSaleOnly} />
 
         {/* Reviews thread — staff-only ratings + comments for this invoice */}
         <InvoiceReviewsSection invoiceId={invoice.invoice_id} />

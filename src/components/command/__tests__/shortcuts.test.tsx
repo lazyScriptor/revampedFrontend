@@ -22,15 +22,15 @@ const run = (init: KeyboardEventInit, target?: Element, overrides?: Record<strin
 describe("shortcuts", () => {
   beforeEach(() => __resetShortcutHandlers());
 
-  it("lists the plan's defaults: F2/F3/F4 live since R2, F8/F9 registered but pending", () => {
+  it("lists the plan's defaults: F2/F3/F4/F8/F9 live since R3, +/− registered as pending", () => {
     const byId = Object.fromEntries(SHORTCUT_DEFS.map((d) => [d.id, d]));
     expect(byId["stock-in"].defaultCombo).toBe("F2");
     expect(byId["find-item"].defaultCombo).toBe("F3");
     expect(byId["correct-stock"].defaultCombo).toBe("F4");
     expect(byId["walk-in"].defaultCombo).toBe("F8");
     expect(byId["sell-print"].defaultCombo).toBe("F9");
-    expect(["walk-in", "sell-print"].every((id) => byId[id].pending)).toBe(true);
-    expect(["stock-in", "find-item", "correct-stock"].every((id) => !byId[id].pending)).toBe(true);
+    expect(["qty-up", "qty-down"].every((id) => byId[id].pending)).toBe(true);
+    expect(["stock-in", "find-item", "correct-stock", "walk-in", "sell-print"].every((id) => !byId[id].pending)).toBe(true);
   });
 
   it("normalises key events and formats combos", () => {

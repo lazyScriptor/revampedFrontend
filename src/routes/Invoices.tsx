@@ -54,9 +54,22 @@ import {
   usePosCartStore,
   selectRentalLines,
   selectRentalSubtotal,
+  selectSaleLines,
+  selectSaleSubtotal,
   toRentalPayload,
 } from "@/features/invoices/store/posCartStore";
 import { POS_CATALOG_KEY } from "@/features/invoices/hooks/usePosEquipmentCatalog";
+import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
+import { invalidateStock } from "@/features/retail/stock/useStockLevels";
+import { invalidateCatalog } from "@/features/retail/catalog/useRetailCatalog";
+import {
+  parseSaleCheckoutError,
+  postSaleInvoice,
+  type PriceChangeItem,
+} from "@/features/retail/api/pos.api";
+import { buildSaleInvoicePayload, round2 } from "@/features/retail/pos/posPricing";
+import type { SaleSubmitParams } from "@/features/retail/pos/SaleCheckoutSection";
+import { PriceChangedDialog } from "@/features/retail/pos/PriceChangedDialog";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
@@ -103,9 +116,11 @@ export default function InvoicesRoute() {
   const lines = usePosCartStore((s) => s.lines);
   // Rental lines without the internal `kind` tag, i.e. exactly the old CartItem[].
   const cartItems = useMemo(() => selectRentalLines(lines).map(toRentalPayload), [lines]);
+  const saleLines = useMemo(() => selectSaleLines(lines), [lines]);
   const setCartItems = usePosCartStore((s) => s.setRentalLines);
   const fees = usePosCartStore((s) => s.fees);
   const setFees = usePosCartStore((s) => s.setFees);
+  const retailEnabled = useRetailEnabled();
   // Optional bill date/time (local "YYYY-MM-DDTHH:mm"); null means the bill is dated now.
   const billDate = usePosCartStore((s) => s.billDate);
   const setBillDate = usePosCartStore((s) => s.setBillDate);
@@ -139,6 +154,8 @@ export default function InvoicesRoute() {
   const [isClearCartOpen, setIsClearCartOpen] = useState(false);
   const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [priceChanges, setPriceChanges] = useState<PriceChangeItem[] | null>(null);
+  const [pendingSaleParams, setPendingSaleParams] = useState<SaleSubmitParams | null>(null);
 
   // ── Thermal Bill Print States ──────────────────────────────────────────────────
   const [lastDispatchedInvoice, setLastDispatchedInvoice] = useState<any | null>(null);
@@ -268,8 +285,146 @@ export default function InvoicesRoute() {
   };
 
   const subTotal = useMemo(() => selectRentalSubtotal(lines), [lines]);
+  const saleSubTotal = useMemo(() => selectSaleSubtotal(lines), [lines]);
+  const activeSubTotal = cartItems.length === 0 && saleLines.length > 0 ? saleSubTotal : subTotal;
+  const activeItemCount = cartItems.length + saleLines.length;
   const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
+
+  const executeSaleCheckout = async (params: SaleSubmitParams) => {
+    const st = usePosCartStore.getState();
+    const curSaleLines = selectSaleLines(st.lines);
+    if (!st.selectedCustomer || curSaleLines.length === 0) return;
+
+    const curSub = selectSaleSubtotal(st.lines);
+    const curTotal = Math.max(0, round2(curSub + (st.fees.transport || 0) - (st.fees.discount || 0)));
+    const effectivePayment = !params.isCredit ? curTotal : Math.min(params.paymentAmount, curTotal);
+    const settleNow = !params.isCredit && effectivePayment + 0.005 >= curTotal;
+    const issuedIso = st.billDate ? new Date(st.billDate).toISOString() : null;
+
+    setIsSubmitting(true);
+    try {
+      const payload = buildSaleInvoicePayload({
+        customerId: st.selectedCustomer.customer_id,
+        saleLines: curSaleLines,
+        fees: st.fees,
+        paymentAmount: effectivePayment,
+        paymentMethod: params.paymentMethod,
+        settleNow,
+        jobSite: st.jobSite,
+        customerPo: st.customerPo,
+        issuedDateIso: issuedIso,
+        billDiscountApprovalToken: st.billDiscountApprovalToken,
+      });
+
+      const serverInv = await postSaleInvoice(payload, st.idempotencyKey);
+      const invId = serverInv?.invoice_id || Math.floor(1000 + Math.random() * 9000);
+      const hydratedSaleLines =
+        serverInv?.SaleLines ||
+        serverInv?.sale_lines ||
+        curSaleLines.map((l, idx) => ({
+          sale_line_id: idx + 1,
+          product_id: l.product_id,
+          line_kind: l.line_kind,
+          description: l.description,
+          unit_label: l.unit_label,
+          unit_factor: l.unit_factor,
+          qty: l.qty,
+          base_qty: l.base_qty,
+          unit_price: l.unit_price,
+          line_discount: l.line_discount,
+          line_total: l.line_total,
+          serials: l.serials,
+          status: "sold",
+        }));
+
+      const hydratedInvoice = {
+        ...serverInv,
+        invoice_id: invId,
+        bill_kind: serverInv?.bill_kind || "sale",
+        issued_date: serverInv?.issued_date || issuedIso || serverInv?.createdAt || new Date().toISOString(),
+        sub_total: serverInv?.sub_total ?? 0,
+        sale_total: serverInv?.sale_total ?? curSub,
+        total_amount: serverInv?.total_amount ?? curTotal,
+        transport_fee: serverInv?.transport_fee ?? st.fees.transport,
+        discount_amount: serverInv?.discount_amount ?? st.fees.discount,
+        id_card_status: 0,
+        job_site: serverInv?.job_site ?? (st.jobSite.trim() || null),
+        customer_po: serverInv?.customer_po ?? (st.customerPo.trim() || null),
+        status: serverInv?.status || (settleNow ? "Completed" : "PendingPayment"),
+        Customer: serverInv?.Customer || st.selectedCustomer,
+        InvoiceLines: serverInv?.InvoiceLines || [],
+        SaleLines: hydratedSaleLines,
+        Payments:
+          serverInv?.Payments ||
+          (effectivePayment > 0
+            ? [
+                {
+                  payment_amount: effectivePayment,
+                  method: params.paymentMethod,
+                  payment_date: issuedIso || new Date().toISOString(),
+                },
+              ]
+            : []),
+      };
+
+      refreshInvoiceData();
+      invalidateStock(queryClient);
+      invalidateCatalog(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["approvals", "desk"] });
+
+      setPriceChanges(null);
+      setPendingSaleParams(null);
+      setLastDispatchedInvoice(hydratedInvoice);
+      showToast(t("retail.pos.saleCompletedToast"), "success");
+
+      setTimeout(() => {
+        const cust = hydratedInvoice.Customer || st.selectedCustomer;
+        const custName =
+          cust?.company_name || `${cust?.first_name || ""} ${cust?.last_name || ""}`.trim() || "Walk-in Customer";
+        const paid =
+          hydratedInvoice.Payments?.reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0) || 0;
+        const qtySum = curSaleLines.reduce((acc, l) => acc + l.qty, 0);
+        handlePrintInvoice("pos-dispatch-silent-receipt", {
+          invoiceId: hydratedInvoice.invoice_id,
+          docNumber: `INV-${hydratedInvoice.invoice_id}`,
+          docType: hydratedInvoice.status === "Completed" ? "COMPLETED" : "DISPATCH",
+          customerName: custName,
+          customerPhone: cust?.phone_number,
+          totalItems: curSaleLines.length,
+          totalMachines: qtySum,
+          subtotal: Number(hydratedInvoice.sale_total ?? curSub),
+          transportFee: Number(hydratedInvoice.transport_fee || 0),
+          discountAmount: Number(hydratedInvoice.discount_amount || 0),
+          grandTotal: Number(hydratedInvoice.total_amount || 0),
+          totalPaid: paid,
+          balanceDue: Math.max(0, Number(hydratedInvoice.total_amount || 0) - paid),
+          billSnapshot: hydratedInvoice,
+        });
+      }, 350);
+
+      setIsPostDispatchOpen(true);
+      resetAll();
+    } catch (error: any) {
+      const parsed = parseSaleCheckoutError(error);
+      if (parsed.kind === "price_changed") {
+        const enriched = parsed.changes.map((c) => {
+          const hit = curSaleLines.find((l) => l.product_id === c.product_id);
+          return { ...c, description: c.description || hit?.description };
+        });
+        st.applyServerPriceChanges(enriched);
+        setPendingSaleParams(params);
+        setPriceChanges(enriched);
+      } else if (parsed.kind === "out_of_stock") {
+        st.markLinesOutOfStock(parsed.items);
+        showToast(parsed.message, "warning");
+      } else {
+        showToast(parsed.message || t("pages.Invoices.failedToCreateInvoice"), "error");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // ── Pane definitions ──────────────────────────────────────────────────────────
   const pane1 = (
@@ -399,7 +554,7 @@ export default function InvoicesRoute() {
             }}
           >
             {posMode === "dispatch"
-              ? t("invoices.lineItem", { count: cartItems.length })
+              ? t("invoices.lineItem", { count: activeItemCount })
               : activeInvoice
               ? `INV-${activeInvoice.invoice_id}`
               : t("invoices.selectAnInvoice")}
@@ -411,7 +566,7 @@ export default function InvoicesRoute() {
             size="small"
             color="error"
             onClick={() => setIsClearCartOpen(true)}
-            disabled={cartItems.length === 0}
+            disabled={activeItemCount === 0}
             sx={{
               borderRadius: 2,
               fontWeight: 700,
@@ -472,6 +627,7 @@ export default function InvoicesRoute() {
           isCollapsed={!isTerminalOpen}
           onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
           onConfirmDispatch={() => setIsConfirmDispatchOpen(true)}
+          onConfirmSale={(params) => void executeSaleCheckout(params)}
           onPrintEstimate={() => setIsEstimatePrintOpen(true)}
           isSubmitting={isSubmitting}
           billDate={billDate}
@@ -496,7 +652,7 @@ export default function InvoicesRoute() {
     {
       label: t("pages.Invoices.cart"),
       icon: (
-        <Badge badgeContent={cartItems.length} color="primary" max={99}>
+        <Badge badgeContent={activeItemCount} color="primary" max={99}>
           <ShoppingCartIcon sx={{ fontSize: 20 }} />
         </Badge>
       ),
@@ -544,10 +700,10 @@ export default function InvoicesRoute() {
                 ? t("orders.title")
                 : t("invoices.InvoicePrintLogsView.billPrintingAuditLogs")}
             </Typography>
-            {posMode === "dispatch" && cartItems.length > 0 && (
+            {posMode === "dispatch" && activeItemCount > 0 && (
               <Chip
                 icon={<ShoppingCartIcon sx={{ fontSize: "14px !important" }} />}
-                label={t("pages.Invoices.itemsRs", { cartItemsCount: cartItems.length, subTotal: subTotal.toLocaleString() })}
+                label={t("pages.Invoices.itemsRs", { cartItemsCount: activeItemCount, subTotal: activeSubTotal.toLocaleString() })}
                 size="small"
                 sx={{
                   fontWeight: 800,
@@ -989,7 +1145,9 @@ export default function InvoicesRoute() {
             <CheckCircleIcon sx={{ fontSize: 36 }} />
           </Box>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a" }}>
-            {t("pages.Invoices.dispatchedSuccessfully")}
+            {lastDispatchedInvoice?.bill_kind === "sale"
+              ? t("retail.pos.saleCompleted")
+              : t("pages.Invoices.dispatchedSuccessfully")}
           </Typography>
           <Typography variant="body2" sx={{ color: "#64748b", mt: 0.5 }}>
             {t("pages.Invoices.invoiceIsNowActive", { invoice_id: lastDispatchedInvoice?.invoice_id })}
@@ -1014,9 +1172,15 @@ export default function InvoicesRoute() {
               </Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-              <Typography variant="caption" sx={{ color: "#64748b" }}>{t("pages.Invoices.equipment")}</Typography>
+              <Typography variant="caption" sx={{ color: "#64748b" }}>
+                {lastDispatchedInvoice?.bill_kind === "sale"
+                  ? t("retail.pos.itemsLabel")
+                  : t("pages.Invoices.equipment")}
+              </Typography>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                {t("pages.Invoices.machinesCount", { count: lastDispatchedInvoice?.InvoiceLines?.reduce((sum: number, l: any) => sum + (l.borrow_quantity || 1), 0) || 0 })}
+                {lastDispatchedInvoice?.bill_kind === "sale"
+                  ? t("invoices.lineItem", { count: lastDispatchedInvoice?.SaleLines?.length || 0 })
+                  : t("pages.Invoices.machinesCount", { count: lastDispatchedInvoice?.InvoiceLines?.reduce((sum: number, l: any) => sum + (l.borrow_quantity || 1), 0) || 0 })}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -1118,6 +1282,23 @@ export default function InvoicesRoute() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {retailEnabled && priceChanges && (
+        <PriceChangedDialog
+          open={true}
+          changes={priceChanges}
+          submitting={isSubmitting}
+          onClose={() => {
+            setPriceChanges(null);
+            setPendingSaleParams(null);
+          }}
+          onConfirm={() => {
+            const p = pendingSaleParams;
+            setPriceChanges(null);
+            if (p) void executeSaleCheckout(p);
+          }}
+        />
+      )}
 
       {/* ── Return Dialog ─────────────────────────────────────────────────────────── */}
       {posMode === "manage" && (
