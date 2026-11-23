@@ -63,7 +63,14 @@ export const fetchDesk = async (q: DeskQuery): Promise<DeskPage> => {
   if (q.from) params.from = q.from;
   if (q.to) params.to = q.to;
   const d = unwrapData<any>(await api.get("/approvals/desk", { params })) ?? {};
-  const rows: CounterException[] = d.rows ?? d.exceptions ?? d.items ?? [];
+  // The backend includes the people as Requester / Approver objects; the desk shows flat names.
+  const personName = (p: any): string | null =>
+    p ? [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.username || null : null;
+  const rows: CounterException[] = (d.rows ?? d.exceptions ?? d.items ?? []).map((r: any) => ({
+    ...r,
+    requested_by_name: r.requested_by_name ?? personName(r.Requester),
+    approved_by_name: r.approved_by_name ?? personName(r.Approver),
+  }));
   const totals: DeskTotals[] = (d.totals ?? []).map((t: any) => ({
     type: t.type,
     count: Number(t.count) || 0,
