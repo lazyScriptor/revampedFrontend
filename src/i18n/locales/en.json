@@ -846,7 +846,9 @@
             "mixedChip": "Mixed",
             "billKindFilter": "Bill kind",
             "colItem": "Item",
-            "colPrice": "Price"
+            "colPrice": "Price",
+            "itemsSoldCount_one": "{{count}} item sold",
+            "itemsSoldCount_other": "{{count}} items sold"
         },
         "title": "Invoices",
         "addInvoice": "Create Invoice",
@@ -1283,7 +1285,9 @@
             "deletedOn": "Deleted on",
             "flagCashier": "Cashier deletion",
             "flaggedOnly": "Show cashier deletions only",
-            "searchPlaceholder": "Search INV number or reason…"
+            "searchPlaceholder": "Search INV number or reason…",
+            "effectGoodsBack": "Items go back to stock.",
+            "goodsTotal": "Goods"
         },
         "handover": {
             "subtitle": "Mark what came back. Late fees are worked out for you.",
@@ -5143,13 +5147,16 @@
             "priceChangedBody": "Catalog prices changed on the server. Review and confirm the new total:",
             "reviewCart": "Review cart",
             "confirmAndSell": "Confirm & sell",
-            "clearRentalFirst": "Clear rental items before adding hardware sales",
-            "clearSalesFirst": "Clear hardware sales before adding rental items",
             "scannedAdded": "Added {{name}}",
             "saleCompletedToast": "Sale completed",
             "saleCompleted": "Sale Completed",
             "itemsLabel": "Items",
-            "totalQtyShort": "Total qty: {{qty}}"
+            "totalQtyShort": "Total qty: {{qty}}",
+            "groupRent": "Rent",
+            "groupItems": "Items",
+            "rentNeedsCustomer": "Choose a customer to rent equipment",
+            "itemsPlusDeposit": "Items + deposit",
+            "dispatchAndPrint": "Dispatch & print"
         }
     }
 }

@@ -846,7 +846,9 @@
             "mixedChip": "මිශ්‍ර",
             "billKindFilter": "බිල් වර්ගය",
             "colItem": "භාණ්ඩය",
-            "colPrice": "මිල"
+            "colPrice": "මිල",
+            "itemsSoldCount_one": "භාණ්ඩ {{count}}ක් විකුණා ඇත",
+            "itemsSoldCount_other": "භාණ්ඩ {{count}}ක් විකුණා ඇත"
         },
         "title": "ඉන්වොයිස්",
         "addInvoice": "ඉන්වොයිසයක් සාදන්න",
@@ -1283,7 +1285,9 @@
             "deletedOn": "මැකූ දිනය",
             "flagCashier": "අයකැමියා මැකූ",
             "flaggedOnly": "අයකැමියන් මැකූ ඒවා පමණක් පෙන්වන්න",
-            "searchPlaceholder": "INV අංකය හෝ හේතුව සොයන්න…"
+            "searchPlaceholder": "INV අංකය හෝ හේතුව සොයන්න…",
+            "effectGoodsBack": "භාණ්ඩ නැවත තොගයට එකතු වේ.",
+            "goodsTotal": "භාණ්ඩ වටිනාකම"
         },
         "handover": {
             "subtitle": "ආපසු ලැබුණු දේ සලකුණු කරන්න. ප්‍රමාද ගාස්තු ස්වයංක්‍රීයව ගණනය වේ.",
@@ -5143,13 +5147,16 @@
             "priceChangedBody": "සේවාදායකයේ මිල වෙනස් වී ඇත. නව මිල පරීක්ෂා කර තහවුරු කරන්න:",
             "reviewCart": "කරත්තය බලන්න",
             "confirmAndSell": "තහවුරු කර විකුණන්න",
-            "clearRentalFirst": "විකුණුම් එක් කිරීමට පෙර කුලී භාණ්ඩ ඉවත් කරන්න",
-            "clearSalesFirst": "කුලී භාණ්ඩ එක් කිරීමට පෙර විකුණුම් ඉවත් කරන්න",
             "scannedAdded": "{{name}} එක් කළා",
             "saleCompletedToast": "විකුණුම සම්පූර්ණයි",
             "saleCompleted": "විකුණුම සම්පූර්ණයි",
             "itemsLabel": "භාණ්ඩ",
-            "totalQtyShort": "මුළු ප්‍රමාණය: {{qty}}"
+            "totalQtyShort": "මුළු ප්‍රමාණය: {{qty}}",
+            "groupRent": "කුලී",
+            "groupItems": "භාණ්ඩ",
+            "rentNeedsCustomer": "උපකරණ කුලියට දීමට පාරිභෝගිකයෙකු තෝරන්න",
+            "itemsPlusDeposit": "භාණ්ඩ + තැන්පතුව",
+            "dispatchAndPrint": "යවා මුද්‍රණය කරන්න"
         }
     }
 }
