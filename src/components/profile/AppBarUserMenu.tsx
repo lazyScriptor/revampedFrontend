@@ -17,6 +17,9 @@ import TuneIcon from "@mui/icons-material/Tune";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LanguageIcon from "@mui/icons-material/Language";
 import CheckIcon from "@mui/icons-material/Check";
+import DensitySmallIcon from "@mui/icons-material/DensitySmall";
+import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
+import { useDensity } from "@/features/preferences/useDensity";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -36,6 +39,8 @@ export function AppBarUserMenu() {
   const logout = useAuthStore((s) => s.logout);
   const { t, i18n } = useTranslation();
 
+  const retail = useRetailEnabled();
+  const { density, setDensity } = useDensity();
   const [open, setOpen] = useState(false);
   const [langAnchor, setLangAnchor] = useState<null | HTMLElement>(null);
   const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -164,6 +169,24 @@ export function AppBarUserMenu() {
             sx={{ height: 20, fontWeight: 700, fontSize: "0.66rem" }}
           />
         </MenuItem>
+        {retail && (
+          <MenuItem
+            onClick={() => setDensity(density === "compact" ? "comfortable" : "compact")}
+            sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: "auto !important" }}>
+                <DensitySmallIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("density.title")}</ListItemText>
+            </Box>
+            <Chip
+              label={t(density === "compact" ? "density.compact" : "density.comfortable")}
+              size="small"
+              sx={{ height: 20, fontWeight: 700, fontSize: "0.66rem" }}
+            />
+          </MenuItem>
+        )}
         <Menu
           anchorEl={langAnchor}
           open={Boolean(langAnchor)}
