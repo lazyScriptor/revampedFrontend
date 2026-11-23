@@ -28,7 +28,7 @@ import i18n from "@/i18n";
 import { ImageHoverPreview } from "@/features/equipment/components/ImageHoverPreview";
 import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
 import { PosRetailLedgerHost } from "@/features/retail/pos/PosRetailLedgerHost";
-import { selectSaleLines, usePosCartStore } from "../store/posCartStore";
+import { usePosCartStore } from "../store/posCartStore";
 
 // ─── CartItem and calculateLineMath ───────────────────────────────────────────
 // `track_overdue` controls whether late-fee tracking applies to this line.
@@ -128,10 +128,8 @@ function useRentalLedgerController({
   cartItems,
   setCartItems,
   showToast,
-  canAddRental,
   onCustomEnter,
 }: PosLedgerPanelProps & {
-  canAddRental?: () => boolean;
   onCustomEnter?: () => boolean;
 }) {
   const { t } = useTranslation();
@@ -153,7 +151,6 @@ function useRentalLedgerController({
   // and the search text is kept so "drill" → three drills works without retyping.
   const handleAddEquipment = (equipment: CatalogEquipment) => {
     if (!equipment) return;
-    if (canAddRental && !canAddRental()) return;
     if (equipment.available_qty <= 0) {
       showToast(t("invoices.PosLedgerPanel.thisItemIsCurrentlyOut"), "error");
       return;
@@ -199,6 +196,17 @@ function useRentalLedgerController({
       pricing_mode: isDaily ? "daily" : "tiered",
       track_overdue: false,
     };
+    // Walk-in can't rent: hold the machine and ask for a named customer. It is added once one is
+    // picked (see setSelectedCustomer in the cart store); cancelling the prompt drops it.
+    if (usePosCartStore.getState().selectedCustomer?.is_walk_in) {
+      const store = usePosCartStore.getState();
+      if (store.pendingRental?.equipment_id === equipment.equipment_id && !equipment.is_bulk_item) {
+        showToast(t("invoices.PosLedgerPanel.serializedItemAlreadyInOrder"), "error");
+        return;
+      }
+      store.holdRentalForCustomer(newItem);
+      return;
+    }
     setCartItems((prev) => [...prev, newItem]);
   };
 
@@ -277,105 +285,7 @@ function useRentalLedgerController({
   const cartSubtotal = cartItems.reduce((t, i) => t + calculateLineMath(i).lineCost, 0);
   const cartQtyById = new Map(cartItems.map((i) => [i.equipment_id, i.borrow_quantity]));
 
-  const renderRentalCartContent = () => (
-    <>
-      {/* ── Cart summary strip ── */}
-      {cartItems.length > 0 && (
-        <Box
-          sx={{
-            mx: { xs: 1.5, sm: 2.5 },
-            mb: 1.5,
-            px: 2,
-            py: 1,
-            borderRadius: 2,
-            bgcolor: "#eff6ff",
-            border: "1px solid #bfdbfe",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "flex", alignItems: "center", gap: 0.75, fontVariantNumeric: "tabular-nums" }}>
-            {t("invoices.PosLedgerPanel.itemsInOrder", { count: cartItems.length })}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 900,
-              color: "primary.dark",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            Rs. {cartSubtotal.toLocaleString()}
-          </Typography>
-        </Box>
-      )}
-
-      {/* ── Cart Items ── */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          overflowY: "auto",
-          px: { xs: 1.5, sm: 2.5 },
-          pb: { xs: 2, sm: 2.5 },
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          "&::-webkit-scrollbar": { width: "5px" },
-          "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "10px" },
-        }}
-      >
-        {cartItems.length === 0 ? (
-          <Box
-            sx={{
-              height: "100%",
-              minHeight: 240,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px dashed #cbd5e1",
-              borderRadius: 3,
-              p: 3,
-              color: "#64748b",
-              gap: 1.5,
-              textAlign: "center",
-            }}
-          >
-            <Box
-              sx={{
-                width: 52,
-                height: 52,
-                borderRadius: "50%",
-                bgcolor: "#f1f5f9",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#94a3b8",
-                mb: 0.5,
-              }}
-            >
-              <ShoppingCartCheckoutIcon sx={{ fontSize: 28 }} />
-            </Box>
-            <Typography variant="body1" sx={{ fontWeight: 800, color: "#1e293b" }}>
-              {t("invoices.PosLedgerPanel.orderManifestIsEmpty")}
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 240, lineHeight: 1.4 }}>
-              {t("invoices.PosLedgerPanel.searchAndAddEquipmentItems")}
-            </Typography>
-            <Button
-              variant="contained"
-              disableElevation
-              startIcon={<GridViewRoundedIcon />}
-              onClick={() => setCatalogOpen(true)}
-              sx={{ mt: 0.5, borderRadius: 3, fontWeight: 800, textTransform: "none", height: 42, px: 2.5 }}
-            >
-              {t("invoices.EquipmentCatalog.browse")}
-            </Button>
-          </Box>
-        ) : (
+  const renderRentalCards = () =>
           cartItems.map((item) => {
             const { totalDays, lineCost, calculationText } = calculateLineMath(item);
             const isDailyMode = item.pricing_mode === "daily";
@@ -765,7 +675,108 @@ function useRentalLedgerController({
                 </Box>
               </Paper>
             );
-          })
+          });
+
+  const renderRentalCartContent = () => (
+    <>
+      {/* ── Cart summary strip ── */}
+      {cartItems.length > 0 && (
+        <Box
+          sx={{
+            mx: { xs: 1.5, sm: 2.5 },
+            mb: 1.5,
+            px: 2,
+            py: 1,
+            borderRadius: 2,
+            bgcolor: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "flex", alignItems: "center", gap: 0.75, fontVariantNumeric: "tabular-nums" }}>
+            {t("invoices.PosLedgerPanel.itemsInOrder", { count: cartItems.length })}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 900,
+              color: "primary.dark",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            Rs. {cartSubtotal.toLocaleString()}
+          </Typography>
+        </Box>
+      )}
+
+      {/* ── Cart Items ── */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          px: { xs: 1.5, sm: 2.5 },
+          pb: { xs: 2, sm: 2.5 },
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          "&::-webkit-scrollbar": { width: "5px" },
+          "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "10px" },
+        }}
+      >
+        {cartItems.length === 0 ? (
+          <Box
+            sx={{
+              height: "100%",
+              minHeight: 240,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px dashed #cbd5e1",
+              borderRadius: 3,
+              p: 3,
+              color: "#64748b",
+              gap: 1.5,
+              textAlign: "center",
+            }}
+          >
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                bgcolor: "#f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#94a3b8",
+                mb: 0.5,
+              }}
+            >
+              <ShoppingCartCheckoutIcon sx={{ fontSize: 28 }} />
+            </Box>
+            <Typography variant="body1" sx={{ fontWeight: 800, color: "#1e293b" }}>
+              {t("invoices.PosLedgerPanel.orderManifestIsEmpty")}
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 240, lineHeight: 1.4 }}>
+              {t("invoices.PosLedgerPanel.searchAndAddEquipmentItems")}
+            </Typography>
+            <Button
+              variant="contained"
+              disableElevation
+              startIcon={<GridViewRoundedIcon />}
+              onClick={() => setCatalogOpen(true)}
+              sx={{ mt: 0.5, borderRadius: 3, fontWeight: 800, textTransform: "none", height: 42, px: 2.5 }}
+            >
+              {t("invoices.EquipmentCatalog.browse")}
+            </Button>
+          </Box>
+        ) : (
+          renderRentalCards()
         )}
       </Box>
     </>
@@ -807,6 +818,7 @@ function useRentalLedgerController({
     handleSearchSubmit,
     cartSubtotal,
     renderRentalCartContent,
+    renderRentalCards,
     renderRentalCatalog,
   };
 }
@@ -835,21 +847,12 @@ function RentalOnlyPosLedgerPanel({ cartItems, setCartItems, showToast }: PosLed
 }
 
 function RetailAwarePosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedgerPanelProps) {
-  const { t } = useTranslation();
-  const hasSaleLines = usePosCartStore((s) => selectSaleLines(s.lines).length > 0);
   const customEnterRef = useRef<() => boolean>(() => false);
 
   const state = useRentalLedgerController({
     cartItems,
     setCartItems,
     showToast,
-    canAddRental: () => {
-      if (hasSaleLines) {
-        showToast(t("retail.pos.clearSalesFirst"), "warning");
-        return false;
-      }
-      return true;
-    },
     onCustomEnter: () => customEnterRef.current(),
   });
 
@@ -877,6 +880,7 @@ function RetailAwarePosLedgerPanel({ cartItems, setCartItems, showToast }: PosLe
       rentalSubtotal={state.cartSubtotal}
       renderRentalCatalog={state.renderRentalCatalog}
       rentalCartContent={state.renderRentalCartContent()}
+      rentalCards={state.renderRentalCards()}
       showToast={showToast}
       setRegisterEnterHandler={(fn) => {
         customEnterRef.current = fn;

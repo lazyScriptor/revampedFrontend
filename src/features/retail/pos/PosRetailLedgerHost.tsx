@@ -4,6 +4,7 @@ import { useTheme } from "@mui/material/styles";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
+import ConstructionOutlinedIcon from "@mui/icons-material/ConstructionOutlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useTranslation } from "react-i18next";
 import { useUiPreference } from "@/features/preferences/useUiPreference";
@@ -34,8 +35,61 @@ interface Props {
   rentalSubtotal: number;
   renderRentalCatalog: (opts: { retailSection?: ReactNode; extraCount?: number; extraTotal?: number }) => ReactNode;
   rentalCartContent: ReactNode;
+  /** The rental line cards alone (no summary strip), used when rentals and goods share the cart. */
+  rentalCards?: ReactNode;
   showToast: (msg: string, severity?: "error" | "success" | "warning") => void;
   setRegisterEnterHandler?: (fn: () => boolean) => void;
+}
+
+function CartGroupHeader({
+  icon,
+  label,
+  count,
+  total,
+  dark,
+  testId,
+}: {
+  icon: ReactNode;
+  label: string;
+  count: number;
+  total: number;
+  dark: boolean;
+  testId: string;
+}) {
+  const tone = dark ? "#fbbf24" : "#b45309";
+  return (
+    <Box
+      data-testid={testId}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.75,
+        px: 1.5,
+        py: 0.75,
+        borderRadius: 2,
+        bgcolor: dark ? "rgba(245, 158, 11, 0.12)" : "#fffbeb",
+        border: "1px solid",
+        borderColor: dark ? "rgba(245, 158, 11, 0.35)" : "#fde68a",
+        color: tone,
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+      <Typography variant="caption" sx={{ fontWeight: 800, color: tone }}>
+        {label}
+      </Typography>
+      <Typography variant="caption" sx={{ fontWeight: 800, color: tone, fontVariantNumeric: "tabular-nums" }}>
+        {count}
+      </Typography>
+      <Box sx={{ flexGrow: 1 }} />
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: 900, color: tone, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}
+      >
+        Rs. {total.toLocaleString()}
+      </Typography>
+    </Box>
+  );
 }
 
 export function PosRetailLedgerHost({
@@ -48,6 +102,7 @@ export function PosRetailLedgerHost({
   rentalSubtotal,
   renderRentalCatalog,
   rentalCartContent,
+  rentalCards,
   showToast,
   setRegisterEnterHandler,
 }: Props) {
@@ -84,16 +139,7 @@ export function PosRetailLedgerHost({
     }
   }, [selectedCustomer?.customer_id, selectedCustomer?.price_level, showContractor, index.byId, priceLevel, applyCustomerPriceLevel]);
 
-  const guardNoRentals = () => {
-    if (rentalCount > 0) {
-      showToast(t("retail.pos.clearRentalFirst"), "warning");
-      return false;
-    }
-    return true;
-  };
-
   const handleAddProduct = (product: CatalogProduct, qty = 1, unit?: CatalogUnit | null, scannedBarcode?: string | null) => {
-    if (!guardNoRentals()) return;
     addSaleLine(
       buildSaleLineFromProduct(product, {
         unit: unit ?? null,
@@ -107,12 +153,10 @@ export function PosRetailLedgerHost({
   };
 
   const handleAddCustomLine = (line: SaleCartLine) => {
-    if (!guardNoRentals()) return;
     addSaleLine(line);
   };
 
   const openUnlisted = (prefill = "", barcode: string | null = null) => {
-    if (!guardNoRentals()) return;
     setUnlistedPrefill(prefill);
     setUnlistedBarcode(barcode);
     setUnlistedOpen(true);
@@ -232,9 +276,7 @@ export function PosRetailLedgerHost({
               size="small"
               variant="outlined"
               startIcon={<SellOutlinedIcon sx={{ fontSize: 15 }} />}
-              onClick={() => {
-                if (guardNoRentals()) setSundryOpen(true);
-              }}
+              onClick={() => setSundryOpen(true)}
               sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, minHeight: 32 }}
             >
               {t("retail.pos.sundryBtn")}
@@ -262,7 +304,48 @@ export function PosRetailLedgerHost({
           />
         )}
 
-        {saleLines.length > 0 ? (
+        {saleLines.length > 0 && rentalCount > 0 ? (
+          <Box
+            data-testid="mixed-cart"
+            sx={{
+              flexGrow: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              px: { xs: 1.5, sm: 2.5 },
+              pb: { xs: 2, sm: 2.5 },
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+            }}
+          >
+            <CartGroupHeader
+              testId="cart-group-rent"
+              icon={<ConstructionOutlinedIcon sx={{ fontSize: 15 }} />}
+              label={t("retail.pos.groupRent")}
+              count={rentalCount}
+              total={rentalSubtotal}
+              dark={dark}
+            />
+            {rentalCards}
+            <CartGroupHeader
+              testId="cart-group-items"
+              icon={<SellOutlinedIcon sx={{ fontSize: 15 }} />}
+              label={t("retail.pos.groupItems")}
+              count={saleLines.length}
+              total={saleSubtotal}
+              dark={dark}
+            />
+            {saleLines.map((line) => (
+              <SaleCartLineRow
+                key={line.cart_id}
+                line={line}
+                selectedCustomer={selectedCustomer}
+                onUpdate={(patch) => updateSaleLine(line.cart_id, patch)}
+                onRemove={() => removeSaleLine(line.cart_id)}
+              />
+            ))}
+          </Box>
+        ) : saleLines.length > 0 ? (
           <>
             <Box
               sx={{

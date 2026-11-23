@@ -7,6 +7,7 @@ import { useRetailEnabled } from "../useRetailEnabled";
 import { useRetailPermissions } from "../catalog/useRetailCatalog";
 import { useRetailSettings } from "../hooks/useRetailSettings";
 import { fetchWalkInCustomer } from "../api/pos.api";
+import { selectRentalLines, usePosCartStore } from "@/features/invoices/store/posCartStore";
 
 export const WALK_IN_KEY = ["retail", "walk-in"] as const;
 
@@ -25,35 +26,42 @@ function PosWalkInButtonInner({ onSelectCustomer, selectedCustomerId }: WalkInBu
     staleTime: Infinity,
   });
 
+  // D2: the walk-in can't rent. While machines are in the cart the button is off (F8 too).
+  const hasMachines = usePosCartStore((s) => selectRentalLines(s.lines).length > 0);
+
   const pickWalkIn = async () => {
+    if (hasMachines) return;
     const cust = q.data ?? (await q.refetch()).data;
     if (cust) onSelectCustomer(cust);
   };
 
-  useShortcut("walk-in", () => void pickWalkIn(), canSell);
+  useShortcut("walk-in", () => void pickWalkIn(), canSell && !hasMachines);
 
   if (!canSell) return null;
   const active = Boolean(q.data && selectedCustomerId === q.data.customer_id);
 
   return (
-    <Tooltip title={`${t("retail.pos.walkIn")} (${formatCombo("F8")})`}>
-      <Button
-        variant={active ? "contained" : "outlined"}
-        size="small"
-        startIcon={<StorefrontOutlinedIcon fontSize="small" />}
-        onClick={() => void pickWalkIn()}
-        data-testid="walk-in-btn"
-        sx={{
-          minHeight: 40,
-          flexShrink: 0,
-          textTransform: "none",
-          fontWeight: 700,
-          borderRadius: 2,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {t("retail.pos.walkIn")}
-      </Button>
+    <Tooltip title={hasMachines ? t("retail.pos.rentNeedsCustomer") : `${t("retail.pos.walkIn")} (${formatCombo("F8")})`}>
+      <span>
+        <Button
+          variant={active ? "contained" : "outlined"}
+          size="small"
+          startIcon={<StorefrontOutlinedIcon fontSize="small" />}
+          onClick={() => void pickWalkIn()}
+          disabled={hasMachines}
+          data-testid="walk-in-btn"
+          sx={{
+            minHeight: 40,
+            flexShrink: 0,
+            textTransform: "none",
+            fontWeight: 700,
+            borderRadius: 2,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {t("retail.pos.walkIn")}
+        </Button>
+      </span>
     </Tooltip>
   );
 }
