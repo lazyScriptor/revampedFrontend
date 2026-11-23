@@ -65,8 +65,9 @@ export const normalizeProduct = (p: any): CatalogProduct => ({
   reorder_level: numOrNull(p.reorder_level),
   warranty_months: numOrNull(p.warranty_months),
   is_active: p.is_active === undefined ? true : !!p.is_active,
-  units: asArray(p.units).map(normalizeUnit),
-  barcodes: asArray(p.barcodes).map(normalizeBarcode),
+  // The backend's Sequelize includes are named Units / Barcodes.
+  units: asArray(p.units ?? p.Units).map(normalizeUnit),
+  barcodes: asArray(p.barcodes ?? p.Barcodes).map(normalizeBarcode),
 });
 
 export const normalizeCategory = (c: any): RetailCategory => ({
@@ -74,7 +75,7 @@ export const normalizeCategory = (c: any): RetailCategory => ({
   category_id: Number(c.category_id ?? c.id),
   parent_id: c.parent_id ?? null,
   attributes: (parseJson(c.attributes) as RetailCategory["attributes"]) ?? null,
-  item_count: c.item_count ?? c.count ?? c.items_count,
+  item_count: c.item_count ?? c.product_count ?? c.count ?? c.items_count,
   children: c.children ? asArray(c.children).map(normalizeCategory) : undefined,
 });
 
@@ -117,9 +118,9 @@ export const fetchProduct = async (id: number): Promise<ProductDetail> => {
   const p = d.product ?? d;
   return {
     ...normalizeProduct(p),
-    family: p.family ?? d.family ?? null,
+    family: p.family ?? p.RetailFamily ?? d.family ?? null,
     category_path: p.category_path ?? d.category_path ?? [],
-    brand: p.brand ?? d.brand ?? null,
+    brand: p.brand ?? p.RetailBrand ?? d.brand ?? null,
     stock: p.stock ?? d.stock ?? null,
   };
 };
@@ -210,7 +211,8 @@ const normalizeGroups = (list: any[]): FinderGroup[] =>
     family: {
       id: g.family?.id ?? g.family?.family_id ?? null,
       name: g.family?.name ?? "",
-      brand: g.family?.brand ?? g.family?.brand_name ?? null,
+      // The backend sends the brand as an object ({brand_id, name}); the finder shows its name.
+      brand: (typeof g.family?.brand === "object" ? g.family?.brand?.name : g.family?.brand) ?? g.family?.brand_name ?? null,
       category_path: g.family?.category_path ?? null,
     },
     variants: asArray(g.variants).map((v: any) => ({

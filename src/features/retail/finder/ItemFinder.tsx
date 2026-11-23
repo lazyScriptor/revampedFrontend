@@ -161,8 +161,9 @@ export function ItemFinder({ onPick, mode = "pick", allowCreate = true, initialS
       // 409: the barcode is already on another item; the server names it.
       const other = err?.response?.data?.product_name ?? err?.response?.data?.data?.name;
       setError(
-        err?.response?.status === 409
-          ? t("retail.finder.barcodeTaken", { name: other ?? errorMessage(err, "") })
+        // The backend's 409 message already names the other item; use it when no name field is sent.
+        err?.response?.status === 409 && other
+          ? t("retail.finder.barcodeTaken", { name: other })
           : errorMessage(err, t("retail.finder.barcodeFailed")),
       );
     } finally {

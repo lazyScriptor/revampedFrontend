@@ -65,7 +65,7 @@ function ItemCardOverlay({ productId }: Props) {
       toast.showSuccess(t("retail.finder.barcodeSaved", { name: product?.name ?? "" }));
     } catch (err: any) {
       const other = err?.response?.data?.product_name ?? err?.response?.data?.data?.name;
-      setMessage(err?.response?.status === 409 ? t("retail.finder.barcodeTaken", { name: other ?? errorMessage(err, "") }) : errorMessage(err, t("retail.finder.barcodeFailed")));
+      setMessage(err?.response?.status === 409 && other ? t("retail.finder.barcodeTaken", { name: other }) : errorMessage(err, t("retail.finder.barcodeFailed")));
     }
   };
 
