@@ -67,7 +67,9 @@ import {
   postSaleInvoice,
   type PriceChangeItem,
 } from "@/features/retail/api/pos.api";
-import { buildSaleInvoicePayload, round2 } from "@/features/retail/pos/posPricing";
+import { buildMixedInvoicePayload, buildSaleInvoicePayload, round2 } from "@/features/retail/pos/posPricing";
+import { useBillDiscountGate } from "@/features/retail/pos/useBillDiscountGate";
+import { mixedCartTotals } from "@/features/invoices/lib/mixedBill";
 import type { SaleSubmitParams } from "@/features/retail/pos/SaleCheckoutSection";
 import { PriceChangedDialog } from "@/features/retail/pos/PriceChangedDialog";
 
@@ -156,6 +158,9 @@ export default function InvoicesRoute() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [priceChanges, setPriceChanges] = useState<PriceChangeItem[] | null>(null);
   const [pendingSaleParams, setPendingSaleParams] = useState<SaleSubmitParams | null>(null);
+  // A mixed bill waiting for the cashier to confirm new prices; holds whether to print afterwards.
+  const [pendingMixedPrint, setPendingMixedPrint] = useState<boolean | null>(null);
+  const customerPrompt = usePosCartStore((s) => s.customerPrompt);
 
   // ── Thermal Bill Print States ──────────────────────────────────────────────────
   const [lastDispatchedInvoice, setLastDispatchedInvoice] = useState<any | null>(null);
@@ -180,12 +185,40 @@ export default function InvoicesRoute() {
     setActiveMobilePane(0);
   }, [posMode]);
 
+  // A machine is waiting for a named customer: show the customer pane on phones.
+  useEffect(() => {
+    if (isMobile && posMode === "dispatch" && customerPrompt) setActiveMobilePane(0);
+  }, [customerPrompt, isMobile, posMode]);
+
   // ── Helpers ───────────────────────────────────────────────────────────────────
   const showToast = (message: string, severity: "error" | "success" | "warning" = "error") => {
     setToast({ open: true, message, severity });
   };
 
+  // The lines of a bill as the receipt wants them, before the server's own copy comes back.
+  const rentalLinesForReceipt = (items: typeof cartItems) =>
+    items.map((item, idx) => {
+      const math = calculateLineMath(item);
+      return {
+        line_id: idx + 1,
+        equipment_id: item.equipment_id,
+        Equipment: {
+          equipment_name: item.equipment_name,
+          is_bulk_item: item.is_bulk_item,
+        },
+        borrow_quantity: item.borrow_quantity,
+        borrow_date: item.borrow_date,
+        expected_return_date: item.expected_return_date,
+        locked_base_price: item.locked_base_price,
+        locked_minimum_days: item.locked_minimum_days,
+        locked_extra_daily_rate: item.locked_extra_daily_rate,
+        line_total_amount: math.lineCost,
+        line_status: "Active",
+      };
+    });
+
   const executeDispatch = async (shouldAutoPrint = false) => {
+    if (isMixedCart) return executeMixedDispatch(shouldAutoPrint);
     setIsSubmitting(true);
     try {
       const response = await api.post("/invoices", {
@@ -212,25 +245,7 @@ export default function InvoicesRoute() {
         status: "Active",
         Customer: selectedCustomer,
         OnBehalfOfCustomer: onBehalfOfCustomer,
-        InvoiceLines: cartItems.map((item, idx) => {
-          const math = calculateLineMath(item);
-          return {
-            line_id: idx + 1,
-            equipment_id: item.equipment_id,
-            Equipment: {
-              equipment_name: item.equipment_name,
-              is_bulk_item: item.is_bulk_item,
-            },
-            borrow_quantity: item.borrow_quantity,
-            borrow_date: item.borrow_date,
-            expected_return_date: item.expected_return_date,
-            locked_base_price: item.locked_base_price,
-            locked_minimum_days: item.locked_minimum_days,
-            locked_extra_daily_rate: item.locked_extra_daily_rate,
-            line_total_amount: math.lineCost,
-            line_status: "Active",
-          };
-        }),
+        InvoiceLines: rentalLinesForReceipt(cartItems),
         Payments:
           fees.advance > 0
             ? [
@@ -286,10 +301,158 @@ export default function InvoicesRoute() {
 
   const subTotal = useMemo(() => selectRentalSubtotal(lines), [lines]);
   const saleSubTotal = useMemo(() => selectSaleSubtotal(lines), [lines]);
-  const activeSubTotal = cartItems.length === 0 && saleLines.length > 0 ? saleSubTotal : subTotal;
+  const isMixedCart = retailEnabled && cartItems.length > 0 && saleLines.length > 0;
+  const activeSubTotal =
+    cartItems.length === 0 && saleLines.length > 0 ? saleSubTotal : isMixedCart ? subTotal + saleSubTotal : subTotal;
   const activeItemCount = cartItems.length + saleLines.length;
-  const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
+  const grandTotal = isMixedCart
+    ? mixedCartTotals(subTotal, saleSubTotal, fees).total
+    : Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
+  const discountGate = useBillDiscountGate(Number(fees.discount) || 0, subTotal + saleSubTotal + (Number(fees.transport) || 0));
+
+  const requestDispatch = async () => {
+    if (isMixedCart && !(await discountGate.ensureApproved())) return;
+    setIsConfirmDispatchOpen(true);
+  };
+
+  // ── Mixed bill (machines + goods): one POST, one transaction, one balance ───────────
+  const executeMixedDispatch = async (shouldAutoPrint = false) => {
+    const st = usePosCartStore.getState();
+    const curRentals = selectRentalLines(st.lines).map(toRentalPayload);
+    const curSales = selectSaleLines(st.lines);
+    if (!st.selectedCustomer || curRentals.length === 0 || curSales.length === 0) return;
+
+    const rentSub = selectRentalSubtotal(st.lines);
+    const itemsSub = selectSaleSubtotal(st.lines);
+    const totals = mixedCartTotals(rentSub, itemsSub, st.fees);
+    const method = st.fees.advance_payment_method || "Cash";
+    const issuedIso = st.billDate ? new Date(st.billDate).toISOString() : null;
+
+    setIsSubmitting(true);
+    try {
+      const payload = buildMixedInvoicePayload({
+        customerId: st.selectedCustomer.customer_id,
+        onBehalfCustomerId: st.onBehalfOfCustomer?.customer_id ?? null,
+        rentalItems: curRentals,
+        saleLines: curSales,
+        fees: st.fees,
+        paymentMethod: method,
+        jobSite: st.jobSite,
+        customerPo: st.customerPo,
+        issuedDateIso: issuedIso,
+        billDiscountApprovalToken: st.billDiscountApprovalToken,
+      });
+      const serverInv = await postSaleInvoice(payload, st.idempotencyKey);
+
+      const hydratedInvoice = {
+        ...serverInv,
+        invoice_id: serverInv?.invoice_id || Math.floor(1000 + Math.random() * 9000),
+        bill_kind: "mixed",
+        issued_date: serverInv?.issued_date || issuedIso || serverInv?.createdAt || new Date().toISOString(),
+        sub_total: serverInv?.sub_total ?? round2(rentSub + itemsSub),
+        sale_total: serverInv?.sale_total ?? itemsSub,
+        total_amount: serverInv?.total_amount ?? totals.total,
+        transport_fee: serverInv?.transport_fee ?? totals.transport,
+        discount_amount: serverInv?.discount_amount ?? totals.discount,
+        advance_paid: serverInv?.advance_paid ?? st.fees.advance,
+        id_card_status: serverInv?.id_card_status ?? 1,
+        job_site: serverInv?.job_site ?? (st.jobSite.trim() || null),
+        customer_po: serverInv?.customer_po ?? (st.customerPo.trim() || null),
+        status: serverInv?.status || "Active",
+        Customer: serverInv?.Customer || st.selectedCustomer,
+        OnBehalfOfCustomer: serverInv?.OnBehalfOfCustomer ?? st.onBehalfOfCustomer,
+        InvoiceLines: serverInv?.InvoiceLines || rentalLinesForReceipt(curRentals),
+        SaleLines:
+          serverInv?.SaleLines ||
+          serverInv?.sale_lines ||
+          curSales.map((l, idx) => ({
+            sale_line_id: idx + 1,
+            product_id: l.product_id,
+            line_kind: l.line_kind,
+            description: l.description,
+            unit_label: l.unit_label,
+            unit_factor: l.unit_factor,
+            qty: l.qty,
+            base_qty: l.base_qty,
+            unit_price: l.unit_price,
+            line_discount: l.line_discount,
+            line_total: l.line_total,
+            serials: l.serials,
+            status: "sold",
+          })),
+        Payments:
+          serverInv?.Payments ||
+          (st.fees.advance > 0
+            ? [{ payment_amount: st.fees.advance, method, payment_date: issuedIso || new Date().toISOString() }]
+            : []),
+      };
+
+      refreshInvoiceData();
+      invalidateStock(queryClient);
+      invalidateCatalog(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["approvals", "desk"] });
+
+      setPriceChanges(null);
+      setPendingMixedPrint(null);
+      setLastDispatchedInvoice(hydratedInvoice);
+      showToast(t("pages.Invoices.invoiceCreatedSuccessfully"), "success");
+      setIsConfirmDispatchOpen(false);
+
+      if (shouldAutoPrint) {
+        setTimeout(() => {
+          const cust = hydratedInvoice.Customer || st.selectedCustomer;
+          const custName =
+            cust?.company_name || `${cust?.first_name || ""} ${cust?.last_name || ""}`.trim() || "Walk-in Customer";
+          const paid = hydratedInvoice.Payments?.reduce((sum: number, p: any) => sum + Number(p.payment_amount || 0), 0) || 0;
+          handlePrintInvoice("pos-dispatch-silent-receipt", {
+            invoiceId: hydratedInvoice.invoice_id,
+            docNumber: `INV-${hydratedInvoice.invoice_id}`,
+            docType: "DISPATCH",
+            customerName: custName,
+            customerPhone: cust?.phone_number,
+            totalItems: curRentals.length + curSales.length,
+            totalMachines: curRentals.reduce((acc, it) => acc + (it.borrow_quantity || 1), 0),
+            subtotal: Number(hydratedInvoice.sub_total || 0),
+            transportFee: Number(hydratedInvoice.transport_fee || 0),
+            discountAmount: Number(hydratedInvoice.discount_amount || 0),
+            grandTotal: Number(hydratedInvoice.total_amount || 0),
+            totalPaid: paid,
+            balanceDue: Math.max(0, Number(hydratedInvoice.total_amount || 0) - paid),
+            billSnapshot: hydratedInvoice,
+          });
+        }, 350);
+      }
+
+      setIsPostDispatchOpen(true);
+      resetAll();
+    } catch (error: any) {
+      // Nothing is lost on any failure: the rentals and the goods stay in the cart (resetAll only runs on success).
+      const parsed = parseSaleCheckoutError(error);
+      if (parsed.kind === "price_changed") {
+        const enriched = parsed.changes.map((c) => {
+          const hit = curSales.find((l) => l.product_id === c.product_id);
+          return { ...c, description: c.description || hit?.description };
+        });
+        st.applyServerPriceChanges(enriched);
+        setIsConfirmDispatchOpen(false);
+        setPendingMixedPrint(shouldAutoPrint);
+        setPriceChanges(enriched);
+      } else if (parsed.kind === "out_of_stock") {
+        st.markLinesOutOfStock(parsed.items);
+        setIsConfirmDispatchOpen(false);
+        showToast(parsed.message, "warning");
+      } else if (parsed.kind === "needs_customer") {
+        setIsConfirmDispatchOpen(false);
+        usePosCartStore.setState({ customerPrompt: true });
+        showToast(parsed.message || t("retail.pos.rentNeedsCustomer"), "warning");
+      } else {
+        showToast(parsed.message || t("pages.Invoices.failedToCreateInvoice"), "error");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const executeSaleCheckout = async (params: SaleSubmitParams) => {
     const st = usePosCartStore.getState();
@@ -626,7 +789,7 @@ export default function InvoicesRoute() {
           setFees={setFees}
           isCollapsed={!isTerminalOpen}
           onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
-          onConfirmDispatch={() => setIsConfirmDispatchOpen(true)}
+          onConfirmDispatch={() => void requestDispatch()}
           onConfirmSale={(params) => void executeSaleCheckout(params)}
           onPrintEstimate={() => setIsEstimatePrintOpen(true)}
           isSubmitting={isSubmitting}
@@ -1035,6 +1198,26 @@ export default function InvoicesRoute() {
             })}
           </Box>
 
+          {isMixedCart && (
+            <>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
+                {t("retail.pos.groupItems")} ({saleLines.length})
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mb: 2.5, maxHeight: 140, overflowY: "auto" }}>
+                {saleLines.map((l) => (
+                  <Box key={l.cart_id} sx={{ display: "flex", justifyContent: "space-between", gap: 1, p: 1, border: "1px solid #e2e8f0", borderRadius: 2, bgcolor: "white" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                      {l.description}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 800, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                      {l.qty} × Rs. {l.line_total.toLocaleString()}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </>
+          )}
+
           {/* Financial breakdown */}
           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>
             {t("pages.Invoices.financialSummary")}
@@ -1049,12 +1232,29 @@ export default function InvoicesRoute() {
               gap: 1,
             }}
           >
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("common.subtotal")}</Typography>
-              <Typography variant="body2" sx={{ color: "#cbd5e1", fontWeight: 700 }}>
-                Rs. {subTotal.toLocaleString()}
-              </Typography>
-            </Box>
+            {isMixedCart ? (
+              <>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("retail.pos.groupRent")}</Typography>
+                  <Typography variant="body2" sx={{ color: "#cbd5e1", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                    Rs. {subTotal.toLocaleString()}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("retail.pos.groupItems")}</Typography>
+                  <Typography variant="body2" sx={{ color: "#cbd5e1", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                    Rs. {saleSubTotal.toLocaleString()}
+                  </Typography>
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("common.subtotal")}</Typography>
+                <Typography variant="body2" sx={{ color: "#cbd5e1", fontWeight: 700 }}>
+                  Rs. {subTotal.toLocaleString()}
+                </Typography>
+              </Box>
+            )}
             {fees.transport > 0 && (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("invoices.transport")}</Typography>
@@ -1183,6 +1383,14 @@ export default function InvoicesRoute() {
                   : t("pages.Invoices.machinesCount", { count: lastDispatchedInvoice?.InvoiceLines?.reduce((sum: number, l: any) => sum + (l.borrow_quantity || 1), 0) || 0 })}
               </Typography>
             </Box>
+            {lastDispatchedInvoice?.bill_kind === "mixed" && (
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                <Typography variant="caption" sx={{ color: "#64748b" }}>{t("retail.pos.itemsLabel")}</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a", fontVariantNumeric: "tabular-nums" }}>
+                  {t("invoices.lineItem", { count: lastDispatchedInvoice?.SaleLines?.length || 0 })}
+                </Typography>
+              </Box>
+            )}
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography variant="caption" sx={{ color: "#64748b" }}>{t("pages.Invoices.netTotal")}</Typography>
               <Typography variant="caption" sx={{ fontWeight: 800, color: "#16a34a" }}>
@@ -1291,11 +1499,15 @@ export default function InvoicesRoute() {
           onClose={() => {
             setPriceChanges(null);
             setPendingSaleParams(null);
+            setPendingMixedPrint(null);
           }}
           onConfirm={() => {
             const p = pendingSaleParams;
+            const mixedPrint = pendingMixedPrint;
             setPriceChanges(null);
-            if (p) void executeSaleCheckout(p);
+            setPendingMixedPrint(null);
+            if (mixedPrint !== null) void executeMixedDispatch(mixedPrint);
+            else if (p) void executeSaleCheckout(p);
           }}
         />
       )}
