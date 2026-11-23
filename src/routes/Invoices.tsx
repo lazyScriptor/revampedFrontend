@@ -36,7 +36,6 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { PosCustomerPanel } from "@/features/invoices/components/PosCustomerPanel";
 import {
   PosLedgerPanel,
-  CartItem,
   calculateLineMath,
 } from "@/features/invoices/components/PosLedgerPanel";
 import { PosCheckoutPanel } from "@/features/invoices/components/PosCheckoutPanel";
@@ -50,7 +49,13 @@ import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
 import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintDialog";
 import { api } from "@/lib/api";
 import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
-import { addDaysLocal, formatDateTime } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
+import {
+  usePosCartStore,
+  selectRentalLines,
+  selectRentalSubtotal,
+  toRentalPayload,
+} from "@/features/invoices/store/posCartStore";
 import { POS_CATALOG_KEY } from "@/features/invoices/hooks/usePosEquipmentCatalog";
 
 export default function InvoicesRoute() {
@@ -90,30 +95,26 @@ export default function InvoicesRoute() {
   };
 
   // ── Dispatch State ────────────────────────────────────────────────────────────
-  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
-  const [onBehalfOfCustomer, setOnBehalfOfCustomer] = useState<any | null>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [fees, setFees] = useState({ transport: 0, discount: 0, advance: 0 });
+  // Cart state lives in a Zustand store (features/invoices/store/posCartStore.ts).
+  const selectedCustomer = usePosCartStore((s) => s.selectedCustomer);
+  const setSelectedCustomer = usePosCartStore((s) => s.setSelectedCustomer);
+  const onBehalfOfCustomer = usePosCartStore((s) => s.onBehalfOfCustomer);
+  const setOnBehalfOfCustomer = usePosCartStore((s) => s.setOnBehalfOfCustomer);
+  const lines = usePosCartStore((s) => s.lines);
+  // Rental lines without the internal `kind` tag, i.e. exactly the old CartItem[].
+  const cartItems = useMemo(() => selectRentalLines(lines).map(toRentalPayload), [lines]);
+  const setCartItems = usePosCartStore((s) => s.setRentalLines);
+  const fees = usePosCartStore((s) => s.fees);
+  const setFees = usePosCartStore((s) => s.setFees);
   // Optional bill date/time (local "YYYY-MM-DDTHH:mm"); null means the bill is dated now.
-  const [billDate, setBillDate] = useState<string | null>(null);
+  const billDate = usePosCartStore((s) => s.billDate);
+  const setBillDate = usePosCartStore((s) => s.setBillDate);
   const billDateIso = billDate ? new Date(billDate).toISOString() : null;
-
-  // Moves every line's out date to `day`, keeping each line's rental length.
-  const applyBillDateToLines = (day: string) => {
-    setCartItems((items) =>
-      items.map((item) => {
-        const shift = Math.round(
-          (new Date(`${day}T00:00:00`).getTime() - new Date(`${item.borrow_date}T00:00:00`).getTime()) / 86_400_000,
-        );
-        if (!shift) return item;
-        return {
-          ...item,
-          borrow_date: day,
-          expected_return_date: addDaysLocal(item.expected_return_date, shift),
-        };
-      }),
-    );
-  };
+  const applyBillDateToLines = usePosCartStore((s) => s.applyBillDateToLines);
+  const clearCart = usePosCartStore((s) => s.clearCart);
+  const resetAll = usePosCartStore((s) => s.resetAll);
+  // The cart used to be component state, so leaving the POS emptied it. Keep that.
+  useEffect(() => () => usePosCartStore.getState().resetAll(), []);
 
   // ── Manage State ──────────────────────────────────────────────────────────────
   const [selectedManageInvoiceId, setSelectedManageInvoiceId] = useState<number | null>(null);
@@ -258,11 +259,7 @@ export default function InvoicesRoute() {
       setIsPostDispatchOpen(true);
 
       // Reset cart and customer selection
-      setSelectedCustomer(null);
-      setOnBehalfOfCustomer(null);
-      setCartItems([]);
-      setFees({ transport: 0, discount: 0, advance: 0 });
-      setBillDate(null);
+      resetAll();
     } catch (error: any) {
       showToast(error.response?.data?.message || t("pages.Invoices.failedToCreateInvoice"), "error");
     } finally {
@@ -270,10 +267,7 @@ export default function InvoicesRoute() {
     }
   };
 
-  const subTotal = useMemo(
-    () => cartItems.reduce((total, item) => total + calculateLineMath(item).lineCost, 0),
-    [cartItems]
-  );
+  const subTotal = useMemo(() => selectRentalSubtotal(lines), [lines]);
   const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
 
@@ -1112,9 +1106,7 @@ export default function InvoicesRoute() {
           </Button>
           <Button
             onClick={() => {
-              setCartItems([]);
-              setFees({ transport: 0, discount: 0, advance: 0 });
-              setBillDate(null);
+              clearCart();
               setIsClearCartOpen(false);
             }}
             color="error"
