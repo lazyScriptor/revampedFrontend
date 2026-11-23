@@ -29,6 +29,8 @@ export interface RetailSettings {
   namePattern?: string;
   codePrefix?: string;
   units?: string[];
+  defaultWarehouseId?: number | null;
+  booksClosedUntil?: string | null;
 }
 
 export const DEFAULT_RETAIL_SETTINGS: RetailSettings = {
