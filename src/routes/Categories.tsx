@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useCategoryList } from "@/features/equipment/hooks/useCategoryHooks";
 import { CategoryTable } from "@/features/equipment/components/CategoryTable";
+import { CategoryOrganizeDialog } from "@/features/equipment/components/CategoryOrganizeDialog";
 import { CategoryFormDrawer } from "@/features/equipment/components/CategoryFormDrawer";
 import { GearGridLoader } from "@/components/ui/GearGridLoader";
 import { ResponsiveKpiStrip } from "@/components/ui/ResponsiveKpiStrip";
@@ -13,6 +14,7 @@ import {
   Typography,
   Card,
   Alert,
+  Snackbar,
   TextField,
   InputAdornment,
   Tooltip,
@@ -42,6 +44,8 @@ export default function CategoriesRoute() {
   const theme = useTheme();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [organizeOpen, setOrganizeOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<any | null>(null);
 
   // Search state
@@ -144,6 +148,10 @@ export default function CategoriesRoute() {
             {t("equipment.subtitle")} · {t("pages.Categories.taxonomyCatalogOrganization")}
           </Typography>
         </div>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+        <Button variant="outlined" onClick={() => setOrganizeOpen(true)} sx={{ py: 1.25, px: 2.5, borderRadius: 2 }}>
+          {t("equipment.CategoryOrganize.button")}
+        </Button>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -153,6 +161,7 @@ export default function CategoriesRoute() {
         >
           {t("common.add")} {t("nav.categories")}
         </Button>
+        </Box>
       </Box>
 
       {/* KPI Cards Strip */}
@@ -317,6 +326,8 @@ export default function CategoriesRoute() {
         )}
       </Card>
 
+      <CategoryOrganizeDialog open={organizeOpen} onClose={() => setOrganizeOpen(false)} onDone={setNotice} />
+      <Snackbar open={!!notice} autoHideDuration={6000} onClose={() => setNotice(null)} message={notice ?? ""} />
       <CategoryFormDrawer
         open={isDrawerOpen}
         onClose={handleCloseDrawer}

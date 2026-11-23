@@ -345,7 +345,10 @@
             "optionalUsefulForOnboardingNew": "Optional. Useful for onboarding new staff.",
             "createACategory": "Create a category",
             "createCategory": "Create category",
-            "newCategory": "New Category"
+            "newCategory": "New Category",
+            "parentCategory": "Parent category",
+            "parentHint": "Leave empty for a top-level category such as Grinders. Pick a parent to make this a size or type under it.",
+            "noParent": "None (top level)"
         },
         "CategoryTable": {
             "categorySuccessfullyDeleted": "Category successfully deleted.",
@@ -703,6 +706,18 @@
             "addNew": "Add \"{{name}}\" as a new category",
             "nameHelp": "Type a name, like battery drill, and pick a machine. The next number, Sinhala name and price fill in.",
             "numberHelp": "Filled in automatically. You can change it."
+        },
+        "CategoryOrganize": {
+            "button": "Organize from names",
+            "title": "Organize machines into categories",
+            "intro": "Machines are grouped by name into families (Grinder) and sizes or types (4 inch, 7 inch). Nothing changes until you apply.",
+            "family": "{{family}} — {{count}} machines",
+            "loose": "{{count}} with no type",
+            "apply": "Apply",
+            "applying": "Applying…",
+            "empty": "No machines to organize.",
+            "done": "Organized: {{moved}} machines moved, {{removed}} empty old categories removed.",
+            "confirmNote": "Old categories that end up empty are deleted. Machines move to their new category."
         }
     },
     "customers": {

@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  MenuItem,
   TextField,
 } from "@mui/material";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
@@ -20,6 +21,7 @@ import {
 import {
   useCreateCategory,
   useUpdateCategory,
+  useCategoryList,
 } from "../hooks/useCategoryHooks";
 import {
   FormDialogShell,
@@ -42,6 +44,8 @@ export function CategoryFormDrawer({
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
 
+  const { data: all } = useCategoryList(1, 1000);
+  const parents = (all?.categories ?? []).filter((c) => !c.parent_id && c.category_id !== initialData?.category_id);
   const isEditing = !!initialData;
   const isPending = createMutation.isPending || updateMutation.isPending;
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +54,8 @@ export function CategoryFormDrawer({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
@@ -61,9 +67,10 @@ export function CategoryFormDrawer({
         reset({
           category_name: initialData.category_name,
           description: initialData.description || "",
+          parent_id: initialData.parent_id ?? null,
         });
       } else {
-        reset({ category_name: "", description: "" });
+        reset({ category_name: "", description: "", parent_id: null });
       }
       setError(null);
     }
@@ -149,6 +156,23 @@ export function CategoryFormDrawer({
             size="small"
           />
         </FormSection>
+
+        <TextField
+          select
+          size="small"
+          fullWidth
+          label={t("equipment.CategoryFormDrawer.parentCategory")}
+          helperText={t("equipment.CategoryFormDrawer.parentHint")}
+          value={watch("parent_id") ?? ""}
+          onChange={(e) => setValue("parent_id", e.target.value === "" ? null : Number(e.target.value), { shouldDirty: true })}
+        >
+          <MenuItem value="">{t("equipment.CategoryFormDrawer.noParent")}</MenuItem>
+          {parents.map((c) => (
+            <MenuItem key={c.category_id} value={c.category_id}>
+              {c.category_name}
+            </MenuItem>
+          ))}
+        </TextField>
 
         <FormSection
           icon={<TextSnippetOutlinedIcon />}

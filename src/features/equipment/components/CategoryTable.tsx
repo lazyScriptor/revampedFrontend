@@ -151,7 +151,7 @@ export function CategoryTable({
                 lineHeight: 1.3,
               }}
             >
-              {params.value}
+              {params.row.parent_name ? `${params.row.parent_name} › ${params.value}` : params.value}
             </Typography>
             {params.row.equipment_count !== undefined && (
               <Typography

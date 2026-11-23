@@ -49,3 +49,20 @@ export const updateCategory = async ({ id, data }: { id: number; data: Partial<C
 export const deleteCategory = async (id: number): Promise<void> => {
     await api.delete(`/categories/${id}`);
 };
+
+export interface OrganizeGroup {
+  family: string;
+  machines: number;
+  direct: number;
+  types: { name: string; machines: number }[];
+}
+
+export const previewOrganize = async (): Promise<OrganizeGroup[]> => {
+  const response = await api.get('/categories/organize/preview');
+  return response.data?.groups ?? [];
+};
+
+export const applyOrganize = async (): Promise<{ families: number; moved: number; removed: number }> => {
+  const response = await api.post('/categories/organize/apply');
+  return response.data;
+};
