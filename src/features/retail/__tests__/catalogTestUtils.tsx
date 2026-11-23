@@ -22,4 +22,12 @@ export const renderCatalogUi = (ui: ReactNode) => {
   return { client, ...result };
 };
 
-export const ALL_RETAIL_PERMISSIONS = ["retail:view", "retail:product_manage", "retail:stock_receive", "retail:cost_view", "retail:sell"];
+export const ALL_RETAIL_PERMISSIONS = [
+  "retail:view",
+  "retail:product_manage",
+  "retail:stock_receive",
+  "retail:stock_adjust",
+  "retail:backdate",
+  "retail:cost_view",
+  "retail:sell",
+];
