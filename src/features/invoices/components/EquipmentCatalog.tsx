@@ -44,9 +44,10 @@ interface EquipmentSearchBarProps {
   onClose: () => void;
   loading: boolean;
   onSubmit: () => void;
+  scanAware?: boolean;
 }
 
-export function EquipmentSearchBar({ value, onChange, open, onOpen, onClose, loading, onSubmit }: EquipmentSearchBarProps) {
+export function EquipmentSearchBar({ value, onChange, open, onOpen, onClose, loading, onSubmit, scanAware }: EquipmentSearchBarProps) {
   const { t } = useTranslation();
   const k = useTokens();
 
@@ -72,7 +73,12 @@ export function EquipmentSearchBar({ value, onChange, open, onOpen, onClose, loa
         placeholder={t("invoices.PosLedgerPanel.addEquipmentByNameOr")}
         fullWidth
         slotProps={{
-          htmlInput: { "aria-label": t("invoices.PosLedgerPanel.addEquipmentByNameOr"), enterKeyHint: "search", autoComplete: "off" },
+          htmlInput: {
+            "aria-label": t("invoices.PosLedgerPanel.addEquipmentByNameOr"),
+            enterKeyHint: "search",
+            autoComplete: "off",
+            ...(scanAware ? { "data-scan": "true" } : {}),
+          },
           input: {
             startAdornment: <SearchIcon sx={{ color: k.muted, ml: 0.5, mr: 0.75, fontSize: 22 }} />,
             endAdornment: (
@@ -139,13 +145,14 @@ interface EquipmentCatalogProps {
   onDecrement: (item: CatalogEquipment) => void;
   onClose: () => void;
   onClearFilters: () => void;
+  retailSection?: React.ReactNode;
 }
 
 export function EquipmentCatalog(props: EquipmentCatalogProps) {
   const {
     items, isLoading, isFetching, isError, onRetry, hasNextPage, isFetchingNextPage, fetchNextPage,
     categories, categoryId, onCategoryChange, inStockOnly, onInStockChange, searching,
-    cartQtyById, cartCount, cartTotal, onAdd, onDecrement, onClose, onClearFilters,
+    cartQtyById, cartCount, cartTotal, onAdd, onDecrement, onClose, onClearFilters, retailSection,
   } = props;
   const { t } = useTranslation();
   const k = useTokens();
@@ -279,36 +286,45 @@ export function EquipmentCatalog(props: EquipmentCatalogProps) {
               ))}
             </Grid>
           ) : items.length === 0 ? (
-            <Box sx={{ minHeight: 240, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1.5, textAlign: "center", py: 4 }}>
-              <Box
-                sx={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: "50%",
-                  bgcolor: k.dark ? "#1e293b" : "#e2e8f0",
-                  color: k.muted,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <SearchOffIcon sx={{ fontSize: 34 }} />
-              </Box>
-              <Typography sx={{ color: k.text, fontWeight: 700, fontSize: "0.95rem" }}>
-                {isError ? t("invoices.EquipmentCatalog.couldNotLoad") : t("invoices.EquipmentCatalog.noResults")}
-              </Typography>
-              {isError ? (
-                <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRetry} sx={{ borderRadius: 3, fontWeight: 700, textTransform: "none" }}>
-                  {t("common.retry")}
-                </Button>
-              ) : (
-                filtersActive && (
-                  <Button variant="outlined" startIcon={<FilterListOffIcon />} onClick={onClearFilters} sx={{ borderRadius: 3, fontWeight: 700, textTransform: "none" }}>
-                    {t("invoices.EquipmentCatalog.clearFilters")}
+            retailSection && !isError ? (
+              <>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", px: 0.5, py: 1 }}>
+                  {t("invoices.EquipmentCatalog.noResults")}
+                </Typography>
+                {retailSection}
+              </>
+            ) : (
+              <Box sx={{ minHeight: 240, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1.5, textAlign: "center", py: 4 }}>
+                <Box
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: "50%",
+                    bgcolor: k.dark ? "#1e293b" : "#e2e8f0",
+                    color: k.muted,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <SearchOffIcon sx={{ fontSize: 34 }} />
+                </Box>
+                <Typography sx={{ color: k.text, fontWeight: 700, fontSize: "0.95rem" }}>
+                  {isError ? t("invoices.EquipmentCatalog.couldNotLoad") : t("invoices.EquipmentCatalog.noResults")}
+                </Typography>
+                {isError ? (
+                  <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRetry} sx={{ borderRadius: 3, fontWeight: 700, textTransform: "none" }}>
+                    {t("common.retry")}
                   </Button>
-                )
-              )}
-            </Box>
+                ) : (
+                  filtersActive && (
+                    <Button variant="outlined" startIcon={<FilterListOffIcon />} onClick={onClearFilters} sx={{ borderRadius: 3, fontWeight: 700, textTransform: "none" }}>
+                      {t("invoices.EquipmentCatalog.clearFilters")}
+                    </Button>
+                  )
+                )}
+              </Box>
+            )
           ) : (
             <>
               <Grid>
@@ -333,6 +349,7 @@ export function EquipmentCatalog(props: EquipmentCatalogProps) {
                   )}
                 </Box>
               )}
+              {retailSection}
             </>
           )}
         </Box>
