@@ -213,7 +213,10 @@
             "sevenDayTrend": "7-day trend",
             "low": "Low",
             "medium": "Medium",
-            "high": "High"
+            "high": "High",
+            "categoryRevenue": "Revenue by Category",
+            "topEarningMachines": "Top Earning Machines",
+            "idleMachines": "Idle Machines"
         },
         "DashboardEngine": {
             "removeWidget": "Remove widget",
@@ -1763,6 +1766,32 @@
             "completeLedgerOfDispatchedActive": "Complete ledger of dispatched, active, overdue, and returned rental orders",
             "filterByStatus": "FILTER BY STATUS",
             "allInvoices": "All Invoices"
+        },
+        "Performance": {
+            "tab": "By category",
+            "title": "Equipment by category",
+            "subtitle": "Revenue, rentals and utilisation by family, size and machine. Click a row to drill down.",
+            "allCategories": "All categories",
+            "allLocations": "All locations",
+            "sortBy": "Sort by",
+            "name": "Name",
+            "revenue": "Revenue",
+            "rentals": "Rentals",
+            "utilization": "Utilisation",
+            "unitsOut": "Out now",
+            "idle": "Idle",
+            "idleMachines": "Idle machines",
+            "idleHint": "No rentals in this period",
+            "repairSpend": "Repair spend",
+            "repairHint": "{{pct}}% of revenue",
+            "payback": "Payback on cost",
+            "paybackHint": "Lifetime revenue vs purchase cost",
+            "machinesCount": "{{count}} machines",
+            "rentalsCount": "{{count}} rentals",
+            "topEarners": "Top earning machines",
+            "idleList": "Idle machines (dearest first)",
+            "noData": "Nothing to show for this period.",
+            "noIdle": "No idle machines in this period."
         }
     },
     "maintenance": {

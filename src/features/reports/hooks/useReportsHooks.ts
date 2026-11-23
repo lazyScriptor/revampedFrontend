@@ -44,6 +44,14 @@ export const useEquipmentMaintenanceByUnit = (range: ReportRange) =>
     staleTime: 30_000,
   });
 
+export const useEquipmentPerformance = (params: ReportRange & { warehouseId?: number; categoryId?: number }) =>
+  useQuery({
+    queryKey: ["report-equipment-performance", params],
+    queryFn: async () => unwrap(await api.get("/reports/equipment/performance", { params })) as import("../equipment/performance.types").EquipmentPerformance,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+
 // ─── Invoice reports ───────────────────────────────────────────────────────
 export const useInvoiceAging = () =>
   useQuery({

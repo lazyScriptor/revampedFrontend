@@ -76,3 +76,10 @@ export const saveTemplate = async (payload: {
 export const deleteTemplate = async (id: number) => {
   await api.delete(`/dashboard/templates/${id}`);
 };
+
+export const fetchEquipmentInsights = async (filters: { startDate?: string; endDate?: string; warehouseId?: number | null }) => {
+  const res: any = await api.get('/dashboard/equipment-insights', {
+    params: { startDate: filters.startDate, endDate: filters.endDate, ...(filters.warehouseId ? { warehouseId: filters.warehouseId } : {}) },
+  });
+  return (res?.data ?? res) as import('@/features/reports/equipment/performance.types').EquipmentPerformance;
+};

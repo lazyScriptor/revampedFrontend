@@ -86,3 +86,14 @@ export const useOpenInvoices = (
     placeholderData: keepPreviousData,
   });
 };
+
+/** Category revenue, top earners and idle machines for the dashboard's date range and depot. */
+export const useEquipmentInsights = () => {
+  const { startDate, endDate, warehouseId } = useDashboardStore((s) => s.globalFilters);
+  return useQuery({
+    queryKey: ['dashboard', 'equipment-insights', startDate, endDate, warehouseId],
+    queryFn: () => dashboardApi.fetchEquipmentInsights({ startDate, endDate, warehouseId }),
+    staleTime: 1000 * 60 * 5,
+    placeholderData: keepPreviousData,
+  });
+};

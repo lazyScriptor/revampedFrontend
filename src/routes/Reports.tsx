@@ -21,6 +21,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import { FeatureLocked, usePlanChecker } from "@/features/plan/usePlan";
 import AllCustomersReport from "@/features/reports/customers/AllCustomersReport";
 import OutstandingBalancesReport from "@/features/reports/customers/OutstandingBalancesReport";
+import CategoryPerformanceReport from "@/features/reports/equipment/CategoryPerformanceReport";
 import UtilizationReport from "@/features/reports/equipment/UtilizationReport";
 import MaintenanceReport from "@/features/reports/equipment/MaintenanceReport";
 import AgingReport from "@/features/reports/invoices/AgingReport";
@@ -62,6 +63,7 @@ const CATEGORIES: {
     subtitle: tk("pages.Reports.utilizationMaintenanceAndAssetPerformanc"),
     icon: <ConstructionIcon fontSize="small" />,
     reports: [
+      { key: "category", label: tk("reports.Performance.tab"), component: CategoryPerformanceReport },
       { key: "utilization", label: tk("reports.utilization"), component: UtilizationReport },
       { key: "maintenance", label: tk("reports.MaintenanceReport.maintenanceByUnit"), component: MaintenanceReport },
     ],

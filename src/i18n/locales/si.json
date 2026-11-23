@@ -213,7 +213,10 @@
             "sevenDayTrend": "දින 7 ප්‍රවණතාව",
             "low": "අඩු",
             "medium": "මධ්‍යම",
-            "high": "ඉහළ"
+            "high": "ඉහළ",
+            "categoryRevenue": "කාණ්ඩ අනුව ආදායම",
+            "topEarningMachines": "වැඩිම ආදායම් යන්ත්‍ර",
+            "idleMachines": "නිෂ්ක්‍රීය යන්ත්‍ර"
         },
         "DashboardEngine": {
             "removeWidget": "මොඩියුලය ඉවත් කරන්න",
@@ -1763,6 +1766,32 @@
             "completeLedgerOfDispatchedActive": "නිකුත් කළ, සක්‍රීය, කල් ඉකුත් වූ සහ ආපසු ලැබුණු සියලු කුලී ඇණවුම්වල සම්පූර්ණ ලෙජරය",
             "filterByStatus": "තත්ත්වය අනුව පෙරන්න",
             "allInvoices": "සියලු ඉන්වොයිස්"
+        },
+        "Performance": {
+            "tab": "කාණ්ඩ අනුව",
+            "title": "කාණ්ඩ අනුව උපකරණ",
+            "subtitle": "පවුල, ප්‍රමාණය සහ යන්ත්‍රය අනුව ආදායම, කුලී සහ උපයෝජනය. විස්තර බැලීමට පේළියක් ක්ලික් කරන්න.",
+            "allCategories": "සියලු කාණ්ඩ",
+            "allLocations": "සියලු ස්ථාන",
+            "sortBy": "පිළියෙළ කරන්න",
+            "name": "නම",
+            "revenue": "ආදායම",
+            "rentals": "කුලී",
+            "utilization": "උපයෝජනය",
+            "unitsOut": "දැන් පිටතින්",
+            "idle": "නිෂ්ක්‍රීය",
+            "idleMachines": "නිෂ්ක්‍රීය යන්ත්‍ර",
+            "idleHint": "මෙම කාලය තුළ කුලී නැත",
+            "repairSpend": "අලුත්වැඩියා වියදම",
+            "repairHint": "ආදායමෙන් {{pct}}%",
+            "payback": "පිරිවැය ආපසු ලැබීම",
+            "paybackHint": "සමස්ත ආදායම සහ මිලදී ගැනීමේ පිරිවැය",
+            "machinesCount": "යන්ත්‍ර {{count}}",
+            "rentalsCount": "කුලී {{count}}",
+            "topEarners": "වැඩිම ආදායම් යන්ත්‍ර",
+            "idleList": "නිෂ්ක්‍රීය යන්ත්‍ර (මිල අධිකම මුලින්)",
+            "noData": "මෙම කාලය සඳහා පෙන්වීමට කිසිවක් නැත.",
+            "noIdle": "මෙම කාලය තුළ නිෂ්ක්‍රීය යන්ත්‍ර නැත."
         }
     },
     "maintenance": {

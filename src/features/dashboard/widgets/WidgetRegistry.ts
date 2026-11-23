@@ -12,5 +12,8 @@ export const WIDGET_COMPONENTS: Record<string, React.LazyExoticComponent<React.C
   returns_today:        lazy(() => import('./ActionableReturnsTable')),
   open_money:           lazy(() => import('./OpenMoneyWidget')),
   open_returns:         lazy(() => import('./OpenReturnsWidget')),
+  category_revenue:     lazy(() => import('./CategoryRevenueWidget')),
+  top_earning_machines: lazy(() => import('./TopEarningMachinesWidget')),
+  idle_machines:        lazy(() => import('./IdleMachinesWidget')),
   maintenance_queue:    lazy(() => import('./MaintenanceQueueWidget')),
 };
