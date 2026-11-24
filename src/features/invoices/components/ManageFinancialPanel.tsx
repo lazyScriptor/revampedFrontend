@@ -174,7 +174,7 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   const payments: any[] = (invoice.Payments || []).filter((p: any) => !p.is_voided);
   const paid = payments.reduce((s, p) => s + Number(p.payment_amount || 0), 0);
   // subtotal = rental for the days so far; late fees only for days past a set due date
-  const { subTotal, transport, discount, lateFees, total, mixed, rent, items } = invoiceTotals(invoice);
+  const { subTotal, transport, discount, lateFees, total, mixed, rent, items, returned } = invoiceTotals(invoice);
   const money = moneyState(total, paid);
   const out = unitsOut(invoice.InvoiceLines || []);
   const isCompleted = invoice.status === "Completed";
@@ -364,6 +364,7 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
           ) : (
             <Row label={t("common.subtotal")} value={rs(subTotal)} />
           )}
+          {returned > 0 && <Row label={t("retail.returns.returnedRow")} value={`− ${rs(returned)}`} tone={theme.palette.warning.dark} />}
           {lateFees > 0 && <Row label={t("invoices.ManageInvoiceViews.lateFees")} value={`+ ${rs(lateFees)}`} tone={theme.palette.error.main} />}
           {feeRow("transport", t("invoices.transport"), transport, "+")}
           {feeRow("discount", t("common.discount"), discount, "−")}

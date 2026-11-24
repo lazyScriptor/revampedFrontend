@@ -74,6 +74,12 @@ export interface InvoiceSaleLineRow {
   serials?: string[];
   status?: string;
   sorted_at?: string | null;
+  /** R5: base units already returned, and what can still come back (base units). */
+  returned_base_qty: number;
+  returnable_qty: number;
+  base_unit: string;
+  /** R5: exact refunded so far in rupees, when the server sends it (makes the last step exact). */
+  returned_value?: number | null;
 }
 
 const num = (v: unknown, fallback = 0): number => {
@@ -337,6 +343,15 @@ export const normalizeSaleLines = (invoice: any): InvoiceSaleLineRow[] => {
       serials: serialList && serialList.length > 0 ? serialList : undefined,
       status: l.status ?? "sold",
       sorted_at: l.sorted_at ?? null,
+      returned_base_qty: num(l.returned_base_qty, 0),
+      returnable_qty:
+        l.status === "voided"
+          ? 0
+          : l.returnable_qty != null
+            ? Math.max(0, num(l.returnable_qty, 0))
+            : Math.max(0, Math.round((num(l.base_qty ?? l.qty, 1) - num(l.returned_base_qty, 0)) * 1000) / 1000),
+      base_unit: String(l.base_unit ?? prod?.base_unit ?? "pcs"),
+      returned_value: l.returned_value != null ? num(l.returned_value, 0) : null,
     };
   });
 };

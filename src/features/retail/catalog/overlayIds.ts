@@ -8,3 +8,5 @@ export const STOCK_IN_OVERLAY_ID = "retail-stock-in";
 export const CORRECT_OVERLAY_ID = "retail-correct";
 export const COUNT_OVERLAY_ID = "retail-count";
 export const HISTORY_OVERLAY_ID = "retail-history";
+export const RETURN_OVERLAY_ID = "retail-return";
+export const FIND_RETURN_OVERLAY_ID = "retail-find-return";

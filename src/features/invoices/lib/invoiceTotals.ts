@@ -24,6 +24,8 @@ export interface InvoiceTotals {
   mixed: boolean;
   rent: number;
   items: number;
+  /** R5: value of sold items taken back so far (the totals above are already reduced by it). */
+  returned: number;
 }
 
 export function invoiceTotals(inv: any): InvoiceTotals {
@@ -60,6 +62,7 @@ export function invoiceTotals(inv: any): InvoiceTotals {
     mixed,
     rent: mixed ? Math.max(0, round(subTotal - itemsGross)) : subTotal,
     items: itemsGross,
+    returned: Math.max(0, Number(inv?.returned_total) || 0),
   };
 }
 
