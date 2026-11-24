@@ -33,6 +33,8 @@ export interface SaleSubmitParams {
   paymentAmount: number;
   paymentMethod: PaymentMethod;
   isCredit: boolean;
+  /** What the customer handed over, when more than the total (the receipt shows the change). */
+  tendered?: number;
 }
 
 interface Props {
@@ -146,6 +148,7 @@ export function SaleCheckoutSection({ isSubmitting, billDate = null, onBillDateC
       paymentAmount: payMode === "pay_now" ? grandTotal : effectivePayment,
       paymentMethod: method,
       isCredit: !isWalkIn && payMode === "credit" && effectivePayment + 0.005 < grandTotal,
+      ...(changeDue > 0 ? { tendered: cleanPayment } : {}),
     });
   };
 

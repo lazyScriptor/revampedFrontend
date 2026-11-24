@@ -3515,7 +3515,31 @@
             "idNotHeld": "හැඳුනුම්පත තබාගෙන නැත",
             "note": "සටහන:",
             "returned": "{{date}} ආපසු ලැබුණි"
-        }
+        },
+        "sItemsSold": "විකුණන ලද භාණ්ඩ",
+        "sItemsDraft": "භාණ්ඩ",
+        "sRent": "කුලිය",
+        "sItems": "භාණ්ඩ",
+        "sReturned": "ආපසු ලැබුණු",
+        "sChange": "ඉතිරි මුදල",
+        "sPaid": "ගෙවූ මුදල",
+        "sCashier": "අයකැමි",
+        "sBillNo": "බිල් අංකය",
+        "sReceipt": "රිසිට්පත",
+        "sSaleBill": "විකුණුම් බිල්පත",
+        "sSaleBillClassic": "*** විකුණුම් බිල්පත ***",
+        "sReturnedQty": "−{{qty}} ආපසු",
+        "sRefund": "ආපසු ගෙවීම",
+        "sOff": "වට්ටම −{{amount}}",
+        "rsTitle": "ආපසු ලැබීමේ රිසිට්පත",
+        "rsGood": "හොඳයි",
+        "rsDamaged": "හානි",
+        "rsValue": "වටිනාකම",
+        "rsRefunded": "ආපසු ගෙවූ ({{method}})",
+        "rsKept": "බිලේ තබා ඇත",
+        "rsBalanceAfter": "පසු ශේෂය",
+        "rsReason": "හේතුව",
+        "rsReturnedOn": "ආපසු ලැබූ දිනය"
     },
     "toast": {
         "success": "සාර්ථකයි",
@@ -3650,6 +3674,12 @@
             "loadMore": "තවත් පූරණය කරන්න",
             "sent": "යැවූ",
             "opened": "විවෘත කළ"
+        },
+        "placeholderLabels": {
+            "items": "බිලේ ඇති සියල්ල: යන්ත්‍ර, පසු භාණ්ඩ",
+            "items_sold": "බිලේ විකුණූ භාණ්ඩ",
+            "sale_total": "භාණ්ඩවල මුළු මුදල",
+            "rent_total": "කුලියේ මුළු මුදල"
         }
     },
     "locker": {
@@ -5213,6 +5243,32 @@
             "traceRefunded_other": "භාණ්ඩ {{count}} ක් ආපසු ලැබුණි · {{amount}} {{method}} ලෙස ආපසු ගෙවා ඇත",
             "traceRefundedNoMethod_one": "භාණ්ඩ {{count}} ක් ආපසු ලැබුණි · {{amount}} ආපසු ගෙවා ඇත",
             "traceRefundedNoMethod_other": "භාණ්ඩ {{count}} ක් ආපසු ලැබුණි · {{amount}} ආපසු ගෙවා ඇත"
+        },
+        "receipts": {
+            "printSlip": "රිසිට්පත මුද්‍රණය",
+            "printReturnSlip": "ආපසු රිසිට්පත මුද්‍රණය",
+            "slipDialogTitle": "ආපසු රිසිට්පත · {{bill}}",
+            "returnSlips": "ආපසු රිසිට්පත්",
+            "slipLoadFailed": "ආපසු රිසිට්පත පූරණය කළ නොහැකි විය.",
+            "slipPaper": "කඩදාසි",
+            "paperA4": "A4",
+            "paper80": "මි.මී. 80",
+            "paper58": "මි.මී. 58",
+            "slipSent": "ආපසු රිසිට්පත {{printer}} වෙත යැවිණි",
+            "print": "මුද්‍රණය",
+            "done": "අවසන්",
+            "settingsTitle": "සිල්ලර රිසිට්පත්",
+            "shortSale": "විකුණුම් සඳහා කෙටි රිසිට්පත",
+            "shortSaleHint": "භාණ්ඩ පමණක් ඇති බිලක් සම්පූර්ණ බිල වෙනුවට කෙටි රිසිට්පතක් මුද්‍රණය කරයි.",
+            "saleFooter": "විකුණුම් රිසිට්පතේ පාද සටහන",
+            "showItemsSold": "කුලී බිල්පත්වල භාණ්ඩ ලැයිස්තුගත කරන්න",
+            "showCashier": "අයකැමි පෙන්වන්න",
+            "returnSlipFooter": "ආපසු රිසිට්පතේ පාද සටහන",
+            "saved": "රිසිට්පත් සැකසුම් සුරැකිණි",
+            "saveFailed": "රිසිට්පත් සැකසුම් සුරැකීමට නොහැකි විය",
+            "footerHint": "අකුරු 300 දක්වා",
+            "docSaleReceipt": "විකුණුම් රිසිට්පත",
+            "docReturnSlip": "ආපසු රිසිට්පත"
         }
     }
 }
