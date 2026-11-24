@@ -45,6 +45,7 @@ import type { TemplateKey } from "@/features/whatsapp/api/whatsapp.api";
 import { useTranslation } from "react-i18next";
 import { normalizeSaleLines } from "@/features/retail/api/pos.api";
 import { ItemsSoldSection } from "./ItemsSoldSection";
+import { saleReturnSentence } from "@/features/retail/returns/traceText";
 
 export interface ReadOnlyInvoiceModalProps {
   open: boolean;
@@ -390,7 +391,7 @@ export function ReadOnlyInvoiceModal({
           </Box>
           )}
 
-          <ItemsSoldSection invoice={invoice} />
+          <ItemsSoldSection invoice={invoice} onBeforeReturn={onClose} />
 
           {/* Financial Breakdown Card */}
           <Box
@@ -431,6 +432,14 @@ export function ReadOnlyInvoiceModal({
                   Rs. {totals.subTotal.toLocaleString()}
                 </Typography>
               </Box>
+              )}
+              {totals.returned > 0 && (
+                <Box data-testid="totals-returned" sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">{t("retail.returns.returnedRow")}</Typography>
+                  <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#b45309", fontFamily: "'JetBrains Mono', monospace" }}>
+                    − Rs. {totals.returned.toLocaleString()}
+                  </Typography>
+                </Box>
               )}
               {totals.lateFees > 0 && (
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -563,7 +572,7 @@ export function ReadOnlyInvoiceModal({
                         sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
                       />
                       <Typography variant="caption" sx={{ color: "#334155" }}>
-                        {trace.comments || t("invoices.ReadOnlyInvoiceModal.activityLogged")}
+                        {saleReturnSentence(trace, t) || trace.comments || t("invoices.ReadOnlyInvoiceModal.activityLogged")}
                       </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: "text.disabled", fontVariantNumeric: "tabular-nums" }}>

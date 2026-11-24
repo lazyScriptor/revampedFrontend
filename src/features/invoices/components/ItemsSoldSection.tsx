@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Chip,
   Table,
   TableBody,
@@ -9,21 +10,36 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import AssignmentReturnOutlinedIcon from "@mui/icons-material/AssignmentReturnOutlined";
 import { useTranslation } from "react-i18next";
+import { useOverlay } from "@/components/overlay";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { normalizeSaleLines } from "@/features/retail/api/pos.api";
+import { RETURN_OVERLAY_ID } from "@/features/retail/catalog/overlayIds";
+import { formatQty } from "@/features/retail/format";
+import { isFullyReturned, returnableLines, returnedOfLabel } from "@/features/retail/returns/returnsModel";
 
 interface Props {
   invoice: any;
   hideHeading?: boolean;
+  /** Runs just before the return overlay opens (the read-only modal closes itself so the overlay is not hidden behind it). */
+  onBeforeReturn?: () => void;
 }
 
 /** Displays sold hardware / unlisted / sundry items on Manage view and ReadOnlyInvoiceModal. */
-export function ItemsSoldSection({ invoice, hideHeading = false }: Props) {
+export function ItemsSoldSection({ invoice, hideHeading = false, onBeforeReturn }: Props) {
   const { t } = useTranslation();
+  const overlay = useOverlay();
+  const canReturn = useAuthStore((s) => s.hasPermission)("retail:return") && !invoice?.is_deleted;
   const saleLines = normalizeSaleLines(invoice);
   if (saleLines.length === 0) return null;
 
-  const showTopBar = !hideHeading || Boolean(invoice?.job_site) || Boolean(invoice?.customer_po);
+  const anyReturnable = canReturn && returnableLines(saleLines).length > 0;
+  const openReturn = (saleLineId?: number) => {
+    onBeforeReturn?.();
+    overlay.open(RETURN_OVERLAY_ID, { invoiceId: Number(invoice.invoice_id), invoice, saleLineId: saleLineId ?? null });
+  };
+  const showTopBar = !hideHeading || Boolean(invoice?.job_site) || Boolean(invoice?.customer_po) || anyReturnable;
 
   return (
     <Box
@@ -62,6 +78,18 @@ export function ItemsSoldSection({ invoice, hideHeading = false }: Props) {
             </Box>
           )}
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+            {anyReturnable && (
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<AssignmentReturnOutlinedIcon />}
+                onClick={() => openReturn()}
+                data-testid="return-items-btn"
+                sx={{ fontWeight: 700, minHeight: 32 }}
+              >
+                {t("retail.returns.returnItems")}
+              </Button>
+            )}
             {invoice?.job_site && (
               <Chip
                 size="small"
@@ -101,11 +129,21 @@ export function ItemsSoldSection({ invoice, hideHeading = false }: Props) {
               <TableCell sx={{ fontWeight: 700, color: "#475569", fontSize: "0.72rem", textAlign: "right" }}>
                 {t("orders.ledger.colTotal")}
               </TableCell>
+              {canReturn && <TableCell sx={{ width: 1 }} />}
             </TableRow>
           </TableHead>
           <TableBody>
-            {saleLines.map((line) => (
-              <TableRow key={line.sale_line_id} hover sx={{ "&:last-child td": { borderBottom: 0 } }}>
+            {saleLines.map((line) => {
+              const fully = isFullyReturned(line);
+              const done = returnedOfLabel(line);
+              return (
+              <TableRow
+                key={line.sale_line_id}
+                hover
+                data-testid="sold-line"
+                data-returned={fully ? "true" : undefined}
+                sx={{ "&:last-child td": { borderBottom: 0 }, ...(fully ? { opacity: 0.55 } : {}) }}
+              >
                 <TableCell>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                     {line.line_kind === "unlisted" && (
@@ -130,6 +168,16 @@ export function ItemsSoldSection({ invoice, hideHeading = false }: Props) {
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "#0f172a" }}>
                       {line.description}
                     </Typography>
+                    {done && (
+                      <Chip
+                        size="small"
+                        color={fully ? "default" : "warning"}
+                        variant="outlined"
+                        data-testid="returned-chip"
+                        label={t("retail.returns.returnedOf", { returned: formatQty(done.returned), qty: formatQty(done.of) })}
+                        sx={{ height: 18, fontSize: "0.65rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+                      />
+                    )}
                   </Box>
                   {line.serials && line.serials.length > 0 && (
                     <Typography
@@ -189,8 +237,26 @@ export function ItemsSoldSection({ invoice, hideHeading = false }: Props) {
                 >
                   Rs. {line.line_total.toLocaleString()}
                 </TableCell>
+                {canReturn && (
+                  <TableCell sx={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                    {line.status !== "voided" && line.returnable_qty > 0 && (
+                      <Tooltip title={t("retail.returns.returnLine")}>
+                        <Button
+                          size="small"
+                          startIcon={<AssignmentReturnOutlinedIcon fontSize="small" />}
+                          onClick={() => openReturn(line.sale_line_id)}
+                          aria-label={`${t("retail.returns.returnAction")} ${line.description}`}
+                          sx={{ fontWeight: 700, minHeight: 32 }}
+                        >
+                          {t("retail.returns.returnAction")}
+                        </Button>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                )}
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </Box>
