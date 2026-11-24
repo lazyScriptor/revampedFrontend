@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import { unwrapData } from "../api/http";
 import type { SaleReturnInput } from "./returnsModel";
+import { normalizeSaleReturn, type SaleReturnRow } from "../receipts/receiptModel";
 
 // Shapes assumed from the R5-backend prompt (docs/RETAIL_POS_BUILD_PROMPTS.md):
 //  POST /api/invoices/:id/sale-returns  (Idempotency-Key header) -> {status, message, data: {invoice, settlement: {refunded, credited, payment_id}}}
@@ -77,4 +78,13 @@ export const needsReturnApproval = (err: any): boolean => {
   const data = err?.response?.data ?? err?.data ?? {};
   const text = `${data.code ?? ""} ${data.data?.code ?? ""} ${data.message ?? ""} ${data.required_approval ?? ""}`;
   return /approval|return_no_bill/i.test(text);
+};
+
+// GET /api/invoices/:id/sale-returns -> the bill's returns of sold items, newest first, for the return slip:
+//   [{return_id, returned_at, cashier, lines:[{sale_line_id, description, qty, unit_label, condition, value}],
+//     value, settlement:{mode, refunded, credited, method}, reason, balance_after}]
+export const fetchSaleReturns = async (invoiceId: number): Promise<SaleReturnRow[]> => {
+  const d = unwrapData<any>(await api.get(`/invoices/${invoiceId}/sale-returns`));
+  const raw: any[] = Array.isArray(d) ? d : (d?.returns ?? d?.rows ?? []);
+  return raw.map(normalizeSaleReturn);
 };

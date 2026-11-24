@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useMemo, useRef, useState } from "react";
 import { Alert, Avatar, Box, Button, Chip, IconButton, InputAdornment, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -6,6 +6,7 @@ import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
 import BrokenImageOutlinedIcon from "@mui/icons-material/BrokenImageOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import AssignmentReturnOutlinedIcon from "@mui/icons-material/AssignmentReturnOutlined";
+import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import { useTranslation } from "react-i18next";
 import { Overlay, useOverlay, type OverlayComponentProps } from "@/components/overlay";
 import { useToast } from "@/components/ui/AppToast";
@@ -17,7 +18,8 @@ import { errorMessage } from "../api/http";
 import { useApproval } from "../approval/useApproval";
 import { useRetailCatalog } from "../catalog/useRetailCatalog";
 import { formatQty, formatRs } from "../format";
-import { needsReturnApproval } from "./returns.api";
+import { fetchSaleReturns, needsReturnApproval } from "./returns.api";
+import type { SaleReturnRow } from "../receipts/receiptModel";
 import {
   RETURN_REASONS,
   buildReturnPayload,
@@ -37,6 +39,9 @@ import {
   type SettlementMode,
 } from "./returnsModel";
 import { useSaleReturn } from "./useSaleReturn";
+
+// The slip (and the receipt it draws) is only loaded when a slip is wanted, so the overlay opens fast.
+const ReturnSlipDialog = lazy(() => import("../receipts/ReturnSlipDialog").then((m) => ({ default: m.ReturnSlipDialog })));
 
 const NUM = { fontVariantNumeric: "tabular-nums" } as const;
 
@@ -86,6 +91,10 @@ function ReturnOverlay({ invoiceId, invoice: initialInvoice, saleLineId }: Props
   const [amountStr, setAmountStr] = useState<string | null>(null);
   const [reason, setReason] = useState<ReturnReason | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // After a saved return the overlay stays open so the cashier can print the slip.
+  const [done, setDone] = useState<{ refunded: number; kept: number } | null>(null);
+  const [slip, setSlip] = useState<SaleReturnRow | null>(null);
+  const [slipBusy, setSlipBusy] = useState(false);
 
   const amountCents = rules.amountFixed ? summary.valueCents : amountStr == null ? defaultRefund : Math.round((Number(amountStr) || 0) * 100);
   const amountTooHigh = mode === "refund" && !rules.amountFixed && amountCents > cap;
@@ -118,11 +127,37 @@ function ReturnOverlay({ invoiceId, invoice: initialInvoice, saleLineId }: Props
       }
       const refunded = res.settlement.refunded;
       toast.showSuccess(refunded > 0 ? t("retail.returns.doneRefund", { amount: formatRs(refunded) }) : t("retail.returns.doneKept", { amount: formatRs(fromCents(summary.valueCents)) }));
-      await overlay.closeAll();
+      setDone({ refunded, kept: fromCents(summary.valueCents) });
     } catch (err: any) {
       setError(errorMessage(err, t("retail.returns.failed")));
     }
   };
+
+  // The newest return of the bill is the one just saved.
+  const openSlip = async () => {
+    setSlipBusy(true);
+    setError(null);
+    try {
+      const returns = await fetchSaleReturns(invoiceId);
+      if (returns[0]) setSlip(returns[0]);
+      else setError(t("retail.receipts.slipLoadFailed"));
+    } catch (err: any) {
+      setError(errorMessage(err, t("retail.receipts.slipLoadFailed")));
+    } finally {
+      setSlipBusy(false);
+    }
+  };
+
+  const doneFooter = (
+    <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
+      <Button onClick={() => void overlay.closeAll()} sx={{ minHeight: 44 }}>
+        {t("retail.receipts.done")}
+      </Button>
+      <Button variant="contained" disableElevation startIcon={<PrintOutlinedIcon />} disabled={slipBusy} onClick={() => void openSlip()} sx={{ minHeight: 44, minWidth: 150, fontWeight: 800 }}>
+        {t("retail.receipts.printSlip")}
+      </Button>
+    </Stack>
+  );
 
   const footer = (
     <Stack spacing={1}>
@@ -142,6 +177,24 @@ function ReturnOverlay({ invoiceId, invoice: initialInvoice, saleLineId }: Props
       </Stack>
     </Stack>
   );
+
+  if (done) {
+    return (
+      <Overlay title={t("retail.returns.title", { bill: `INV-${invoiceId}` })} width={520} onConfirm={() => void openSlip()} footer={doneFooter}>
+        <Stack spacing={2} data-testid="return-done">
+          {error && <Alert severity="error">{error}</Alert>}
+          <Alert severity="success" icon={<CheckCircleOutlined />}>
+            {done.refunded > 0 ? t("retail.returns.doneRefund", { amount: formatRs(done.refunded) }) : t("retail.returns.doneKept", { amount: formatRs(done.kept) })}
+          </Alert>
+        </Stack>
+        {slip && (
+          <Suspense fallback={null}>
+            <ReturnSlipDialog open onClose={() => setSlip(null)} invoice={invoice} ret={slip} />
+          </Suspense>
+        )}
+      </Overlay>
+    );
+  }
 
   return (
     <Overlay title={t("retail.returns.title", { bill: `INV-${invoiceId}` })} width={520} onConfirm={canSubmit ? () => void submit() : undefined} footer={footer}>
