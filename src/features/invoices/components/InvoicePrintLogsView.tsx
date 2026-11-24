@@ -53,7 +53,7 @@ interface PrintLogItem {
   log_id: number;
   invoice_id: number | null;
   doc_number: string;
-  doc_type: "DISPATCH" | "COMPLETED" | "DRAFT" | "RETURN_SETTLEMENT";
+  doc_type: "DISPATCH" | "COMPLETED" | "DRAFT" | "RETURN_SETTLEMENT" | "SALE_RECEIPT" | "RETURN_SLIP";
   printed_by_user_id: number;
   printed_by_name: string;
   printed_by_role: string;
@@ -166,6 +166,10 @@ export function InvoicePrintLogsView() {
         return <Chip label={t("invoices.InvoicePrintLogsView.draftQuote")} size="small" sx={{ bgcolor: "#fffbeb", color: "#b45309", fontWeight: 800, fontSize: "0.72rem" }} />;
       case "RETURN_SETTLEMENT":
         return <Chip label={t("invoices.InvoicePrintLogsView.returnSettlement")} size="small" sx={{ bgcolor: "#f5f3ff", color: "#6d28d9", fontWeight: 800, fontSize: "0.72rem" }} />;
+      case "SALE_RECEIPT":
+        return <Chip label={t("retail.receipts.docSaleReceipt")} size="small" sx={{ bgcolor: "#fffbeb", color: "#b45309", fontWeight: 800, fontSize: "0.72rem" }} />;
+      case "RETURN_SLIP":
+        return <Chip label={t("retail.receipts.docReturnSlip")} size="small" sx={{ bgcolor: "#f5f3ff", color: "#6d28d9", fontWeight: 800, fontSize: "0.72rem" }} />;
       default:
         return <Chip label={type} size="small" />;
     }

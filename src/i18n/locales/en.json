@@ -3515,7 +3515,31 @@
             "idNotHeld": "ID card not kept",
             "note": "Note:",
             "returned": "Returned {{date}}"
-        }
+        },
+        "sItemsSold": "ITEMS SOLD",
+        "sItemsDraft": "ITEMS",
+        "sRent": "Rent",
+        "sItems": "Items",
+        "sReturned": "Returned",
+        "sChange": "Change",
+        "sPaid": "Paid",
+        "sCashier": "Cashier",
+        "sBillNo": "Bill no.",
+        "sReceipt": "RECEIPT",
+        "sSaleBill": "SALES BILL",
+        "sSaleBillClassic": "*** SALES BILL ***",
+        "sReturnedQty": "−{{qty}} returned",
+        "sRefund": "Refund",
+        "sOff": "Discount −{{amount}}",
+        "rsTitle": "RETURN SLIP",
+        "rsGood": "Good",
+        "rsDamaged": "Damaged",
+        "rsValue": "Value",
+        "rsRefunded": "Refunded ({{method}})",
+        "rsKept": "Kept on bill",
+        "rsBalanceAfter": "Balance after",
+        "rsReason": "Reason",
+        "rsReturnedOn": "Returned on"
     },
     "toast": {
         "success": "Success",
@@ -3650,6 +3674,12 @@
             "loadMore": "Load more",
             "sent": "Sent",
             "opened": "Opened"
+        },
+        "placeholderLabels": {
+            "items": "Everything on the bill: machines, then goods",
+            "items_sold": "The goods sold on the bill",
+            "sale_total": "Total of the goods",
+            "rent_total": "Total of the rental"
         }
     },
     "locker": {
@@ -5213,6 +5243,32 @@
             "traceRefunded_other": "Returned {{count}} items · {{amount}} refunded in {{method}}",
             "traceRefundedNoMethod_one": "Returned {{count}} item · {{amount}} refunded",
             "traceRefundedNoMethod_other": "Returned {{count}} items · {{amount}} refunded"
+        },
+        "receipts": {
+            "printSlip": "Print slip",
+            "printReturnSlip": "Print return slip",
+            "slipDialogTitle": "Return slip · {{bill}}",
+            "returnSlips": "Return slips",
+            "slipLoadFailed": "Could not load the return slip.",
+            "slipPaper": "Paper",
+            "paperA4": "A4",
+            "paper80": "80 mm",
+            "paper58": "58 mm",
+            "slipSent": "Return slip sent to {{printer}}",
+            "print": "Print",
+            "done": "Done",
+            "settingsTitle": "Retail receipts",
+            "shortSale": "Short receipt for sales",
+            "shortSaleHint": "A bill with only goods prints a short receipt instead of the full bill.",
+            "saleFooter": "Sale receipt footer",
+            "showItemsSold": "List goods on rental bills",
+            "showCashier": "Show cashier",
+            "returnSlipFooter": "Return slip footer",
+            "saved": "Receipt settings saved",
+            "saveFailed": "Could not save the receipt settings",
+            "footerHint": "Up to 300 letters",
+            "docSaleReceipt": "Sale receipt",
+            "docReturnSlip": "Return slip"
         }
     }
 }

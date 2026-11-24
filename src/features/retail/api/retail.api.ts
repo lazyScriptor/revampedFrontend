@@ -2,6 +2,8 @@ import { api } from "@/lib/api";
 import { unwrapData } from "./http";
 import {
   DEFAULT_RETAIL_SETTINGS,
+  DEFAULT_RECEIPT_SETTINGS,
+  type RetailReceiptSettings,
   type Approver,
   type ApprovalGrant,
   type ApprovalRequestInput,
@@ -21,7 +23,28 @@ export const fetchRetailSettings = async (): Promise<RetailSettings> => {
     ...DEFAULT_RETAIL_SETTINGS,
     ...s,
     exceptions: { ...DEFAULT_RETAIL_SETTINGS.exceptions, ...(s?.exceptions ?? {}) },
+    receipt: normalizeReceiptSettings(s?.receipt),
   };
+};
+
+/** Fills what the server did not send with the defaults, and ignores anything of the wrong type. */
+export const normalizeReceiptSettings = (raw: any): RetailReceiptSettings => {
+  const r = raw && typeof raw === "object" ? raw : {};
+  const d = DEFAULT_RECEIPT_SETTINGS;
+  return {
+    shortSaleReceipt: typeof r.shortSaleReceipt === "boolean" ? r.shortSaleReceipt : d.shortSaleReceipt,
+    saleFooter: typeof r.saleFooter === "string" ? r.saleFooter : d.saleFooter,
+    showItemsSoldOnRentalReceipt: typeof r.showItemsSoldOnRentalReceipt === "boolean" ? r.showItemsSoldOnRentalReceipt : d.showItemsSoldOnRentalReceipt,
+    showCashier: typeof r.showCashier === "boolean" ? r.showCashier : d.showCashier,
+    returnSlipFooter: typeof r.returnSlipFooter === "string" ? r.returnSlipFooter : d.returnSlipFooter,
+  };
+};
+
+// PUT /api/retail/settings (needs config:manage): only the sent fields change; `receipt` is merged on the server.
+export const saveReceiptSettings = async (patch: Partial<RetailReceiptSettings>): Promise<RetailReceiptSettings> => {
+  const data = unwrapData<any>(await api.put("/retail/settings", { receipt: patch }));
+  const s = data?.settings ?? data ?? {};
+  return normalizeReceiptSettings(s?.receipt ?? patch);
 };
 
 // ── Approvals ─────────────────────────────────────────────────────────────────

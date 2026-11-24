@@ -20,6 +20,27 @@ export type ApprovalMethod = "pin" | "password" | "either";
 
 export type ExceptionPolicyMode = "off" | "record" | "approve";
 
+/** How receipts and return slips look (plan §7.7, §7.10). Saved in `retail.receipt` of the shop settings. */
+export interface RetailReceiptSettings {
+  /** A sale-only bill prints the short retail receipt instead of the full bill. */
+  shortSaleReceipt: boolean;
+  /** Printed under the items on the short receipt. */
+  saleFooter: string;
+  /** A bill with machines and goods lists the goods under the machines. */
+  showItemsSoldOnRentalReceipt: boolean;
+  showCashier: boolean;
+  /** Printed at the bottom of a return slip. */
+  returnSlipFooter: string;
+}
+
+export const DEFAULT_RECEIPT_SETTINGS: RetailReceiptSettings = {
+  shortSaleReceipt: true,
+  saleFooter: "",
+  showItemsSoldOnRentalReceipt: true,
+  showCashier: true,
+  returnSlipFooter: "",
+};
+
 export interface RetailSettings {
   approvalMethod: ApprovalMethod;
   /** Minutes one approval stays valid for more lines on the same bill; 0 = single use. */
@@ -37,6 +58,7 @@ export interface RetailSettings {
   units?: string[] | { base?: string[]; pack?: string[] };
   defaultWarehouseId?: number | null;
   booksClosedUntil?: string | null;
+  receipt?: RetailReceiptSettings;
 }
 
 export const DEFAULT_RETAIL_SETTINGS: RetailSettings = {
@@ -48,6 +70,7 @@ export const DEFAULT_RETAIL_SETTINGS: RetailSettings = {
   quickPad: [],
   showContractorPrice: true,
   belowCostWarning: true,
+  receipt: DEFAULT_RECEIPT_SETTINGS,
   exceptions: {
     unlisted_item: "record",
     price_change: "approve",

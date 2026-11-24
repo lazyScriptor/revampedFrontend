@@ -131,7 +131,7 @@ const mixedInvoice = {
     },
   ],
   SaleLines: [
-    { sale_line_id: 1, product_id: 1006, line_kind: "item", description: "SALI Steel Drill Bit 6mm", unit_label: "pcs", unit_factor: 1, qty: 2, base_qty: 2, unit_price: 250, line_discount: 0, bill_discount_share: 50, line_total: 450, status: "sold" },
+    { sale_line_id: 1, product_id: 1006, line_kind: "item", description: "SALI Steel Drill Bit 6mm", unit_label: "pcs", unit_factor: 1, qty: 2, base_qty: 2, unit_price: 250, line_discount: 0, bill_discount_share: 50, line_total: 500, status: "sold" },
   ],
   Payments: [{ payment_id: 1, payment_amount: 500, method: "Cash", payment_date: "2026-11-23T10:00:00Z" }],
 };

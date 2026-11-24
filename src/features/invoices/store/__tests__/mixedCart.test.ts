@@ -154,7 +154,8 @@ describe("invoiceTotals on a mixed bill", () => {
     discount_amount: 100,
     transport_fee: 0,
     total_amount: 1900,
-    SaleLines: [{ sale_line_id: 1, description: "Tape", qty: 2, unit_price: 250, line_total: 450, bill_discount_share: 50, status: "sold" }],
+    // the server stores line_total before the line's share of the bill discount (bill #77 on a real DB)
+    SaleLines: [{ sale_line_id: 1, description: "Tape", qty: 2, unit_price: 250, line_total: 500, bill_discount_share: 50, status: "sold" }],
   };
 
   it("splits Rent and Items, keeps the sub_total and shows no phantom late fee", () => {
@@ -170,5 +171,18 @@ describe("invoiceTotals on a mixed bill", () => {
   it("rental and sale bills are read as before", () => {
     expect(invoiceTotals({ bill_kind: "rental", sub_total: 900, total_amount: 900 }).subTotal).toBe(900);
     expect(invoiceTotals({ bill_kind: "sale", sub_total: 0, sale_total: 700, total_amount: 700 }).subTotal).toBe(700);
+  });
+
+  it("a discounted sale bill shows no late fee, and a return doesn't hide one on a mixed bill", () => {
+    // sale: 750 of goods, 30 off → sale_total 720 (real bill #80 before its returns)
+    const sale = invoiceTotals({ bill_kind: "sale", sub_total: 750, sale_total: 720, discount_amount: 30, total_amount: 720 });
+    expect(sale.subTotal).toBe(750);
+    expect(sale.lateFees).toBe(0);
+    // the same bill after 240 came back
+    expect(invoiceTotals({ bill_kind: "sale", sub_total: 750, sale_total: 480, discount_amount: 30, total_amount: 480, returned_total: 240 }).lateFees).toBe(0);
+    // mixed: 300 late fees accrued, then 450 of goods returned
+    const mixed = invoiceTotals({ ...bill, total_amount: 1900 + 300 - 450, sale_total: 0, returned_total: 450 });
+    expect(mixed.lateFees).toBe(300);
+    expect(mixed.returned).toBe(450);
   });
 });

@@ -43,6 +43,20 @@ export const TEMPLATE_I18N: Record<TemplateKey, string> = {
   custom: tk("whatsapp.types.custom"),
 };
 
+/** Plain-words names for the placeholders that need one (shown when a chip is hovered or focused). */
+export const PLACEHOLDER_I18N: Record<string, string> = {
+  items: tk("whatsapp.placeholderLabels.items"),
+  items_sold: tk("whatsapp.placeholderLabels.items_sold"),
+  sale_total: tk("whatsapp.placeholderLabels.sale_total"),
+  rent_total: tk("whatsapp.placeholderLabels.rent_total"),
+};
+
+/** Example values for the retail placeholders, used by the live preview when the server's samples lack them. */
+export const PLACEHOLDER_SAMPLES: Record<Language, Record<string, string>> = {
+  en: { items_sold: "2 x Cement bag, 5 kg Nails 2\"", sale_total: "Rs. 4,500", rent_total: "Rs. 12,000" },
+  si: { items_sold: "සිමෙන්ති බෑග් 2, අඟල් 2 ඇණ කි.ග්‍රෑ. 5", sale_total: "රු. 4,500", rent_total: "රු. 12,000" },
+};
+
 /** Message types that make sense for a given invoice status (first = the suggested default). */
 export const suggestedTemplate = (invoiceStatus?: string | null): TemplateKey => {
   switch (invoiceStatus) {

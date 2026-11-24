@@ -46,6 +46,7 @@ import {
 } from "@/features/invoices/components/ManageInvoiceViews";
 import { ReturnSettlementDialog } from "@/features/invoices/components/ReturnSettlementDialog";
 import { InvoiceReceipt } from "@/features/invoices/components/InvoiceReceipt";
+import { useReceiptSettings } from "@/features/retail/receipts/useReceiptSettings";
 import { ReceiptPrintDialog } from "@/features/invoices/components/ReceiptPrintDialog";
 import { api } from "@/lib/api";
 import { useInvoiceDetails, handlePrintInvoice } from "@/features/invoices/hooks/useInvoiceHooks";
@@ -157,6 +158,7 @@ export default function InvoicesRoute() {
   const [isConfirmDispatchOpen, setIsConfirmDispatchOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [priceChanges, setPriceChanges] = useState<PriceChangeItem[] | null>(null);
+  const receiptSettings = useReceiptSettings();
   const [pendingSaleParams, setPendingSaleParams] = useState<SaleSubmitParams | null>(null);
   // A mixed bill waiting for the cashier to confirm new prices; holds whether to print afterwards.
   const [pendingMixedPrint, setPendingMixedPrint] = useState<boolean | null>(null);
@@ -513,6 +515,12 @@ export default function InvoicesRoute() {
         transport_fee: serverInv?.transport_fee ?? st.fees.transport,
         discount_amount: serverInv?.discount_amount ?? st.fees.discount,
         id_card_status: 0,
+        // Cash handed over beyond the total: the server reports it; otherwise it is worked out here.
+        ...(serverInv?.change_due != null
+          ? { change_due: Number(serverInv.change_due) || 0 }
+          : params.tendered != null && params.tendered > curTotal + 0.004 && settleNow
+            ? { change_due: round2(params.tendered - curTotal) }
+            : {}),
         job_site: serverInv?.job_site ?? (st.jobSite.trim() || null),
         customer_po: serverInv?.customer_po ?? (st.customerPo.trim() || null),
         status: serverInv?.status || (settleNow ? "Completed" : "PendingPayment"),
@@ -552,7 +560,9 @@ export default function InvoicesRoute() {
         handlePrintInvoice("pos-dispatch-silent-receipt", {
           invoiceId: hydratedInvoice.invoice_id,
           docNumber: `INV-${hydratedInvoice.invoice_id}`,
-          docType: hydratedInvoice.status === "Completed" ? "COMPLETED" : "DISPATCH",
+          // The short retail receipt is its own kind of print; with it switched off the full bill prints as before.
+          docType: receiptSettings.shortSaleReceipt ? "SALE_RECEIPT" : hydratedInvoice.status === "Completed" ? "COMPLETED" : "DISPATCH",
+          changeDue: hydratedInvoice.change_due ?? null,
           customerName: custName,
           customerPhone: cust?.phone_number,
           totalItems: curSaleLines.length,
@@ -1456,6 +1466,7 @@ export default function InvoicesRoute() {
           customer: selectedCustomer,
           onBehalfOfCustomer,
           items: cartItems,
+          saleLines: retailEnabled ? saleLines : [],
           fees,
         }}
         title={t("pages.Invoices.quotationEstimateSlipPreview")}
