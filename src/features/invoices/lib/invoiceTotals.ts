@@ -29,40 +29,38 @@ export interface InvoiceTotals {
 }
 
 export function invoiceTotals(inv: any): InvoiceTotals {
-  const rentalSub = Number(inv?.sub_total) || 0;
-  const saleSub = Number(inv?.sale_total) || 0;
-  // A mixed bill's sub_total already holds both parts (rent + goods before the bill discount), so it is
-  // used as it is; goods are split out by adding back each line's share of the bill discount.
-  const mixed = inv?.bill_kind === "mixed";
-  const itemsGross = mixed
-    ? round(
-        normalizeSaleLines(inv).length > 0
-          ? normalizeSaleLines(inv)
-              .filter((l) => l.status !== "voided")
-              .reduce((sum, l) => sum + l.line_total + l.bill_discount_share, 0)
-          : saleSub,
-      )
-    : 0;
-  const subTotal = mixed
-    ? rentalSub
-    : inv?.bill_kind === "sale" || (rentalSub === 0 && saleSub > 0)
-      ? saleSub || rentalSub
-      : rentalSub + saleSub;
+  const rawSub = Number(inv?.sub_total) || 0;
+  const saleTotal = Number(inv?.sale_total) || 0;
   const transport = Number(inv?.transport_fee) || 0;
   const discount = Number(inv?.discount_amount) || 0;
   const total = Number(inv?.total_amount) || 0;
+  const returned = Math.max(0, Number(inv?.returned_total) || 0);
+  const kind = inv?.bill_kind;
+  const mixed = kind === "mixed";
+  const saleOnly = kind === "sale" || (!mixed && rawSub === 0 && saleTotal > 0);
+
+  // What the server stores (R3–R5):
+  //  • sub_total: rent + goods before the bill discount and before any return (sale and mixed bills)
+  //  • a sale line's line_total: after its own line discount, BEFORE its share of the bill discount
+  //  • sale_total and total_amount: after the bill discount and after returns
+  // So goods before the bill discount = Σ line_total, and returns are shown as their own row.
+  const lines = mixed ? normalizeSaleLines(inv).filter((l) => l.status !== "voided") : [];
+  const itemsGross = mixed ? round(lines.length > 0 ? lines.reduce((sum, l) => sum + l.line_total, 0) : saleTotal + returned) : 0;
+  const subTotal = saleOnly ? rawSub || round(saleTotal + returned + discount) : rawSub;
+
   const billed = inv?.billed_total_amount !== undefined ? Number(inv.billed_total_amount) || 0 : round(total - (Number(inv?.accrued_charges) || 0));
   return {
     subTotal,
     transport,
     discount,
-    lateFees: Math.max(0, round(total - (subTotal + transport - discount))),
+    // returns lower the total; add them back so they never hide (or fake) late fees
+    lateFees: Math.max(0, round(total + returned - (subTotal + transport - discount))),
     billed,
     total,
     mixed,
     rent: mixed ? Math.max(0, round(subTotal - itemsGross)) : subTotal,
     items: itemsGross,
-    returned: Math.max(0, Number(inv?.returned_total) || 0),
+    returned,
   };
 }
 
