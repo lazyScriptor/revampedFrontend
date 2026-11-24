@@ -8,10 +8,12 @@ import {
   CATEGORIES_OVERLAY_ID,
   CORRECT_OVERLAY_ID,
   COUNT_OVERLAY_ID,
+  FIND_RETURN_OVERLAY_ID,
   FINDER_OVERLAY_ID,
   HISTORY_OVERLAY_ID,
   ITEM_CARD_OVERLAY_ID,
   NEW_ITEM_OVERLAY_ID,
+  RETURN_OVERLAY_ID,
   STOCK_IN_OVERLAY_ID,
   WORDS_OVERLAY_ID,
 } from "./overlayIds";
@@ -30,6 +32,8 @@ const loaders = {
   [CORRECT_OVERLAY_ID]: () => import("../stock/CorrectOverlay"),
   [COUNT_OVERLAY_ID]: () => import("../stock/CountOverlay"),
   [HISTORY_OVERLAY_ID]: () => import("../stock/HistoryOverlay"),
+  [RETURN_OVERLAY_ID]: () => import("../returns/ReturnOverlay"),
+  [FIND_RETURN_OVERLAY_ID]: () => import("../returns/FindReturnOverlay"),
 };
 
 const lazyOverlay = (load: () => Promise<{ default: ComponentType<any> }>) => {
@@ -120,4 +124,11 @@ registerCommand({
   keywords: ["categories", "category", "sub-category", "icons"],
   visible: (u) => retailOn(u) && can(u, "retail:view"),
   perform: ({ openOverlay }) => openOverlay(CATEGORIES_OVERLAY_ID),
+});
+registerCommand({
+  id: "retail-return-item",
+  label: "retail.cmd.returnItem",
+  keywords: ["return", "refund", "exchange", "sold", "receipt", "ආපසු"],
+  visible: (u) => retailOn(u) && can(u, "retail:return"),
+  perform: ({ openOverlay }) => openOverlay(FIND_RETURN_OVERLAY_ID),
 });
