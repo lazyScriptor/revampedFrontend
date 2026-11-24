@@ -151,7 +151,8 @@ export type ReturnReason = (typeof RETURN_REASONS)[number];
 export interface SaleReturnLineInput {
   sale_line_id: number;
   qty: number;
-  unit_id?: number;
+  /** Always sent: the unit qty is counted in. null = single base pieces (the server reads a missing unit_id as the line's own unit). */
+  unit_id: number | null;
   condition: ReturnCondition;
   serial_no?: string;
 }
@@ -177,8 +178,12 @@ export function buildReturnPayload({ rows, mode, method, amount, reason, approva
   const lines: SaleReturnLineInput[] = rows
     .filter((r) => r.qty > 0)
     .map((r) => {
-      const out: SaleReturnLineInput = { sale_line_id: r.line.sale_line_id, qty: r.qty, condition: r.condition };
-      if (r.unit.unitId != null) out.unit_id = r.unit.unitId;
+      const out: SaleReturnLineInput = {
+        sale_line_id: r.line.sale_line_id,
+        qty: r.qty,
+        unit_id: r.unit.unitId ?? null,
+        condition: r.condition,
+      };
       if (isSerialLine(r.line) && r.serial.trim()) out.serial_no = r.serial.trim();
       return out;
     });

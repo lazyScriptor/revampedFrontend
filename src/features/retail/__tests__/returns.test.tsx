@@ -93,7 +93,7 @@ describe("return overlay", () => {
     await waitFor(() => expect(api.postSaleReturn).toHaveBeenCalledTimes(2));
     const [id, body, key] = api.postSaleReturn.mock.calls[0];
     expect(id).toBe(501);
-    expect(body).toEqual({ lines: [{ sale_line_id: 11, qty: 1, condition: "damaged" }], settlement: { mode: "refund", method: "Cash" } });
+    expect(body).toEqual({ lines: [{ sale_line_id: 11, qty: 1, unit_id: null, condition: "damaged" }], settlement: { mode: "refund", method: "Cash" } });
     expect(typeof key).toBe("string");
     expect(api.postSaleReturn.mock.calls[1][2]).toBe(key);
   });
@@ -130,7 +130,7 @@ describe("return overlay", () => {
     expect(summaryText()).toContain("Rs 500"); // 2,000 x 5 / 20
     submit();
     await waitFor(() => expect(api.postSaleReturn).toHaveBeenCalled());
-    expect(api.postSaleReturn.mock.calls[0][1].lines).toEqual([{ sale_line_id: 12, qty: 5, condition: "good" }]);
+    expect(api.postSaleReturn.mock.calls[0][1].lines).toEqual([{ sale_line_id: 12, qty: 5, unit_id: null, condition: "good" }]);
   });
 
   it("a serial line shows the serial sold, prefilled, and sends it", async () => {
@@ -138,7 +138,7 @@ describe("return overlay", () => {
     expect((screen.getByRole("textbox", { name: "Serial" }) as HTMLInputElement).value).toBe("SN-1");
     submit();
     await waitFor(() => expect(api.postSaleReturn).toHaveBeenCalled());
-    expect(api.postSaleReturn.mock.calls[0][1].lines).toEqual([{ sale_line_id: 13, qty: 1, condition: "good", serial_no: "SN-1" }]);
+    expect(api.postSaleReturn.mock.calls[0][1].lines).toEqual([{ sale_line_id: 13, qty: 1, unit_id: null, condition: "good", serial_no: "SN-1" }]);
   });
 
   it("asks a manager when the server wants approval, then retries with the token", async () => {

@@ -105,6 +105,15 @@ describe("payload", () => {
       settlement: { mode: "credit" },
     });
   });
+
+  it("a pack line returned in single pieces sends unit_id null, so the server doesn't read it as packs", () => {
+    const pack = lineOf({ unit_id: 7, unit_label: "box", unit_factor: 10, qty: 2, base_qty: 20, base_unit: "pcs" });
+    const [row] = buildRows([pack], 1);
+    const pieces = { ...row, qty: 3, unit: unitOptions(pack).find((u) => u.unitId === null)! };
+    expect(buildReturnPayload({ rows: [pieces], mode: "credit", method: "Cash", amount: null }).lines).toEqual([
+      { sale_line_id: 1, qty: 3, unit_id: null, condition: "good" },
+    ]);
+  });
 });
 
 describe("trace", () => {
