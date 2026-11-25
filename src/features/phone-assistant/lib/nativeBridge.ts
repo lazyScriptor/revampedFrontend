@@ -5,6 +5,7 @@ import {
   getDeviceId,
   getDeviceTenantDb,
   getDeviceToken,
+  setDeviceToken,
 } from "@/features/signatures/lib/deviceId";
 
 export interface PhoneAssistantSetupStatus {
@@ -83,6 +84,7 @@ export interface NativeCustomerHit {
 
 interface NativePluginShape {
   syncBadge?(options: { unread: number }): Promise<void>;
+  getDeviceToken?: () => Promise<{ deviceId: string; deviceToken: string }>;
   getSyncStatus?: () => Promise<NativeSyncStatus>;
   showSampleCall?: () => Promise<{ shown: boolean }>;
   setCallTextScale?: (args: { scale: number | null }) => Promise<{ saved: boolean }>;
@@ -151,7 +153,27 @@ export const deviceApi = axios.create({
   },
 });
 
-deviceApi.interceptors.request.use((config) => {
+/**
+ * The app replaces the device token every 30 days and the old one stops working a day later,
+ * so these pages take the app's current token before using their own copy.
+ */
+export async function syncNativeDeviceToken(): Promise<void> {
+  const plugin = getNativePlugin();
+  if (!plugin?.getDeviceToken) return;
+  try {
+    const native = await plugin.getDeviceToken();
+    // A different device id means a new pairing is being handed over: leave it alone.
+    if (native?.deviceToken && native.deviceId === getDeviceId() && native.deviceToken !== getDeviceToken()) {
+      setDeviceToken(native.deviceToken);
+    }
+  } catch {
+    // Keep the stored token
+  }
+}
+void syncNativeDeviceToken();
+
+deviceApi.interceptors.request.use(async (config) => {
+  await syncNativeDeviceToken();
   const deviceId = getDeviceId();
   const token = getDeviceToken();
   const tenantDb = getDeviceTenantDb();

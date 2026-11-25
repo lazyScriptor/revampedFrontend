@@ -299,11 +299,11 @@ describe("Slice 2 Dashboard, Call Tracking & Recording Player", () => {
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
-        "/calls/55/notes",
+        "/calls/55/note",
         expect.objectContaining({
           customer_id: 11,
           outcome: "answered",
-          result: "will_pay_date",
+          result: "will_pay_on_date",
           promise_amount: 5000,
           promise_date: "2026-11-30",
         }),

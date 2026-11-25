@@ -13,15 +13,18 @@ export interface CallResultOption {
   label_en: string;
   label_si: string;
   active: boolean;
+  requires_promise?: boolean;
+  requires_date?: boolean;
+  requires_note?: boolean;
 }
 
 export const DEFAULT_CALL_RESULTS: CallResultOption[] = [
   { key: "will_pay_today", label_en: "Will pay today", label_si: "අද ගෙවනවා", active: true },
-  { key: "will_pay_date", label_en: "Will pay on a date", label_si: "දිනයක ගෙවනවා", active: true },
-  { key: "will_return", label_en: "Will bring machines back", label_si: "යන්ත්‍ර ආපසු ගෙන එනවා", active: true },
+  { key: "will_pay_on_date", label_en: "Will pay on a date", label_si: "දිනයක ගෙවනවා", active: true, requires_promise: true, requires_date: true },
+  { key: "will_return_machines", label_en: "Will bring machines back", label_si: "යන්ත්‍ර ආපසු ගෙන එනවා", active: true, requires_date: true },
   { key: "asked_more_time", label_en: "Asked for more time", label_si: "වැඩි කාලයක් ඉල්ලුවා", active: true },
-  { key: "amount_disputed", label_en: "Says amount is wrong", label_si: "මුදල වැරදි බව කියයි", active: true },
-  { key: "other", label_en: "Other", label_si: "වෙනත්", active: true },
+  { key: "disputes_amount", label_en: "Says amount is wrong", label_si: "මුදල වැරදි බව කියයි", active: true },
+  { key: "other", label_en: "Other", label_si: "වෙනත්", active: true, requires_note: true },
 ];
 
 export interface LastCallSummary {

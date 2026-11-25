@@ -19,7 +19,7 @@ export async function dialFromUserPhone(payload: DialFromPhonePayload) {
 
 export async function saveCallOutcome(payload: SaveCallOutcomePayload) {
   if (payload.call_id) {
-    const res: any = await api.post(`/calls/${payload.call_id}/notes`, {
+    const res: any = await api.post(`/calls/${payload.call_id}/note`, {
       customer_id: payload.customer_id,
       invoice_ids: payload.invoice_ids,
       outcome: payload.outcome,
@@ -27,8 +27,7 @@ export async function saveCallOutcome(payload: SaveCallOutcomePayload) {
       note: payload.note,
       promise_amount: payload.promise_amount,
       promise_date: payload.promise_date,
-      expected_return_date: payload.expected_return_date,
-      follow_up_on: payload.call_again_on,
+      follow_up_on: payload.call_again_on || payload.expected_return_date || null,
     });
     return unwrap<any>(res);
   }
@@ -41,8 +40,7 @@ export async function saveCallOutcome(payload: SaveCallOutcomePayload) {
     note: payload.note,
     promise_amount: payload.promise_amount,
     promise_date: payload.promise_date,
-    expected_return_date: payload.expected_return_date,
-    follow_up_on: payload.call_again_on,
+    follow_up_on: payload.call_again_on || payload.expected_return_date || null,
   });
   return unwrap<any>(res);
 }

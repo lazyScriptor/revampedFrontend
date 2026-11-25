@@ -94,7 +94,8 @@ export function useInvoiceActivity(invoiceId: number | null | undefined) {
       return;
     }
     let active = true;
-    fetchActivityList({ preset: "this_month" }, 1, 50, invoiceId)
+    // No period: a bill's history covers all of its life.
+    fetchActivityList({}, 1, 50, invoiceId)
       .then((res) => {
         if (active) setData(res);
       })
