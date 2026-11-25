@@ -3948,7 +3948,34 @@
       "qtyLabel": "ප්‍රමාණය {{count}}",
       "totalAmount": "මුළු බිල්පත",
       "paidAmount": "ගෙවූ මුදල",
-      "balanceDue": "ගෙවීමට ඉතිරි මුදල"
+      "balanceDue": "ගෙවීමට ඉතිරි මුදල",
+      "cachedAgo": "මිනිත්තු {{count}} කට පෙර යාවත්කාලීන විය",
+      "openedFrom": "ඔබ මෙය විවෘත කළේ: {{summary}}",
+      "kind_rental": "කුලී",
+      "kind_sale": "විකුණුම්",
+      "kind_mixed": "මිශ්‍ර",
+      "backdatedDays": "දින {{count}} ක් පසුපසට",
+      "settlementTag": "#S-{{id}} බේරුම්කරණයේ කොටසකි",
+      "walkInCustomer": "සාමාන්‍ය පාරිභෝගිකයා",
+      "idCardHeld": "හැඳුනුම්පත භාරයේ ඇත",
+      "idCardReturned": "හැඳුනුම්පත ආපසු දී ඇත",
+      "rentLabel": "කුලිය",
+      "itemsAmountLabel": "භාණ්ඩ",
+      "transportLabel": "ප්‍රවාහනය",
+      "discountLabel": "වට්ටම",
+      "lateFeesLabel": "ප්‍රමාද ගාස්තු",
+      "returnedLabel": "ආපසු ගෙවූ",
+      "daysLate": "දින {{count}} ක් ප්‍රමාදයි",
+      "saleLinesHeading": "විකුණුම් භාණ්ඩ",
+      "paymentsHeading": "ගෙවීම් සහ ආපසු ගෙවීම්",
+      "refundTag": "ආපසු ගෙවීම",
+      "voidedTag": "අවලංගු කළ",
+      "enteredOn": "ඇතුළත් කළේ {{date}}",
+      "callsHeading": "මෙම බිල්පත පිළිබඳ ඇමතුම්",
+      "historyHeading": "ඉතිහාසය",
+      "openInGearGrid": "GearGrid හි විවෘත කරන්න",
+      "sharePdf": "බිල් PDF බෙදාගන්න",
+      "markChecked": "පරීක්ෂා කළ බව සලකුණු කරන්න"
     },
     "calls": {
       "incomingTitle": "ලැබෙන ඇමතුමක්",
@@ -4574,7 +4601,8 @@
       "group_alerts": "අනතුරු ඇඟවීම්",
       "group_digest": "සාරාංශ",
       "empty": "තවම දැනුම්දීම් නැත.",
-      "clear": "ඉතිහාසය හිස් කරන්න"
+      "clear": "ඉතිහාසය හිස් කරන්න",
+      "updatedJustNow": "දැන් යාවත්කාලීන විය"
     },
     "app": {
       "offline": "GearGrid විවෘත කිරීමට අන්තර්ජාලයට සම්බන්ධ වන්න.",
@@ -4639,7 +4667,8 @@
       "notificationText": "Android දැනුම්දීම් දුරකථනයේම අකුරු ප්‍රමාණය භාවිතා කරයි, යෙදුමකට එය වෙනස් කළ නොහැක. GearGrid පාලනය කරන්නේ වචන සහ පෙන්වන විස්තරයි.",
       "licences": "විවෘත මූලාශ්‍ර බලපත්‍ර geargrid.live හි ලැයිස්තුගතය."
     },
-    "backToPhoneHome": "දුරකථන මුල් පිටුව"
+    "backToPhoneHome": "දුරකථන මුල් පිටුව",
+    "phoneHome": "දුරකථන මුල් පිටුව"
   },
   "collections": {
     "call": {

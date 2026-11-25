@@ -69,13 +69,13 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    // Paired-phone start page: a phone that already has a device_id opens on its own home (/device).
+    // Paired-phone start page: a phone that already has a device_id opens on Alerts (/device/alerts).
     // This applies to the first visit of a launch only. Choosing the GearGrid tab or following a link
     // to "/" later in the same session must not bounce back (it used to trap staff on /device).
     try {
       if (getDeviceId() && !window.sessionStorage.getItem(APP_LAUNCHED_KEY)) {
         window.sessionStorage.setItem(APP_LAUNCHED_KEY, "1");
-        throw redirect({ to: "/device" });
+        throw redirect({ to: "/device/alerts" });
       }
     } catch (err: any) {
       // Rethrow TanStack Router redirects; swallow any storage errors.

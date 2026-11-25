@@ -3948,7 +3948,34 @@
       "qtyLabel": "Qty {{count}}",
       "totalAmount": "Total bill",
       "paidAmount": "Paid so far",
-      "balanceDue": "Balance due"
+      "balanceDue": "Balance due",
+      "cachedAgo": "Updated {{count}} min ago",
+      "openedFrom": "You opened this from: {{summary}}",
+      "kind_rental": "Rental",
+      "kind_sale": "Sale",
+      "kind_mixed": "Mixed",
+      "backdatedDays": "Back-dated {{count}} days",
+      "settlementTag": "Part of settlement #S-{{id}}",
+      "walkInCustomer": "Walk-in customer",
+      "idCardHeld": "ID card held",
+      "idCardReturned": "ID card returned",
+      "rentLabel": "Rent",
+      "itemsAmountLabel": "Items",
+      "transportLabel": "Transport",
+      "discountLabel": "Discount",
+      "lateFeesLabel": "Late fees",
+      "returnedLabel": "Returned",
+      "daysLate": "{{count}} days late",
+      "saleLinesHeading": "Items sold",
+      "paymentsHeading": "Payments & refunds",
+      "refundTag": "Refund",
+      "voidedTag": "Voided",
+      "enteredOn": "Entered {{date}}",
+      "callsHeading": "Calls about this bill",
+      "historyHeading": "History",
+      "openInGearGrid": "Open in GearGrid",
+      "sharePdf": "Share bill PDF",
+      "markChecked": "Mark checked"
     },
     "calls": {
       "incomingTitle": "Incoming call",
@@ -4574,7 +4601,8 @@
       "group_alerts": "Alerts",
       "group_digest": "Summaries",
       "empty": "No alerts yet.",
-      "clear": "Clear history"
+      "clear": "Clear history",
+      "updatedJustNow": "Updated just now"
     },
     "app": {
       "offline": "Connect to the internet to open GearGrid.",
@@ -4639,7 +4667,8 @@
       "notificationText": "Android notifications use the phone's own text size, which an app cannot change. GearGrid controls the wording and which details appear.",
       "licences": "Open-source licences are listed on geargrid.live."
     },
-    "backToPhoneHome": "Phone home"
+    "backToPhoneHome": "Phone home",
+    "phoneHome": "Phone home"
   },
   "collections": {
     "call": {
