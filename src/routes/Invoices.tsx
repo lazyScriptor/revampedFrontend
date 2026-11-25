@@ -93,7 +93,7 @@ export default function InvoicesRoute() {
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [onBehalfOfCustomer, setOnBehalfOfCustomer] = useState<any | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [fees, setFees] = useState({ transport: 0, discount: 0, advance: 0 });
+  const [fees, setFees] = useState<{ transport: number; discount: number; advance: number; discount_reason?: any }>({ transport: 0, discount: 0, advance: 0, discount_reason: null });
   // Optional bill date/time (local "YYYY-MM-DDTHH:mm"); null means the bill is dated now.
   const [billDate, setBillDate] = useState<string | null>(null);
   const billDateIso = billDate ? new Date(billDate).toISOString() : null;
@@ -175,6 +175,7 @@ export default function InvoicesRoute() {
         borrowed_on_behalf_of_customer_id: onBehalfOfCustomer?.customer_id ?? null,
         items: cartItems,
         fees: fees,
+        ...(fees.discount > 0 && fees.discount_reason ? { discount_reason: fees.discount_reason } : {}),
         ...(billDateIso ? { issued_date: billDateIso } : {}),
       });
 

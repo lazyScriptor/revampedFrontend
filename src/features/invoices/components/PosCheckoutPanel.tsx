@@ -21,11 +21,13 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 import { useTranslation } from "react-i18next";
 import { BillDateControl } from "./BillDateControl";
+import { ReasonChips, isReasonValid } from "@/components/ui/ReasonChips";
+import type { ReasonValue } from "@/features/activity/types";
 
 interface PosCheckoutPanelProps {
   cartItems: CartItem[];
   selectedCustomer: any | null;
-  fees: { transport: number; discount: number; advance: number; advance_payment_method?: string };
+  fees: { transport: number; discount: number; advance: number; advance_payment_method?: string; discount_reason?: ReasonValue | null };
   setFees: React.Dispatch<React.SetStateAction<any>>;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -82,7 +84,9 @@ export function PosCheckoutPanel({
     }
   };
 
-  const canDispatch = !!selectedCustomer && cartItems.length > 0 && !isSubmitting;
+  const discountReason = fees.discount_reason ?? null;
+  const discountNeedsReason = fees.discount > 0 && !isReasonValid(discountReason, true);
+  const canDispatch = !!selectedCustomer && cartItems.length > 0 && !isSubmitting && !discountNeedsReason;
 
   // ── Collapsed sidebar strip ──────────────────────────────────────────────────
   if (isCollapsed) {
@@ -269,6 +273,16 @@ export function PosCheckoutPanel({
                 inputLabel: { sx: { color: "#94a3b8" } },
               }}
             />
+            {fees.discount > 0 && (
+              <ReasonChips
+                list="discount"
+                value={discountReason}
+                onChange={(r) => setFees((prev: any) => ({ ...prev, discount_reason: r }))}
+                required
+                surface="dark"
+                error={discountNeedsReason}
+              />
+            )}
           </Box>
         </Box>
 
@@ -472,6 +486,11 @@ export function PosCheckoutPanel({
         {selectedCustomer && cartItems.length === 0 && (
           <Typography variant="caption" sx={{ color: "#64748b", display: "block", textAlign: "center", mb: 1 }}>
             {t("invoices.PosCheckoutPanel.addEquipmentToTheOrder")}
+          </Typography>
+        )}
+        {selectedCustomer && cartItems.length > 0 && discountNeedsReason && (
+          <Typography variant="caption" sx={{ color: "#fbbf24", display: "block", textAlign: "center", mb: 1, fontWeight: 700 }}>
+            {t("reasons.discountReasonRequired")}
           </Typography>
         )}
         {cartItems.length > 0 && onPrintEstimate && (

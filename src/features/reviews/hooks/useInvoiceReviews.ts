@@ -27,6 +27,7 @@ export interface ReviewDraft {
   comment?: string | null;
   stage?: ReviewStage;
   is_primary?: boolean;
+  tags?: string[];
 }
 
 const fetchReviews = async (invoiceId: number): Promise<InvoiceReview[]> => {
