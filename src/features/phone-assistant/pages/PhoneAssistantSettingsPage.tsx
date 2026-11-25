@@ -17,6 +17,7 @@ import { CallScreenDesigner } from "../components/CallScreenDesigner";
 import { PushSettingsPanel } from "../components/PushSettingsPanel";
 import { NotificationLanguagePanel } from "../components/NotificationLanguagePanel";
 import { ApprovalsPanel, ContactsCallsPanel, SyncPrivacyPanel } from "../components/PolicyTabs";
+import { CollectionsSettingsSection } from "@/features/collections/components/CollectionsSettingsSection";
 
 export const PHONE_SETTINGS_TABS = [
   "phones",
@@ -90,7 +91,12 @@ export default function PhoneAssistantSettingsPage() {
       {active === "call-screen" && <CallScreenDesigner />}
       {active === "notifications" && <PushSettingsPanel />}
       {active === "languages" && <NotificationLanguagePanel />}
-      {active === "contacts-calls" && <ContactsCallsPanel />}
+      {active === "contacts-calls" && (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <ContactsCallsPanel />
+          <CollectionsSettingsSection />
+        </Box>
+      )}
       {active === "approvals" && <ApprovalsPanel />}
       {active === "sync-privacy" && <SyncPrivacyPanel />}
     </Box>

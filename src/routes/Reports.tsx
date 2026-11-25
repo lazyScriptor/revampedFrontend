@@ -20,7 +20,8 @@ import PrintIcon from "@mui/icons-material/Print";
 
 import { FeatureLocked, usePlanChecker } from "@/features/plan/usePlan";
 import AllCustomersReport from "@/features/reports/customers/AllCustomersReport";
-import OutstandingBalancesReport from "@/features/reports/customers/OutstandingBalancesReport";
+import CollectionsReportPage from "@/features/collections/pages/CollectionsReportPage";
+import CallsReportPage from "@/features/collections/pages/CallsReportPage";
 import CategoryPerformanceReport from "@/features/reports/equipment/CategoryPerformanceReport";
 import UtilizationReport from "@/features/reports/equipment/UtilizationReport";
 import MaintenanceReport from "@/features/reports/equipment/MaintenanceReport";
@@ -54,7 +55,8 @@ const CATEGORIES: {
     icon: <PeopleIcon fontSize="small" />,
     reports: [
       { key: "all", label: tk("reports.allCustomers"), component: AllCustomersReport },
-      { key: "outstanding", label: tk("reports.outstandingBalances"), component: OutstandingBalancesReport },
+      { key: "collections", label: tk("collections.report.title"), component: CollectionsReportPage },
+      { key: "calls", label: tk("collections.callsReport.title"), component: CallsReportPage },
     ],
   },
   {

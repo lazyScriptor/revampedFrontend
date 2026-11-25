@@ -1,11 +1,12 @@
 import React from "react";
 import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
-import PhoneIcon from "@mui/icons-material/Phone";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import type { OpenInvoiceRow, OpenInvoicesView } from "@/features/dashboard/types";
 import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplateForOpenInvoice } from "@/features/whatsapp/lib/whatsapp";
+import { LastCallLine } from "@/features/collections/components/LastCallLine";
+import { RowCallControls } from "@/features/collections/components/RowCallControls";
 import { dashboardTokens as dt, dashboardTones } from "../../_tokens";
 import { PaymentReturnIcons } from "./PaymentReturnIcons";
 import { useDashboardMoney } from "@/features/accounting/utils/currency";
@@ -209,6 +210,8 @@ export const OpenInvoiceRowItem: React.FC<OpenInvoiceRowProps> = ({
             </Typography>
           </Stack>
         )}
+        {/* Last call line */}
+        <LastCallLine lastCall={row.last_call} />
       </Stack>
 
       {/* Right: Amount / Status icons / Action buttons */}
@@ -269,38 +272,13 @@ export const OpenInvoiceRowItem: React.FC<OpenInvoiceRowProps> = ({
             </Tooltip>
           )}
 
-          {hasPhone && (
-            <Tooltip
-              title={t("dashboard.ActionableReturnsTable.call", {
-                phone_number: row.customer.phone_number,
-                defaultValue: `Call ${row.customer.phone_number}`,
-              })}
-            >
-              <Box
-                component="a"
-                href={`tel:${row.customer.phone_number}`}
-                aria-label={`Call ${row.customer.phone_number}`}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 30,
-                  height: 30,
-                  borderRadius: dt.radius.sm,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  color: dashboardTones.accent.strong,
-                  textDecoration: "none",
-                  "&:hover": {
-                    bgcolor: dashboardTones.accent.soft,
-                    borderColor: dashboardTones.accent.strong,
-                  },
-                }}
-              >
-                <PhoneIcon sx={{ fontSize: 15 }} />
-              </Box>
-            </Tooltip>
-          )}
+          <RowCallControls
+            customerId={row.customer.customer_id}
+            customerName={row.customer.name || t("invoices.ReadOnlyInvoiceModal.customer", "Customer")}
+            phone={row.customer.phone_number}
+            invoiceIds={[row.invoice_id]}
+            lastCall={row.last_call}
+          />
         </Box>
       </Box>
     </Box>

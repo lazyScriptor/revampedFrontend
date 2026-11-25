@@ -1,3 +1,5 @@
+import type { CallFilterKey, LastCallSummary } from "@/features/collections/types";
+
 // ============================================================================
 // LAYOUT & CONFIG
 // ============================================================================
@@ -63,6 +65,7 @@ export interface UtilizationData {
 export interface ReturnItem {
   line_id: number;
   invoice_id: number;
+  customer_id?: number;
   first_name: string;
   last_name: string;
   company_name: string | null;
@@ -72,12 +75,14 @@ export interface ReturnItem {
   expected_return_date: string;
   borrow_quantity: number;
   days_overdue: number;
+  last_call?: LastCallSummary | null;
 }
 
 export interface ReturnsData {
   items: ReturnItem[];
   total: number;
   overdueCount: number;
+  callCounts?: Partial<Record<CallFilterKey, number>>;
 }
 
 export interface MaintenanceItem {
@@ -140,6 +145,7 @@ export interface OpenInvoiceRow {
   open_ended?: boolean;
   is_unpaid: boolean;
   has_items_out: boolean;
+  last_call?: LastCallSummary | null;
 }
 
 export interface OpenInvoicesSummary {
@@ -165,6 +171,7 @@ export interface OpenInvoicesData {
   buckets: OpenInvoiceBucket[];
   rows: OpenInvoiceRow[];
   totalCount: number;
+  callCounts?: Partial<Record<CallFilterKey, number>>;
 }
 
 // ============================================================================

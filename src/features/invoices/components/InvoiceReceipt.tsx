@@ -332,6 +332,7 @@ export interface InvoiceReceiptProps {
   isPreview?: boolean; // Render visibly on screen inside a dialog preview
   design?: ReceiptDesign; // "minimal" (default) or the detailed "classic" layout
   showIdStatus?: boolean; // print whether the customer's ID card is kept
+  callRecordingTermsLine?: string | null;
 }
 
 export function buildSnapshotReceiptProps(log: any) {
@@ -448,6 +449,7 @@ export const InvoiceReceipt = ({
   isPreview = false,
   design,
   showIdStatus,
+  callRecordingTermsLine,
 }: InvoiceReceiptProps) => {
   // Fall back to the counter's saved choice so every print path matches the print dialog.
   const activeDesign: ReceiptDesign = design ?? getReceiptDesign();
@@ -462,6 +464,19 @@ export const InvoiceReceipt = ({
       : "en");
 
   const t = getReceiptLabels(activeLang);
+
+  const resolvedCallRecordingLine = useMemo(() => {
+    if (callRecordingTermsLine) return callRecordingTermsLine;
+    if (invoice?.terms_call_recording) return String(invoice.terms_call_recording);
+    if (invoice?.call_recording_terms_line) return String(invoice.call_recording_terms_line);
+    const cr = config?.call_recording;
+    if (cr?.termsLineEnabled) {
+      return activeLang === "si"
+        ? cr.termsLine_si || "සේවා සහ වාර්තා තබා ගැනීම සඳහා අපගේ වෙළඳසැල සමඟ සිදු කරන ඇමතුම් පටිගත කළ හැක."
+        : cr.termsLine_en || "Calls with our shop may be recorded for service and record-keeping.";
+    }
+    return null;
+  }, [callRecordingTermsLine, invoice?.terms_call_recording, invoice?.call_recording_terms_line, config?.call_recording, activeLang]);
 
   // Captured signatures for this invoice. Hook returns null when invoice has
   // no id (draft / snapshot preview). We pick the most recent CUSTOMER +
@@ -834,6 +849,7 @@ export const InvoiceReceipt = ({
           showBarcode={showBarcode}
           showIdStatus={printIdStatus}
           customNotes={customNotes}
+          callRecordingTermsLine={resolvedCallRecordingLine}
         />
       </Box>
     );
@@ -1242,6 +1258,9 @@ export const InvoiceReceipt = ({
           <div style={{ margin: "0.5px 0" }}>{t.term2}</div>
           <div style={{ margin: "0.5px 0" }}>{t.term3}</div>
           <div style={{ margin: "0.5px 0" }}>{t.term4}</div>
+          {resolvedCallRecordingLine && (
+            <div style={{ margin: "0.5px 0" }}>{resolvedCallRecordingLine}</div>
+          )}
         </div>
       )}
 
@@ -1367,6 +1386,7 @@ interface MinimalReceiptBodyProps {
   showBarcode: boolean;
   showIdStatus: boolean;
   customNotes?: string;
+  callRecordingTermsLine?: string | null;
 }
 
 function MinimalReceiptBody({
@@ -1382,6 +1402,7 @@ function MinimalReceiptBody({
   showBarcode,
   showIdStatus,
   customNotes,
+  callRecordingTermsLine,
 }: MinimalReceiptBodyProps) {
   const small = is58mm ? "8.5px" : "9.5px";
   const big = is58mm ? "13px" : "15px";
@@ -1514,6 +1535,7 @@ function MinimalReceiptBody({
             <div>{t.term2}</div>
             <div>{t.term3}</div>
             <div>{t.term4}</div>
+            {callRecordingTermsLine && <div>{callRecordingTermsLine}</div>}
           </div>
         </>
       )}

@@ -1,13 +1,18 @@
 import React, { useMemo, useState } from "react";
-import { Box, Button, Chip, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Chip, Dialog, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useOpenInvoices } from "@/features/dashboard/hooks/useDashboardHooks";
 import type { OpenInvoiceAgeDays, OpenInvoiceRow } from "@/features/dashboard/types";
+import type { CallFilterKey } from "@/features/collections/types";
+import { CallFilterChips } from "@/features/collections/components/CallFilterChips";
+import { VirtualizedList } from "@/features/dashboard/components/VirtualizedList";
 import { SkeletonListRows } from "@/components/ui/loading";
 import { suggestedTemplateForOpenInvoice } from "@/features/whatsapp/lib/whatsapp";
 import { dashboardTones } from "../_tokens";
@@ -20,9 +25,11 @@ const OpenReturnsWidget: React.FC = () => {
   const navigate = useNavigate();
   const [olderThanDays, setOlderThanDays] = useState<OpenInvoiceAgeDays>(7);
   const [onlyOverdue, setOnlyOverdue] = useState(false);
+  const [callFilter, setCallFilter] = useState<CallFilterKey | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<OpenInvoiceRow | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
-  const { data, isLoading, isError, refetch } = useOpenInvoices("returns", olderThanDays, onlyOverdue);
+  const { data, isLoading, isError, refetch } = useOpenInvoices("returns", olderThanDays, onlyOverdue, callFilter);
 
   const selectedTemplate = useMemo(
     () =>
@@ -36,7 +43,7 @@ const OpenReturnsWidget: React.FC = () => {
     [selectedInvoice],
   );
 
-  return (
+  const renderCardBody = (inOverlay = false) => (
     <Box
       sx={{
         height: "100%",
@@ -124,42 +131,52 @@ const OpenReturnsWidget: React.FC = () => {
           </Box>
         </Box>
 
-        {data && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, flexWrap: "wrap" }}>
-            <Chip
-              size="small"
-              label={t("dashboard.openInvoices.invoiceCount", {
-                count: data.summary.returns.count,
-                defaultValue: `${data.summary.returns.count} invoices`,
-              })}
-              sx={{
-                height: 20,
-                fontSize: "0.66rem",
-                fontWeight: 700,
-                fontVariantNumeric: "tabular-nums",
-                bgcolor: dashboardTones.slate.soft,
-                color: dashboardTones.slate.on,
-              }}
-            />
-            {data.summary.returns.overdueCount > 0 && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, flexWrap: "wrap" }}>
+          {data && (
+            <>
               <Chip
                 size="small"
-                label={t("dashboard.openInvoices.overdueCountChip", {
-                  count: data.summary.returns.overdueCount,
-                  defaultValue: `${data.summary.returns.overdueCount} overdue`,
+                label={t("dashboard.openInvoices.invoiceCount", {
+                  count: data.summary.returns.count,
+                  defaultValue: `${data.summary.returns.count} invoices`,
                 })}
                 sx={{
                   height: 20,
                   fontSize: "0.66rem",
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontVariantNumeric: "tabular-nums",
-                  bgcolor: dashboardTones.danger.soft,
-                  color: dashboardTones.danger.on,
+                  bgcolor: dashboardTones.slate.soft,
+                  color: dashboardTones.slate.on,
                 }}
               />
-            )}
-          </Box>
-        )}
+              {data.summary.returns.overdueCount > 0 && (
+                <Chip
+                  size="small"
+                  label={t("dashboard.openInvoices.overdueCountChip", {
+                    count: data.summary.returns.overdueCount,
+                    defaultValue: `${data.summary.returns.overdueCount} overdue`,
+                  })}
+                  sx={{
+                    height: 20,
+                    fontSize: "0.66rem",
+                    fontWeight: 800,
+                    fontVariantNumeric: "tabular-nums",
+                    bgcolor: dashboardTones.danger.soft,
+                    color: dashboardTones.danger.on,
+                  }}
+                />
+              )}
+            </>
+          )}
+          <IconButton
+            size="small"
+            onClick={() => setExpanded(!inOverlay)}
+            aria-label={inOverlay ? t("common.close", "Close") : t("dashboard.openInvoices.expand", "Expand")}
+            sx={{ width: 28, height: 28 }}
+          >
+            {inOverlay ? <CloseIcon fontSize="small" /> : <OpenInFullOutlinedIcon sx={{ fontSize: 16 }} />}
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Age Filter Chips + Only Overdue Toggle */}
@@ -170,6 +187,9 @@ const OpenReturnsWidget: React.FC = () => {
         onlyOverdue={onlyOverdue}
         onOnlyOverdueChange={setOnlyOverdue}
       />
+
+      {/* Call Filter Chips */}
+      <CallFilterChips value={callFilter} onChange={setCallFilter} counts={data?.callCounts} />
 
       {/* List Body */}
       <Box
@@ -239,14 +259,18 @@ const OpenReturnsWidget: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          data.rows.map((row) => (
-            <OpenInvoiceRowItem
-              key={row.invoice_id}
-              row={row}
-              view="returns"
-              onRowClick={() => setSelectedInvoice(row)}
-            />
-          ))
+          <VirtualizedList
+            items={data.rows}
+            estimatedItemHeight={82}
+            getKey={(row) => row.invoice_id}
+            renderItem={(row) => (
+              <OpenInvoiceRowItem
+                row={row}
+                view="returns"
+                onRowClick={() => setSelectedInvoice(row)}
+              />
+            )}
+          />
         )}
       </Box>
 
@@ -275,7 +299,7 @@ const OpenReturnsWidget: React.FC = () => {
         <Button
           size="small"
           endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
-          onClick={() => navigate({ to: "/rental-history" })}
+          onClick={() => navigate({ to: "/reports/customers/collections", search: { not_returned: "1" } as any })}
           sx={{
             textTransform: "none",
             fontWeight: 700,
@@ -287,13 +311,23 @@ const OpenReturnsWidget: React.FC = () => {
           {t("dashboard.openInvoices.seeAll", "See all")}
         </Button>
       </Box>
+    </Box>
+  );
 
+  return (
+    <>
+      {renderCardBody(false)}
+      <Dialog fullScreen open={expanded} onClose={() => setExpanded(false)}>
+        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+          {renderCardBody(true)}
+        </DialogContent>
+      </Dialog>
       <OpenInvoiceQuickModal
         invoiceId={selectedInvoice?.invoice_id ?? null}
         whatsAppTemplate={selectedTemplate}
         onClose={() => setSelectedInvoice(null)}
       />
-    </Box>
+    </>
   );
 };
 

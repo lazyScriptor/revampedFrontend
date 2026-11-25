@@ -112,39 +112,28 @@ const DashboardEngine: React.FC = () => {
   }, [layout, catalogMap, hasPermission, maintenanceOn]);
 
   // Desktop RGL Layout
-  const desktopLayouts = useMemo(
-    () => ({
-      lg: visibleLayout.map((item) => ({
+  const desktopLayouts = useMemo(() => {
+    const mapItem = (item: StoreLayoutItem) => {
+      const def = catalogMap[item.i];
+      const minW = Math.min(4, Math.max(1, item.minW ?? def?.min_w ?? 1));
+      const minH = Math.max(1, item.minH ?? def?.min_h ?? 1);
+      return {
         i: item.i,
         x: item.x,
         y: item.y,
         w: item.w,
-        h: item.h,
-      })),
-      md: visibleLayout.map((item) => ({
-        i: item.i,
-        x: item.x,
-        y: item.y,
-        w: item.w,
-        h: item.h,
-      })),
-      sm: visibleLayout.map((item) => ({
-        i: item.i,
-        x: item.x,
-        y: item.y,
-        w: item.w,
-        h: item.h,
-      })),
-      xs: visibleLayout.map((item) => ({
-        i: item.i,
-        x: item.x,
-        y: item.y,
-        w: item.w,
-        h: item.h,
-      })),
-    }),
-    [visibleLayout],
-  );
+        h: Math.max(minH, item.h),
+        minW,
+        minH,
+      };
+    };
+    return {
+      lg: visibleLayout.map(mapItem),
+      md: visibleLayout.map(mapItem),
+      sm: visibleLayout.map(mapItem),
+      xs: visibleLayout.map(mapItem),
+    };
+  }, [visibleLayout, catalogMap]);
 
   const sortedVisibleLayout = useMemo(() => {
     return [...visibleLayout].sort((a, b) => {
@@ -499,8 +488,8 @@ const DashboardEngine: React.FC = () => {
                 const isKpi = item.h <= 1 && item.w <= 1;
                 const desktopSpan = Math.min(4, Math.max(1, item.w));
                 const mobileSpan = isKpi ? (item.w > 1 ? 2 : 1) : 2;
-                const desktopHeight = item.h <= 1 ? 140 : item.h === 2 ? 296 : 452;
-                const mobileHeight = isKpi ? 130 : item.h >= 3 ? 360 : 290;
+                const desktopHeight = item.h * 140 + Math.max(0, item.h - 1) * 16;
+                const mobileHeight = isKpi ? 130 : Math.max(290, Math.min(560, item.h * 100));
 
                 return (
                   <Box
@@ -568,7 +557,7 @@ const DashboardEngine: React.FC = () => {
               margin={[16, 16]}
               containerPadding={[0, 0]}
               dragConfig={{ enabled: isEditMode, handle: ".drag-handle" }}
-              resizeConfig={{ enabled: false }}
+              resizeConfig={{ enabled: isEditMode }}
               compactor={verticalCompactor}
               onLayoutChange={onLayoutChange}
             >

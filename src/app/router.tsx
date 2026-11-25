@@ -25,6 +25,8 @@ import {
   WorkforceRoute,
   AccountingRoute,
   ReportsRoute,
+  CollectionsReportPage,
+  CustomerCollectionDetailPage,
   MessagesRoute,
   LockerRoute,
   ProfileRoute,
@@ -322,8 +324,37 @@ const reportsRoute = createRoute({
       : undefined,
     report: typeof search.report === "string" ? (search.report as string) : undefined,
   }),
-  beforeLoad: () => requirePermission("inventory_permission"),
+  beforeLoad: ({ search }) => {
+    requirePermission("inventory_permission");
+    if (search.category === "customers" && search.report === "outstanding") {
+      throw redirect({ to: "/reports/customers/collections", search: { owes_money: "1" } as any });
+    }
+  },
   component: () => <ReportsRoute />,
+});
+
+const collectionsReportRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/reports/customers/collections",
+  validateSearch: (search: Record<string, unknown>) => search as Record<string, any>,
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <CollectionsReportPage />,
+});
+
+const customerCollectionDetailRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/reports/customers/collections/$customerId",
+  validateSearch: (search: Record<string, unknown>) => search as Record<string, any>,
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <CustomerCollectionDetailPage />,
+});
+
+const outstandingBalancesRedirectRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/reports/customers/outstanding",
+  beforeLoad: () => {
+    throw redirect({ to: "/reports/customers/collections", search: { owes_money: "1" } as any });
+  },
 });
 
 // Personal profile (no permission gate — every authenticated user has one)
@@ -418,6 +449,9 @@ const routeTree = rootRoute.addChildren([
     workforceRoute,
     accountingRoute,
     reportsRoute,
+    collectionsReportRoute,
+    customerCollectionDetailRoute,
+    outstandingBalancesRedirectRoute,
     profileRoute,
     phoneAssistantSettingsRoute,
     permissionsRoute,
