@@ -1,0 +1,12 @@
+export const FINDER_OVERLAY_ID = "retail-finder";
+export const ITEM_CARD_OVERLAY_ID = "retail-item-card";
+export const NEW_ITEM_OVERLAY_ID = "retail-new-item";
+export const CATEGORIES_OVERLAY_ID = "retail-categories";
+export const BRANDS_OVERLAY_ID = "retail-brands";
+export const WORDS_OVERLAY_ID = "retail-words";
+export const STOCK_IN_OVERLAY_ID = "retail-stock-in";
+export const CORRECT_OVERLAY_ID = "retail-correct";
+export const COUNT_OVERLAY_ID = "retail-count";
+export const HISTORY_OVERLAY_ID = "retail-history";
+export const RETURN_OVERLAY_ID = "retail-return";
+export const FIND_RETURN_OVERLAY_ID = "retail-find-return";

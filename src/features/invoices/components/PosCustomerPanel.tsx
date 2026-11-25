@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { formatDateTime } from "@/lib/dates";
 import { invoiceStatusLabel } from "@/features/invoices/lib/invoiceStatus";
 import {
@@ -53,6 +53,8 @@ import {
 import type { PhoneContactMatch } from "@/features/phone-assistant/api/phoneAssistantApi";
 import { useTranslation } from "react-i18next";
 import { isContactSearch, MIN_CONTACT_SEARCH_DIGITS } from "@/lib/phoneSearch";
+import { CustomerPriceLevelChip, PosWalkInButton } from "@/features/retail/pos/PosWalkInControl";
+import { usePosCartStore } from "../store/posCartStore";
 
 interface PosCustomerPanelProps {
   selectedCustomer: any | null;
@@ -73,6 +75,18 @@ export function PosCustomerPanel({
   const canSearchPhoneContacts = useCanPerform("phone_contacts:view") && canPlan("phone_assistant");
 
   const [inputValue, setInputValue] = useState("");
+  // D2: a machine picked for the walk-in waits in the cart store while we ask for a named customer.
+  const customerPrompt = usePosCartStore((s) => s.customerPrompt);
+  const heldMachine = usePosCartStore((s) => s.pendingRental);
+  const cancelCustomerPrompt = usePosCartStore((s) => s.cancelCustomerPrompt);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!customerPrompt) return;
+    setInputValue("");
+    setSearchOpen(true);
+    searchRef.current?.querySelector("input")?.focus();
+  }, [customerPrompt]);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [selectedPreviewInvoice, setSelectedPreviewInvoice] = useState<any | null>(null);
   const [pendingContact, setPendingContact] = useState<PhoneContactMatch | null>(null);
@@ -175,8 +189,13 @@ export function PosCustomerPanel({
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
       {/* Search */}
       <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
         <Autocomplete
-          sx={{ width: "100%" }}
+          ref={searchRef}
+          open={searchOpen}
+          onOpen={() => setSearchOpen(true)}
+          onClose={() => setSearchOpen(false)}
+          sx={{ flex: 1, minWidth: 0 }}
           slotProps={{
             popper: { placement: "bottom-start", style: { minWidth: 340 } },
             paper: { sx: { maxHeight: 420 } },
@@ -419,6 +438,33 @@ export function PosCustomerPanel({
             );
           }}
         />
+        <PosWalkInButton selectedCustomerId={selectedCustomer?.customer_id ?? null} onSelectCustomer={onSelectCustomer} />
+        </Box>
+        {customerPrompt && (
+          <Alert
+            severity="info"
+            data-testid="rent-needs-customer"
+            sx={{ py: 0, alignItems: "center" }}
+            action={
+              <IconButton
+                size="small"
+                aria-label={t("common.cancel")}
+                onClick={cancelCustomerPrompt}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            }
+          >
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {t("retail.pos.rentNeedsCustomer")}
+            </Typography>
+            {heldMachine && (
+              <Typography variant="caption" color="text.secondary">
+                {heldMachine.equipment_name}
+              </Typography>
+            )}
+          </Alert>
+        )}
         <Tooltip title={t("invoices.PosCustomerPanel.newCustomerHint")}>
           <Button
             variant="outlined"
@@ -637,6 +683,7 @@ export function PosCustomerPanel({
                     color: "#475569",
                   }}
                 />
+                <CustomerPriceLevelChip customer={selectedCustomer} />
                 {selectedCustomer.nic_number && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <BadgeIcon sx={{ fontSize: 13, color: "text.secondary" }} />

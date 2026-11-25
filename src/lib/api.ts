@@ -118,15 +118,9 @@ api.interceptors.response.use(
             window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         }
 
-        const errorMessage = error.response?.data?.message || i18n.t('errors.unexpected');
-        // Keep the HTTP status (undefined = no response, e.g. offline) and response payload so callers (e.g. 409 settlement_changed) can react to it.
-        return Promise.reject(
-            Object.assign(new Error(errorMessage), {
-                status,
-                code: (error.response?.data as any)?.code,
-                data: (error.response?.data as any)?.data ?? error.response?.data,
-                response: error.response,
-            })
-        );
+        const data = error.response?.data;
+        const errorMessage = data?.message || i18n.t('errors.unexpected');
+        // Keep HTTP status & payload (status undefined = no response, e.g. offline) so callers (409 price_changed / out_of_stock / settlement_changed) can react cleanly.
+        return Promise.reject(Object.assign(new Error(errorMessage), { status, code: (data as any)?.code, data, response: error.response }));
     }
 );

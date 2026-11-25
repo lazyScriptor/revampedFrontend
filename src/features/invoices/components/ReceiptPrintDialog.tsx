@@ -42,6 +42,9 @@ import { SignatureCaptureDialog } from "@/features/signatures/components/Signatu
 import { useInvoiceSignatures } from "@/features/signatures/hooks/useSignatures";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
+import { useReceiptSettings } from "@/features/retail/receipts/useReceiptSettings";
+import { billKindOf } from "@/features/retail/receipts/receiptModel";
+import { RetailReceiptSettings } from "@/features/retail/receipts/RetailReceiptSettings";
 
 export interface ReceiptPrintDialogProps {
   open: boolean;
@@ -63,7 +66,8 @@ export function ReceiptPrintDialog({
   defaultCustomNotes = "",
 }: ReceiptPrintDialogProps) {
   const { t } = useTranslation();
-  const [paperWidth, setPaperWidth] = useState<"80mm" | "58mm">("80mm");
+  const retailReceipt = useReceiptSettings();
+  const [paperWidth, setPaperWidth] = useState<"80mm" | "58mm" | "a4">("80mm");
   const [density, setDensity] = useState<"standard" | "compact">("standard");
   const [language, setLanguage] = useState<ReceiptLanguage>(() => {
     try {
@@ -118,13 +122,18 @@ export function ReceiptPrintDialog({
       const custName = cust?.company_name || `${cust?.first_name || ""} ${cust?.last_name || ""}`.trim() || "Walk-in Customer";
       const custPhone = cust?.phone_number || "";
       const docNum = isDraft ? (draftData?.draftId || "DRAFT-QUOTE") : `INV-${invoice?.invoice_id || "POS"}`;
+      const soldLinesDraft: any[] = isDraft ? draftData?.saleLines || [] : [];
+      const isShortSale = !isDraft && billKindOf(invoice) === "sale" && retailReceipt.shortSaleReceipt;
       const docType = isDraft
         ? "DRAFT"
+        : isShortSale
+        ? "SALE_RECEIPT"
         : (invoice?.status || "").toLowerCase() === "completed" || invoice?.status === "Returned"
         ? "COMPLETED"
         : "DISPATCH";
       const subtotal = isDraft
-        ? (draftData?.items || []).reduce((acc: number, it: any) => acc + (calculateLineMath(it).lineCost || Number(it.line_total || it.base_price || 0)), 0)
+        ? (draftData?.items || []).reduce((acc: number, it: any) => acc + (calculateLineMath(it).lineCost || Number(it.line_total || it.base_price || 0)), 0) +
+          soldLinesDraft.reduce((acc: number, l: any) => acc + (Number(l.line_total) || 0), 0)
         : Number(invoice?.sub_total || 0);
       const transportFee = Number(isDraft ? draftData?.fees?.transport || 0 : invoice?.transport_fee || 0);
       const discountAmount = Number(isDraft ? draftData?.fees?.discount || 0 : invoice?.discount_amount || 0);
@@ -132,7 +141,7 @@ export function ReceiptPrintDialog({
       const totalPaid = Number(invoice?.Payments?.reduce((s: number, p: any) => s + Number(p.payment_amount || 0), 0) || (isDraft ? draftData?.fees?.advance || 0 : 0));
       const balanceDue = Math.max(0, grandTotal - totalPaid);
       const lines = isDraft ? (draftData?.items || []) : (invoice?.InvoiceLines || []);
-      const totalItems = lines.length;
+      const totalItems = lines.length + soldLinesDraft.length;
       const totalMachines = lines.reduce(
         (acc: number, it: any) => acc + Number(it.borrow_quantity || it.quantity || 1),
         0
@@ -146,6 +155,7 @@ export function ReceiptPrintDialog({
         invoiceId: invoice?.invoice_id || null,
         docNumber: docNum,
         docType: docType as any,
+        changeDue: invoice?.change_due ?? null,
         customerName: custName,
         customerPhone: custPhone,
         totalItems,
@@ -414,6 +424,9 @@ export function ReceiptPrintDialog({
                 <ToggleButton value="58mm" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
                   {t("invoices.ReceiptPrintDialog.58mmCompact")}
                 </ToggleButton>
+                <ToggleButton value="a4" sx={{ fontWeight: 700, textTransform: "none", py: 0.75 }}>
+                  {t("retail.receipts.paperA4")}
+                </ToggleButton>
               </ToggleButtonGroup>
             </Box>
 
@@ -495,6 +508,8 @@ export function ReceiptPrintDialog({
             <Divider sx={{ borderColor: "#f1f5f9" }} />
 
             <BillDetailsEditor />
+
+            <RetailReceiptSettings />
 
             <Divider sx={{ borderColor: "#f1f5f9" }} />
 

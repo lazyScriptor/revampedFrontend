@@ -16,6 +16,7 @@ export const CollectionsReportPage = lazyRouteComponent(() => import("@/features
 export const CustomerCollectionDetailPage = lazyRouteComponent(() => import("@/features/collections/pages/CustomerCollectionDetailPage"));
 export const CallsReportPage = lazyRouteComponent(() => import("@/features/collections/pages/CallsReportPage"));
 export const MessagesRoute = lazyRouteComponent(() => import("@/routes/Messages"));
+export const StockRoute = lazyRouteComponent(() => import("@/routes/Stock"));
 export const LockerRoute = lazyRouteComponent(() => import("@/routes/Locker"));
 export const ProfileRoute = lazyRouteComponent(() => import("@/routes/Profile"));
 export const PermissionsPage = lazyRouteComponent(() => import("@/routes/Permissions"));

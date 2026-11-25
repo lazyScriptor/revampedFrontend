@@ -14,6 +14,8 @@ type StartPageOption = {
   permission?: string;
   /** Plan feature the page needs, for pages behind a feature gate. */
   feature?: string;
+  /** Needs the shop's plan to say retail is on (off by default, so an unknown plan does not count). */
+  retailOnly?: boolean;
 };
 
 export const START_PAGE_OPTIONS: StartPageOption[] = [
@@ -27,9 +29,10 @@ export const START_PAGE_OPTIONS: StartPageOption[] = [
   { key: "maintenance", path: "/maintenance", labelKey: "nav.maintenance", permission: "inventory_permission", feature: "maintenance" },
   { key: "messages", path: "/messages", labelKey: "nav.messages", permission: "whatsapp:send", feature: "messages" },
   { key: "locker", path: "/locker", labelKey: "nav.cashLocker", permission: "locker:count", feature: "cash_locker" },
+  { key: "stock", path: "/stock", labelKey: "nav.stock", permission: "retail:view", retailOnly: true },
 ];
 
-type StartPageUser = {
+export type StartPageUser = {
   start_page?: string | null;
   permissions?: string[] | null;
   plan?: TenantPlan | null;
@@ -39,6 +42,7 @@ type StartPageUser = {
 export const canOpenStartPage = (user: StartPageUser, option: StartPageOption): boolean => {
   if (option.permission && !(user?.permissions ?? []).includes(option.permission)) return false;
   if (option.feature && !planAllows(user?.plan ?? null, option.feature)) return false;
+  if (option.retailOnly && user?.plan?.features?.retail !== true) return false;
   return true;
 };
 

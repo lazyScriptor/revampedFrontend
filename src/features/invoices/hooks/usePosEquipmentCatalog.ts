@@ -71,6 +71,9 @@ export const usePosEquipmentCatalog = ({ search, categoryId, inStockOnly, enable
     placeholderData: keepPreviousData,
     enabled,
     staleTime: 30 * 1000,
+    // Kept on this device (IndexedDB) so the till opens instantly. Only the plain browse view is
+    // kept, not every typed search, so the stored copy stays small.
+    meta: { persist: debounced.length === 0 },
   });
 
   // A machine must never show twice. Pages are fetched separately, so if the list shifts

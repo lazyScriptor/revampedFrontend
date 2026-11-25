@@ -24,6 +24,7 @@ import { useMyProfile } from "@/features/profile/hooks/useMe";
 import { AvatarBlock } from "@/features/profile/components/AvatarBlock";
 import { ProfileForm } from "@/features/profile/components/ProfileForm";
 import { SecuritySection } from "@/features/profile/components/SecuritySection";
+import { ApprovalPinSection } from "@/features/retail/approval/ApprovalPinSection";
 import { PreferencesSection } from "@/features/profile/components/PreferencesSection";
 import { NotificationsSection } from "@/features/profile/components/NotificationsSection";
 import { ActivitySection } from "@/features/profile/components/ActivitySection";
@@ -164,7 +165,12 @@ export default function ProfileRoute() {
           <ProfileForm profile={profile} />
         </Paper>
       )}
-      {activeKey === "security"      && <SecuritySection      profile={profile} />}
+      {activeKey === "security"      && (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <SecuritySection profile={profile} />
+          <ApprovalPinSection />
+        </Box>
+      )}
       {activeKey === "signature"     && <SignatureSection     profile={profile} />}
       {activeKey === "phones"        && canManagePhones && (
         <Paper elevation={0} sx={{ p: 3, border: 1, borderColor: "divider", borderRadius: 2.5, bgcolor: "background.paper" }}>

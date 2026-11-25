@@ -32,12 +32,13 @@ import { api } from "@/lib/api";
 import { InvoiceReceipt, buildSnapshotReceiptProps } from "./InvoiceReceipt";
 import { handlePrintInvoice } from "../utils/thermalPrint";
 import { useTranslation } from "react-i18next";
+import { ReturnSlipsSection } from "@/features/retail/receipts/ReturnSlipsSection";
 
 interface PrintLogItem {
   log_id: number;
   invoice_id: number | null;
   doc_number: string;
-  doc_type: "DISPATCH" | "COMPLETED" | "DRAFT" | "RETURN_SETTLEMENT";
+  doc_type: "DISPATCH" | "COMPLETED" | "DRAFT" | "RETURN_SETTLEMENT" | "SALE_RECEIPT" | "RETURN_SLIP";
   printed_by_user_id: number;
   printed_by_name: string;
   printed_by_role: string;
@@ -192,6 +193,7 @@ export function InvoicePrintHistoryDialog({
         </DialogTitle>
 
         <DialogContent sx={{ p: 2.5, minHeight: 320 }}>
+          <ReturnSlipsSection invoiceId={invoiceId} active={open} />
           {isLoading ? (
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8, gap: 1.5 }}>
               <CircularProgress size={32} />

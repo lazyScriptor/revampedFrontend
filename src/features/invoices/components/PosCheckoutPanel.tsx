@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -21,6 +21,10 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { CartItem, calculateLineMath } from "./PosLedgerPanel";
 import { useTranslation } from "react-i18next";
 import { BillDateControl } from "./BillDateControl";
+import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
+import { selectSaleLines, selectSaleSubtotal, usePosCartStore } from "../store/posCartStore";
+import { SaleCheckoutSection, type SaleSubmitParams } from "@/features/retail/pos/SaleCheckoutSection";
+import { mixedCartTotals, suggestedMixedPayment } from "../lib/mixedBill";
 import { ReasonChips, isReasonValid } from "@/components/ui/ReasonChips";
 import type { ReasonValue } from "@/features/activity/types";
 
@@ -32,6 +36,7 @@ interface PosCheckoutPanelProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onConfirmDispatch: () => void;
+  onConfirmSale?: (params: SaleSubmitParams) => void;
   onPrintEstimate?: () => void;
   isSubmitting: boolean;
   billDate?: string | null;
@@ -47,6 +52,7 @@ export function PosCheckoutPanel({
   isCollapsed,
   onToggleCollapse,
   onConfirmDispatch,
+  onConfirmSale,
   onPrintEstimate,
   isSubmitting,
   billDate = null,
@@ -54,15 +60,48 @@ export function PosCheckoutPanel({
   onApplyBillDateToLines,
 }: PosCheckoutPanelProps) {
   const { t } = useTranslation();
-  const subTotal = useMemo(
+  const retailEnabled = useRetailEnabled();
+  const allStoreLines = usePosCartStore((s) => s.lines);
+  const saleLines = useMemo(() => (retailEnabled ? selectSaleLines(allStoreLines) : []), [retailEnabled, allStoreLines]);
+  const saleSubTotal = useMemo(() => (retailEnabled ? selectSaleSubtotal(allStoreLines) : 0), [retailEnabled, allStoreLines]);
+  const isSaleOnly = retailEnabled && cartItems.length === 0 && saleLines.length > 0;
+
+  const rentalSubTotal = useMemo(
     () => cartItems.reduce((total, item) => total + calculateLineMath(item).lineCost, 0),
     [cartItems]
   );
-  const grandTotal = Math.max(0, subTotal + fees.transport - fees.discount);
+  // Machines and goods on one bill (D13): one total, one payment box, the rental button.
+  const isMixed = retailEnabled && cartItems.length > 0 && saleLines.length > 0;
+  const subTotal = isSaleOnly ? saleSubTotal : isMixed ? rentalSubTotal + saleSubTotal : rentalSubTotal;
+  const grandTotal = isMixed
+    ? mixedCartTotals(rentalSubTotal, saleSubTotal, fees).total
+    : Math.max(0, subTotal + fees.transport - fees.discount);
   const balanceDue = Math.max(0, grandTotal - fees.advance);
+
+  // The payment box starts at the goods total and follows it until the cashier types their own amount.
+  const [advanceTouched, setAdvanceTouched] = useState(false);
+  const autoAdvance = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isMixed) {
+      if (autoAdvance.current != null) {
+        const auto = autoAdvance.current;
+        setFees((prev: any) => (prev.advance === auto ? { ...prev, advance: 0 } : prev));
+        autoAdvance.current = null;
+      }
+      setAdvanceTouched(false);
+      return;
+    }
+    if (advanceTouched) return;
+    const suggested = suggestedMixedPayment(saleSubTotal);
+    autoAdvance.current = suggested;
+    setFees((prev: any) =>
+      prev.advance === suggested ? prev : { ...prev, advance: suggested, advance_payment_method: prev.advance_payment_method || "Cash" },
+    );
+  }, [isMixed, saleSubTotal, advanceTouched, setFees]);
 
   const handleFeeChange = (field: string, value: string) => {
     const num = parseFloat(value);
+    if (field === "advance") setAdvanceTouched(true);
     setFees((prev: any) => ({
       ...prev,
       [field]: isNaN(num) ? 0 : num,
@@ -75,6 +114,7 @@ export function PosCheckoutPanel({
 
   const handleApplyWallet = () => {
     if (selectedCustomer?.deposit_balance) {
+      setAdvanceTouched(true);
       const maxApplicable = Math.min(Number(selectedCustomer.deposit_balance), grandTotal);
       setFees((prev: any) => ({
         ...prev,
@@ -84,9 +124,20 @@ export function PosCheckoutPanel({
     }
   };
 
+  const goodsBlocked =
+    isMixed &&
+    (saleLines.some((l) => l.out_of_stock) ||
+      saleLines.some((l) => l.tracking === "serial" && (l.serials?.length ?? 0) !== Math.max(1, Math.round(l.base_qty))));
   const discountReason = fees.discount_reason ?? null;
   const discountNeedsReason = fees.discount > 0 && !isReasonValid(discountReason, true);
-  const canDispatch = !!selectedCustomer && cartItems.length > 0 && !isSubmitting && !discountNeedsReason;
+  const canDispatch =
+    !!selectedCustomer &&
+    !(isMixed && selectedCustomer.is_walk_in) &&
+    cartItems.length > 0 &&
+    !isSubmitting &&
+    !goodsBlocked &&
+    !discountNeedsReason;
+
 
   // ── Collapsed sidebar strip ──────────────────────────────────────────────────
   if (isCollapsed) {
@@ -172,6 +223,15 @@ export function PosCheckoutPanel({
         </IconButton>
       </Box>
 
+      {isSaleOnly ? (
+        <SaleCheckoutSection
+          isSubmitting={isSubmitting}
+          billDate={billDate}
+          onBillDateChange={onBillDateChange}
+          onSellAndPrint={(params) => onConfirmSale?.(params)}
+        />
+      ) : (
+        <>
       {/* Scrollable body */}
       <Box
         sx={{
@@ -288,6 +348,24 @@ export function PosCheckoutPanel({
 
         {/* Financial breakdown */}
         <Box sx={{ bgcolor: "#1e293b", borderRadius: 2, p: 2, border: "1px solid #334155", display: "flex", flexDirection: "column", gap: 1 }}>
+          {isMixed ? (
+            <>
+              {[
+                { key: "rent", label: t("retail.pos.groupRent"), value: rentalSubTotal },
+                { key: "items", label: t("retail.pos.groupItems"), value: saleSubTotal },
+              ].map((row) => (
+                <Box key={row.key} data-testid={`mixed-row-${row.key}`} sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" sx={{ color: "#94a3b8" }}>{row.label}</Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#f8fafc", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", fontVariantNumeric: "tabular-nums" }}
+                  >
+                    Rs. {row.value.toLocaleString()}
+                  </Typography>
+                </Box>
+              ))}
+            </>
+          ) : (
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Typography variant="body2" sx={{ color: "#94a3b8" }}>
               {t("invoices.PosCheckoutPanel.subtotalItems", { cartItemsCount: cartItems.length })}
@@ -304,6 +382,7 @@ export function PosCheckoutPanel({
               Rs. {subTotal.toLocaleString()}
             </Typography>
           </Box>
+          )}
           {fees.transport > 0 && (
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography variant="body2" sx={{ color: "#94a3b8" }}>{t("invoices.transport")}</Typography>
@@ -340,6 +419,7 @@ export function PosCheckoutPanel({
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <Typography variant="body2" sx={{ color: "#94a3b8", fontWeight: 800 }}>{t("invoices.grandTotal")}</Typography>
             <Typography
+              data-testid="checkout-total"
               variant="h6"
               sx={{
                 color: "white",
@@ -359,7 +439,7 @@ export function PosCheckoutPanel({
         {/* Advance */}
         <Box>
           <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: 1, mb: 1.5, display: "block" }}>
-            {t("invoices.PosCheckoutPanel.advancePayment")}
+            {isMixed ? t("retail.pos.itemsPlusDeposit") : t("invoices.PosCheckoutPanel.advancePayment")}
           </Typography>
 
           {selectedCustomer && Number(selectedCustomer.deposit_balance) > 0 && (
@@ -413,7 +493,7 @@ export function PosCheckoutPanel({
           )}
 
           <TextField
-            label={t("invoices.PosCheckoutPanel.collectedNow")}
+            label={isMixed ? t("retail.pos.itemsPlusDeposit") : t("invoices.PosCheckoutPanel.collectedNow")}
             type="number"
             size="small"
             fullWidth
@@ -539,9 +619,15 @@ export function PosCheckoutPanel({
             "&.Mui-disabled": { bgcolor: "#1e293b", color: "#475569" },
           }}
         >
-          {isSubmitting ? t("invoices.PosCheckoutPanel.processing") : t("invoices.PosCheckoutPanel.placeDispatchOrder")}
+          {isSubmitting
+            ? t("invoices.PosCheckoutPanel.processing")
+            : isMixed
+              ? t("retail.pos.dispatchAndPrint")
+              : t("invoices.PosCheckoutPanel.placeDispatchOrder")}
         </Button>
       </Box>
+        </>
+      )}
     </Box>
   );
 }

@@ -28,6 +28,7 @@ import {
   CollectionsReportPage,
   CustomerCollectionDetailPage,
   MessagesRoute,
+  StockRoute,
   LockerRoute,
   ProfileRoute,
   PermissionsPage,
@@ -53,6 +54,7 @@ import {
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
 import { startPathFor } from "@/app/startPage";
+import { canOpenStock } from "@/features/retail/stockAccess";
 
 // --- 1. Helper Functions ---
 const requirePermission = (permissionCode: string) => {
@@ -229,6 +231,16 @@ const equipmentCategoryRoute = createRoute({
   path: "/equipment-category", // Note: Ensure this matches the path in your _authenticated.tsx sidebar ("/equipment-categories" vs "/equipment-category")
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <Categories />,
+});
+
+// Retail: one Stock workspace (plan §7.1). Only for shops with the retail feature and users with retail:view.
+const stockRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/stock",
+  beforeLoad: () => {
+    if (!canOpenStock(useAuthStore.getState().user)) throw redirect({ to: "/dashboard" });
+  },
+  component: () => <StockRoute />,
 });
 
 const invoicesRoute = createRoute({
@@ -473,6 +485,7 @@ const routeTree = rootRoute.addChildren([
   authenticatedRoute.addChildren([
     dashboardRoute,
     equipmentRoute,
+    stockRoute,
     invoicesRoute,
     equipmentCategoryRoute,
     dataArenaRoute,

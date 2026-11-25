@@ -10,6 +10,7 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -27,7 +28,7 @@ import {
   useWhatsAppSettings,
   useWhatsAppTemplates,
 } from "../hooks/useWhatsApp";
-import { TEMPLATE_I18N, renderTemplate, unknownPlaceholders } from "../lib/whatsapp";
+import { PLACEHOLDER_I18N, PLACEHOLDER_SAMPLES, TEMPLATE_I18N, renderTemplate, unknownPlaceholders } from "../lib/whatsapp";
 
 const GROUP_I18N: Record<string, string> = {
   order: tk("whatsapp.templates.groupOrder"),
@@ -59,7 +60,7 @@ export function TemplatesTab() {
   const unknown = useMemo(() => (data ? unknownPlaceholders(draft, data.placeholders) : []), [draft, data]);
   const tooLong = !!data && draft.length > data.max_length;
   const dirty = !!entry && draft !== entry.body;
-  const preview = useMemo(() => (data ? renderTemplate(draft, data.samples[lang]) : ""), [draft, data, lang]);
+  const preview = useMemo(() => (data ? renderTemplate(draft, { ...PLACEHOLDER_SAMPLES[lang], ...data.samples[lang] }) : ""), [draft, data, lang]);
 
   const insertPlaceholder = (name: string) => {
     const el = inputRef.current;
@@ -193,9 +194,16 @@ export function TemplatesTab() {
 
               {canManage && (
                 <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }} aria-label={t("whatsapp.templates.placeholders")}>
-                  {data.placeholders.map((p) => (
-                    <Chip key={p} size="small" clickable label={`{{${p}}}`} onClick={() => insertPlaceholder(p)} sx={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem" }} />
-                  ))}
+                  {data.placeholders.map((p) => {
+                    const chip = <Chip key={p} size="small" clickable label={`{{${p}}}`} onClick={() => insertPlaceholder(p)} sx={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem" }} />;
+                    return PLACEHOLDER_I18N[p] ? (
+                      <Tooltip key={p} title={t(PLACEHOLDER_I18N[p])} describeChild>
+                        {chip}
+                      </Tooltip>
+                    ) : (
+                      chip
+                    );
+                  })}
                 </Box>
               )}
 

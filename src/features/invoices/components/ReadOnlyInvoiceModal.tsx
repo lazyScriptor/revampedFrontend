@@ -46,6 +46,9 @@ import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import type { TemplateKey } from "@/features/whatsapp/api/whatsapp.api";
 import { useTranslation } from "react-i18next";
+import { normalizeSaleLines } from "@/features/retail/api/pos.api";
+import { ItemsSoldSection } from "./ItemsSoldSection";
+import { saleReturnSentence } from "@/features/retail/returns/traceText";
 import { eventSentence } from "@/features/activity/lib/eventSentence";
 
 export interface ReadOnlyInvoiceModalProps {
@@ -96,6 +99,8 @@ export function ReadOnlyInvoiceModal({
     invoice.invoice_lines ||
     invoice.lines ||
     [];
+  const saleLines = normalizeSaleLines(invoice);
+  const isSaleOnly = invoice.bill_kind === "sale" || (lines.length === 0 && saleLines.length > 0);
   const payments: any[] =
     invoice.Payments ||
     invoice.payments ||
@@ -181,6 +186,19 @@ export function ReadOnlyInvoiceModal({
                 borderRadius: 1,
               }}
             />
+            {(invoice.bill_kind === "sale" || invoice.bill_kind === "mixed") && (
+              <Chip
+                size="small"
+                color="warning"
+                label={t(invoice.bill_kind === "sale" ? "invoices.sale.saleChip" : "invoices.sale.mixedChip")}
+                sx={{
+                  fontWeight: 800,
+                  fontSize: "0.7rem",
+                  height: 22,
+                  borderRadius: 1,
+                }}
+              />
+            )}
             {Boolean(invoice.id_card_status) && (
               <Chip
                 size="small"
@@ -315,6 +333,7 @@ export function ReadOnlyInvoiceModal({
           </Box>
 
           {/* Equipment Items Table */}
+          {(lines.length > 0 || !isSaleOnly) && (
           <Box
             sx={{
               bgcolor: "#ffffff",
@@ -394,6 +413,9 @@ export function ReadOnlyInvoiceModal({
               </Table>
             </Box>
           </Box>
+          )}
+
+          <ItemsSoldSection invoice={invoice} onBeforeReturn={onClose} />
 
           {/* Financial Breakdown Card */}
           <Box
@@ -412,12 +434,37 @@ export function ReadOnlyInvoiceModal({
               <Typography variant="caption" sx={{ fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.5 }}>
                 {t("invoices.ReadOnlyInvoiceModal.orderSummary")}
               </Typography>
+              {totals.mixed ? (
+                <>
+                  <Box data-testid="totals-rent" sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2" color="text.secondary">{t("retail.pos.groupRent")}</Typography>
+                    <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                      Rs. {totals.rent.toLocaleString()}
+                    </Typography>
+                  </Box>
+                  <Box data-testid="totals-items" sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2" color="text.secondary">{t("retail.pos.groupItems")}</Typography>
+                    <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                      Rs. {totals.items.toLocaleString()}
+                    </Typography>
+                  </Box>
+                </>
+              ) : (
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">{t("common.subtotal")}</Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
                   Rs. {totals.subTotal.toLocaleString()}
                 </Typography>
               </Box>
+              )}
+              {totals.returned > 0 && (
+                <Box data-testid="totals-returned" sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">{t("retail.returns.returnedRow")}</Typography>
+                  <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#b45309", fontFamily: "'JetBrains Mono', monospace" }}>
+                    − Rs. {totals.returned.toLocaleString()}
+                  </Typography>
+                </Box>
+              )}
               {totals.lateFees > 0 && (
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="body2" color="text.secondary">{t("invoices.ManageInvoiceViews.lateFees")}</Typography>
@@ -586,7 +633,7 @@ export function ReadOnlyInvoiceModal({
                         sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
                       />
                       <Typography variant="caption" sx={{ color: "#334155" }}>
-                        {trace.comments || t("invoices.ReadOnlyInvoiceModal.activityLogged")}
+                        {saleReturnSentence(trace, t) || trace.comments || t("invoices.ReadOnlyInvoiceModal.activityLogged")}
                       </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: "text.disabled", fontVariantNumeric: "tabular-nums" }}>

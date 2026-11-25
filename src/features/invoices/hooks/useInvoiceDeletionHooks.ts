@@ -17,6 +17,10 @@ export interface DeletedInvoiceRow {
   invoice_id: number;
   issued_date: string;
   total_amount: number;
+  /** "rental" | "sale" | "mixed" (R4); older servers may omit it. */
+  bill_kind?: "rental" | "sale" | "mixed";
+  /** Value of the goods on the bill (sale and mixed bills). */
+  sale_total?: number;
   status: string;
   customer: { first_name?: string; last_name?: string; company_name?: string; customer_type?: string; phone_number?: string } | null;
   deleted_at: string;

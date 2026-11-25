@@ -37,7 +37,8 @@ const receiptHtmlWithSharpSignatures = async (el: HTMLElement): Promise<string> 
 };
 
 export interface PrintInvoiceOptions {
-  paperWidth?: "80mm" | "58mm";
+  /** "a4" is a simple sheet printed through the browser's own print window (no roll, no agent). */
+  paperWidth?: "80mm" | "58mm" | "a4";
   title?: string;
   copies?: number;
   printer?: string;
@@ -45,7 +46,11 @@ export interface PrintInvoiceOptions {
   // Audit logging metadata
   invoiceId?: number | null;
   docNumber?: string;
-  docType?: "DISPATCH" | "COMPLETED" | "DRAFT" | "RETURN_SETTLEMENT";
+  docType?: "DISPATCH" | "COMPLETED" | "DRAFT" | "RETURN_SETTLEMENT" | "SALE_RECEIPT" | "RETURN_SLIP";
+  /** A return slip belongs to one return of sold items. */
+  returnId?: number | null;
+  /** Change handed back on a cash sale (kept in the print record). */
+  changeDue?: number | null;
   customerName?: string;
   customerPhone?: string;
   totalItems?: number;
@@ -212,8 +217,9 @@ export const handlePrintInvoice = async (
 
   const paperWidth = resolvedOptions?.paperWidth || "80mm";
   const is58 = paperWidth === "58mm";
+  const isA4 = paperWidth === "a4";
   const printableWidthMm = is58 ? 48 : 72; // physical printable area of the head
-  const fontPx = is58 ? "10px" : "11px";
+  const fontPx = is58 ? "10px" : isA4 ? "12px" : "11px";
   const title = resolvedOptions?.title || "GearGrid POS Receipt";
   const innerHtml = await receiptHtmlWithSharpSignatures(contentElement);
   // Embedded Sinhala font — without it Sinhala prints in a thin system fallback.
@@ -221,6 +227,19 @@ export const handlePrintInvoice = async (
 
   // ── 1. DIRECT: exact-length print through the local agent ────────────────
   let fallbackReason = "Print agent not running";
+  // A4 goes straight to the browser print window: the agent only feeds thermal rolls.
+  if (isA4) {
+    const a4Doc = buildReceiptDocument(innerHtml, { title, pageWidth: "190mm", pageHeight: "277mm", fontPx, fontCss });
+    const { iframe: a4Frame, heightMm: a4Height } = await renderAndMeasure(a4Doc, "190mm");
+    const tag = a4Frame.contentWindow!.document.getElementById("dynamic-page-size");
+    if (tag) tag.textContent = "@page { size: A4; margin: 10mm !important; }";
+    const a4Result: PrintResult = { method: "dialog", reason: "A4" };
+    await logPrintEventToServer(resolvedOptions, a4Result, a4Height);
+    a4Frame.contentWindow?.focus();
+    a4Frame.contentWindow?.print();
+    removeLater(a4Frame);
+    return a4Result;
+  }
   try {
     const measureDoc = buildReceiptDocument(innerHtml, {
       title,
@@ -320,7 +339,7 @@ const logPrintEventToServer = async (
       customer_phone: options?.customerPhone || null,
       print_method: result.method === "direct" ? "direct_agent" : "browser_dialog",
       printer_name: result.method === "direct" ? result.printer : (options?.printer || "Browser Default"),
-      paper_width: options?.paperWidth || "80mm",
+      paper_width: options?.paperWidth === "a4" ? "80mm" : options?.paperWidth || "80mm",
       copies: options?.copies || 1,
       height_mm: heightMm,
       total_items: options?.totalItems || 0,
@@ -334,6 +353,12 @@ const logPrintEventToServer = async (
       language: options?.language || "en",
       custom_notes: options?.customNotes || null,
       bill_snapshot: options?.billSnapshot || null,
+      ...(options?.docType === "RETURN_SLIP"
+        ? { return_id: options?.returnId ?? options?.billSnapshot?.return_id ?? null }
+        : {}),
+      ...((options?.changeDue ?? options?.billSnapshot?.change_due) != null
+        ? { change_due: options?.changeDue ?? options?.billSnapshot?.change_due }
+        : {}),
     };
     const res = await api.post("/invoices/print-logs", payload);
     console.info("POS Bill print log successfully recorded to audit trail:", res.data);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { periodCharge } from "../lib/lineCost";
 import {
@@ -26,6 +26,9 @@ import { EquipmentCatalog, EquipmentSearchBar } from "./EquipmentCatalog";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { ImageHoverPreview } from "@/features/equipment/components/ImageHoverPreview";
+import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
+import { PosRetailLedgerHost } from "@/features/retail/pos/PosRetailLedgerHost";
+import { usePosCartStore } from "../store/posCartStore";
 
 // ─── CartItem and calculateLineMath ───────────────────────────────────────────
 // `track_overdue` controls whether late-fee tracking applies to this line.
@@ -121,7 +124,14 @@ interface PosLedgerPanelProps {
   showToast: (msg: string, severity?: "error" | "success" | "warning") => void;
 }
 
-export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedgerPanelProps) {
+function useRentalLedgerController({
+  cartItems,
+  setCartItems,
+  showToast,
+  onCustomEnter,
+}: PosLedgerPanelProps & {
+  onCustomEnter?: () => boolean;
+}) {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -186,6 +196,17 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
       pricing_mode: isDaily ? "daily" : "tiered",
       track_overdue: false,
     };
+    // Walk-in can't rent: hold the machine and ask for a named customer. It is added once one is
+    // picked (see setSelectedCustomer in the cart store); cancelling the prompt drops it.
+    if (usePosCartStore.getState().selectedCustomer?.is_walk_in) {
+      const store = usePosCartStore.getState();
+      if (store.pendingRental?.equipment_id === equipment.equipment_id && !equipment.is_bulk_item) {
+        showToast(t("invoices.PosLedgerPanel.serializedItemAlreadyInOrder"), "error");
+        return;
+      }
+      store.holdRentalForCustomer(newItem);
+      return;
+    }
     setCartItems((prev) => [...prev, newItem]);
   };
 
@@ -202,6 +223,7 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
 
   // Enter (or a barcode scanner's trailing Enter) adds the match when it is unambiguous.
   const handleSearchSubmit = () => {
+    if (onCustomEnter && onCustomEnter()) return;
     // wait until the list really is the answer to what was typed — while a newer search is
     // in flight the old (placeholder) list is still on screen and must not be acted on
     if (catalog.isSettling || catalog.isFetching || catalog.isPlaceholderData || catalog.items.length !== 1) return;
@@ -263,373 +285,290 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
   const cartSubtotal = cartItems.reduce((t, i) => t + calculateLineMath(i).lineCost, 0);
   const cartQtyById = new Map(cartItems.map((i) => [i.equipment_id, i.borrow_quantity]));
 
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      {/* ── Equipment search (opens the visual catalog below) ── */}
-      <Box sx={{ px: { xs: 1.5, sm: 2.5 }, pt: { xs: 2, sm: 2.5 }, pb: 1.5, flexShrink: 0 }}>
-        <EquipmentSearchBar
-          value={inputValue}
-          onChange={setInputValue}
-          open={catalogOpen}
-          onOpen={() => setCatalogOpen(true)}
-          onClose={() => setCatalogOpen(false)}
-          loading={catalogOpen && (catalog.isSettling || catalog.isFetching)}
-          onSubmit={handleSearchSubmit}
-        />
-      </Box>
+  const renderRentalCards = () =>
+          cartItems.map((item) => {
+            const { totalDays, lineCost, calculationText } = calculateLineMath(item);
+            const isDailyMode = item.pricing_mode === "daily";
+            const returnBeforeBorrow =
+              item.track_overdue && compareDateStr(item.expected_return_date, item.borrow_date) < 0;
 
-      {/* ── Order manifest, with the catalog laid over it while open ── */}
-      <Box sx={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        {/* ── Cart summary strip ── */}
-        {cartItems.length > 0 && (
-          <Box
-            sx={{
-              mx: { xs: 1.5, sm: 2.5 },
-              mb: 1.5,
-              px: 2,
-              py: 1,
-              borderRadius: 2,
-              bgcolor: "#eff6ff",
-              border: "1px solid #bfdbfe",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "flex", alignItems: "center", gap: 0.75, fontVariantNumeric: "tabular-nums" }}>
-              {t("invoices.PosLedgerPanel.itemsInOrder", { count: cartItems.length })}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                fontWeight: 900,
-                color: "primary.dark",
-                fontFamily: "'JetBrains Mono', monospace",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              Rs. {cartSubtotal.toLocaleString()}
-            </Typography>
-          </Box>
-        )}
-
-        {/* ── Cart Items ── */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            overflowY: "auto",
-            px: { xs: 1.5, sm: 2.5 },
-            pb: { xs: 2, sm: 2.5 },
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            "&::-webkit-scrollbar": { width: "5px" },
-            "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "10px" },
-          }}
-        >
-          {cartItems.length === 0 ? (
-            <Box
-              sx={{
-                height: "100%",
-                minHeight: 240,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "2px dashed #cbd5e1",
-                borderRadius: 3,
-                p: 3,
-                color: "#64748b",
-                gap: 1.5,
-                textAlign: "center",
-              }}
-            >
-              <Box
+            return (
+              <Paper
+                key={item.cart_id}
+                elevation={0}
                 sx={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  bgcolor: "#f1f5f9",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#94a3b8",
-                  mb: 0.5,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 2.5,
+                  bgcolor: "white",
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                  "&:hover": { borderColor: "#93c5fd" },
+                  transition: "all 0.15s ease-in-out",
                 }}
               >
-                <ShoppingCartCheckoutIcon sx={{ fontSize: 28 }} />
-              </Box>
-              <Typography variant="body1" sx={{ fontWeight: 800, color: "#1e293b" }}>
-                {t("invoices.PosLedgerPanel.orderManifestIsEmpty")}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 240, lineHeight: 1.4 }}>
-                {t("invoices.PosLedgerPanel.searchAndAddEquipmentItems")}
-              </Typography>
-              <Button
-                variant="contained"
-                disableElevation
-                startIcon={<GridViewRoundedIcon />}
-                onClick={() => setCatalogOpen(true)}
-                sx={{ mt: 0.5, borderRadius: 3, fontWeight: 800, textTransform: "none", height: 42, px: 2.5 }}
-              >
-                {t("invoices.EquipmentCatalog.browse")}
-              </Button>
-            </Box>
-          ) : (
-            cartItems.map((item) => {
-              const { totalDays, lineCost, calculationText } = calculateLineMath(item);
-              const isDailyMode = item.pricing_mode === "daily";
-              const returnBeforeBorrow =
-                item.track_overdue && compareDateStr(item.expected_return_date, item.borrow_date) < 0;
-
-              return (
-                <Paper
-                  key={item.cart_id}
-                  elevation={0}
+                {/* Item header */}
+                <Box
                   sx={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 2.5,
-                    bgcolor: "white",
-                    overflow: "hidden",
-                    flexShrink: 0,
-                    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-                    "&:hover": { borderColor: "#93c5fd" },
-                    transition: "all 0.15s ease-in-out",
+                    px: 2,
+                    py: 1.25,
+                    bgcolor: "#f8fafc",
+                    borderBottom: "1px solid #f1f5f9",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
                   }}
                 >
-                  {/* Item header */}
-                  <Box
+                  {item.image_url ? (
+                    <ImageHoverPreview src={resolveAssetUrl(item.image_url)}>
+                      <Box
+                        component="img"
+                        src={resolveAssetUrl(item.image_url) || undefined}
+                        alt=""
+                        loading="lazy"
+                        sx={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0, borderRadius: 1 }}
+                      />
+                    </ImageHoverPreview>
+                  ) : (
+                    <ConstructionIcon sx={{ fontSize: 16, color: "primary.main", flexShrink: 0 }} />
+                  )}
+                  {item.serial_number && <EquipmentNumberBadge value={item.serial_number} size="sm" />}
+                  <Typography
+                    variant="body2"
                     sx={{
-                      px: 2,
-                      py: 1.25,
-                      bgcolor: "#f8fafc",
-                      borderBottom: "1px solid #f1f5f9",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
+                      fontWeight: 800,
+                      flexGrow: 1,
+                      minWidth: 0,
+                      color: "#0f172a",
+                      lineHeight: 1.25,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      wordBreak: "break-word",
                     }}
                   >
-                    {item.image_url ? (
-                      <ImageHoverPreview src={resolveAssetUrl(item.image_url)}>
-                        <Box
-                          component="img"
-                          src={resolveAssetUrl(item.image_url) || undefined}
-                          alt=""
-                          loading="lazy"
-                          sx={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0, borderRadius: 1 }}
-                        />
-                      </ImageHoverPreview>
-                    ) : (
-                      <ConstructionIcon sx={{ fontSize: 16, color: "primary.main", flexShrink: 0 }} />
-                    )}
-                    {item.serial_number && <EquipmentNumberBadge value={item.serial_number} size="sm" />}
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: 800,
-                        flexGrow: 1,
-                        minWidth: 0,
-                        color: "#0f172a",
-                        lineHeight: 1.25,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {item.equipment_name}
-                      {item.equipment_name_si && (
-                        <Box component="span" sx={{ ml: 1, fontWeight: 600, color: "#475569" }}>
-                          {item.equipment_name_si}
-                        </Box>
-                      )}
-                    </Typography>
-                    <Chip
-                      size="small"
-                      label={isDailyMode ? t("invoices.PosLedgerPanel.dailyMode") : t("invoices.PosLedgerPanel.tieredMode")}
-                      sx={{
-                        // the mode is also shown by the "Switch to …" button below, so phones
-                        // drop the chip to give the machine name the room
-                        display: { xs: "none", sm: "inline-flex" },
-                        height: 20,
-                        fontSize: "0.65rem",
-                        fontWeight: 800,
-                        bgcolor: isDailyMode ? "#eff6ff" : "#f0fdf4",
-                        color: isDailyMode ? "#2563eb" : "#059669",
-                        border: "1px solid",
-                        borderColor: isDailyMode ? "#bfdbfe" : "#bbf7d0",
-                      }}
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={() => removeItem(item.cart_id)}
-                      sx={{ color: "text.secondary", "&:hover": { color: "error.main", bgcolor: "rgba(239, 68, 68, 0.08)" } }}
-                    >
-                      <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </Box>
-
-                  {/* Logistics row */}
-                  <Box sx={{ px: 2, pt: 1.5, pb: 1, display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
-                    <TextField
-                      type="number"
-                      label={t("common.qty")}
-                      size="small"
-                      value={item.borrow_quantity}
-                      onChange={(e) => {
-                        let val = parseInt(e.target.value) || 1;
-                        if (val > item.available_qty) val = item.available_qty;
-                        if (val < 1) val = 1;
-                        updateItem(item.cart_id, "borrow_quantity", val);
-                      }}
-                      disabled={!item.is_bulk_item}
-                      slotProps={{ input: { inputProps: { min: 1, max: item.available_qty } } }}
-                      sx={{
-                        width: 76,
-                        "& .MuiInputBase-input": {
-                          color: "#0f172a !important",
-                          fontWeight: 700,
-                          fontVariantNumeric: "tabular-nums",
-                          fontFamily: "'JetBrains Mono', monospace",
-                          WebkitTextFillColor: "#0f172a !important",
-                        },
-                      }}
-                    />
-                    <TextField
-                      type="date"
-                      label={t("invoices.dispatch")}
-                      size="small"
-                      slotProps={{ inputLabel: { shrink: true } }}
-                      value={item.borrow_date}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        if (!item.track_overdue) {
-                          // Tracking off: Due Back follows Dispatch so cost stays
-                          // a single-day base fee.
-                          updateItemBatch(item.cart_id, {
-                            borrow_date: next,
-                            expected_return_date: next,
-                          });
-                        } else if (compareDateStr(next, item.expected_return_date) > 0) {
-                          // Tracking on: if user pushes Dispatch past Due Back,
-                          // auto-bump Due Back to Dispatch + 1 rather than leave
-                          // a stale invalid range.
-                          updateItemBatch(item.cart_id, {
-                            borrow_date: next,
-                            expected_return_date: addDaysLocal(next, 1),
-                          });
-                        } else {
-                          updateItem(item.cart_id, "borrow_date", next);
-                        }
-                      }}
-                      sx={{
-                        flex: 1,
-                        minWidth: 130,
-                        "& .MuiInputBase-input": {
-                          color: "#0f172a !important",
-                          fontWeight: 600,
-                          WebkitTextFillColor: "#0f172a !important",
-                        },
-                      }}
-                    />
-                    {item.track_overdue ? (
-                      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, flex: 1, minWidth: 160 }}>
-                        <TextField
-                          type="date"
-                          label={t("invoices.PosLedgerPanel.dueBack")}
-                          size="small"
-                          slotProps={{
-                            inputLabel: { shrink: true },
-                            htmlInput: { min: item.borrow_date },
-                          }}
-                          value={item.expected_return_date}
-                          onChange={(e) => updateItem(item.cart_id, "expected_return_date", e.target.value)}
-                          error={returnBeforeBorrow}
-                          helperText={returnBeforeBorrow ? t("invoices.PosLedgerPanel.mustBeOnOrAfter") : undefined}
-                          sx={{
-                            flex: 1,
-                            "& .MuiInputBase-input": {
-                              color: "#0f172a !important",
-                              fontWeight: 600,
-                              WebkitTextFillColor: "#0f172a !important",
-                            },
-                          }}
-                        />
-                        <IconButton
-                          size="small"
-                          onClick={() => toggleOverdueTracking(item)}
-                          title={t("invoices.PosLedgerPanel.removeOverdueTrackingForThis")}
-                          sx={{ mt: 0.5, color: "text.disabled", "&:hover": { color: "error.main" } }}
-                        >
-                          <CloseIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
+                    {item.equipment_name}
+                    {item.equipment_name_si && (
+                      <Box component="span" sx={{ ml: 1, fontWeight: 600, color: "#475569" }}>
+                        {item.equipment_name_si}
                       </Box>
-                    ) : (
-                      <Chip
+                    )}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={isDailyMode ? t("invoices.PosLedgerPanel.dailyMode") : t("invoices.PosLedgerPanel.tieredMode")}
+                    sx={{
+                      // the mode is also shown by the "Switch to …" button below, so phones
+                      // drop the chip to give the machine name the room
+                      display: { xs: "none", sm: "inline-flex" },
+                      height: 20,
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      bgcolor: isDailyMode ? "#eff6ff" : "#f0fdf4",
+                      color: isDailyMode ? "#2563eb" : "#059669",
+                      border: "1px solid",
+                      borderColor: isDailyMode ? "#bfdbfe" : "#bbf7d0",
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => removeItem(item.cart_id)}
+                    sx={{ color: "text.secondary", "&:hover": { color: "error.main", bgcolor: "rgba(239, 68, 68, 0.08)" } }}
+                  >
+                    <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Box>
+
+                {/* Logistics row */}
+                <Box sx={{ px: 2, pt: 1.5, pb: 1, display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+                  <TextField
+                    type="number"
+                    label={t("common.qty")}
+                    size="small"
+                    value={item.borrow_quantity}
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value) || 1;
+                      if (val > item.available_qty) val = item.available_qty;
+                      if (val < 1) val = 1;
+                      updateItem(item.cart_id, "borrow_quantity", val);
+                    }}
+                    disabled={!item.is_bulk_item}
+                    slotProps={{ input: { inputProps: { min: 1, max: item.available_qty } } }}
+                    sx={{
+                      width: 76,
+                      "& .MuiInputBase-input": {
+                        color: "#0f172a !important",
+                        fontWeight: 700,
+                        fontVariantNumeric: "tabular-nums",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        WebkitTextFillColor: "#0f172a !important",
+                      },
+                    }}
+                  />
+                  <TextField
+                    type="date"
+                    label={t("invoices.dispatch")}
+                    size="small"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    value={item.borrow_date}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      if (!item.track_overdue) {
+                        // Tracking off: Due Back follows Dispatch so cost stays
+                        // a single-day base fee.
+                        updateItemBatch(item.cart_id, {
+                          borrow_date: next,
+                          expected_return_date: next,
+                        });
+                      } else if (compareDateStr(next, item.expected_return_date) > 0) {
+                        // Tracking on: if user pushes Dispatch past Due Back,
+                        // auto-bump Due Back to Dispatch + 1 rather than leave
+                        // a stale invalid range.
+                        updateItemBatch(item.cart_id, {
+                          borrow_date: next,
+                          expected_return_date: addDaysLocal(next, 1),
+                        });
+                      } else {
+                        updateItem(item.cart_id, "borrow_date", next);
+                      }
+                    }}
+                    sx={{
+                      flex: 1,
+                      minWidth: 130,
+                      "& .MuiInputBase-input": {
+                        color: "#0f172a !important",
+                        fontWeight: 600,
+                        WebkitTextFillColor: "#0f172a !important",
+                      },
+                    }}
+                  />
+                  {item.track_overdue ? (
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, flex: 1, minWidth: 160 }}>
+                      <TextField
+                        type="date"
+                        label={t("invoices.PosLedgerPanel.dueBack")}
                         size="small"
-                        icon={<AddIcon sx={{ fontSize: 14 }} />}
-                        label={t("invoices.PosLedgerPanel.trackOverdue")}
-                        variant="outlined"
-                        clickable
-                        onClick={() => toggleOverdueTracking(item)}
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                          htmlInput: { min: item.borrow_date },
+                        }}
+                        value={item.expected_return_date}
+                        onChange={(e) => updateItem(item.cart_id, "expected_return_date", e.target.value)}
+                        error={returnBeforeBorrow}
+                        helperText={returnBeforeBorrow ? t("invoices.PosLedgerPanel.mustBeOnOrAfter") : undefined}
                         sx={{
-                          borderStyle: "dashed",
-                          borderColor: "#cbd5e1",
-                          color: "text.secondary",
-                          fontWeight: 600,
-                          fontSize: "0.72rem",
-                          height: 34,
-                          "&:hover": {
-                            borderStyle: "solid",
-                            borderColor: "primary.main",
-                            bgcolor: "#eff6ff",
-                            color: "primary.main",
+                          flex: 1,
+                          "& .MuiInputBase-input": {
+                            color: "#0f172a !important",
+                            fontWeight: 600,
+                            WebkitTextFillColor: "#0f172a !important",
                           },
                         }}
                       />
-                    )}
-                  </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleOverdueTracking(item)}
+                        title={t("invoices.PosLedgerPanel.removeOverdueTrackingForThis")}
+                        sx={{ mt: 0.5, color: "text.disabled", "&:hover": { color: "error.main" } }}
+                      >
+                        <CloseIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <Chip
+                      size="small"
+                      icon={<AddIcon sx={{ fontSize: 14 }} />}
+                      label={t("invoices.PosLedgerPanel.trackOverdue")}
+                      variant="outlined"
+                      clickable
+                      onClick={() => toggleOverdueTracking(item)}
+                      sx={{
+                        borderStyle: "dashed",
+                        borderColor: "#cbd5e1",
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        fontSize: "0.72rem",
+                        height: 34,
+                        "&:hover": {
+                          borderStyle: "solid",
+                          borderColor: "primary.main",
+                          bgcolor: "#eff6ff",
+                          color: "primary.main",
+                        },
+                      }}
+                    />
+                  )}
+                </Box>
 
-                  {/* Pricing row */}
-                  <Box
-                    sx={{
-                      px: 2,
-                      pb: 1.5,
-                      display: "flex",
-                      alignItems: "flex-end",
-                      gap: 1.5,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {isDailyMode ? (
+                {/* Pricing row */}
+                <Box
+                  sx={{
+                    px: 2,
+                    pb: 1.5,
+                    display: "flex",
+                    alignItems: "flex-end",
+                    gap: 1.5,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {isDailyMode ? (
+                    <TextField
+                      type="number"
+                      label={t("invoices.PosLedgerPanel.rateDay")}
+                      size="small"
+                      value={item.locked_base_price}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        updateItemBatch(item.cart_id, {
+                          locked_base_price: val,
+                          locked_extra_daily_rate: val,
+                          locked_minimum_days: 1,
+                        });
+                      }}
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+                                Rs.
+                              </Typography>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{
+                        width: 140,
+                        "& .MuiInputBase-input": {
+                          color: "#0f172a !important",
+                          fontWeight: 700,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontVariantNumeric: "tabular-nums",
+                          WebkitTextFillColor: "#0f172a !important",
+                        },
+                      }}
+                    />
+                  ) : (
+                    <>
                       <TextField
                         type="number"
-                        label={t("invoices.PosLedgerPanel.rateDay")}
+                        label={t("invoices.PosLedgerPanel.baseFee")}
                         size="small"
                         value={item.locked_base_price}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 0;
-                          updateItemBatch(item.cart_id, {
-                            locked_base_price: val,
-                            locked_extra_daily_rate: val,
-                            locked_minimum_days: 1,
-                          });
-                        }}
+                        onChange={(e) =>
+                          updateItem(item.cart_id, "locked_base_price", parseFloat(e.target.value) || 0)
+                        }
                         slotProps={{
                           input: {
                             startAdornment: (
                               <InputAdornment position="start">
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                                  Rs.
-                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>Rs.</Typography>
                               </InputAdornment>
                             ),
                           },
                         }}
                         sx={{
-                          width: 140,
+                          width: 110,
                           "& .MuiInputBase-input": {
                             color: "#0f172a !important",
                             fontWeight: 700,
@@ -639,162 +578,318 @@ export function PosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedger
                           },
                         }}
                       />
-                    ) : (
-                      <>
-                        <TextField
-                          type="number"
-                          label={t("invoices.PosLedgerPanel.baseFee")}
-                          size="small"
-                          value={item.locked_base_price}
-                          onChange={(e) =>
-                            updateItem(item.cart_id, "locked_base_price", parseFloat(e.target.value) || 0)
-                          }
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>Rs.</Typography>
-                                </InputAdornment>
-                              ),
-                            },
-                          }}
-                          sx={{
-                            width: 110,
-                            "& .MuiInputBase-input": {
-                              color: "#0f172a !important",
-                              fontWeight: 700,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontVariantNumeric: "tabular-nums",
-                              WebkitTextFillColor: "#0f172a !important",
-                            },
-                          }}
-                        />
-                        <TextField
-                          type="number"
-                          label={t("invoices.PosLedgerPanel.coversDays")}
-                          size="small"
-                          value={item.locked_minimum_days}
-                          onChange={(e) =>
-                            updateItem(item.cart_id, "locked_minimum_days", parseInt(e.target.value) || 1)
-                          }
-                          sx={{
-                            width: 105,
-                            "& .MuiInputBase-input": {
-                              color: "#0f172a !important",
-                              fontWeight: 700,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontVariantNumeric: "tabular-nums",
-                              WebkitTextFillColor: "#0f172a !important",
-                            },
-                          }}
-                        />
-                        <TextField
-                          type="number"
-                          label={t("invoices.PosLedgerPanel.extraDay")}
-                          size="small"
-                          value={item.locked_extra_daily_rate}
-                          onChange={(e) =>
-                            updateItem(item.cart_id, "locked_extra_daily_rate", parseFloat(e.target.value) || 0)
-                          }
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>Rs.</Typography>
-                                </InputAdornment>
-                              ),
-                            },
-                          }}
-                          sx={{
-                            width: 110,
-                            "& .MuiInputBase-input": {
-                              color: "#0f172a !important",
-                              fontWeight: 700,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontVariantNumeric: "tabular-nums",
-                              WebkitTextFillColor: "#0f172a !important",
-                            },
-                          }}
-                        />
-                      </>
-                    )}
-                    <Button
-                      size="small"
-                      variant="text"
-                      startIcon={<SwapHorizIcon sx={{ fontSize: 14 }} />}
-                      onClick={() => togglePricingMode(item)}
-                      sx={{
-                        textTransform: "none",
-                        fontSize: "0.72rem",
-                        fontWeight: 700,
-                        color: "text.secondary",
-                        ml: "auto",
-                        whiteSpace: "nowrap",
-                        minWidth: 0,
-                      }}
-                    >
-                      {isDailyMode ? t("invoices.PosLedgerPanel.switchToTiered") : t("invoices.PosLedgerPanel.switchToDaily")}
-                    </Button>
-                  </Box>
-
-                  {/* Cost footer */}
-                  <Box
+                      <TextField
+                        type="number"
+                        label={t("invoices.PosLedgerPanel.coversDays")}
+                        size="small"
+                        value={item.locked_minimum_days}
+                        onChange={(e) =>
+                          updateItem(item.cart_id, "locked_minimum_days", parseInt(e.target.value) || 1)
+                        }
+                        sx={{
+                          width: 105,
+                          "& .MuiInputBase-input": {
+                            color: "#0f172a !important",
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontVariantNumeric: "tabular-nums",
+                            WebkitTextFillColor: "#0f172a !important",
+                          },
+                        }}
+                      />
+                      <TextField
+                        type="number"
+                        label={t("invoices.PosLedgerPanel.extraDay")}
+                        size="small"
+                        value={item.locked_extra_daily_rate}
+                        onChange={(e) =>
+                          updateItem(item.cart_id, "locked_extra_daily_rate", parseFloat(e.target.value) || 0)
+                        }
+                        slotProps={{
+                          input: {
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>Rs.</Typography>
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                        sx={{
+                          width: 110,
+                          "& .MuiInputBase-input": {
+                            color: "#0f172a !important",
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontVariantNumeric: "tabular-nums",
+                            WebkitTextFillColor: "#0f172a !important",
+                          },
+                        }}
+                      />
+                    </>
+                  )}
+                  <Button
+                    size="small"
+                    variant="text"
+                    startIcon={<SwapHorizIcon sx={{ fontSize: 14 }} />}
+                    onClick={() => togglePricingMode(item)}
                     sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      px: 2,
-                      py: 1.25,
-                      bgcolor: "#eff6ff",
-                      borderTop: "1px solid #bfdbfe",
+                      textTransform: "none",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      color: "text.secondary",
+                      ml: "auto",
+                      whiteSpace: "nowrap",
+                      minWidth: 0,
                     }}
                   >
-                    <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5, fontVariantNumeric: "tabular-nums" }}>
-                      {totalDays}d · {t("invoices.PosLedgerPanel.unitsCount", { count: item.borrow_quantity })} · {calculationText}
-                    </Typography>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 900,
-                        color: "primary.dark",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      Rs. {lineCost.toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Paper>
-              );
-            })
-          )}
+                    {isDailyMode ? t("invoices.PosLedgerPanel.switchToTiered") : t("invoices.PosLedgerPanel.switchToDaily")}
+                  </Button>
+                </Box>
+
+                {/* Cost footer */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    px: 2,
+                    py: 1.25,
+                    bgcolor: "#eff6ff",
+                    borderTop: "1px solid #bfdbfe",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, display: "flex", alignItems: "center", gap: 0.5, fontVariantNumeric: "tabular-nums" }}>
+                    {totalDays}d · {t("invoices.PosLedgerPanel.unitsCount", { count: item.borrow_quantity })} · {calculationText}
+                  </Typography>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 900,
+                      color: "primary.dark",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    Rs. {lineCost.toLocaleString()}
+                  </Typography>
+                </Box>
+              </Paper>
+            );
+          });
+
+  const renderRentalCartContent = () => (
+    <>
+      {/* ── Cart summary strip ── */}
+      {cartItems.length > 0 && (
+        <Box
+          sx={{
+            mx: { xs: 1.5, sm: 2.5 },
+            mb: 1.5,
+            px: 2,
+            py: 1,
+            borderRadius: 2,
+            bgcolor: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.dark", display: "flex", alignItems: "center", gap: 0.75, fontVariantNumeric: "tabular-nums" }}>
+            {t("invoices.PosLedgerPanel.itemsInOrder", { count: cartItems.length })}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 900,
+              color: "primary.dark",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            Rs. {cartSubtotal.toLocaleString()}
+          </Typography>
         </Box>
-        {catalogOpen && (
-          <EquipmentCatalog
-            items={catalog.items}
-            isLoading={catalog.isLoading}
-            isFetching={catalog.isFetching || catalog.isSettling}
-            isError={catalog.isError}
-            onRetry={() => catalog.refetch()}
-            hasNextPage={!!catalog.hasNextPage}
-            isFetchingNextPage={catalog.isFetchingNextPage}
-            fetchNextPage={() => catalog.fetchNextPage()}
-            categories={categoryOptions}
-            categoryId={categoryId}
-            onCategoryChange={setCategoryId}
-            inStockOnly={inStockOnly}
-            onInStockChange={setInStockOnly}
-            searching={inputValue.trim().length > 0}
-            cartQtyById={cartQtyById}
-            cartCount={cartItems.length}
-            cartTotal={cartSubtotal}
-            onAdd={handleAddEquipment}
-            onDecrement={handleDecrementEquipment}
-            onClose={() => setCatalogOpen(false)}
-            onClearFilters={clearCatalogFilters}
-          />
+      )}
+
+      {/* ── Cart Items ── */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          px: { xs: 1.5, sm: 2.5 },
+          pb: { xs: 2, sm: 2.5 },
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          "&::-webkit-scrollbar": { width: "5px" },
+          "&::-webkit-scrollbar-thumb": { background: "#cbd5e1", borderRadius: "10px" },
+        }}
+      >
+        {cartItems.length === 0 ? (
+          <Box
+            sx={{
+              height: "100%",
+              minHeight: 240,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px dashed #cbd5e1",
+              borderRadius: 3,
+              p: 3,
+              color: "#64748b",
+              gap: 1.5,
+              textAlign: "center",
+            }}
+          >
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                bgcolor: "#f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#94a3b8",
+                mb: 0.5,
+              }}
+            >
+              <ShoppingCartCheckoutIcon sx={{ fontSize: 28 }} />
+            </Box>
+            <Typography variant="body1" sx={{ fontWeight: 800, color: "#1e293b" }}>
+              {t("invoices.PosLedgerPanel.orderManifestIsEmpty")}
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 240, lineHeight: 1.4 }}>
+              {t("invoices.PosLedgerPanel.searchAndAddEquipmentItems")}
+            </Typography>
+            <Button
+              variant="contained"
+              disableElevation
+              startIcon={<GridViewRoundedIcon />}
+              onClick={() => setCatalogOpen(true)}
+              sx={{ mt: 0.5, borderRadius: 3, fontWeight: 800, textTransform: "none", height: 42, px: 2.5 }}
+            >
+              {t("invoices.EquipmentCatalog.browse")}
+            </Button>
+          </Box>
+        ) : (
+          renderRentalCards()
         )}
+      </Box>
+    </>
+  );
+
+  const renderRentalCatalog = (opts: { retailSection?: ReactNode; extraCount?: number; extraTotal?: number } = {}) => (
+    <EquipmentCatalog
+      items={catalog.items}
+      isLoading={catalog.isLoading}
+      isFetching={catalog.isFetching || catalog.isSettling}
+      isError={catalog.isError}
+      onRetry={() => catalog.refetch()}
+      hasNextPage={!!catalog.hasNextPage}
+      isFetchingNextPage={catalog.isFetchingNextPage}
+      fetchNextPage={() => catalog.fetchNextPage()}
+      categories={categoryOptions}
+      categoryId={categoryId}
+      onCategoryChange={setCategoryId}
+      inStockOnly={inStockOnly}
+      onInStockChange={setInStockOnly}
+      searching={inputValue.trim().length > 0}
+      cartQtyById={cartQtyById}
+      cartCount={cartItems.length + (opts.extraCount ?? 0)}
+      cartTotal={cartSubtotal + (opts.extraTotal ?? 0)}
+      onAdd={handleAddEquipment}
+      onDecrement={handleDecrementEquipment}
+      onClose={() => setCatalogOpen(false)}
+      onClearFilters={clearCatalogFilters}
+      retailSection={opts.retailSection}
+    />
+  );
+
+  return {
+    inputValue,
+    setInputValue,
+    catalogOpen,
+    setCatalogOpen,
+    catalog,
+    handleSearchSubmit,
+    cartSubtotal,
+    renderRentalCartContent,
+    renderRentalCards,
+    renderRentalCatalog,
+  };
+}
+
+function RentalOnlyPosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedgerPanelProps) {
+  const state = useRentalLedgerController({ cartItems, setCartItems, showToast });
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      <Box sx={{ px: { xs: 1.5, sm: 2.5 }, pt: { xs: 2, sm: 2.5 }, pb: 1.5, flexShrink: 0 }}>
+        <EquipmentSearchBar
+          value={state.inputValue}
+          onChange={state.setInputValue}
+          open={state.catalogOpen}
+          onOpen={() => state.setCatalogOpen(true)}
+          onClose={() => state.setCatalogOpen(false)}
+          loading={state.catalogOpen && (state.catalog.isSettling || state.catalog.isFetching)}
+          onSubmit={state.handleSearchSubmit}
+        />
+      </Box>
+      <Box sx={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        {state.renderRentalCartContent()}
+        {state.catalogOpen && state.renderRentalCatalog()}
       </Box>
     </Box>
   );
+}
+
+function RetailAwarePosLedgerPanel({ cartItems, setCartItems, showToast }: PosLedgerPanelProps) {
+  const customEnterRef = useRef<() => boolean>(() => false);
+
+  const state = useRentalLedgerController({
+    cartItems,
+    setCartItems,
+    showToast,
+    onCustomEnter: () => customEnterRef.current(),
+  });
+
+  const searchBar = (
+    <EquipmentSearchBar
+      value={state.inputValue}
+      onChange={state.setInputValue}
+      open={state.catalogOpen}
+      onOpen={() => state.setCatalogOpen(true)}
+      onClose={() => state.setCatalogOpen(false)}
+      loading={state.catalogOpen && (state.catalog.isSettling || state.catalog.isFetching)}
+      onSubmit={state.handleSearchSubmit}
+      scanAware
+    />
+  );
+
+  return (
+    <PosRetailLedgerHost
+      searchBar={searchBar}
+      inputValue={state.inputValue}
+      setInputValue={state.setInputValue}
+      catalogOpen={state.catalogOpen}
+      setCatalogOpen={state.setCatalogOpen}
+      rentalCount={cartItems.length}
+      rentalSubtotal={state.cartSubtotal}
+      renderRentalCatalog={state.renderRentalCatalog}
+      rentalCartContent={state.renderRentalCartContent()}
+      rentalCards={state.renderRentalCards()}
+      showToast={showToast}
+      setRegisterEnterHandler={(fn) => {
+        customEnterRef.current = fn;
+      }}
+    />
+  );
+}
+
+export function PosLedgerPanel(props: PosLedgerPanelProps) {
+  const retailEnabled = useRetailEnabled();
+  return retailEnabled ? <RetailAwarePosLedgerPanel {...props} /> : <RentalOnlyPosLedgerPanel {...props} />;
 }

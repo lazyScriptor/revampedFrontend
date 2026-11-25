@@ -247,8 +247,8 @@ export function CustomerSettlementView({
           showToast?.(t("settlement.review.savedToast", "Settlement saved"), "success");
         },
         onError: (err: any) => {
-          if (err?.status === 409 && (err?.code === "settlement_changed" || err?.data?.preview)) {
-            const nextPreview: SettlementPreviewResponse | undefined = err?.data?.preview;
+          if (err?.status === 409 && (err?.code === "settlement_changed" || err?.data?.data?.preview || err?.data?.preview)) {
+            const nextPreview: SettlementPreviewResponse | undefined = err?.data?.data?.preview ?? err?.data?.preview;
             if (nextPreview) {
               setConflictPreview(nextPreview);
               setPreview(nextPreview);

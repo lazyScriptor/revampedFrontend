@@ -9,6 +9,11 @@ import { tk } from "@/i18n/marker";
 import { RECEIPT_SINHALA_FAMILY, ensureReceiptFontInApp } from "../lib/receiptFont";
 import { getReceiptDesign, getShowIdStatus, type ReceiptDesign } from "../lib/receiptPrefs";
 import { printableSignatureStyle, usePrintableSignature } from "../lib/printableSignature";
+import { normalizeSaleLines } from "@/features/retail/api/pos.api";
+import { useReceiptSettings } from "@/features/retail/receipts/useReceiptSettings";
+import { billKindOf, normalizeSaleReturn, soldBillTotals, soldLinesOf, type SaleReturnRow, type SoldReceiptLine } from "@/features/retail/receipts/receiptModel";
+import { ReturnSlipBody, ShortSaleReceiptBody, SoldItemsBlock, SoldTotalsBlock } from "@/features/retail/receipts/SaleReceiptParts";
+import type { RetailReceiptSettings } from "@/features/retail/api/types";
 
 ensureReceiptFontInApp();
 
@@ -290,6 +295,28 @@ const RECEIPT_KEYS = {
   mIdHeld: tk("receipt.minimal.idHeld"),
   mIdNotHeld: tk("receipt.minimal.idNotHeld"),
   mNote: tk("receipt.minimal.note"),
+  // retail: goods on a bill, the short sale receipt and the return slip
+  sItemsSold: tk("receipt.sItemsSold"),
+  sItemsDraft: tk("receipt.sItemsDraft"),
+  sRent: tk("receipt.sRent"),
+  sItems: tk("receipt.sItems"),
+  sReturned: tk("receipt.sReturned"),
+  sChange: tk("receipt.sChange"),
+  sPaid: tk("receipt.sPaid"),
+  sCashier: tk("receipt.sCashier"),
+  sBillNo: tk("receipt.sBillNo"),
+  sReceipt: tk("receipt.sReceipt"),
+  sSaleBill: tk("receipt.sSaleBill"),
+  sSaleBillClassic: tk("receipt.sSaleBillClassic"),
+  sRefund: tk("receipt.sRefund"),
+  rsTitle: tk("receipt.rsTitle"),
+  rsGood: tk("receipt.rsGood"),
+  rsDamaged: tk("receipt.rsDamaged"),
+  rsValue: tk("receipt.rsValue"),
+  rsKept: tk("receipt.rsKept"),
+  rsBalanceAfter: tk("receipt.rsBalanceAfter"),
+  rsReason: tk("receipt.rsReason"),
+  rsReturnedOn: tk("receipt.rsReturnedOn"),
 } as const;
 
 export type ReceiptLabels = { [K in keyof typeof RECEIPT_KEYS]: string } & {
@@ -298,6 +325,9 @@ export type ReceiptLabels = { [K in keyof typeof RECEIPT_KEYS]: string } & {
   mReturned: (date: string) => string;
   priceDaily: (days: number, rate: string) => string;
   priceTiered: (base: string, days: number, extra: string) => string;
+  returnedQty: (qty: string) => string;
+  off: (amount: string) => string;
+  refundedVia: (method: string) => string;
 };
 
 export const getReceiptLabels = (lng: ReceiptLanguage): ReceiptLabels => {
@@ -308,6 +338,9 @@ export const getReceiptLabels = (lng: ReceiptLanguage): ReceiptLabels => {
   out.priceDaily = (days: number, rate: string) => i18n.t("receipt.priceDaily", { lng, count: days, rate });
   out.priceTiered = (base: string, days: number, extra: string) => i18n.t("receipt.priceTiered", { lng, base, days, extra });
   out.mReturned = (date: string) => i18n.t("receipt.minimal.returned", { lng, date });
+  out.returnedQty = (qty: string) => i18n.t("receipt.sReturnedQty", { lng, qty });
+  out.off = (amount: string) => i18n.t("receipt.sOff", { lng, amount });
+  out.refundedVia = (method: string) => i18n.t("receipt.rsRefunded", { lng, method: method || "—" });
   return out as ReceiptLabels;
 };
 
@@ -319,10 +352,12 @@ export interface InvoiceReceiptProps {
     customer?: any;
     onBehalfOfCustomer?: any;
     items?: CartItem[];
+    /** Goods in the cart (a mixed estimate lists them under the machines). */
+    saleLines?: any[];
     fees?: { transport?: number; discount?: number; advance?: number };
     draftId?: string;
   };
-  paperWidth?: "80mm" | "58mm";
+  paperWidth?: "80mm" | "58mm" | "a4";
   density?: "standard" | "compact";
   language?: ReceiptLanguage; // Supports "en" (English) or "si" (Sinhala)
   showTerms?: boolean;
@@ -332,6 +367,10 @@ export interface InvoiceReceiptProps {
   isPreview?: boolean; // Render visibly on screen inside a dialog preview
   design?: ReceiptDesign; // "minimal" (default) or the detailed "classic" layout
   showIdStatus?: boolean; // print whether the customer's ID card is kept
+  /** Prints the slip of this return instead of the bill. */
+  returnSlip?: SaleReturnRow | null;
+  /** Overrides the shop's saved retail receipt choices (previews and tests). */
+  retailReceipt?: Partial<RetailReceiptSettings>;
   callRecordingTermsLine?: string | null;
 }
 
@@ -431,6 +470,8 @@ export function buildSnapshotReceiptProps(log: any) {
     language: (log?.language === "si" ? "si" : "en") as ReceiptLanguage,
     customNotes: log?.custom_notes || snap.customNotes || undefined,
     cashierName: printedByDisplay,
+    // A return slip is printed from the return stored with it, not from today's bill.
+    returnSlip: log?.doc_type === "RETURN_SLIP" && snap.return ? normalizeSaleReturn(snap.return) : undefined,
   };
 }
 
@@ -449,8 +490,12 @@ export const InvoiceReceipt = ({
   isPreview = false,
   design,
   showIdStatus,
+  returnSlip,
+  retailReceipt,
   callRecordingTermsLine,
 }: InvoiceReceiptProps) => {
+  const savedRetail = useReceiptSettings();
+  const retail: RetailReceiptSettings = { ...savedRetail, ...retailReceipt };
   // Fall back to the counter's saved choice so every print path matches the print dialog.
   const activeDesign: ReceiptDesign = design ?? getReceiptDesign();
   const printIdStatus = showIdStatus ?? getShowIdStatus();
@@ -563,16 +608,49 @@ export const InvoiceReceipt = ({
           pricingText,
           status: "Draft",
           returnedDate: null,
+          isSale: false,
         };
       });
 
+      // A mixed estimate also lists the goods in the cart and adds them to the figures.
+      const draftSold: SoldReceiptLine[] = (draftData?.saleLines || []).map((l: any, idx: number) => ({
+        id: `draft-sale-${l.cart_id || idx}`,
+        name: String(l.description || ""),
+        qty: Number(l.qty) || 0,
+        unit: String(l.unit_label || "pcs"),
+        unitPrice: Number(l.unit_price) || 0,
+        lineDiscount: Number(l.line_discount) || 0,
+        lineTotal: Number(l.line_total) || 0,
+        returnedQty: 0,
+        fullyReturned: false,
+      }));
+      const draftItems = Math.round(draftSold.reduce((acc, l) => acc + l.lineTotal, 0) * 100) / 100;
       const subtotal =
         Number(fees.subtotal || 0) || lines.reduce((acc, l) => acc + l.lineTotal, 0);
       const transport = Number(fees.transport ?? fees.transportFee ?? 0);
       const discount = Number(fees.discount ?? fees.discountAmount ?? 0);
       const advance = Number(fees.advance ?? fees.totalPaid ?? 0);
-      const grandTotal = Number(fees.grandTotal ?? Math.max(0, subtotal + transport - discount));
+      const grandTotal = Number(fees.grandTotal ?? Math.max(0, subtotal + draftItems + transport - discount));
       const balanceDue = Number(fees.balanceDue ?? Math.max(0, grandTotal - advance));
+      const draftKind: "rental" | "sale" | "mixed" = draftSold.length === 0 ? "rental" : lines.length === 0 ? "sale" : "mixed";
+      const draftSoldTotals =
+        draftKind === "rental"
+          ? null
+          : {
+              kind: draftKind,
+              rent: subtotal,
+              items: draftItems,
+              transport,
+              discount,
+              returned: 0,
+              lateFees: 0,
+              total: grandTotal,
+              paid: advance,
+              tendered: advance,
+              balance: balanceDue,
+              changeDue: 0,
+              payments: advance > 0 ? [{ amount: advance, method: t.methodCashWallet, refund: false }] : [],
+            };
 
       return {
         docType: "ESTIMATE" as const,
@@ -626,6 +704,11 @@ export const InvoiceReceipt = ({
         vaultStatus: t.vaultPending,
         idHeld: false,
         statusDisplay: t.statusDraft,
+        kind: draftKind,
+        sold: draftSold,
+        soldTotals: draftSoldTotals,
+        issuedBy: null as string | null,
+        changeDue: 0,
       };
     }
 
@@ -638,7 +721,7 @@ export const InvoiceReceipt = ({
       (invoice.status || "").toLowerCase() === "completed" ||
       invoice.status === "Returned";
 
-    const lines = invLines.map((line: any, idx: number) => {
+    const rentalLines = invLines.map((line: any, idx: number) => {
       // A machine kept past its due date (or one with no due date) is billed for the days it was really
       // out, so the bill shows the actual return day instead of the original due day.
       const backDate = line.returned_date || line.actual_return_date || null;
@@ -675,12 +758,40 @@ export const InvoiceReceipt = ({
         pricingText,
         status: line.line_status || "Active",
         returnedDate: line.returned_date || line.actual_return_date || null,
+        isSale: false,
       };
     });
 
+    const soldLines = normalizeSaleLines(invoice).map((l, idx) => ({
+      id: `sale-${l.sale_line_id || idx}`,
+      name: l.description,
+      code: "",
+      qty: l.qty,
+      start: "",
+      end: "",
+      days: 0,
+      lineTotal: l.line_total,
+      pricingText: `${l.qty} ${l.unit_label} × ${fmtMoney(l.unit_price, currencyCode)}`,
+      status: l.status || "sold",
+      returnedDate: null,
+      isSale: true,
+    }));
+
+    // A bill with goods lists the machines in its rental section and the goods in their own section.
+    const kind = billKindOf(invoice);
+    const sold = soldLinesOf(invoice);
+    const soldTotals = kind === "rental" ? null : soldBillTotals(invoice);
+    const lines = kind === "rental" ? [...rentalLines, ...soldLines] : rentalLines;
+
     const computedLinesSubtotal = lines.reduce((acc: number, l: any) => acc + l.lineTotal, 0);
+    const rawSub = Number(invoice.sub_total ?? invoice.fees?.subtotal ?? 0);
+    const rawSale = Number(invoice.sale_total ?? 0);
+    const isSaleOnlyBill = invoice.bill_kind === "sale" || (invLines.length === 0 && soldLines.length > 0);
+    // A mixed bill's sub_total already holds the rent and the goods (before the bill discount).
+    const isMixedBill = invoice.bill_kind === "mixed";
     const subtotal =
-      Number(invoice.sub_total ?? invoice.fees?.subtotal ?? 0) || computedLinesSubtotal;
+      (isMixedBill ? rawSub : isSaleOnlyBill ? rawSale || rawSub : rawSale > 0 ? rawSub + rawSale : rawSub) ||
+      computedLinesSubtotal;
     const transport = Number(
       invoice.transport_fee ?? invoice.fees?.transportFee ?? invoice.fees?.transport ?? 0
     );
@@ -690,7 +801,7 @@ export const InvoiceReceipt = ({
     const grandTotal =
       Number(invoice.total_amount ?? invoice.fees?.grandTotal ?? 0) ||
       Math.max(0, subtotal + transport - discount);
-    const lateFees = Math.max(0, grandTotal - (subtotal + transport - discount));
+    const lateFees = soldTotals ? soldTotals.lateFees : Math.max(0, grandTotal - (subtotal + transport - discount));
 
     const paidFromPayments = rawPayments.reduce(
       (sum: number, p: any) => sum + Number(p.payment_amount ?? p.amount ?? 0),
@@ -739,8 +850,8 @@ export const InvoiceReceipt = ({
 
     return {
       docType: isCompleted ? ("COMPLETED" as const) : ("DISPATCH" as const),
-      docTitle: isCompleted ? t.completedTitle : t.dispatchTitle,
-      docSubtitle: isCompleted ? t.completedSubtitle : t.dispatchSubtitle,
+      docTitle: kind === "sale" ? t.sSaleBillClassic : isCompleted ? t.completedTitle : t.dispatchTitle,
+      docSubtitle: kind === "sale" ? "" : isCompleted ? t.completedSubtitle : t.dispatchSubtitle,
       docNumber,
       issuedDate: invoice.issued_date || invoice.createdAt || new Date().toISOString(),
       customer: {
@@ -774,18 +885,26 @@ export const InvoiceReceipt = ({
       totalPaid,
       balanceDue,
       vaultStatus:
-        invoice.id_card_status || cust.is_id_retained_currently
-          ? t.vaultHeld
-          : t.vaultReleased,
-      idHeld: Boolean(invoice.id_card_status || cust.is_id_retained_currently),
+        invoice.bill_kind === "sale"
+          ? t.vaultReleased
+          : invoice.id_card_status || cust.is_id_retained_currently
+            ? t.vaultHeld
+            : t.vaultReleased,
+      idHeld: invoice.bill_kind === "sale" ? false : Boolean(invoice.id_card_status || cust.is_id_retained_currently),
       statusDisplay: isCompleted ? t.statusCompleted : t.statusActive,
+      kind,
+      sold,
+      soldTotals,
+      issuedBy: (invoice.issued_by?.name || invoice.issued_by_name || null) as string | null,
+      changeDue: soldTotals?.changeDue ?? 0,
     };
   }, [invoice, isDraft, draftData, currencyCode, activeLang, t]);
 
   // Styling metrics based on paperWidth & density
   const is58mm = paperWidth === "58mm";
+  const isA4 = paperWidth === "a4";
   const isCompact = density === "compact";
-  const fontSizeBase = is58mm ? "10px" : isCompact ? "10.5px" : "11px";
+  const fontSizeBase = is58mm ? "10px" : isA4 ? "12px" : isCompact ? "10.5px" : "11px";
   const fontSizeHeader = is58mm ? "14px" : "16px";
   const fontSizeTotal = is58mm ? "13px" : "15px";
   const lineHeight = "1.25";
@@ -802,8 +921,8 @@ export const InvoiceReceipt = ({
   // Container styling
   const containerStyle: React.CSSProperties = isPreview
     ? {
-        width: is58mm ? "48mm" : "72mm",
-        maxWidth: is58mm ? "48mm" : "72mm",
+        width: is58mm ? "48mm" : isA4 ? "190mm" : "72mm",
+        maxWidth: is58mm ? "48mm" : isA4 ? "190mm" : "72mm",
         margin: "0 auto",
         padding: "2mm 2mm 6mm 2mm",
         backgroundColor: "#ffffff",
@@ -833,10 +952,62 @@ export const InvoiceReceipt = ({
     operator: capturedOperator ? { src: resolveImageUrl(capturedOperator.image_url) || "", name: capturedOperator.signatory_name } : null,
   };
 
+  const company = { name: companyName, address: companyAddress, contactLine };
+  const partsCtx = { t, fmt: (n: number) => fmtMoney(n, currencyCode), is58mm, isSi };
+
+  // The slip of one return of sold items.
+  if (returnSlip) {
+    const slipDocNumber = invoice?.doc_number || (invoice?.invoice_id ? `INV-${invoice.invoice_id}` : "");
+    return (
+      <Box id={id} sx={containerStyle}>
+        <ReturnSlipBody
+          c={partsCtx}
+          company={company}
+          docNumber={slipDocNumber}
+          dateTime={shortDateTime(returnSlip.returned_at)}
+          ret={returnSlip}
+          footer={retail.returnSlipFooter}
+          a4={isA4}
+        />
+      </Box>
+    );
+  }
+
+  // A bill with only goods prints the short retail receipt (unless the shop turned it off).
+  if (!isDraft && normalized.kind === "sale" && normalized.soldTotals && retail.shortSaleReceipt) {
+    return (
+      <Box id={id} sx={containerStyle}>
+        <ShortSaleReceiptBody
+          c={partsCtx}
+          company={company}
+          docNumber={normalized.docNumber}
+          dateTime={shortDateTime(normalized.issuedDate)}
+          cashier={retail.showCashier ? normalized.issuedBy || operatorName : null}
+          lines={normalized.sold}
+          totals={normalized.soldTotals}
+          footer={retail.saleFooter}
+          barcode={
+            showBarcode ? (
+              <div className="avoid-break" style={{ marginTop: "4px", breakInside: "avoid" }}>
+                <Code39Barcode value={normalized.docNumber} height={is58mm ? 24 : 28} narrowWidth={is58mm ? 1.1 : 1.3} wideWidth={is58mm ? 2.6 : 3.2} />
+              </div>
+            ) : null
+          }
+        />
+      </Box>
+    );
+  }
+
+  const soldHeading = isDraft ? t.sItemsDraft : t.sItemsSold;
+  const showSoldList = normalized.kind === "sale" || retail.showItemsSoldOnRentalReceipt;
+
   if (activeDesign === "minimal") {
     return (
       <Box id={id} sx={containerStyle}>
         <MinimalReceiptBody
+          soldHeading={soldHeading}
+          showSoldList={showSoldList}
+          partsCtx={partsCtx}
           t={t}
           normalized={normalized}
           company={{ name: companyName, address: companyAddress, contactLine }}
@@ -893,9 +1064,11 @@ export const InvoiceReceipt = ({
         <div style={{ fontWeight: 800, fontSize: is58mm ? "10px" : "11.5px", color: "#000000" }}>
           {normalized.docTitle}
         </div>
-        <div style={{ fontSize: is58mm ? "8px" : "9px", color: "#000000", fontWeight: 500 }}>
-          {normalized.docSubtitle}
-        </div>
+        {normalized.docSubtitle && (
+          <div style={{ fontSize: is58mm ? "8px" : "9px", color: "#000000", fontWeight: 500 }}>
+            {normalized.docSubtitle}
+          </div>
+        )}
       </div>
 
       <div style={{ fontSize: fontSizeBase, margin: "3px 0", fontWeight: 500 }}>
@@ -953,7 +1126,7 @@ export const InvoiceReceipt = ({
             {normalized.beneficiary.name} ({normalized.beneficiary.phone})
           </div>
         )}
-        {printIdStatus && (
+        {printIdStatus && normalized.kind !== "sale" && (
           <div
             style={{
               marginTop: "2px",
@@ -994,11 +1167,13 @@ export const InvoiceReceipt = ({
         <hr style={{ border: "none", borderTop: "1px dashed #000000", margin: "2px 0" }} />
 
         {normalized.lines.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "4px 0", fontWeight: 500 }}>
-            {t.noItems}
-          </div>
+          normalized.kind === "rental" && (
+            <div style={{ textAlign: "center", padding: "4px 0", fontWeight: 500 }}>
+              {t.noItems}
+            </div>
+          )
         ) : (
-          normalized.lines.map((line, idx) => (
+          normalized.lines.map((line: any, idx: number) => (
             <div
               key={line.id}
               className="avoid-break"
@@ -1039,23 +1214,25 @@ export const InvoiceReceipt = ({
                 </div>
               </div>
 
-              {/* Row 2: Rental duration & Qty */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: is58mm ? "8.5px" : "9.5px",
-                  color: "#000000",
-                  fontWeight: 500,
-                  paddingLeft: "8px",
-                  marginTop: "0.5px",
-                }}
-              >
-                <span>
-                  {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{t.daysSuffix})
-                </span>
-                <span style={{ fontWeight: 600 }}>{t.qty}: {line.qty}</span>
-              </div>
+              {/* Row 2: Rental duration & Qty (skipped on sale lines) */}
+              {!line.isSale && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: is58mm ? "8.5px" : "9.5px",
+                    color: "#000000",
+                    fontWeight: 500,
+                    paddingLeft: "8px",
+                    marginTop: "0.5px",
+                  }}
+                >
+                  <span>
+                    {fmtDate(line.start)} → {fmtDate(line.end)} ({line.days}{t.daysSuffix})
+                  </span>
+                  <span style={{ fontWeight: 600 }}>{t.qty}: {line.qty}</span>
+                </div>
+              )}
 
               {/* Row 3: Pricing math details */}
               <div
@@ -1066,7 +1243,7 @@ export const InvoiceReceipt = ({
                   paddingLeft: "8px",
                 }}
               >
-                {t.rate}: {line.pricingText}
+                {line.isSale ? line.pricingText : `${t.rate}: ${line.pricingText}`}
               </div>
 
               {/* Line Status Badge (if Returned) */}
@@ -1096,7 +1273,14 @@ export const InvoiceReceipt = ({
         )}
       </div>
 
+      {normalized.kind !== "rental" && showSoldList && normalized.sold.length > 0 && (
+        <div style={{ margin: "4px 0" }}>
+          <SoldItemsBlock lines={normalized.sold} c={partsCtx} heading={soldHeading} />
+        </div>
+      )}
+
       {/* Equipment Metrics Count */}
+      {normalized.lines.length > 0 && (
       <div
         style={{
           borderTop: "1px dashed #000000",
@@ -1114,8 +1298,14 @@ export const InvoiceReceipt = ({
           {t.totalMachines} {normalized.totalUnits}
         </span>
       </div>
+      )}
 
       {/* ── 5. FINANCIAL BREAKDOWN ───────────────────────────────────────────── */}
+      {normalized.soldTotals ? (
+        <div style={{ margin: "3px 0", fontSize: fontSizeBase, fontWeight: 500 }}>
+          <SoldTotalsBlock totals={normalized.soldTotals} c={partsCtx} />
+        </div>
+      ) : (
       <div style={{ margin: "3px 0", fontSize: fontSizeBase, fontWeight: 500 }}>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>{t.subtotal}</span>
@@ -1166,7 +1356,7 @@ export const InvoiceReceipt = ({
         {/* Itemized Payments */}
         {normalized.payments.length > 0 && (
           <div style={{ margin: "2.5px 0" }}>
-            {normalized.payments.map((p, pIdx) => (
+            {normalized.payments.map((p: any, pIdx: number) => (
               <div
                 key={pIdx}
                 style={{
@@ -1221,6 +1411,7 @@ export const InvoiceReceipt = ({
           </span>
         </div>
       </div>
+      )}
 
       {/* ── 6. CUSTOM NOTES (IF SPECIFIED) ──────────────────────────────────── */}
       {customNotes && (
@@ -1239,7 +1430,7 @@ export const InvoiceReceipt = ({
       )}
 
       {/* ── 7. RENTAL CONDITIONS (COMPACT & LEGALLY ESSENTIAL) ───────────────── */}
-      {showTerms && (
+      {showTerms && normalized.kind !== "sale" && (
         <div
           className="avoid-break"
           style={{
@@ -1265,7 +1456,7 @@ export const InvoiceReceipt = ({
       )}
 
       {/* ── 8. DUAL SIGNATURE BLOCK ─────────────────────────────────────────── */}
-      <div
+      {normalized.kind !== "sale" && <div
         className="avoid-break"
         style={{
           marginTop: "8px",
@@ -1289,7 +1480,7 @@ export const InvoiceReceipt = ({
             align="right"
           />
         </div>
-      </div>
+      </div>}
 
       {/* ── 9. VECTOR BARCODE & FOOTER ───────────────────────────────────────── */}
       {showBarcode && (
@@ -1352,6 +1543,7 @@ interface MinimalLine {
   lineTotal: number;
   pricingText: string;
   returnedDate?: string | null;
+  isSale?: boolean;
 }
 
 interface MinimalReceiptBodyProps {
@@ -1372,7 +1564,13 @@ interface MinimalReceiptBodyProps {
     totalPaid: number;
     balanceDue: number;
     idHeld: boolean;
+    kind: "rental" | "sale" | "mixed";
+    sold: SoldReceiptLine[];
+    soldTotals: import("@/features/retail/receipts/receiptModel").SoldBillTotals | null;
   };
+  soldHeading: string;
+  showSoldList: boolean;
+  partsCtx: import("@/features/retail/receipts/SaleReceiptParts").PartsCtx;
   company: { name: string; address: string; contactLine: string };
   currency: string;
   operatorName: string;
@@ -1390,6 +1588,9 @@ interface MinimalReceiptBodyProps {
 }
 
 function MinimalReceiptBody({
+  soldHeading,
+  showSoldList,
+  partsCtx,
   t,
   normalized: n,
   company,
@@ -1423,7 +1624,9 @@ function MinimalReceiptBody({
     </div>
   );
   const title =
-    n.docType === "ESTIMATE" ? t.mBillEstimate : n.docType === "COMPLETED" ? t.mBillCompleted : t.mBillDispatch;
+    n.docType === "ESTIMATE" ? t.mBillEstimate : n.kind === "sale" ? t.sSaleBill : n.docType === "COMPLETED" ? t.mBillCompleted : t.mBillDispatch;
+  const hasSold = n.kind !== "rental";
+  const saleOnly = n.kind === "sale";
   const hasExtras = n.transport > 0 || n.discount > 0 || n.lateFees > 0;
   const nicKnown = n.customer.nic && n.customer.nic !== t.notOnFile;
   const phoneKnown = n.customer.phone && n.customer.phone !== "N/A";
@@ -1467,13 +1670,13 @@ function MinimalReceiptBody({
           {n.beneficiary.phone ? ` (${n.beneficiary.phone})` : ""}
         </div>
       )}
-      {showIdStatus && <div style={{ fontSize: small }}>{n.idHeld ? t.mIdHeld : t.mIdNotHeld}</div>}
+      {showIdStatus && !saleOnly && <div style={{ fontSize: small }}>{n.idHeld ? t.mIdHeld : t.mIdNotHeld}</div>}
 
       {rule}
 
       {/* Machines */}
       {n.lines.length === 0 ? (
-        <div style={{ textAlign: "center", fontSize: small }}>{t.noItems}</div>
+        !hasSold && <div style={{ textAlign: "center", fontSize: small }}>{t.noItems}</div>
       ) : (
         n.lines.map((line, idx) => (
           <div
@@ -1490,7 +1693,7 @@ function MinimalReceiptBody({
               <span style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{fmtMoney(line.lineTotal, currency)}</span>
             </div>
             <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>
-              {shortDate(line.start)} → {shortDate(line.end)} · {line.pricingText}
+              {line.isSale ? line.pricingText : `${shortDate(line.start)} → ${shortDate(line.end)} · ${line.pricingText}`}
             </div>
             {line.returnedDate && (
               <div style={{ fontSize: small, fontVariantNumeric: "tabular-nums" }}>✓ {t.mReturned(shortDate(line.returnedDate))}</div>
@@ -1499,9 +1702,17 @@ function MinimalReceiptBody({
         ))
       )}
 
+      {hasSold && showSoldList && n.sold.length > 0 && (
+        <>
+          {n.lines.length > 0 && rule}
+          <SoldItemsBlock lines={n.sold} c={partsCtx} heading={soldHeading} />
+        </>
+      )}
+
       {rule}
 
       {/* Money */}
+      {n.soldTotals ? <SoldTotalsBlock totals={n.soldTotals} c={partsCtx} /> : <>
       {hasExtras && row(t.mSubtotal, fmtMoney(n.subtotal, currency))}
       {n.transport > 0 && row(t.mTransport, `+${fmtMoney(n.transport, currency)}`)}
       {n.discount > 0 && row(t.mDiscount, `-${fmtMoney(n.discount, currency)}`)}
@@ -1516,6 +1727,7 @@ function MinimalReceiptBody({
       <div style={{ marginTop: "2px" }}>
         {row(t.mBalance, n.balanceDue === 0 ? t.paidInFull : fmtMoney(n.balanceDue, currency), { strong: true, size: big })}
       </div>
+      </>}
 
       {customNotes && (
         <>
@@ -1527,7 +1739,7 @@ function MinimalReceiptBody({
         </>
       )}
 
-      {showTerms && (
+      {showTerms && !saleOnly && (
         <>
           {rule}
           <div className="avoid-break" style={{ fontSize: is58mm ? "8px" : "8.5px", lineHeight: 1.3, breakInside: "avoid" }}>
@@ -1541,10 +1753,10 @@ function MinimalReceiptBody({
       )}
 
       {/* Signatures */}
-      <div className="avoid-break" style={{ display: "flex", alignItems: "flex-end", gap: "10px", marginTop: "10px", fontSize: small, breakInside: "avoid" }}>
+      {!saleOnly && <div className="avoid-break" style={{ display: "flex", alignItems: "flex-end", gap: "10px", marginTop: "10px", fontSize: small, breakInside: "avoid" }}>
         <SignatureSlot src={signatures.customer?.src} label={t.custSign} name={signatures.customer?.name || n.customer.name} align="left" />
         <SignatureSlot src={signatures.operator?.src} label={t.authSign} name={signatures.operator?.name || operatorName} align="right" />
-      </div>
+      </div>}
 
       {showBarcode && (
         <div className="avoid-break" style={{ marginTop: "6px", breakInside: "avoid" }}>
