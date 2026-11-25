@@ -4766,7 +4766,8 @@
       "addCallByHand": "අතින් ඇමතුමක් එක් කරන්න",
       "exportCalls": "ඇමතුම් නිර්යාත කරන්න",
       "pairedPhonesOnlyNote": "සම්බන්ධිත GearGrid දුරකථනවලින් (සහ අතින් ඇතුළත් කළ) ඇමතුම් පමණක් මෙහි දිස්වේ.",
-      "noCalls": "තේරූ පෙරහනට ගැලපෙන ඇමතුම් නැත."
+      "noCalls": "තේරූ පෙරහනට ගැලපෙන ඇමතුම් නැත.",
+      "settle": "බේරුම් කරන්න"
     },
     "calls": {
       "callsLabel": "ඇමතුම්",
@@ -4948,5 +4949,190 @@
     "voidPaymentTitle": "රු. {{amount}} ගෙවීම අවලංගු කරන්න",
     "paymentVoided": "ගෙවීම අවලංගු කරන ලදී",
     "lateFeeLessThanToday": "ප්‍රමාද ගාස්තුව අදට වඩා රු. {{amount}} අඩුයි"
+  },
+  "settlement": {
+    "title": "පාරිභෝගික බේරුම් කිරීම",
+    "subtitle": "විවෘත බිල්පත් හරහා යන්ත්‍ර ආපසු භාරදීම සහ ගෙවීම් බේරුම් කිරීම",
+    "settleCustomer": "පාරිභෝගික බේරුම් කිරීම",
+    "updating": "යාවත්කාලීන වෙමින්…",
+    "skipStep": "මඟ හරින්න",
+    "selectCustomerPrompt": "විවෘත බිල්පත් බැලීමට, යන්ත්‍ර ආපසු භාරදීමට සහ ගෙවීම් බේරුම් කිරීමට පාරිභෝගිකයෙකු තෝරන්න.",
+    "steps": {
+      "customer": "පාරිභෝගිකයා",
+      "bills": "බිල්පත්",
+      "machinesBack": "ආපසු යන්ත්‍ර",
+      "payment": "ගෙවීම",
+      "checkAndSave": "පරීක්ෂා කර සුරකින්න"
+    },
+    "age": {
+      "under7": "දින < 7",
+      "7to30": "දින 7–30",
+      "over30": "දින > 30"
+    },
+    "customer": {
+      "searchPlaceholder": "නම, දුරකථන අංකය හෝ ජා.හැ. අංකයෙන් සොයන්න…",
+      "noMatches": "ගැළපෙන පාරිභෝගිකයන් නැත",
+      "call": "අමතන්න",
+      "owesSummary": "බිල්පත් {{bills}} කට {{amount}} ක් හිඟයි · යන්ත්‍ර {{machines}} ක් පිටත",
+      "oldestUnpaid": "පැරණිතම නොගෙවූ බිල: {{date}}",
+      "lastPayment": "අවසන් ගෙවීම: {{amount}} ({{date}})",
+      "hasCredit": "{{amount}} ක ණය ශේෂයක් ඇත",
+      "idCardsHeld": "හැඳුනුම්පත් {{count}} ක් තබා ඇත",
+      "continueToBills": "බිල්පත් වෙත යන්න"
+    },
+    "filters": {
+      "paymentDue": "ගෙවීමට ඇති",
+      "machinesOut": "යන්ත්‍ර පිටත",
+      "allBack": "සියලු යන්ත්‍ර ආපසු",
+      "completed": "සම්පූර්ණ කළ",
+      "all": "සියල්ල",
+      "date": "දිනය",
+      "machine": "යන්ත්‍රය",
+      "allMachines": "සියලු යන්ත්‍ර"
+    },
+    "datePreset": {
+      "all": "සියලු කාලය",
+      "this_month": "මෙම මාසය",
+      "last_3_months": "පසුගිය මාස 3",
+      "this_year": "මෙම වසර",
+      "custom": "අභිරුචි",
+      "from": "සිට",
+      "to": "දක්වා"
+    },
+    "sort": {
+      "oldest": "පැරණිතම පළමුව",
+      "biggest": "වැඩිම හිඟය",
+      "newest": "නවතම"
+    },
+    "bills": {
+      "pickBill": "INV-{{id}} තෝරන්න",
+      "unpickBill": "INV-{{id}} ඉවත් කරන්න",
+      "onBehalfOf": "{{name}} වෙනුවෙන්",
+      "growingPerDay": "දිනකට +{{amount}} කින් වැඩිවේ",
+      "paidOfTotal": "{{total}} න් {{paid}} ක් ගෙවා ඇත",
+      "discountShort": "වට්ටම {{amount}}",
+      "tapForDetails": "බිල බලන්න",
+      "usingPicked": "තෝරාගත් බිල්පත් {{count}} හරහා ආපසු භාරදීම සහ ගෙවීම",
+      "usingAllOpen": "සියලු විවෘත බිල්පත් {{count}} හරහා ආපසු භාරදීම සහ ගෙවීම",
+      "undoPick": "ආපසු ගන්න (බිල් {{count}})",
+      "dragOrTickHint": "නිශ්චිත බිල්පත් මත වැඩ කිරීමට කවය තට්ටු කරන්න (හෝ මෙහි ඇද දමන්න).",
+      "workingOnHeader": "බිල්පත් {{count}} ක් මත · {{owed}} හිඟයි · යන්ත්‍ර {{machines}} ක් පිටත",
+      "noneFound": "මෙම පෙරහන් සඳහා බිල්පත් නොමැත.",
+      "showMoreRendered": "තවත් බිල්පත් {{count}} ක් පෙන්වන්න",
+      "loadMore": "තවත් බිල්පත් පූරණය කරන්න"
+    },
+    "machines": {
+      "noMachinesOut": "මෙම පාරිභෝගිකයා සතුව දැනට පිටත යන්ත්‍ර නොමැත.",
+      "outOnBills": "බිල් {{bills}} ක {{count}} ක් පිටත",
+      "showAllBills": "සියලු බිල්පත් පෙන්වන්න",
+      "notOnPicked": "මෙම බිල්පත්වල නැත, සියලු බිල්පත් පෙන්වන්නද?",
+      "returnedCount": "ආපසු ආ ගණන",
+      "decreaseReturned": "ආපසු ගණන අඩු කරන්න",
+      "returnedInput": "ආපසු ආ ප්‍රමාණය",
+      "increaseReturned": "ආපසු ගණන වැඩි කරන්න",
+      "allBack": "සියල්ල",
+      "damagedCount": "හානි වූ",
+      "decreaseDamaged": "හානි ගණන අඩු කරන්න",
+      "damagedInput": "හානි වූ ප්‍රමාණය",
+      "increaseDamaged": "හානි ගණන වැඩි කරන්න",
+      "good": "හොඳ",
+      "damagedShort": "හානි",
+      "returnDate": "ආපසු භාරදුන් දිනය",
+      "cheaperForCustomer": "පාරිභෝගිකයාට ලාභදායී: {{amount}} ක් ඉතිරි වේ",
+      "backdateReason": "පෙර දිනයක ආපසු භාරදීමට හේතුව",
+      "placementHint": "බිල්පත් අතර බෙදීම (පෙරනිමියෙන් පැරණිතම පළමුව; මුළු ගණන වෙනස් නොකර මාරු කිරීමට +/− භාවිතා කරන්න):",
+      "allMachinesBack": "සියලු යන්ත්‍ර ආපසු",
+      "continueToPayment": "ගෙවීම වෙත යන්න"
+    },
+    "payment": {
+      "payingToday": "අද ගෙවන මුදල",
+      "bucketSummary": "බෙදීමට {{total}} · ඉතිරි {{left}}",
+      "amountLabel": "මුදල (රු.)",
+      "amountInput": "ගෙවන මුදල",
+      "payEverything": "සියල්ල ගෙවන්න",
+      "date": "ගෙවූ දිනය",
+      "backdateReason": "පෙර දිනයක ගෙවීමට හේතුව",
+      "addSecondMethod": "දෙවන ක්‍රමයක් එක් කරන්න",
+      "useCredit": "{{amount}} ණය ශේෂය භාවිතා කරන්න",
+      "leftoverLabel": "ඉතිරි {{amount}}:",
+      "keepAsCredit": "ණය ශේෂය ලෙස තබන්න",
+      "giveChange": "ඉතිරි මුදල දෙන්න",
+      "queueOrder": "බෙදන පිළිවෙල:",
+      "balanceWas": "හිඟය {{amount}}",
+      "allBackTag": "සියල්ල ආපසු",
+      "payThisFirst": "පළමුව මෙය ගෙවන්න",
+      "payBillOff": "මෙම බිල සම්පූර්ණයෙන් ගෙවන්න",
+      "discount": "වට්ටම",
+      "discountAmount": "වට්ටම් අගය",
+      "applyDiscount": "වට්ටම යොදන්න",
+      "continueToReview": "පරීක්ෂා කර සුරකින්න",
+      "method": {
+        "Cash": "මුදල්",
+        "Card": "කාඩ්පත්",
+        "Transfer": "බැංකු මාරු",
+        "Cheque": "චෙක්පත්",
+        "Wallet": "පසුම්බිය"
+      }
+    },
+    "splitRule": {
+      "oldestFirst": "පැරණිතම පළමුව",
+      "cheaper": "ලාභදායී"
+    },
+    "queueRule": {
+      "fullyBack": "සම්පූර්ණයෙන් ආපසු පළමුව",
+      "biggest": "වැඩිම හිඟය පළමුව",
+      "even": "සමානව බෙදන්න"
+    },
+    "review": {
+      "paidOffStamp": "✓ ගෙවා අවසන්",
+      "readyToCloseStamp": "වැසීමට සූදානම්",
+      "owed": "හිඟයි",
+      "nothingToReview": "වෙනස්කම් බැලීමට යන්ත්‍ර ආපසු භාරදෙන්න හෝ ගෙවීමක් ඇතුළත් කරන්න.",
+      "conflictChanged": "ඔබ පරීක්ෂා කරන අතරතුර බිල්පත් වෙනස් වී ඇත. නව අගයන් පරීක්ෂා කර නැවත තහවුරු කර සුරකින්න.",
+      "savedSuccess": "බේරුම් කිරීම #S-{{id}} සුරකින ලදී.",
+      "savedToast": "බේරුම් කිරීම සුරකින ලදී",
+      "saveFailed": "බේරුම් කිරීම සුරැකීම අසාර්ථක විය",
+      "owedLabel": "හිඟ මුදල",
+      "machinesOutLabel": "පිටත යන්ත්‍ර",
+      "noChangesYet": "තවමත් කිසිදු බිලක වෙනසක් නැත.",
+      "hideUnchanged": "වෙනස් නොවූ බිල්පත් සඟවන්න",
+      "showUnchanged": "අනෙක් බිල්පත් {{count}} පෙන්වන්න",
+      "confirmAgain": "තහවුරු කර සුරකින්න",
+      "save": "සුරකින්න",
+      "giveBackIdCard": "හැඳුනුම්පත ආපසු දෙන්න",
+      "closeTheseBills": "මෙම බිල්පත් වසන්න ({{count}})",
+      "billsClosedCount": "බිල්පත් {{count}} ක් වසන ලදී",
+      "billsClosedToast": "බිල්පත් වසන ලදී",
+      "closeFailed": "බිල්පත් වැසීම අසාර්ථක විය",
+      "receiptAndWhatsApp": "රිසිට්පත සහ WhatsApp"
+    },
+    "receipt": {
+      "title": "බේරුම් රිසිට්පත #S-{{id}}",
+      "thermal": "තාප මුද්‍රණය (80mm)",
+      "a4": "A4",
+      "header": "පාරිභෝගික බේරුම් කිරීම",
+      "whatsappPreview": "WhatsApp පණිවිඩය (පෙර → පසු සැකැස්ම)",
+      "copyWhatsApp": "WhatsApp පිටපත් කරන්න",
+      "sendWhatsApp": "WhatsApp යවන්න",
+      "print": "මුද්‍රණය කරන්න"
+    },
+    "viewMenu": {
+      "button": "දසුන",
+      "title": "දසුන සහ පෙරනිමි",
+      "cardSize": "කාඩ්පත් ප්‍රමාණය",
+      "compact": "කෙටි",
+      "normal": "සාමාන්‍ය",
+      "detailed": "විස්තරාත්මක",
+      "showFields": "කාඩ්පත් මත පෙන්වන්න",
+      "machineIcons": "යන්ත්‍ර අයිකන",
+      "paymentHistory": "ගෙවීම් ඉතිහාසය",
+      "discount": "වට්ටම",
+      "runningCharge": "දෛනික ගාස්තුව",
+      "dates": "දින",
+      "groupByMonth": "මාසය අනුව කාණ්ඩ කරන්න",
+      "defaultSplitRule": "පෙරනිමි ආපසු බෙදීම",
+      "defaultQueueRule": "පෙරනිමි ගෙවීම් පිළිවෙල",
+      "defaultFilter": "පෙරනිමි බිල්පත් පෙරහන"
+    }
   }
 }
