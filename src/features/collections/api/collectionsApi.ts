@@ -88,12 +88,15 @@ export async function fetchCallsReport(params: {
 }
 
 export async function fetchCollectionsSettings() {
-  const res: any = await api.get("/settings/collections");
-  return unwrap<{
-    call_results?: CallResultOption[];
-    answered_threshold_seconds?: number;
-    call_recording?: CallRecordingSettings;
-  }>(res);
+  const res: any = await api.get("/config/collections");
+  const data = unwrap<any>(res) || {};
+  return {
+    call_results: data.call_results,
+    answered_threshold_seconds:
+      data.answered_threshold_seconds ?? data.calls?.answeredThresholdSeconds ?? 5,
+    call_recording: data.call_recording,
+    collections: data.collections,
+  };
 }
 
 export async function updateCollectionsSettings(payload: {
@@ -101,6 +104,10 @@ export async function updateCollectionsSettings(payload: {
   answered_threshold_seconds?: number;
   call_recording?: CallRecordingSettings;
 }) {
-  const res: any = await api.patch("/settings/collections", payload);
+  const body: any = { ...payload };
+  if (payload.answered_threshold_seconds !== undefined) {
+    body.calls = { answeredThresholdSeconds: payload.answered_threshold_seconds };
+  }
+  const res: any = await api.put("/config/collections", body);
   return unwrap<any>(res);
 }
