@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { DeviceShell } from "../../components/DeviceShell";
 import { MissedCallsAndFollowUpsPanel } from "../../components/MissedCallsAndFollowUpsPanel";
+import { CallsToNoteList } from "../../components/CallsToNoteList";
 import { isNativePhoneApp, nativeBridge, type NativeCustomerHit } from "../../lib/nativeBridge";
 import { useOnline } from "../../lib/phoneAppState";
 import { usePullToRefresh } from "../../lib/usePullToRefresh";
@@ -110,6 +111,7 @@ export function DeviceCallsPage() {
             {refreshing ? t("phoneShell.refreshing") : t("phoneShell.pullToRefresh")}
           </Typography>
         )}
+        {online && <CallsToNoteList />}
         <OfflineCustomerSearch />
         {online ? (
           <MissedCallsAndFollowUpsPanel mode="device" />

@@ -202,6 +202,7 @@ describe("Manage: a mixed bill", () => {
     wrap(<ManageFinancialPanel invoice={mixedInvoice} showToast={showToast} isCollapsed={false} onToggleCollapse={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit Discount" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Discount" }), { target: { value: "5000" } });
+    fireEvent.click(screen.getByText("Regular customer"));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(showToast).toHaveBeenCalledWith("Discount is more than the rental part of this bill", "error");
   });

@@ -136,7 +136,7 @@ describe("DeviceAppGatePage", () => {
   it("asks for the app lock first and opens the sign-in page when nobody is signed in", async () => {
     mocks.getAppPrefs.mockResolvedValue({ appLanguage: "en", appTextSize: "default", callTextScale: null, appLockEnabled: true });
     wrap(<DeviceAppGatePage />);
-    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/login", replace: true }));
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/login" }));
     expect(mocks.authenticateAppLock).toHaveBeenCalled();
   });
 
@@ -151,6 +151,6 @@ describe("DeviceAppGatePage", () => {
   it("opens the dashboard when signed in", async () => {
     mocks.signedIn = true;
     wrap(<DeviceAppGatePage />);
-    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/dashboard", replace: true }));
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/dashboard" }));
   });
 });

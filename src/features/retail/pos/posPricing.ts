@@ -205,10 +205,14 @@ export function buildSaleInvoicePayload(opts: {
 
   const paymentAmount = round2(Math.max(0, opts.paymentAmount));
 
+  // Release 4: every bill discount carries a reason (the server refuses one without).
+  const discountReason = (opts.fees.discount || 0) > 0 ? opts.fees.discount_reason ?? null : null;
+
   return {
     customer_id: opts.customerId,
     items: [],
     sale_items,
+    ...(discountReason ? { discount_reason: discountReason } : {}),
     fees: {
       transport: round2(opts.fees.transport || 0),
       discount: round2(opts.fees.discount || 0),

@@ -78,7 +78,17 @@ export const useProcessReturn = () => {
 export const useAddPayment = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (payload: { id: number, data: { amount: number, method: string, is_refund: boolean } }) => {
+        mutationFn: async (payload: {
+            id: number,
+            data: {
+                amount: number,
+                method: string,
+                is_refund: boolean,
+                payment_date?: string,
+                date_reason?: { key: string; note?: string },
+                refund_reason?: { key: string; note?: string },
+            }
+        }) => {
             const response: any = await api.post(`/invoices/${payload.id}/payments`, payload.data);
             return response?.data || response;
         },
@@ -142,7 +152,7 @@ export const useToggleVault = () => {
 export const useUpdateFees = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (payload: { id: number, data: { transport_fee: number, discount_amount: number } }) => {
+        mutationFn: async (payload: { id: number, data: { transport_fee: number, discount_amount: number, discount_reason?: { key: string; note?: string } } }) => {
             const response = await api.patch(`/invoices/${payload.id}/fees`, payload.data);
             return response.data;
         },

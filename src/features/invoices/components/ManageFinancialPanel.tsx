@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "../lib/paymentMethods";
 import { invoiceTotals } from "../lib/invoiceTotals";
-import { formatDateTime } from "@/lib/dates";
+import { formatDisplayDate, formatDateTime, todayLocalStr } from "@/lib/dates";
+import { ReasonChips, isReasonValid } from "@/components/ui/ReasonChips";
+import type { ReasonValue } from "@/features/activity/types";
+import { useInvoiceActivity, useVoidPayment } from "@/features/activity/hooks/useActivityHooks";
 import type { ReactNode } from "react";
 import {
   alpha,
@@ -60,6 +63,7 @@ import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
 import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
 import { CompletionRatingDialog } from "@/features/reviews/components/CompletionRatingDialog";
+import { eventSentence } from "@/features/activity/lib/eventSentence";
 
 const MONO = "'JetBrains Mono', monospace";
 // PAYMENT_METHODS / METHOD_LABELS: shared with the checkout and the handover dialog.
@@ -123,8 +127,15 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   const [mode, setMode] = useState<Mode>("collect");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("Cash");
+  const [paymentDate, setPaymentDate] = useState(todayLocalStr());
+  const [paymentReason, setPaymentReason] = useState<ReasonValue | null>(null);
   const [editing, setEditing] = useState<null | "discount" | "transport">(null);
   const [feeDraft, setFeeDraft] = useState("");
+  const [discountReason, setDiscountReason] = useState<ReasonValue | null>(null);
+  const [voidTarget, setVoidTarget] = useState<{ id: number; amount: number } | null>(null);
+  const [voidReason, setVoidReason] = useState<ReasonValue | null>(null);
+  const voidMutation = useVoidPayment();
+  const { data: invoiceActivity } = useInvoiceActivity(invoice?.invoice_id);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [releaseId, setReleaseId] = useState(true);
   const [ledgerOpen, setLedgerOpen] = useState(false);
@@ -142,6 +153,9 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   useEffect(() => {
     setAmount("");
     setEditing(null);
+    setDiscountReason(null);
+    setPaymentDate(todayLocalStr());
+    setPaymentReason(null);
     setMode(refundDueNow ? "refund" : "collect");
     setConfirmOpen(false);
     setRatingOpen(false);
@@ -207,16 +221,37 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   }
 
   // ── actions ──
+  const todayStr = todayLocalStr();
+  const isPaymentBackdated = mode === "collect" && paymentDate < todayStr;
+  const isPaymentFuture = paymentDate > todayStr;
+  const paymentNeedsReason = mode === "refund" || isPaymentBackdated;
+
   const submitPayment = () => {
     const value = Number(amount);
     if (!(value > 0)) return showToast(t("invoices.ManageInvoiceViews.enterAValidAmount"), "error");
+    if (isPaymentFuture) return showToast(t("reasons.futureDateBlocked"), "error");
+    if (paymentNeedsReason && !isReasonValid(paymentReason, true)) {
+      return showToast(t("reasons.selectReason"), "error");
+    }
     if (mode === "refund" && value > paid + 0.005) return showToast(t("invoices.ManageInvoiceViews.cannotRefundMoreThanPaid"), "error");
     paymentMutation.mutate(
-      { id: invoiceId, data: { amount: value, method, is_refund: mode === "refund" } },
+      {
+        id: invoiceId,
+        data: {
+          amount: value,
+          method,
+          is_refund: mode === "refund",
+          ...(mode === "collect" && paymentDate !== todayStr ? { payment_date: paymentDate } : {}),
+          ...(isPaymentBackdated && paymentReason ? { date_reason: paymentReason } : {}),
+          ...(mode === "refund" && paymentReason ? { refund_reason: paymentReason } : {}),
+        },
+      },
       {
         onSuccess: () => {
           showToast(mode === "refund" ? t("invoices.ManageInvoiceViews.refundIssued") : t("invoices.ManageInvoiceViews.paymentRecorded"), "success");
           setAmount("");
+          setPaymentDate(todayStr);
+          setPaymentReason(null);
         },
         onError: (e: any) => showToast(e?.message || t("errors.unexpected"), "error"),
       },
@@ -226,16 +261,36 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   const startEdit = (field: "discount" | "transport") => {
     setEditing(field);
     setFeeDraft(String(field === "discount" ? discount : transport));
+    if (field === "discount") {
+      setDiscountReason(
+        invoice.discount_reason_key
+          ? { key: invoice.discount_reason_key, note: invoice.discount_reason_note || "" }
+          : null,
+      );
+    }
   };
   const saveFee = () => {
     const value = Number(feeDraft);
     if (!(value >= 0)) return showToast(t("invoices.ManageInvoiceViews.enterAValidAmount"), "error");
+    const discountChanged = editing === "discount" && value !== discount;
+    const discountNeedsReason = editing === "discount" && (value > 0 || discountChanged);
+    if (discountNeedsReason && !isReasonValid(discountReason, true)) {
+      return showToast(t("reasons.discountReasonRequired"), "error");
+    }
     feesMutation.mutate(
-      { id: invoiceId, data: { transport_fee: editing === "transport" ? value : transport, discount_amount: editing === "discount" ? value : discount } },
+      {
+        id: invoiceId,
+        data: {
+          transport_fee: editing === "transport" ? value : transport,
+          discount_amount: editing === "discount" ? value : discount,
+          ...(editing === "discount" && discountReason ? { discount_reason: discountReason } : {}),
+        },
+      },
       {
         onSuccess: () => {
           showToast(t("invoices.ManageInvoiceViews.feesUpdated"), "success");
           setEditing(null);
+          setDiscountReason(null);
         },
         onError: (e: any) => showToast(e?.message || t("errors.unexpected"), "error"),
       },
@@ -272,28 +327,47 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
 
   // ── small pieces ──
   // a plain function (not a component) so the edit box keeps focus while typing
+  const discountEditNeedsReason = editing === "discount" && (Number(feeDraft) > 0 || Number(feeDraft) !== discount);
   const feeRow = (field: "discount" | "transport", label: string, value: number, sign: "+" | "−") =>
     editing === field ? (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}>
-        <TextField
-          autoFocus
-          size="small"
-          label={label}
-          value={feeDraft}
-          onChange={(e) => setFeeDraft(e.target.value.replace(/[^0-9.]/g, ""))}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") saveFee();
-            if (e.key === "Escape") setEditing(null);
-          }}
-          slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }, htmlInput: { inputMode: "decimal", style: num } }}
-          sx={{ flexGrow: 1 }}
-        />
-        <Button size="small" onClick={() => setEditing(null)} color="inherit" sx={{ textTransform: "none" }}>
-          {t("common.cancel")}
-        </Button>
-        <Button size="small" variant="contained" disableElevation onClick={saveFee} disabled={feesMutation.isPending} sx={{ textTransform: "none", fontWeight: 700 }}>
-          {t("common.save")}
-        </Button>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1, py: 0.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <TextField
+            autoFocus
+            size="small"
+            label={label}
+            value={feeDraft}
+            onChange={(e) => setFeeDraft(e.target.value.replace(/[^0-9.]/g, ""))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveFee();
+              if (e.key === "Escape") setEditing(null);
+            }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }, htmlInput: { inputMode: "decimal", style: num } }}
+            sx={{ flexGrow: 1 }}
+          />
+          <Button size="small" onClick={() => setEditing(null)} color="inherit" sx={{ textTransform: "none" }}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            disableElevation
+            onClick={saveFee}
+            disabled={feesMutation.isPending || (discountEditNeedsReason && !isReasonValid(discountReason, true))}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            {t("common.save")}
+          </Button>
+        </Box>
+        {discountEditNeedsReason && (
+          <ReasonChips
+            list="discount"
+            value={discountReason}
+            onChange={setDiscountReason}
+            required
+            error={!isReasonValid(discountReason, true)}
+          />
+        )}
       </Box>
     ) : (
       <Row
@@ -315,7 +389,14 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
   // ── ledger events (newest first) ──
   const events = [...payments]
     .sort((a, b) => new Date(b.payment_date || b.createdAt).getTime() - new Date(a.payment_date || a.createdAt).getTime())
-    .map((p) => ({ id: p.payment_id, refund: Number(p.payment_amount) < 0, amount: Math.abs(Number(p.payment_amount)), method: p.method, date: p.payment_date || p.createdAt }));
+    .map((p) => ({
+      id: p.payment_id,
+      refund: Number(p.payment_amount) < 0,
+      amount: Math.abs(Number(p.payment_amount)),
+      method: p.method,
+      date: p.payment_date || p.createdAt,
+      enteredAt: p.entered_at || p.createdAt,
+    }));
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, bgcolor: alpha(theme.palette.text.primary, 0.025) }}>
@@ -368,6 +449,12 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
           {lateFees > 0 && <Row label={t("invoices.ManageInvoiceViews.lateFees")} value={`+ ${rs(lateFees)}`} tone={theme.palette.error.main} />}
           {feeRow("transport", t("invoices.transport"), transport, "+")}
           {feeRow("discount", t("common.discount"), discount, "−")}
+          {discount > 0 && (invoice.discount_reason_label || invoice.discount_reason_key) && (
+            <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: -0.25, mb: 0.5 }}>
+              {t("reasons.reasonLabel")}: {invoice.discount_reason_label || invoice.discount_reason_key}
+              {invoice.discount_reason_note ? ` — ${invoice.discount_reason_note}` : ""}
+            </Typography>
+          )}
           {!isCompleted && discount === 0 && editing !== "discount" && (
             <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: -0.25, mb: 0.5 }}>
               {t("invoices.FinancialPanel.discountHint")}
@@ -436,12 +523,51 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
                 />
               ))}
             </Box>
+            {mode === "collect" && (
+              <Box sx={{ mb: 1.25 }}>
+                <TextField
+                  type="date"
+                  size="small"
+                  fullWidth
+                  label={t("reasons.paymentDate")}
+                  value={paymentDate}
+                  onChange={(e) => {
+                    if (e.target.value) setPaymentDate(e.target.value);
+                  }}
+                  error={isPaymentFuture}
+                  helperText={isPaymentFuture ? t("reasons.futureDateBlocked") : undefined}
+                  slotProps={{
+                    htmlInput: {
+                      max: todayStr,
+                      "aria-label": t("reasons.paymentDate"),
+                      style: num,
+                    },
+                  }}
+                />
+              </Box>
+            )}
+            {paymentNeedsReason && (
+              <Box sx={{ mb: 1.25 }}>
+                <ReasonChips
+                  list={mode === "refund" ? "refund" : "backdate"}
+                  value={paymentReason}
+                  onChange={setPaymentReason}
+                  required
+                  error={!isReasonValid(paymentReason, true)}
+                />
+              </Box>
+            )}
             <Button
               fullWidth
               variant="contained"
               disableElevation
               onClick={submitPayment}
-              disabled={paymentMutation.isPending || !(Number(amount) > 0)}
+              disabled={
+                paymentMutation.isPending ||
+                !(Number(amount) > 0) ||
+                isPaymentFuture ||
+                (paymentNeedsReason && !isReasonValid(paymentReason, true))
+              }
               color={mode === "refund" ? "warning" : "primary"}
               sx={{ textTransform: "none", fontWeight: 800, borderRadius: 2.5, py: 1 }}
             >
@@ -554,25 +680,71 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
                 {t("orders.noTransactions")}
               </Typography>
             ) : (
-              events.map((e) => (
+              events.map((e) => {
+                const paidDay = String(e.date || "").slice(0, 10);
+                const enteredDay = String(e.enteredAt || "").slice(0, 10);
+                const datesDiffer = paidDay && enteredDay && paidDay !== enteredDay;
+                return (
                 <Box key={e.id} sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.75, py: 1, borderTop: "1px solid", borderColor: border }}>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <Typography variant="body2" component="div" sx={{ fontWeight: 700 }}>
                       {e.refund ? t("invoices.ManageInvoiceViews.refund") : t("invoices.ManageInvoiceViews.payment")}
                       <Chip size="small" label={e.method} sx={{ ml: 1, height: 18, fontSize: "0.65rem" }} />
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", display: "block" }}>
                       {e.date ? formatDateTime(e.date, { today: t("time.today"), yesterday: t("time.yesterday") }) : ""}
+                      {datesDiffer && ` (${t("reasons.enteredOn", { date: formatDisplayDate(enteredDay) })})`}
                     </Typography>
                   </Box>
                   <Typography variant="body2" sx={{ fontWeight: 800, color: e.refund ? "warning.dark" : "success.dark", ...num }}>
                     {e.refund ? "−" : "+"} {rs(e.amount)}
                   </Typography>
+                  {!isCompleted && (
+                    <Tooltip title={t("reasons.voidPayment")}>
+                      <IconButton
+                        size="small"
+                        aria-label={t("reasons.voidPayment")}
+                        onClick={() => {
+                          setVoidReason(null);
+                          setVoidTarget({ id: e.id, amount: e.amount });
+                        }}
+                        sx={{ color: "text.disabled", "&:hover": { color: "error.main" } }}
+                      >
+                        <DeleteOutlinedIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
-              ))
+                );
+              })
             )}
           </Collapse>
         </Card>
+
+        {/* 7. bill activity events with Checked state */}
+        {(invoiceActivity?.events?.length || invoice.activity_events?.length) ? (
+          <Card>
+            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "text.secondary", display: "block", mb: 1 }}>
+              {t("activity.billActivityTitle")}
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+              {(invoiceActivity?.events || invoice.activity_events || []).map((ev: any) => (
+                <Box key={ev.event_id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                  <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600 }}>
+                    {eventSentence(ev)}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={ev.checked_at ? `✓ ${ev.checked_by_name || t("activity.checked")}` : t("activity.notChecked")}
+                    color={ev.checked_at ? "success" : "default"}
+                    variant={ev.checked_at ? "filled" : "outlined"}
+                    sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Card>
+        ) : null}
       </Box>
 
       {/* confirm close */}
@@ -599,6 +771,50 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
       <ReceiptPrintDialog open={printOpen} onClose={() => setPrintOpen(false)} invoice={invoice} />
       <InvoicePrintHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} invoiceId={invoiceId} invoiceNumber={invoice.invoice_number || `INV-${invoiceId}`} />
       <DeleteInvoiceDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} invoice={invoice} onDeleted={onInvoiceDeleted} />
+      {/* Void payment dialog */}
+      <Dialog open={!!voidTarget} onClose={() => setVoidTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {t("reasons.voidPaymentTitle", { amount: rs(voidTarget?.amount || 0) })}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            <ReasonChips
+              list="void"
+              value={voidReason}
+              onChange={setVoidReason}
+              required
+              error={!isReasonValid(voidReason, true)}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setVoidTarget(null)} color="inherit" sx={{ textTransform: "none" }}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disableElevation
+            disabled={!voidTarget || !isReasonValid(voidReason, true) || voidMutation.isPending}
+            onClick={() => {
+              if (!voidTarget || !voidReason) return;
+              voidMutation.mutate(
+                { invoiceId, paymentId: voidTarget.id, reason: voidReason },
+                {
+                  onSuccess: () => {
+                    showToast(t("reasons.paymentVoided"), "success");
+                    setVoidTarget(null);
+                  },
+                  onError: (err: any) => showToast(err?.message || t("errors.unexpected"), "error"),
+                },
+              );
+            }}
+            sx={{ textTransform: "none", fontWeight: 800 }}
+          >
+            {t("reasons.voidPayment")}
+          </Button>
+        </DialogActions>
+      </Dialog>
       {/* Mounted only once completion succeeds, so its review queries never
           run (and never need a QueryClient in tests) while the panel is idle. */}
       {ratingOpen && (

@@ -62,6 +62,8 @@ export interface CartFees {
   discount: number;
   advance: number;
   advance_payment_method?: string;
+  /** Required by the server when discount > 0 (Release 4 reason chips). */
+  discount_reason?: import("@/features/activity/types").ReasonValue | null;
 }
 
 const EMPTY_FEES: CartFees = { transport: 0, discount: 0, advance: 0 };

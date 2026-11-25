@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "@/i18n";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { InvoiceReceipt, buildSnapshotReceiptProps, getReceiptLabels } from "@/features/invoices/components/InvoiceReceipt";
@@ -75,6 +75,12 @@ beforeEach(() => {
 });
 
 describe("rental receipts are unchanged", () => {
+  // Estimates print today's date; the baseline was drawn on 24 Nov 2026.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-24T10:00:00+05:30"));
+  });
+  afterEach(() => vi.useRealTimers());
   for (const c of CASES) {
     it(`${c.name} draws exactly what it drew before retail receipts`, () => {
       expect(renderCase(InvoiceReceipt, c.props)).toBe((baseline as Record<string, string>)[c.name]);

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTheme } from "@mui/material/styles";
 import i18n from "@/i18n";
 import {
   nativeBridge,
   isNativePhoneApp,
+  type NativeAlert,
   type NativeAppPrefs,
   type NativeSyncStatus,
 } from "./nativeBridge";
@@ -178,4 +180,106 @@ export function installNativeAuthBridge(
   subscribe((state) => {
     void nativeBridge.setSignedIn(Boolean(state.user));
   });
+}
+
+/** Keeps the Android status bar & safe-area inset background in sync with the active light/dark theme. */
+export function useSyncNativeStatusBar() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  useEffect(() => {
+    if (!isNativePhoneApp()) return;
+    const color = isDark ? "#0F172A" : "#FFFFFF";
+    void nativeBridge.setStatusBarTheme(isDark, color);
+  }, [isDark]);
+}
+
+let backHandlerInstalled = false;
+
+/** Registers a global hook so Android's Back button closes any open web dialog/drawer/popover first. */
+export function installWebBackOverlayHandler() {
+  if (backHandlerInstalled || typeof window === "undefined") return;
+  backHandlerInstalled = true;
+  (window as any).__geargridHandleBack = (): boolean => {
+    const modals = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        ".MuiModal-root:not(.MuiModal-hidden), [role='dialog']:not([aria-hidden='true'])",
+      ),
+    ).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return style.display !== "none" && style.visibility !== "hidden";
+    });
+    if (modals.length === 0) return false;
+    const top = modals[modals.length - 1];
+    top.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true }));
+    const backdrop = top.querySelector<HTMLElement>(".MuiBackdrop-root");
+    backdrop?.click();
+    return true;
+  };
+}
+
+const READ_ALERTS_KEY = "geargrid.alerts.read_ids.v1";
+const READ_ALERTS_EVENT = "geargrid:alerts-read-changed";
+
+export function getReadAlertIds(): Set<string> {
+  try {
+    const arr = JSON.parse(window.localStorage.getItem(READ_ALERTS_KEY) || "[]");
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function markAlertsRead(ids: string[]) {
+  if (ids.length === 0) return;
+  try {
+    const current = getReadAlertIds();
+    let changed = false;
+    for (const id of ids) {
+      if (id && !current.has(id)) {
+        current.add(id);
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    const trimmed = Array.from(current).slice(-300);
+    window.localStorage.setItem(READ_ALERTS_KEY, JSON.stringify(trimmed));
+    window.dispatchEvent(new Event(READ_ALERTS_EVENT));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function countUnreadAlerts(alerts: NativeAlert[], readIds = getReadAlertIds()): number {
+  let unread = 0;
+  for (const a of alerts) {
+    if (!readIds.has(a.id)) unread += 1;
+  }
+  return unread;
+}
+
+export function useUnreadAlertCount() {
+  const [count, setCount] = useState(0);
+
+  const refresh = useCallback(async () => {
+    const alerts = await nativeBridge.getAlerts();
+    setCount(countUnreadAlerts(alerts));
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+    const onChange = () => void refresh();
+    const onVis = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    window.addEventListener(READ_ALERTS_EVENT, onChange);
+    window.addEventListener("focus", onChange);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener(READ_ALERTS_EVENT, onChange);
+      window.removeEventListener("focus", onChange);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [refresh]);
+
+  return { count, refresh };
 }

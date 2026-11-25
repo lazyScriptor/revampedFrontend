@@ -25,11 +25,13 @@ import { useRetailEnabled } from "@/features/retail/useRetailEnabled";
 import { selectSaleLines, selectSaleSubtotal, usePosCartStore } from "../store/posCartStore";
 import { SaleCheckoutSection, type SaleSubmitParams } from "@/features/retail/pos/SaleCheckoutSection";
 import { mixedCartTotals, suggestedMixedPayment } from "../lib/mixedBill";
+import { ReasonChips, isReasonValid } from "@/components/ui/ReasonChips";
+import type { ReasonValue } from "@/features/activity/types";
 
 interface PosCheckoutPanelProps {
   cartItems: CartItem[];
   selectedCustomer: any | null;
-  fees: { transport: number; discount: number; advance: number; advance_payment_method?: string };
+  fees: { transport: number; discount: number; advance: number; advance_payment_method?: string; discount_reason?: ReasonValue | null };
   setFees: React.Dispatch<React.SetStateAction<any>>;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -126,8 +128,15 @@ export function PosCheckoutPanel({
     isMixed &&
     (saleLines.some((l) => l.out_of_stock) ||
       saleLines.some((l) => l.tracking === "serial" && (l.serials?.length ?? 0) !== Math.max(1, Math.round(l.base_qty))));
+  const discountReason = fees.discount_reason ?? null;
+  const discountNeedsReason = fees.discount > 0 && !isReasonValid(discountReason, true);
   const canDispatch =
-    !!selectedCustomer && !(isMixed && selectedCustomer.is_walk_in) && cartItems.length > 0 && !isSubmitting && !goodsBlocked;
+    !!selectedCustomer &&
+    !(isMixed && selectedCustomer.is_walk_in) &&
+    cartItems.length > 0 &&
+    !isSubmitting &&
+    !goodsBlocked &&
+    !discountNeedsReason;
 
 
   // ── Collapsed sidebar strip ──────────────────────────────────────────────────
@@ -324,6 +333,16 @@ export function PosCheckoutPanel({
                 inputLabel: { sx: { color: "#94a3b8" } },
               }}
             />
+            {fees.discount > 0 && (
+              <ReasonChips
+                list="discount"
+                value={discountReason}
+                onChange={(r) => setFees((prev: any) => ({ ...prev, discount_reason: r }))}
+                required
+                surface="dark"
+                error={discountNeedsReason}
+              />
+            )}
           </Box>
         </Box>
 
@@ -547,6 +566,11 @@ export function PosCheckoutPanel({
         {selectedCustomer && cartItems.length === 0 && (
           <Typography variant="caption" sx={{ color: "#64748b", display: "block", textAlign: "center", mb: 1 }}>
             {t("invoices.PosCheckoutPanel.addEquipmentToTheOrder")}
+          </Typography>
+        )}
+        {selectedCustomer && cartItems.length > 0 && discountNeedsReason && (
+          <Typography variant="caption" sx={{ color: "#fbbf24", display: "block", textAlign: "center", mb: 1, fontWeight: 700 }}>
+            {t("reasons.discountReasonRequired")}
           </Typography>
         )}
         {cartItems.length > 0 && onPrintEstimate && (

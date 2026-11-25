@@ -12,6 +12,9 @@ export const MaintenanceRoute = lazyRouteComponent(() => import("@/routes/Mainte
 export const WorkforceRoute = lazyRouteComponent(() => import("@/routes/Workforce"));
 export const AccountingRoute = lazyRouteComponent(() => import("@/routes/Accounting"));
 export const ReportsRoute = lazyRouteComponent(() => import("@/routes/Reports"));
+export const CollectionsReportPage = lazyRouteComponent(() => import("@/features/collections/pages/CollectionsReportPage"));
+export const CustomerCollectionDetailPage = lazyRouteComponent(() => import("@/features/collections/pages/CustomerCollectionDetailPage"));
+export const CallsReportPage = lazyRouteComponent(() => import("@/features/collections/pages/CallsReportPage"));
 export const MessagesRoute = lazyRouteComponent(() => import("@/routes/Messages"));
 export const StockRoute = lazyRouteComponent(() => import("@/routes/Stock"));
 export const LockerRoute = lazyRouteComponent(() => import("@/routes/Locker"));
@@ -21,6 +24,12 @@ export const SuperAdminLogin = lazyRouteComponent(() => import("@/routes/SuperAd
 export const SuperAdminDashboard = lazyRouteComponent(() => import("@/routes/SuperAdmin"));
 export const PhoneAssistantSettingsPage = lazyRouteComponent(
   () => import("@/features/phone-assistant/pages/PhoneAssistantSettingsPage"),
+);
+export const ActivityPage = lazyRouteComponent(
+  () => import("@/features/activity/pages/ActivityPage"),
+);
+export const ActivitySettingsPage = lazyRouteComponent(
+  () => import("@/features/activity/pages/ActivitySettingsPage"),
 );
 
 // Phone-app pages: they open inside the GearGrid Phone app, not at the counter.
@@ -51,6 +60,10 @@ export const DeviceInvoicePage = lazyRouteComponent(
 export const DeviceCallsPage = lazyRouteComponent(
   () => import("@/features/phone-assistant/pages/device/DeviceCallsPage"),
   "DeviceCallsPage",
+);
+export const DeviceCallCardPage = lazyRouteComponent(
+  () => import("@/features/phone-assistant/pages/device/DeviceCallCardPage"),
+  "DeviceCallCardPage",
 );
 export const DeviceAlertsPage = lazyRouteComponent(
   () => import("@/features/phone-assistant/pages/device/DeviceAlertsPage"),
@@ -88,6 +101,8 @@ const BACKGROUND_ORDER = [
   DataArena,
   PermissionsPage,
   PhoneAssistantSettingsPage,
+  ActivityPage,
+  ActivitySettingsPage,
 ];
 
 /**

@@ -35,12 +35,12 @@ describe("dashboard card sizes", () => {
     expect(kpi()).toMatchObject({ w: 1, h: 1 });
   });
 
-  it("repairs saved layouts that have a tall KPI or a width over 4", () => {
+  it("clamps width to 4 while preserving user-resized height above minH", () => {
     const fixed = compactAndPackLayout([
       { i: "revenue_kpi", x: 0, y: 0, w: 1, h: 2 },
       { i: "revenue_trend_chart", x: 0, y: 2, w: 6, h: 3 },
     ]);
-    expect(fixed.find((i) => i.i === "revenue_kpi")).toMatchObject({ w: 1, h: 1 });
-    expect(fixed.find((i) => i.i === "revenue_trend_chart")).toMatchObject({ w: 4, h: 2 });
+    expect(fixed.find((i) => i.i === "revenue_kpi")).toMatchObject({ w: 1, h: 2 });
+    expect(fixed.find((i) => i.i === "revenue_trend_chart")).toMatchObject({ w: 4, h: 3 });
   });
 });

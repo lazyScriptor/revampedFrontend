@@ -120,7 +120,7 @@ api.interceptors.response.use(
 
         const data = error.response?.data;
         const errorMessage = data?.message || i18n.t('errors.unexpected');
-        // Keep HTTP status & payload (status undefined = no response, e.g. offline) so callers (e.g. 409 price_changed / out_of_stock) can react cleanly.
-        return Promise.reject(Object.assign(new Error(errorMessage), { status, data, response: error.response }));
+        // Keep HTTP status & payload (status undefined = no response, e.g. offline) so callers (409 price_changed / out_of_stock / settlement_changed) can react cleanly.
+        return Promise.reject(Object.assign(new Error(errorMessage), { status, code: (data as any)?.code, data, response: error.response }));
     }
 );

@@ -28,6 +28,7 @@ import { useApproval } from "../approval/useApproval";
 import { useRetailPermissions } from "../catalog/useRetailCatalog";
 import { useRetailSettings } from "../hooks/useRetailSettings";
 import { computeDiscountPct, round2 } from "./posPricing";
+import { ReasonChips, isReasonValid } from "@/components/ui/ReasonChips";
 
 export interface SaleSubmitParams {
   paymentAmount: number;
@@ -112,13 +113,15 @@ export function SaleCheckoutSection({ isSubmitting, billDate = null, onBillDateC
   const hasOutOfStock = saleLines.some((l) => l.out_of_stock);
   const missingSerials = saleLines.some((l) => l.tracking === "serial" && (l.serials?.length ?? 0) !== Math.max(1, Math.round(l.base_qty)));
   const walkInShort = isWalkIn && cleanPayment + 0.005 < grandTotal;
+  const discountNeedsReason = discount > 0 && !isReasonValid(fees.discount_reason ?? null, true);
   const canSell =
     Boolean(selectedCustomer) &&
     saleLines.length > 0 &&
     !isSubmitting &&
     !hasOutOfStock &&
     !missingSerials &&
-    !walkInShort;
+    !walkInShort &&
+    !discountNeedsReason;
 
   const billDiscPct = computeDiscountPct(1, Math.max(0, subTotal + transport), discount);
   const needsBillDiscountApproval =
@@ -266,6 +269,18 @@ export function SaleCheckoutSection({ isSubmitting, billDate = null, onBillDateC
             }}
           />
         </Box>
+        {discount > 0 && (
+          <Box sx={{ mb: 1.5 }}>
+            <ReasonChips
+              list="discount"
+              value={fees.discount_reason ?? null}
+              onChange={(r) => setFees((prev: any) => ({ ...prev, discount_reason: r }))}
+              required
+              surface="dark"
+              error={discountNeedsReason}
+            />
+          </Box>
+        )}
 
         {/* Breakdown card */}
         <Box

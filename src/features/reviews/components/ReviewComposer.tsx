@@ -17,6 +17,7 @@ import {
   ReviewStage,
 } from "@/features/reviews/hooks/useInvoiceReviews";
 import { useTranslation } from "react-i18next";
+import { ReviewTagChips, appendTagLabelToComment } from "./ReviewTagChips";
 
 interface ReviewComposerProps {
   invoiceId: number;
@@ -33,6 +34,7 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
   ];
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [stage, setStage] = useState<ReviewStage>("return");
   const [isPrimary, setIsPrimary] = useState(true);
   const { mutate, isPending, error } = useCreateReview(invoiceId);
@@ -40,11 +42,12 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
   const submit = () => {
     if (!rating && !comment.trim()) return;
     mutate(
-      { rating, comment: comment.trim() || null, stage, is_primary: isPrimary },
+      { rating, comment: comment.trim() || null, stage, is_primary: isPrimary, ...(selectedTags.length > 0 ? { tags: selectedTags } : {}) },
       {
         onSuccess: () => {
           setRating(null);
           setComment("");
+          setSelectedTags([]);
           setStage("return");
           setIsPrimary(true);
           onCreated?.();
@@ -95,6 +98,16 @@ export function ReviewComposer({ invoiceId, onCreated }: ReviewComposerProps) {
           label={<Typography variant="caption">{t("orders.primaryHint")}</Typography>}
         />
       </Box>
+
+      <ReviewTagChips
+        selectedKeys={selectedTags}
+        onToggleTag={(tag, label, willSelect) => {
+          setSelectedTags((prev) =>
+            willSelect ? [...prev, tag.key] : prev.filter((k) => k !== tag.key),
+          );
+          setComment((prev) => appendTagLabelToComment(prev, label, willSelect));
+        }}
+      />
 
       <TextField
         size="small"

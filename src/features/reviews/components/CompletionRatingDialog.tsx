@@ -15,6 +15,7 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { useCreateReview, useInvoiceReviews } from "@/features/reviews/hooks/useInvoiceReviews";
 import { useTranslation } from "react-i18next";
+import { ReviewTagChips, appendTagLabelToComment } from "./ReviewTagChips";
 
 interface CompletionRatingDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ export function CompletionRatingDialog({
   const { t } = useTranslation();
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const { data: reviews = [], isLoading: loadingReviews } = useInvoiceReviews(invoiceId);
   const { mutate: createReview, isPending: saving } = useCreateReview(invoiceId ?? 0);
@@ -50,6 +52,7 @@ export function CompletionRatingDialog({
     if (!open) return;
     setRating(null);
     setComment("");
+    setSelectedTags([]);
   }, [open, invoiceId]);
 
   const alreadyRated = reviews.some((r) => r.is_primary && r.rating !== null);
@@ -57,7 +60,7 @@ export function CompletionRatingDialog({
   const save = () => {
     if (!invoiceId || !rating) return;
     createReview(
-      { rating, comment: comment.trim() || null, stage: "return", is_primary: true },
+      { rating, comment: comment.trim() || null, stage: "return", is_primary: true, ...(selectedTags.length > 0 ? { tags: selectedTags } : {}) },
       {
         onSuccess: () => {
           showToast(t("invoices.CompletionRating.saved", { defaultValue: "Customer rating saved." }), "success");
@@ -103,6 +106,15 @@ export function CompletionRatingDialog({
               size="large"
               icon={<StarIcon sx={{ color: "#f59e0b" }} fontSize="inherit" />}
               emptyIcon={<StarBorderIcon fontSize="inherit" />}
+            />
+            <ReviewTagChips
+              selectedKeys={selectedTags}
+              onToggleTag={(tag, label, willSelect) => {
+                setSelectedTags((prev) =>
+                  willSelect ? [...prev, tag.key] : prev.filter((k) => k !== tag.key),
+                );
+                setComment((prev) => appendTagLabelToComment(prev, label, willSelect));
+              }}
             />
             <TextField
               size="small"
