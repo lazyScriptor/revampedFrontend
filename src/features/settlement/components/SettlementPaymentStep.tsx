@@ -18,6 +18,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import VerticalAlignTopIcon from "@mui/icons-material/VerticalAlignTop";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import { PAYMENT_METHODS } from "@/features/invoices/lib/paymentMethods";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import { useTranslation } from "react-i18next";
@@ -53,7 +54,7 @@ interface SettlementPaymentStepProps {
   onNextStep?: () => void;
 }
 
-const METHODS = ["Cash", "Card", "Transfer", "Cheque", "Wallet"] as const;
+const METHODS = PAYMENT_METHODS;
 const QUICK_AMOUNTS = [1000, 5000, 10000] as const;
 
 const fmtLkr = (n: number) =>
