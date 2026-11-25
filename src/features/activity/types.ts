@@ -128,17 +128,19 @@ export interface ActivityFilterState {
   after_hours?: boolean;
 }
 
+export interface ActivityTotals {
+  count: number;
+  amount: number;
+  high_count: number;
+  not_checked_count: number;
+}
+
 export interface ActivityListResponse {
   events: ActivityEvent[];
   total: number;
   page: number;
   limit: number;
-  totals: {
-    count: number;
-    amount: number;
-    high_count: number;
-    not_checked_count: number;
-  };
+  totals?: ActivityTotals;
   see_amounts?: boolean;
 }
 
@@ -174,6 +176,9 @@ export interface ActivitySummaryResponse {
   high_not_checked_count: number;
   by_staff?: ActivityStaffSummaryRow[];
   see_amounts?: boolean;
+  totals?: ActivityTotals;
+  /** Phone only: whether the paired user may tick Checked. */
+  can_check?: boolean;
 }
 
 export interface SavedActivityFilter {

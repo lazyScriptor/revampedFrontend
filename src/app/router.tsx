@@ -43,6 +43,7 @@ import {
   PhonePhotoPage,
   DeviceInvoicePage,
   DeviceCallsPage,
+  DeviceCallCardPage,
   DeviceAlertsPage,
   DeviceAppGatePage,
   DeviceSettingsPage,
@@ -150,6 +151,15 @@ const deviceCallsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/device/calls",
   component: () => <DeviceCallsPage />,
+});
+
+const deviceCallCardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/call/$callId",
+  component: function DeviceCallCardComponent() {
+    const { callId } = deviceCallCardRoute.useParams();
+    return <DeviceCallCardPage clientCallId={callId} />;
+  },
 });
 
 const deviceAlertsRoute = createRoute({
@@ -452,6 +462,7 @@ const routeTree = rootRoute.addChildren([
   signPairedRoute,
   phonePhotoRoute,
   deviceCallsRoute,
+  deviceCallCardRoute,
   deviceAlertsRoute,
   deviceAppRoute,
   deviceSettingsRoute,

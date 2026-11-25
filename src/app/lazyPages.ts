@@ -60,6 +60,10 @@ export const DeviceCallsPage = lazyRouteComponent(
   () => import("@/features/phone-assistant/pages/device/DeviceCallsPage"),
   "DeviceCallsPage",
 );
+export const DeviceCallCardPage = lazyRouteComponent(
+  () => import("@/features/phone-assistant/pages/device/DeviceCallCardPage"),
+  "DeviceCallCardPage",
+);
 export const DeviceAlertsPage = lazyRouteComponent(
   () => import("@/features/phone-assistant/pages/device/DeviceAlertsPage"),
   "DeviceAlertsPage",

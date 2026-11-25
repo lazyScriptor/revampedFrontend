@@ -18,6 +18,7 @@ import {
   useSyncNativeStatusBar,
   useUnreadAlertCount,
 } from "../lib/phoneAppState";
+import { useDeviceUnread } from "../hooks/useDeviceUnread";
 
 export type DeviceTab = "alerts" | "calls" | "app" | "settings" | "home";
 
@@ -47,10 +48,11 @@ export function DeviceShell({ active, title, children, hideTitle, unreadCount: u
   useDeviceManifest();
   useScreenWakeLock(Boolean(deviceId));
   const { count: liveUnread } = useUnreadAlertCount();
-  const unreadCount = unreadProp ?? liveUnread;
 
   const status = useDeviceStatus(deviceId, { refetchInterval: 30_000 });
   const live = status.data?.paired === true && (status.data?.device_status ?? "ACTIVE") === "ACTIVE" && !status.data?.shop_inactive;
+  const feedUnread = useDeviceUnread(live && online);
+  const unreadCount = feedUnread ?? unreadProp ?? liveUnread;
   const pending = useDevicePendingSignatures(deviceId, { enabled: live });
   const pendingPhotos = useDevicePendingPhotos(deviceId, { enabled: live });
 

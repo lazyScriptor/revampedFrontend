@@ -80,38 +80,42 @@ export const CallCardPopover: React.FC<CallCardPopoverProps> = ({
     setError(null);
   }, [open, initialCall]);
 
+  // What the chosen result asks for comes from the shop's list, as on the phone.
+  const chosen = outcome === "answered" ? resultsList.find((r) => r.key === result) : undefined;
+  const asksPromise = Boolean(chosen?.requires_promise);
+  const asksReturnDate = Boolean(chosen?.requires_date && !chosen.requires_promise);
+  const asksNote = Boolean(chosen?.requires_note);
+
   const handleSave = async () => {
-    if (outcome === "answered" && result === "other" && !note.trim()) {
+    if (asksNote && !note.trim()) {
       setError(t("collections.callCard.noteRequiredForOther", "Please enter a short note for Other."));
       return;
     }
-    if (outcome === "answered" && result === "will_pay_date" && (!promiseAmount || !promiseDate)) {
+    if (asksPromise && (!(Number(promiseAmount) > 0) || !promiseDate)) {
       setError(t("collections.callCard.promiseRequired", "Please enter promise amount and date."));
       return;
     }
+    // The server keeps one reminder date, so the return date goes into the note when both are set.
+    const returnDate = asksReturnDate ? expectedReturnDate : "";
+    const returnLine =
+      returnDate && callAgainOn && callAgainOn !== returnDate
+        ? t("phoneShell.callCard.returnNote", { date: returnDate })
+        : "";
 
     setError(null);
     try {
       await saveMutation.mutateAsync({
         call_id: initialCall?.call_id ?? null,
         customer_id: customerId,
-        invoice_ids: invoiceIds,
+        // An empty list would unlink every bill from the call, so it is left out.
+        invoice_ids: invoiceIds?.length ? invoiceIds : undefined,
         phone: phone ?? null,
         outcome,
-        result: outcome === "answered" ? result || null : null,
-        note: note.trim() || null,
-        promise_amount:
-          outcome === "answered" && result === "will_pay_date" && promiseAmount
-            ? Number(promiseAmount)
-            : null,
-        promise_date:
-          outcome === "answered" && result === "will_pay_date" && promiseDate
-            ? promiseDate
-            : null,
-        expected_return_date:
-          outcome === "answered" && result === "will_return" && expectedReturnDate
-            ? expectedReturnDate
-            : null,
+        result: chosen?.key ?? null,
+        note: [note.trim(), returnLine].filter(Boolean).join(" · ") || null,
+        promise_amount: asksPromise ? Number(promiseAmount) : null,
+        promise_date: asksPromise ? promiseDate : null,
+        expected_return_date: returnDate || null,
         call_again_on: callAgainOn || null,
       });
       onSaved?.();
@@ -221,7 +225,7 @@ export const CallCardPopover: React.FC<CallCardPopoverProps> = ({
         )}
 
         {/* Promise fields */}
-        {outcome === "answered" && result === "will_pay_date" && (
+        {asksPromise && (
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
             <TextField
               size="small"
@@ -243,7 +247,7 @@ export const CallCardPopover: React.FC<CallCardPopoverProps> = ({
         )}
 
         {/* Return date field */}
-        {outcome === "answered" && result === "will_return" && (
+        {asksReturnDate && (
           <TextField
             size="small"
             type="date"
@@ -259,13 +263,13 @@ export const CallCardPopover: React.FC<CallCardPopoverProps> = ({
           size="small"
           fullWidth
           label={
-            outcome === "answered" && result === "other"
+            asksNote
               ? t("collections.callCard.noteRequired", "Note (required)")
               : t("collections.callCard.noteOptional", "Short note (optional)")
           }
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          required={outcome === "answered" && result === "other"}
+          required={asksNote}
         />
 
         {/* Call again on */}
