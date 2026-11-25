@@ -4602,7 +4602,8 @@
       "group_digest": "සාරාංශ",
       "empty": "තවම දැනුම්දීම් නැත.",
       "clear": "ඉතිහාසය හිස් කරන්න",
-      "updatedJustNow": "දැන් යාවත්කාලීන විය"
+      "updatedJustNow": "දැන් යාවත්කාලීන විය",
+      "feedUnavailable": "ක්‍රියාකාරකම් ලැයිස්තුව පූරණය කළ නොහැකි විය. මෙම දුරකථනයේ සුරැකි දැනුම්දීම් පෙන්වයි."
     },
     "app": {
       "offline": "GearGrid විවෘත කිරීමට අන්තර්ජාලයට සම්බන්ධ වන්න.",
@@ -4668,7 +4669,45 @@
       "licences": "විවෘත මූලාශ්‍ර බලපත්‍ර geargrid.live හි ලැයිස්තුගතය."
     },
     "backToPhoneHome": "දුරකථන මුල් පිටුව",
-    "phoneHome": "දුරකථන මුල් පිටුව"
+    "phoneHome": "දුරකථන මුල් පිටුව",
+    "toNote": {
+      "title": "සටහන් කළ යුතු ඇමතුම්",
+      "empty": "සියලු ඇමතුම්වලට සටහන් ඇත.",
+      "loadFailed": "සටහන් කළ යුතු ඇමතුම් පූරණය කළ නොහැකි විය.",
+      "chip": "සටහන් කළ යුතු ඇමතුම් ({{count}})",
+      "openBills_one": "විවෘත බිල්පත් {{count}}",
+      "openBills_other": "විවෘත බිල්පත් {{count}}"
+    },
+    "callCard": {
+      "lengthMinSec": "මිනිත්තු {{m}} තත්පර {{s}}",
+      "lengthSec": "තත්පර {{s}}",
+      "tomorrow": "හෙට",
+      "in3Days": "දින 3කින්",
+      "in1Week": "සතියකින්",
+      "returnDateRequired": "යන්ත්‍ර ආපසු ගෙන එන දිනය තෝරන්න.",
+      "returnNote": "{{date}} දින යන්ත්‍ර ආපසු ගෙන එයි",
+      "saved": "ඇමතුම සුරැකිණි.",
+      "alreadyNoted": "මෙම ඇමතුමට සටහනක් දැනටමත් ඇත. සුරැකීමෙන් තවත් එකක් එක් වේ.",
+      "billsAbout": "මෙම ඇමතුම අදාළ බිල්පත්",
+      "owed": "රු. {{amount}} හිඟයි",
+      "unitsOut_one": "යන්ත්‍ර {{count}}ක් පිටත",
+      "unitsOut_other": "යන්ත්‍ර {{count}}ක් පිටත",
+      "later": "පසුව",
+      "notFound": "මෙම ඇමතුම තවම GearGrid වෙත ලැබී නැත. සම්බන්ධතාව පරීක්ෂා කර නැවත උත්සාහ කරන්න.",
+      "unknown": "නොදන්නා අමතන්නා",
+      "direction_INCOMING": "ඔවුන් ඇමතුවා",
+      "direction_OUTGOING": "අපි ඇමතුවා",
+      "direction_MISSED": "මඟ හැරුණු ඇමතුම",
+      "outcome_answered": "පිළිතුරු දුන්නා",
+      "outcome_no_answer": "පිළිතුරු නැත",
+      "outcome_unreachable": "ක්‍රියා විරහිත / වැරදි අංකය",
+      "result_will_pay_today": "අද ගෙවනවා",
+      "result_will_pay_on_date": "දිනයක ගෙවනවා",
+      "result_will_return_machines": "යන්ත්‍ර ආපසු ගෙන එනවා",
+      "result_asked_more_time": "වැඩි කාලයක් ඉල්ලුවා",
+      "result_disputes_amount": "මුදල වැරදි බව කියයි",
+      "result_other": "වෙනත්"
+    }
   },
   "collections": {
     "call": {

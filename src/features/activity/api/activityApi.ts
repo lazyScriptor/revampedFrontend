@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { deviceApi } from "@/features/phone-assistant/lib/nativeBridge";
 import type {
   ActivityComment,
   ActivityFilterState,
@@ -10,24 +11,31 @@ import type {
 } from "../types";
 import { DEFAULT_ACTIVITY_SETTINGS } from "../constants";
 
-const unwrap = <T,>(res: any): T => (res?.data !== undefined ? res.data : res) as T;
+export type ActivityApiMode = "staff" | "device";
+
+const unwrap = <T,>(res: any): T => {
+  const first = res?.data !== undefined ? res.data : res;
+  return (first?.data !== undefined && first?.status ? first.data : first) as T;
+};
+
+const clientFor = (mode: ActivityApiMode) => (mode === "device" ? deviceApi : api);
+const prefixFor = (mode: ActivityApiMode) => (mode === "device" ? "/device/activity" : "/activity");
 
 export function buildActivityQueryParams(
   filters: Partial<ActivityFilterState>,
   extra?: { page?: number; limit?: number; invoice_id?: number },
 ): Record<string, string | number> {
   const params: Record<string, string | number> = {};
-  if (filters.preset) {
+  // A tapped bar narrows the period to one day. The server prefers a preset over from/to,
+  // so the preset has to be left out then.
+  const singleDay = Boolean(filters.from && filters.from === filters.to);
+  if (filters.preset && !(singleDay && filters.preset !== "custom")) {
     params.preset = filters.preset;
     params.date = filters.preset;
   }
-  if (filters.preset === "custom") {
+  if (filters.preset === "custom" || singleDay) {
     if (filters.from) params.from = filters.from;
     if (filters.to) params.to = filters.to;
-  } else if (filters.from && filters.to && filters.from === filters.to) {
-    // Bar tap drills down to a single day inside the current period
-    params.from = filters.from;
-    params.to = filters.to;
   }
   if (filters.types && filters.types.length > 0) {
     params.types = filters.types.join(",");
@@ -54,25 +62,44 @@ export const fetchActivityList = async (
   page = 1,
   limit = 50,
   invoiceId?: number,
+  mode: ActivityApiMode = "staff",
 ): Promise<ActivityListResponse> => {
   const params = buildActivityQueryParams(filters, { page, limit, invoice_id: invoiceId });
-  const res = await api.get("/activity", { params });
+  const res = await clientFor(mode).get(prefixFor(mode), { params });
   const payload = unwrap<Partial<ActivityListResponse>>(res);
   return {
     events: payload?.events ?? [],
     total: payload?.total ?? 0,
     page: payload?.page ?? page,
     limit: payload?.limit ?? limit,
-    totals: payload?.totals ?? { count: 0, amount: 0, high_count: 0, not_checked_count: 0 },
+    // The server sends the filtered totals with the summary, not with the list.
+    totals: payload?.totals,
     see_amounts: payload?.see_amounts ?? true,
+  };
+};
+
+/** The server groups as { bucket, types: { type: { count } }, total_count }; the chart reads counts by type. */
+const normalizeBucket = (raw: any) => {
+  if (raw?.counts) return raw;
+  const key = String(raw?.bucket ?? raw?.key ?? "");
+  const [day, time] = key.split(" ");
+  return {
+    key,
+    label: time || (day.length === 10 ? `${day.slice(8, 10)}/${day.slice(5, 7)}` : key),
+    date: day || undefined,
+    counts: Object.fromEntries(
+      Object.entries(raw?.types ?? {}).map(([type, v]: [string, any]) => [type, Number(v?.count ?? 0)]),
+    ),
+    total: Number(raw?.total_count ?? raw?.total ?? 0),
   };
 };
 
 export const fetchActivitySummary = async (
   filters: Partial<ActivityFilterState>,
+  mode: ActivityApiMode = "staff",
 ): Promise<ActivitySummaryResponse> => {
   const params = buildActivityQueryParams(filters);
-  const res = await api.get("/activity/summary", { params });
+  const res = await clientFor(mode).get(`${prefixFor(mode)}/summary`, { params });
   const payload = unwrap<any>(res) ?? {};
   const rawByType = payload.by_type;
   const by_type = Array.isArray(rawByType)
@@ -85,41 +112,61 @@ export const fetchActivitySummary = async (
           high_count: Number(stats?.high_count ?? 0),
         }))
       : [];
+  const notChecked = payload.not_checked_count ?? payload.not_checked ?? 0;
   return {
     by_type,
-    buckets: payload.buckets ?? [],
+    buckets: (payload.buckets ?? []).map(normalizeBucket),
+    totals: payload.totals
+      ? {
+          count: Number(payload.totals.count ?? 0),
+          amount: Number(payload.totals.amount ?? 0),
+          high_count: Number(payload.totals.high_count ?? 0),
+          not_checked_count: Number(payload.totals.not_checked_count ?? payload.totals.not_checked ?? notChecked),
+        }
+      : undefined,
+    can_check: payload.can_check,
     granularity: payload.granularity ?? (filters.preset === "today" ? "hour" : "day"),
-    not_checked_count: payload.not_checked_count ?? payload.not_checked ?? 0,
-    high_not_checked_count:
-      payload.high_not_checked_count ?? payload.totals?.high_count ?? 0,
+    not_checked_count: notChecked,
+    high_not_checked_count: payload.high_not_checked_count ?? payload.high_not_checked ?? 0,
     by_staff: payload.by_staff ?? undefined,
     see_amounts: payload.see_amounts ?? true,
   };
 };
 
-export const checkActivityEvent = async (id: number) => {
-  const res = await api.post(`/activity/${id}/check`);
+export const checkActivityEvent = async (id: number, mode: ActivityApiMode = "staff") => {
+  const res = await clientFor(mode).post(`${prefixFor(mode)}/${id}/check`);
   return unwrap<{ event_id: number; checked_by: number; checked_by_name?: string; checked_at: string }>(res);
 };
 
-export const uncheckActivityEvent = async (id: number) => {
-  const res = await api.delete(`/activity/${id}/check`);
+export const uncheckActivityEvent = async (id: number, mode: ActivityApiMode = "staff") => {
+  const res = await clientFor(mode).delete(`${prefixFor(mode)}/${id}/check`);
   return unwrap<{ event_id: number; checked_by: null; checked_at: null }>(res);
 };
 
-export const fetchActivityComments = async (id: number): Promise<ActivityComment[]> => {
-  const res = await api.get(`/activity/${id}/comments`);
-  return unwrap<{ comments?: ActivityComment[] }>(res)?.comments ?? [];
+export const fetchActivityComments = async (
+  id: number,
+  mode: ActivityApiMode = "staff",
+): Promise<ActivityComment[]> => {
+  const res = await clientFor(mode).get(`${prefixFor(mode)}/${id}/comments`);
+  const comments = unwrap<{ comments?: Array<ActivityComment & { author_name?: string }> }>(res)?.comments ?? [];
+  return comments.map((c) => ({ ...c, user_name: c.user_name ?? c.author_name }));
 };
 
-export const addActivityComment = async (id: number, body: string): Promise<ActivityComment> => {
-  const res = await api.post(`/activity/${id}/comments`, { body });
+export const addActivityComment = async (
+  id: number,
+  body: string,
+  mode: ActivityApiMode = "staff",
+): Promise<ActivityComment> => {
+  const res = await clientFor(mode).post(`${prefixFor(mode)}/${id}/comments`, { body });
   return unwrap<{ comment: ActivityComment }>(res)?.comment ?? unwrap<ActivityComment>(res);
 };
 
-export const markActivityEventsRead = async (eventIds: number[]): Promise<void> => {
+export const markActivityEventsRead = async (
+  eventIds: number[],
+  mode: ActivityApiMode = "staff",
+): Promise<void> => {
   if (eventIds.length === 0) return;
-  await api.post("/activity/read", { event_ids: eventIds });
+  await clientFor(mode).post(`${prefixFor(mode)}/read`, { event_ids: eventIds });
 };
 
 export const exportActivityExcel = async (filters: Partial<ActivityFilterState>): Promise<Blob> => {

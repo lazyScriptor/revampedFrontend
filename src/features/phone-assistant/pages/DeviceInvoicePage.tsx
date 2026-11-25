@@ -31,6 +31,7 @@ import { shareElementAsPdf } from "../lib/sharePdf";
 import { isNativePhoneApp } from "../lib/nativeBridge";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { checkActivityEvent } from "@/features/activity/api/activityApi";
+import { formatCallLength } from "../lib/callFormat";
 
 const fmtMoney = (n: number | null | undefined) =>
   `Rs. ${Number(n || 0).toLocaleString("en-US", {
@@ -145,7 +146,8 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
     if (!Number.isInteger(rawId) || rawId <= 0) return;
     setChecking(true);
     try {
-      await checkActivityEvent(rawId);
+      // The paired phone's own credentials: nobody needs to be signed in to tick Checked here.
+      await checkActivityEvent(rawId, "device");
       setCheckedLocal(true);
     } catch {
       // Non-fatal
@@ -821,8 +823,12 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                   {calls.map((c) => (
                     <Box key={c.call_id}>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {c.outcome || c.direction}
-                        {c.result ? ` · ${c.result}` : ""}
+                        {c.outcome
+                          ? t(`phoneShell.callCard.outcome_${c.outcome}`)
+                          : t(`phoneShell.callCard.direction_${c.direction}`)}
+                        {c.result
+                          ? ` · ${t(`phoneShell.callCard.result_${c.result}`, { defaultValue: c.result })}`
+                          : ""}
                         {c.staff_name ? ` · ${c.staff_name}` : ""}
                       </Typography>
                       {c.note && (
@@ -831,7 +837,7 @@ export function DeviceInvoicePage({ invoiceId }: { invoiceId: number }) {
                         </Typography>
                       )}
                       <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
-                        {fmtDateOnly(c.started_at)} · {c.duration_seconds}s
+                        {fmtDateOnly(c.started_at)} · {formatCallLength(t, c.duration_seconds)}
                       </Typography>
                     </Box>
                   ))}

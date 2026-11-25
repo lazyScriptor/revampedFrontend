@@ -4602,7 +4602,8 @@
       "group_digest": "Summaries",
       "empty": "No alerts yet.",
       "clear": "Clear history",
-      "updatedJustNow": "Updated just now"
+      "updatedJustNow": "Updated just now",
+      "feedUnavailable": "Couldn't load the activity feed. Showing the alerts saved on this phone."
     },
     "app": {
       "offline": "Connect to the internet to open GearGrid.",
@@ -4668,7 +4669,45 @@
       "licences": "Open-source licences are listed on geargrid.live."
     },
     "backToPhoneHome": "Phone home",
-    "phoneHome": "Phone home"
+    "phoneHome": "Phone home",
+    "toNote": {
+      "title": "Calls to note",
+      "empty": "Every call has its note.",
+      "loadFailed": "Couldn't load the calls to note.",
+      "chip": "Calls to note ({{count}})",
+      "openBills_one": "{{count}} open bill",
+      "openBills_other": "{{count}} open bills"
+    },
+    "callCard": {
+      "lengthMinSec": "{{m}} min {{s}} s",
+      "lengthSec": "{{s}} s",
+      "tomorrow": "Tomorrow",
+      "in3Days": "In 3 days",
+      "in1Week": "In 1 week",
+      "returnDateRequired": "Choose the date the machines come back.",
+      "returnNote": "Machines back on {{date}}",
+      "saved": "Call saved.",
+      "alreadyNoted": "A note is already saved for this call. Saving adds another.",
+      "billsAbout": "Bills this call was about",
+      "owed": "Rs {{amount}} owed",
+      "unitsOut_one": "{{count}} machine out",
+      "unitsOut_other": "{{count}} machines out",
+      "later": "Later",
+      "notFound": "This call hasn't reached GearGrid yet. Check the connection and try again.",
+      "unknown": "Unknown caller",
+      "direction_INCOMING": "They called",
+      "direction_OUTGOING": "We called",
+      "direction_MISSED": "Missed call",
+      "outcome_answered": "Answered",
+      "outcome_no_answer": "No answer",
+      "outcome_unreachable": "Off / wrong number",
+      "result_will_pay_today": "Will pay today",
+      "result_will_pay_on_date": "Will pay on a date",
+      "result_will_return_machines": "Will bring machines back",
+      "result_asked_more_time": "Asked for more time",
+      "result_disputes_amount": "Says amount is wrong",
+      "result_other": "Other"
+    }
   },
   "collections": {
     "call": {

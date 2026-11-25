@@ -15,6 +15,7 @@ import {
   uncheckActivityEvent,
   updateActivitySettings,
   voidInvoicePayment,
+  type ActivityApiMode,
 } from "../api/activityApi";
 import type {
   ActivityFilterState,
@@ -43,20 +44,25 @@ export function useActivityList(
   page = 1,
   limit = 50,
   enabled = true,
+  apiMode: ActivityApiMode = "staff",
 ) {
   return useQuery({
-    queryKey: ACTIVITY_KEYS.list(filters, page),
-    queryFn: () => fetchActivityList(filters, page, limit),
+    queryKey: [...ACTIVITY_KEYS.list(filters, page), apiMode],
+    queryFn: () => fetchActivityList(filters, page, limit, undefined, apiMode),
     enabled,
     staleTime: 15_000,
     placeholderData: (prev) => prev,
   });
 }
 
-export function useActivitySummary(filters: Partial<ActivityFilterState>, enabled = true) {
+export function useActivitySummary(
+  filters: Partial<ActivityFilterState>,
+  enabled = true,
+  apiMode: ActivityApiMode = "staff",
+) {
   return useQuery({
-    queryKey: ACTIVITY_KEYS.summary(filters),
-    queryFn: () => fetchActivitySummary(filters),
+    queryKey: [...ACTIVITY_KEYS.summary(filters), apiMode],
+    queryFn: () => fetchActivitySummary(filters, apiMode),
     enabled,
     staleTime: 15_000,
     placeholderData: (prev) => prev,
@@ -103,7 +109,7 @@ export function useInvoiceActivity(invoiceId: number | null | undefined) {
   return { data };
 }
 
-export function useToggleCheckActivity() {
+export function useToggleCheckActivity(apiMode: ActivityApiMode = "staff") {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -117,36 +123,43 @@ export function useToggleCheckActivity() {
       checked_by: number | null;
       checked_by_name?: string;
       checked_at: string | null;
-    }> => (checked ? uncheckActivityEvent(eventId) : checkActivityEvent(eventId)),
+    }> => (checked ? uncheckActivityEvent(eventId, apiMode) : checkActivityEvent(eventId, apiMode)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ACTIVITY_KEYS.all });
     },
   });
 }
 
-export function useActivityComments(eventId: number, open: boolean) {
+export function useActivityComments(
+  eventId: number,
+  open: boolean,
+  apiMode: ActivityApiMode = "staff",
+) {
   return useQuery({
-    queryKey: ACTIVITY_KEYS.comments(eventId),
-    queryFn: () => fetchActivityComments(eventId),
+    queryKey: [...ACTIVITY_KEYS.comments(eventId), apiMode],
+    queryFn: () => fetchActivityComments(eventId, apiMode),
     enabled: open && eventId > 0,
   });
 }
 
-export function useAddActivityComment(eventId: number) {
+export function useAddActivityComment(
+  eventId: number,
+  apiMode: ActivityApiMode = "staff",
+) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => addActivityComment(eventId, body),
+    mutationFn: (body: string) => addActivityComment(eventId, body, apiMode),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ACTIVITY_KEYS.comments(eventId) });
+      qc.invalidateQueries({ queryKey: [...ACTIVITY_KEYS.comments(eventId), apiMode] });
       qc.invalidateQueries({ queryKey: ACTIVITY_KEYS.all });
     },
   });
 }
 
-export function useMarkActivityRead() {
+export function useMarkActivityRead(apiMode: ActivityApiMode = "staff") {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (eventIds: number[]) => markActivityEventsRead(eventIds),
+    mutationFn: (eventIds: number[]) => markActivityEventsRead(eventIds, apiMode),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["activity", "list"] });
     },

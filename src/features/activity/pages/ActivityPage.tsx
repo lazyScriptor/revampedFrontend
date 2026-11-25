@@ -81,7 +81,7 @@ export default function ActivityPage() {
 
   const seeAmounts = listData?.see_amounts ?? summary?.see_amounts ?? true;
   const events = listData?.events ?? [];
-  const totals = listData?.totals ?? {
+  const totals = listData?.totals ?? summary?.totals ?? {
     count: events.length,
     amount: events.reduce((s, e) => s + (Number(e.amount) || 0), 0),
     high_count: events.filter((e) => e.risk === "high").length,

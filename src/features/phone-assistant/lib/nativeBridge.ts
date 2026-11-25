@@ -82,6 +82,7 @@ export interface NativeCustomerHit {
 }
 
 interface NativePluginShape {
+  syncBadge?(options: { unread: number }): Promise<void>;
   getSyncStatus?: () => Promise<NativeSyncStatus>;
   showSampleCall?: () => Promise<{ shown: boolean }>;
   setCallTextScale?: (args: { scale: number | null }) => Promise<{ saved: boolean }>;
@@ -214,6 +215,17 @@ export async function registerDeviceWithServer(body: {
 }
 
 export const nativeBridge = {
+  /** Clears the app icon badge when nothing is unread. Older app builds don't have it. */
+  async syncBadge(unread: number): Promise<void> {
+    const plugin = getNativePlugin();
+    if (!plugin?.syncBadge) return;
+    try {
+      await plugin.syncBadge({ unread });
+    } catch {
+      // The badge is cosmetic
+    }
+  },
+
   async getSyncStatus(): Promise<NativeSyncStatus | null> {
     const plugin = getNativePlugin();
     if (!plugin?.getSyncStatus) return null;

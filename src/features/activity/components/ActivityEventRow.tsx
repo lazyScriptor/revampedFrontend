@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -20,6 +20,7 @@ import { eventSentence } from "@/features/activity/lib/eventSentence";
 import { ACTIVITY_TYPE_META } from "../constants";
 import type { ActivityEvent } from "../types";
 import { ActivityTypeIcon } from "./ActivityTypeIcon";
+import type { ActivityApiMode } from "../api/activityApi";
 import {
   useActivityComments,
   useAddActivityComment,
@@ -33,6 +34,7 @@ interface ActivityEventRowProps {
   canCheck: boolean;
   onOpenBill: (invoiceId: number) => void;
   onMarkRead?: (eventId: number) => void;
+  apiMode?: ActivityApiMode;
 }
 
 export function ActivityEventRow({
@@ -41,25 +43,45 @@ export function ActivityEventRow({
   canCheck,
   onOpenBill,
   onMarkRead,
+  apiMode = "staff",
 }: ActivityEventRowProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [draft, setDraft] = useState("");
+  const rowRef = useRef<HTMLDivElement | null>(null);
 
-  const toggleCheck = useToggleCheckActivity();
+  const toggleCheck = useToggleCheckActivity(apiMode);
   const { data: comments = [], isLoading: loadingComments } = useActivityComments(
     event.event_id,
     commentsOpen,
+    apiMode,
   );
-  const addComment = useAddActivityComment(event.event_id);
+  const addComment = useAddActivityComment(event.event_id, apiMode);
 
   const meta = ACTIVITY_TYPE_META[event.type] ?? ACTIVITY_TYPE_META.system;
   const sentence = eventSentence(event, t(meta.labelKey));
 
   const isUnread = !event.is_read;
   const isChecked = Boolean(event.checked_at);
+
+  useEffect(() => {
+    if (!isUnread || !onMarkRead || typeof IntersectionObserver === "undefined") return;
+    const el = rowRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          onMarkRead(event.event_id);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [event.event_id, isUnread, onMarkRead]);
 
   const handleRowClick = () => {
     if (isUnread && onMarkRead) onMarkRead(event.event_id);
@@ -80,6 +102,7 @@ export function ActivityEventRow({
 
   return (
     <Box
+      ref={rowRef}
       data-testid={`activity-row-${event.event_id}`}
       sx={{
         borderBottom: "1px solid",
@@ -168,6 +191,11 @@ export function ActivityEventRow({
             {event.actor_name && (
               <Typography variant="caption" color="text.secondary">
                 · {event.actor_name}
+              </Typography>
+            )}
+            {isChecked && event.checked_by_name && (
+              <Typography variant="caption" color="success.main" sx={{ fontWeight: 700 }}>
+                · ✓ {event.checked_by_name}
               </Typography>
             )}
             {timeStr && (
