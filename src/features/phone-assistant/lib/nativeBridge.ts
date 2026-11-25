@@ -64,6 +64,7 @@ export interface NativeAlert {
   group: string;
   eventKey?: string | null;
   invoiceId?: string | null;
+  eventId?: string | null;
   customerId?: string | null;
   link?: string | null;
 }
@@ -95,6 +96,7 @@ interface NativePluginShape {
   clearAlerts?: () => Promise<{ cleared: boolean }>;
   searchCustomers?: (args: { query: string; limit?: number }) => Promise<{ hits: NativeCustomerHit[]; cachedBriefs: number }>;
   setSignedIn?: (args: { signedIn: boolean }) => Promise<{ saved: boolean }>;
+  setStatusBarTheme?: (args: { dark: boolean; color?: string }) => Promise<{ applied: boolean }>;
   setCredentials?: (args: {
     deviceId: string;
     deviceToken: string;
@@ -337,6 +339,15 @@ export const nativeBridge = {
     if (!plugin?.setSignedIn) return false;
     try {
       return Boolean((await plugin.setSignedIn({ signedIn })).saved);
+    } catch {
+      return false;
+    }
+  },
+  async setStatusBarTheme(dark: boolean, color?: string): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.setStatusBarTheme) return false;
+    try {
+      return Boolean((await plugin.setStatusBarTheme({ dark, color })).applied);
     } catch {
       return false;
     }
