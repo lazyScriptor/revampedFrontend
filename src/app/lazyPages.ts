@@ -21,6 +21,12 @@ export const SuperAdminDashboard = lazyRouteComponent(() => import("@/routes/Sup
 export const PhoneAssistantSettingsPage = lazyRouteComponent(
   () => import("@/features/phone-assistant/pages/PhoneAssistantSettingsPage"),
 );
+export const ActivityPage = lazyRouteComponent(
+  () => import("@/features/activity/pages/ActivityPage"),
+);
+export const ActivitySettingsPage = lazyRouteComponent(
+  () => import("@/features/activity/pages/ActivitySettingsPage"),
+);
 
 // Phone-app pages: they open inside the GearGrid Phone app, not at the counter.
 export const MobileSignPage = lazyRouteComponent(
@@ -87,6 +93,8 @@ const BACKGROUND_ORDER = [
   DataArena,
   PermissionsPage,
   PhoneAssistantSettingsPage,
+  ActivityPage,
+  ActivitySettingsPage,
 ];
 
 /**

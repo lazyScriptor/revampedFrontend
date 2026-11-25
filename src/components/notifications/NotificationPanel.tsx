@@ -10,6 +10,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
+import { useNavigate } from "@tanstack/react-router";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { NotificationItem } from "./NotificationItem";
 import { useTranslation } from "react-i18next";
@@ -31,6 +32,7 @@ export function NotificationPanel({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const items = useNotificationStore((s) => s.items);
   const loading = useNotificationStore((s) => s.loading);
   const markRead = useNotificationStore((s) => s.markRead);
@@ -151,6 +153,21 @@ export function NotificationPanel({
             </Box>
           ))
         )}
+      </Box>
+      {/* Footer */}
+      <Divider />
+      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "center" }}>
+        <Button
+          fullWidth
+          size="small"
+          onClick={() => {
+            onClose();
+            navigate({ to: "/activity" as any });
+          }}
+          sx={{ textTransform: "none", fontWeight: 800 }}
+        >
+          {t("activity.openActivity")}
+        </Button>
       </Box>
     </Popover>
   );
