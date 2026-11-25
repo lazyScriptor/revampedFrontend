@@ -24,6 +24,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import BusinessIcon from "@mui/icons-material/Business";
+import HandshakeOutlinedIcon from "@mui/icons-material/HandshakeOutlined";
 
 import { useDeleteCustomer } from "../hooks/useCustomerHooks";
 import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
@@ -36,6 +37,7 @@ interface CustomerTableProps {
   paginationModel: { page: number; pageSize: number };
   onPaginationModelChange: (model: { page: number; pageSize: number }) => void;
   onEdit: (customerRow: any) => void;
+  onSettle?: (customerRow: any) => void;
   selectedIds?: number[];
   onSelectionChange?: (ids: number[]) => void;
 }
@@ -47,6 +49,7 @@ export function CustomerTable({
   paginationModel,
   onPaginationModelChange,
   onEdit,
+  onSettle,
   selectedIds = [],
   onSelectionChange,
 }: CustomerTableProps) {
@@ -264,11 +267,29 @@ export function CustomerTable({
     {
       field: "actions",
       headerName: t("common.actions"),
-      width: 100,
+      width: onSettle ? 132 : 100,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ display: "flex", gap: 0.75, alignItems: "center", height: "100%" }}>
+          {onSettle && (
+            <Tooltip title={t("settlement.settleCustomer", "Customer settlement")}>
+              <IconButton
+                size="small"
+                color="success"
+                aria-label={t("settlement.settleCustomer", "Customer settlement")}
+                onClick={() => onSettle(params.row)}
+                sx={{
+                  bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(16, 185, 129, 0.14)" : "rgba(16, 185, 129, 0.1)"),
+                  "&:hover": {
+                    bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(16, 185, 129, 0.24)" : "rgba(16, 185, 129, 0.18)"),
+                  },
+                }}
+              >
+                <HandshakeOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title={t("customers.CustomerTable.editProfile")}>
             <IconButton
               size="small"

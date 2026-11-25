@@ -12,7 +12,6 @@ import {
   Switch,
   Tab,
   Tabs,
-  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -345,19 +344,20 @@ export default function CustomerCollectionDetailPage() {
                 disabled={!customer.invoice_ids?.length}
               />
             )}
-            <Tooltip title={t("collections.customer.settleComingSoon", "Customer settlement (coming soon in Slice 3)")}>
-              <span>
-                <Button
-                  size="small"
-                  variant="contained"
-                  disabled
-                  startIcon={<AccountBalanceWalletOutlinedIcon />}
-                  sx={{ textTransform: "none", fontWeight: 700 }}
-                >
-                  {t("collections.customer.settleSoon", "Settle (coming soon)")}
-                </Button>
-              </span>
-            </Tooltip>
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<AccountBalanceWalletOutlinedIcon />}
+              onClick={() =>
+                navigate({
+                  to: "/invoices",
+                  search: { mode: "settle", customer: customer.customer_id } as any,
+                })
+              }
+              sx={{ textTransform: "none", fontWeight: 700 }}
+            >
+              {t("collections.customer.settle", "Settle")}
+            </Button>
           </Box>
         </Box>
       </Paper>
