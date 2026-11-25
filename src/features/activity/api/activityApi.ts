@@ -17,7 +17,10 @@ export function buildActivityQueryParams(
   extra?: { page?: number; limit?: number; invoice_id?: number },
 ): Record<string, string | number> {
   const params: Record<string, string | number> = {};
-  if (filters.preset) params.preset = filters.preset;
+  if (filters.preset) {
+    params.preset = filters.preset;
+    params.date = filters.preset;
+  }
   if (filters.preset === "custom") {
     if (filters.from) params.from = filters.from;
     if (filters.to) params.to = filters.to;
@@ -70,15 +73,27 @@ export const fetchActivitySummary = async (
 ): Promise<ActivitySummaryResponse> => {
   const params = buildActivityQueryParams(filters);
   const res = await api.get("/activity/summary", { params });
-  const payload = unwrap<Partial<ActivitySummaryResponse>>(res);
+  const payload = unwrap<any>(res) ?? {};
+  const rawByType = payload.by_type;
+  const by_type = Array.isArray(rawByType)
+    ? rawByType
+    : rawByType && typeof rawByType === "object"
+      ? Object.entries(rawByType).map(([type, stats]: [string, any]) => ({
+          type,
+          count: Number(stats?.count ?? 0),
+          amount: Number(stats?.amount ?? 0),
+          high_count: Number(stats?.high_count ?? 0),
+        }))
+      : [];
   return {
-    by_type: payload?.by_type ?? [],
-    buckets: payload?.buckets ?? [],
-    granularity: payload?.granularity ?? (filters.preset === "today" ? "hour" : "day"),
-    not_checked_count: payload?.not_checked_count ?? 0,
-    high_not_checked_count: payload?.high_not_checked_count ?? 0,
-    by_staff: payload?.by_staff,
-    see_amounts: payload?.see_amounts ?? true,
+    by_type,
+    buckets: payload.buckets ?? [],
+    granularity: payload.granularity ?? (filters.preset === "today" ? "hour" : "day"),
+    not_checked_count: payload.not_checked_count ?? payload.not_checked ?? 0,
+    high_not_checked_count:
+      payload.high_not_checked_count ?? payload.totals?.high_count ?? 0,
+    by_staff: payload.by_staff ?? undefined,
+    see_amounts: payload.see_amounts ?? true,
   };
 };
 
@@ -167,8 +182,14 @@ export const fetchReturnDatePreview = async (
   const res = await api.post(`/invoices/${invoiceId}/return-preview`, {
     actual_return_date: actualReturnDate,
     lines,
+    lines_returned: lines,
   });
-  return unwrap<ReturnPreviewResponse>(res);
+  const payload = unwrap<any>(res) ?? {};
+  return {
+    late_fee_today: payload.late_fee_today ?? payload.now_late_fees ?? 0,
+    late_fee_at_date: payload.late_fee_at_date ?? payload.actual_late_fees ?? 0,
+    difference: payload.difference ?? payload.late_fee_difference ?? 0,
+  };
 };
 
 export const voidInvoicePayment = async (
