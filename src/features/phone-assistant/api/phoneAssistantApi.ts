@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { callContract } from "@/lib/callContract";
 import {
   SearchPhoneContactsContract,
@@ -348,6 +349,23 @@ export async function rotateDeviceToken(): Promise<{
   return callDeviceContract(RotateDeviceTokenContract, { body: {} });
 }
 
+// The released contract predates call recordings, and a response schema drops fields it doesn't
+// list: without these two the console's "no call recordings received" warning never shows.
+const shopDevicesData = ListShopDevicesContract.response.shape.data;
+const ListShopDevicesWithRecordings: typeof ListShopDevicesContract = {
+  ...ListShopDevicesContract,
+  response: ListShopDevicesContract.response.extend({
+    data: shopDevicesData.extend({
+      devices: z.array(
+        shopDevicesData.shape.devices.element.extend({
+          last_recording_received_at: z.string().nullable().optional(),
+          recording_missing_since: z.string().nullable().optional(),
+        }),
+      ),
+    }),
+  }),
+};
+
 export async function listShopDevices(status?: string): Promise<{
   devices: ShopDeviceItem[];
   counts: {
@@ -358,7 +376,7 @@ export async function listShopDevices(status?: string): Promise<{
     revoked: number;
   };
 }> {
-  return callContract(ListShopDevicesContract, {
+  return callContract(ListShopDevicesWithRecordings, {
     query: status ? { status } : undefined,
   });
 }

@@ -250,7 +250,7 @@ export const CollectionsSettingsSection: React.FC = () => {
             />
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 1.5, alignItems: "center" }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 1.5, alignItems: "center" }}>
             <FormControl size="small">
               <InputLabel>{t("collections.settings.retentionDays", "Keep recordings for")}</InputLabel>
               <Select
@@ -280,24 +280,14 @@ export const CollectionsSettingsSection: React.FC = () => {
                 </Typography>
               }
             />
-
-            <FormControlLabel
-              control={
-                <Switch
-                  size="small"
-                  checked={recording.deleteFromPhoneAfterUpload}
-                  onChange={(e) =>
-                    setRecording((r) => ({ ...r, deleteFromPhoneAfterUpload: e.target.checked }))
-                  }
-                />
-              }
-              label={
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                  {t("collections.settings.deleteAfterUpload", "Delete from phone after upload")}
-                </Typography>
-              }
-            />
           </Box>
+
+          <Typography variant="caption" color="text.secondary">
+            {t(
+              "collections.settings.phoneKeepsFile",
+              "The recording stays on the phone: Android 11 and later don't let GearGrid delete it, and the app doesn't delete it on older versions either. To clear old files, use auto-delete in the phone's own call recorder settings.",
+            )}
+          </Typography>
 
           <FormControlLabel
             control={

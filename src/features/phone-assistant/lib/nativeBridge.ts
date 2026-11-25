@@ -17,6 +17,11 @@ export interface PhoneAssistantSetupStatus {
   contactsPermission: boolean;
   callLogPermission: boolean;
   batteryOptimizationExempt: boolean;
+  /** Call recording fields are missing on app builds older than them. */
+  audioPermission?: boolean;
+  callRecordingEnabled?: boolean;
+  /** True when the paired user is an administrator. */
+  callRecordingSetupAllowed?: boolean;
   contactSyncEnabled: boolean;
   contactSyncMode?: string;
   callLoggingScope?: string;
@@ -114,6 +119,7 @@ interface NativePluginShape {
   requestContactsPermission?: () => Promise<PhoneAssistantSetupStatus>;
   requestCallLogPermission?: () => Promise<PhoneAssistantSetupStatus>;
   requestBatteryExemption?: () => Promise<PhoneAssistantSetupStatus>;
+  requestAudioPermission?: () => Promise<PhoneAssistantSetupStatus>;
   openVendorAutostart?: () => Promise<{ opened: boolean }>;
   syncNow?: () => Promise<PhoneAssistantSetupStatus>;
   setContactSyncEnabled?: (args: {
@@ -443,6 +449,11 @@ export const nativeBridge = {
     const plugin = getNativePlugin();
     if (!plugin?.requestBatteryExemption) return null;
     return plugin.requestBatteryExemption();
+  },
+  async requestAudioPermission(): Promise<PhoneAssistantSetupStatus | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.requestAudioPermission) return null;
+    return plugin.requestAudioPermission();
   },
   async openVendorAutostart(): Promise<{ opened: boolean } | null> {
     const plugin = getNativePlugin();
