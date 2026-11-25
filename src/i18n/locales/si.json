@@ -3821,6 +3821,17 @@
       "never": "කිසිදා නැත",
       "capabilitiesTitle": "මෙම දුරකථනයේ අනුමත ප්‍රවේශයන්"
     },
+    "recordingSetup": {
+      "title": "ඇමතුම් පටිගත කිරීම්",
+      "adminOnly": "මෙම පියවර පෙනෙන්නේ පරිපාලකයින්ට පමණි.",
+      "autoRecordTitle": "1. දුරකථනයේම Phone යෙදුමේ ස්වයංක්‍රීය පටිගත කිරීම සක්‍රීය කරන්න",
+      "samsungSteps": "Samsung: Phone යෙදුම → ⋮ → Settings → Record calls → Auto record calls: On → All calls.",
+      "vivoSteps": "Vivo: Phone යෙදුම → Settings → Call recording → Auto record all calls.",
+      "otherSteps": "Phone යෙදුමේ සැකසුම් තුළ සියලු ඇමතුම් ස්වයංක්‍රීයව පටිගත කිරීමේ විකල්පය සොයන්න. Google Phone යෙදුමට සෑම ඇමතුමක්ම ස්වයංක්‍රීයව පටිගත කළ නොහැකි බැවින් එයින් පටිගත කිරීම් නොලැබේ.",
+      "permissionTitle": "2. පටිගත කිරීම් සොයා ගැනීමට \"Music and audio\" අවසරය ලබා දෙන්න",
+      "permissionHint": "කිසිවක් සිදු නොවේ නම්, Android Settings → Apps → GearGrid Phone → Permissions වෙත ගොස් එහිදී අවසර දෙන්න.",
+      "check": "3. පාරිභෝගිකයෙකුට කෙටි පරීක්ෂණ ඇමතුමක් ගෙන, එම ඇමතුම වාදනය කළ හැකිදැයි වෙබ් අඩවියෙන් බලන්න."
+    },
     "consent": {
       "title": "සම්බන්ධතා සමමුහුර්තය සක්‍රීය කරන්නද?",
       "body": "බිල්පත් සෑදීමේදී කවුන්ටරයේ කාර්ය මණ්ඩලයට පාරිභෝගිකයන් සොයා ගැනීමට හැකි වන පරිදි මෙම දුරකථනයේ සම්බන්ධතා නම් සහ දුරකථන අංක ඔබේ වෙළඳසැලේ GearGrid ගිණුමට උඩුගත කෙරේ.",

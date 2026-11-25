@@ -3821,6 +3821,17 @@
       "never": "Never",
       "capabilitiesTitle": "Allowed capabilities on this phone"
     },
+    "recordingSetup": {
+      "title": "Call recordings",
+      "adminOnly": "Only administrators see this step.",
+      "autoRecordTitle": "1. Turn on automatic recording in the phone's own dialer",
+      "samsungSteps": "Samsung: Phone app → ⋮ → Settings → Record calls → Auto record calls: On → All calls.",
+      "vivoSteps": "Vivo: Phone app → Settings → Call recording → Auto record all calls.",
+      "otherSteps": "Look in the Phone app's settings for automatic recording of all calls. Google's Phone app can't record every call automatically, so no recordings will arrive from it.",
+      "permissionTitle": "2. Allow \"Music and audio\" so the recordings can be found",
+      "permissionHint": "If nothing happens, open Android Settings → Apps → GearGrid Phone → Permissions and allow it there.",
+      "check": "3. Make a short test call to a customer, then check on the web that the call can be played."
+    },
     "consent": {
       "title": "Enable contact sync?",
       "body": "Contact names and phone numbers from this phone will be uploaded to your shop's GearGrid account so counter staff can find them when creating a bill.",
