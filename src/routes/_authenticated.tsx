@@ -24,6 +24,7 @@ import {
   ListItemText,
   useMediaQuery,
   Avatar,
+  Badge,
   Tooltip,
   Collapse,
   Button,
@@ -73,6 +74,9 @@ import { ForcePasswordChange } from "@/features/auth/ForcePasswordChange";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PostAddIcon from "@mui/icons-material/PostAdd";
+import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
+import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
+import { useActivityNotCheckedCount } from "@/features/activity/hooks/useActivityHooks";
 import { isNativePhoneApp } from "@/features/phone-assistant/lib/nativeBridge";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
@@ -184,6 +188,7 @@ function AuthenticatedLayout() {
 
   const user = useAuthStore((state) => state.user);
   const hasPermission = useAuthStore((state) => state.hasPermission);
+  const { data: activityNotChecked = 0 } = useActivityNotCheckedCount();
   const planCheck = useMenuPlanChecker();
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
@@ -241,6 +246,22 @@ function AuthenticatedLayout() {
   // ("Inventory", "Accounting", …) and only translate the display label.
   const allNavItems: NavItem[] = [
     { text: "Dashboard", label: t("nav.dashboard"), icon: <DashboardIcon />, path: "/dashboard" },
+    {
+      text: "Activity",
+      label: t("nav.activity"),
+      icon: (
+        <Badge
+          badgeContent={activityNotChecked > 99 ? "99+" : activityNotChecked}
+          color="warning"
+          invisible={activityNotChecked === 0}
+          sx={{ "& .MuiBadge-badge": { fontSize: "0.62rem", height: 16, minWidth: 16, fontWeight: 800, fontVariantNumeric: "tabular-nums" } }}
+        >
+          <NotificationsOutlinedIcon />
+        </Badge>
+      ),
+      path: "/activity",
+      requiredPermission: "activity:view",
+    },
     {
       text: "Inventory",
       label: t("nav.inventory"),
@@ -341,6 +362,7 @@ function AuthenticatedLayout() {
         { text: "Roles", label: t("nav.roles"), path: "/admin/roles", icon: <AdminPanelSettingsIcon fontSize="small" /> },
         { text: "Permissions", label: t("nav.permissions"), path: "/permissions", icon: <SecurityIcon fontSize="small" /> },
         { text: "Phone Assistant", label: t("nav.phoneAssistant"), path: "/settings/phone-assistant", icon: <PhoneAndroidOutlinedIcon fontSize="small" />, requiredPermission: "devices:manage" },
+        { text: "Activity & Reasons", label: t("nav.activitySettings"), path: "/settings/activity", icon: <TuneOutlinedIcon fontSize="small" />, requiredPermission: "activity:view" },
       ],
     },
   ];

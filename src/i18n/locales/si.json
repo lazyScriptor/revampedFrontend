@@ -169,7 +169,9 @@
     "equipmentSheet": "උපකරණ පත්‍රිකාව",
     "locations": "ස්ථාන",
     "addMachines": "යන්ත්‍ර එක් කිරීම",
-    "phoneAssistant": "දුරකථන සහායක"
+    "phoneAssistant": "දුරකථන සහායක",
+    "activity": "ක්‍රියාකාරකම්",
+    "activitySettings": "ක්‍රියාකාරකම් සහ හේතු"
   },
   "dashboard": {
     "title": "ප්‍රධාන පුවරුව",
@@ -2916,7 +2918,8 @@
       "return": "ආපසු භාර ගැනීම",
       "followup": "පසු විපරම",
       "adhoc": "අවස්ථානුකූල"
-    }
+    },
+    "tagsLabel": "ඉක්මන් ටැග් (සටහනට එක් වේ)"
   },
   "signatures": {
     "DeviceHomePage": {
@@ -4819,5 +4822,131 @@
       "legalCheckbox": "මම නීති උපදෙස් ලබාගෙන ඇත",
       "confirmEnable": "පටිගත කිරීම සක්‍රිය කරන්න"
     }
+  },
+  "activity": {
+    "title": "ක්‍රියාකාරකම්",
+    "subtitle": "සාප්පුවේ සියලු සිදුවීම්, පරීක්ෂා කිරීම් සහ සටහන්",
+    "exportExcel": "Excel බාගන්න",
+    "openActivity": "ක්‍රියාකාරකම් විවෘත කරන්න",
+    "high": "ඉහළ",
+    "afterHours": "වැඩ වේලාවෙන් පසු",
+    "notChecked": "පරීක්ෂා නොකළ",
+    "checked": "පරීක්ෂා කළා",
+    "checkedBy": "{{name}} විසින් පරීක්ෂා කළා · {{time}}",
+    "markChecked": "පරීක්ෂා කළ ලෙස සලකුණු කරන්න",
+    "uncheck": "පරීක්ෂා සලකුණ ඉවත් කරන්න",
+    "comments": "අදහස්",
+    "noComments": "තවම අදහස් නොමැත",
+    "addCommentPlaceholder": "සටහනක් එක් කරන්න...",
+    "sendComment": "යවන්න",
+    "emptyPeriod": "මෙම කාලසීමාවේ ක්‍රියාකාරකම් නොමැත",
+    "emptyFiltered": "තෝරාගත් පෙරහන් වලට ගැලපෙන සිදුවීම් නොමැත",
+    "notCheckedSummary": "පරීක්ෂා නොකළ {{count}}, ඉහළ {{high}}",
+    "totalsStripWithAmount": "සිදුවීම් {{count}} · රු. {{amount}}",
+    "totalsStripCount": "සිදුවීම් {{count}}",
+    "highCountLabel": "ඉහළ {{count}}",
+    "billActivityTitle": "බිල්පත් ක්‍රියාකාරකම්",
+    "dates": {
+      "thisWeek": "මෙම සතිය",
+      "last7Days": "පසුගිය දින 7",
+      "thisMonth": "මෙම මාසය",
+      "custom": "අභිරුචි",
+      "from": "සිට",
+      "to": "දක්වා"
+    },
+    "types": {
+      "invoice_created": "නව බිල්පත",
+      "payment": "ගෙවීම",
+      "refund": "ආපසු ගෙවීම",
+      "discount": "වට්ටම",
+      "backdated_payment": "පසු දින ගෙවීම",
+      "backdated_bill": "පසු දින බිල්පත",
+      "backdated_return": "පසු දින ආපසු දීම",
+      "return": "ආපසු දීම",
+      "payment_voided": "ගෙවීම අවලංගු කළා",
+      "invoice_deleted": "බිල්පත මකා දැමුවා",
+      "invoice_restored": "බිල්පත ප්‍රතිසාධනය කළා",
+      "invoice_reopened": "බිල්පත නැවත විවෘත කළා",
+      "id_card_released_unpaid": "නොගෙවා හැඳුනුම්පත නිදහස් කළා",
+      "review": "සමාලෝචනය",
+      "customer_payment": "පාරිභෝගික පියවීම",
+      "call_promise_missed": "පොරොන්දුව මගහැරුණා",
+      "system": "පද්ධතිය"
+    },
+    "groups": {
+      "payments": "ගෙවීම්",
+      "refunds": "ආපසු ගෙවීම්",
+      "discounts": "වට්ටම්",
+      "backdated": "පසු දින",
+      "bills": "නව බිල්පත්",
+      "returns": "ආපසු දීම්",
+      "voids_deletes": "අවලංගු / මැකීම්",
+      "reopened": "නැවත විවෘත",
+      "id_card": "හැඳුනුම්පත",
+      "reviews": "සමාලෝචන",
+      "system": "පද්ධතිය"
+    },
+    "charts": {
+      "activityByHour": "පැය අනුව ක්‍රියාකාරකම්",
+      "activityByDay": "දින අනුව ක්‍රියාකාරකම්",
+      "filteredDay": "පෙරූ දිනය: {{day}}",
+      "shareByType": "වර්ගය අනුව බෙදීම",
+      "whoDidWhat": "කවුරුන් කළේ කුමක්ද",
+      "staffBreakdown": "වට්ටම් {{discounts}} · පසු දින {{backdated}} · ආපසු ගෙවීම් {{refunds}}"
+    },
+    "filters": {
+      "title": "පෙරහන්",
+      "customerSearch": "පාරිභෝගිකයා...",
+      "billSearch": "බිල් අංකය...",
+      "amountMin": "මුදල >=",
+      "staff": "කාර්ය මණ්ඩලය",
+      "unread": "නොකියවූ",
+      "highOnly": "ඉහළ පමණි",
+      "saveFilter": "පෙරහන සුරකින්න",
+      "saveFilterTitle": "වත්මන් පෙරහන සුරකින්න",
+      "filterName": "පෙරහන් නම",
+      "filterNamePlaceholder": "උදා: මෙම සතියේ විශාල වට්ටම්",
+      "saved": "සුරැකි පෙරහන්"
+    },
+    "settings": {
+      "title": "ක්‍රියාකාරකම් සහ හේතු සැකසුම්",
+      "subtitle": "හේතු ලැයිස්තු, ඉහළ අවදානම් සීමා, භූමිකා දැනුම්දීම් සහ සමාලෝචන ටැග් කළමනාකරණය කරන්න",
+      "saved": "සැකසුම් සුරකින ලදී",
+      "tabReasons": "හේතු ලැයිස්තු",
+      "tabThresholds": "ක්‍රියාකාරකම් සීමා",
+      "tabRoles": "භූමිකා දැනුම්දීම්",
+      "tabReviewTags": "සමාලෝචන ටැග්",
+      "list_discount": "වට්ටම්",
+      "list_backdate": "පසු දින",
+      "list_refund": "ආපසු ගෙවීම්",
+      "list_void": "අවලංගු කිරීම්",
+      "labelEn": "ඉංග්‍රීසි නම",
+      "labelSi": "සිංහල නම",
+      "newReasonEn": "නව හේතුව (ඉංග්‍රීසි)",
+      "newReasonSi": "නව හේතුව (සිංහල)",
+      "discountHighPct": "ඉහළ වට්ටම් (%)",
+      "discountHighAmount": "ඉහළ වට්ටම් මුදල (රු.)",
+      "backdateHighDays": "ඉහළ පසු දින (දින)",
+      "refundHighAmount": "ඉහළ ආපසු ගෙවීම් මුදල (රු.)",
+      "noRoles": "භූමිකා හමු නොවීය",
+      "seeAmounts": "මුදල් පෙන්වන්න",
+      "positiveTags": "ධනාත්මක ටැග්",
+      "negativeTags": "ඍණාත්මක ටැග්"
+    }
+  },
+  "reasons": {
+    "selectReason": "හේතුව",
+    "otherNoteRequired": "හේතුව සඳහන් කරන්න (අනිවාර්යයි)",
+    "optionalNote": "අමතර සටහන (විකල්ප)",
+    "noteRequiredForOther": "වෙනත් සඳහා කෙටි සටහනක් අවශ්‍යයි",
+    "discountReasonRequired": "කරුණාකර වට්ටම් හේතුවක් තෝරන්න",
+    "reasonLabel": "හේතුව",
+    "paymentDate": "ගෙවීම් දිනය",
+    "futureDateBlocked": "අනාගත දින භාවිතා කළ නොහැක",
+    "enteredOn": "ඇතුළත් කළේ {{date}}",
+    "voidPayment": "ගෙවීම අවලංගු කරන්න",
+    "voidPaymentTitle": "රු. {{amount}} ගෙවීම අවලංගු කරන්න",
+    "paymentVoided": "ගෙවීම අවලංගු කරන ලදී",
+    "lateFeeLessThanToday": "ප්‍රමාද ගාස්තුව අදට වඩා රු. {{amount}} අඩුයි"
   }
 }

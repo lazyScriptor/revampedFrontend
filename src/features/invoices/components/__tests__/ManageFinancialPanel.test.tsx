@@ -88,8 +88,12 @@ describe("ManageFinancialPanel", () => {
     expect(completeBtn()).toBeDisabled();
     expect(screen.getByRole("button", { name: "Refund" })).toHaveAttribute("aria-pressed", "true"); // preselected
     fireEvent.click(screen.getByText("Fill Rs. 2,000"));
+    fireEvent.click(screen.getByText("Deposit refund"));
     fireEvent.click(screen.getByRole("button", { name: "Refund Rs. 2,000" }));
-    expect(pay).toHaveBeenCalledWith({ id: 42, data: { amount: 2000, method: "Cash", is_refund: true } }, expect.any(Object));
+    expect(pay).toHaveBeenCalledWith(
+      { id: 42, data: { amount: 2000, method: "Cash", is_refund: true, refund_reason: { key: "deposit_refund", note: "" } } },
+      expect.any(Object),
+    );
   });
 
   it("a balance owed blocks completion; collecting uses the chosen method", () => {
@@ -114,8 +118,12 @@ describe("ManageFinancialPanel", () => {
     const box = screen.getByRole("textbox", { name: "Discount" });
     fireEvent.change(box, { target: { value: "2000" } });
     expect(screen.getByRole("textbox", { name: "Discount" })).toBe(box); // keeps focus/identity while typing
+    fireEvent.click(screen.getByText("Regular customer"));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(fees).toHaveBeenCalledWith({ id: 42, data: { transport_fee: 0, discount_amount: 2000 } }, expect.any(Object));
+    expect(fees).toHaveBeenCalledWith(
+      { id: 42, data: { transport_fee: 0, discount_amount: 2000, discount_reason: { key: "regular_customer", note: "" } } },
+      expect.any(Object),
+    );
   });
 
   it("completed: read-only money, no payment box, can be reopened", () => {

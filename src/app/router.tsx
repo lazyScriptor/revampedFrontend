@@ -34,6 +34,8 @@ import {
   SuperAdminLogin,
   SuperAdminDashboard,
   PhoneAssistantSettingsPage,
+  ActivityPage,
+  ActivitySettingsPage,
   MobileSignPage,
   PairDevicePage,
   DeviceHomePage,
@@ -382,6 +384,25 @@ const phoneAssistantSettingsRoute = createRoute({
   component: () => <FeatureGate feature="phone_assistant"><PhoneAssistantSettingsPage /></FeatureGate>,
 });
 
+// Activity feed
+const activityRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/activity",
+  beforeLoad: () => requirePermission("activity:view"),
+  component: () => <ActivityPage />,
+});
+
+// Activity & Reason Lists settings
+const activitySettingsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/settings/activity",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
+  beforeLoad: () => requirePermission("activity:view"),
+  component: () => <ActivitySettingsPage />,
+});
+
 // Permissions Matrix (Admin only)
 const permissionsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -454,6 +475,8 @@ const routeTree = rootRoute.addChildren([
     outstandingBalancesRedirectRoute,
     profileRoute,
     phoneAssistantSettingsRoute,
+    activityRoute,
+    activitySettingsRoute,
     permissionsRoute,
     adminUsersRoute,
     adminRolesRoute,

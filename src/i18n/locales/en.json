@@ -169,7 +169,9 @@
     "equipmentSheet": "Equipment Sheet",
     "locations": "Locations",
     "addMachines": "Add Machines",
-    "phoneAssistant": "Phone assistant"
+    "phoneAssistant": "Phone assistant",
+    "activity": "Activity",
+    "activitySettings": "Activity & Reasons"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -2916,7 +2918,8 @@
       "return": "Return",
       "followup": "Follow-up",
       "adhoc": "Ad-hoc"
-    }
+    },
+    "tagsLabel": "Quick tags (appended to note)"
   },
   "signatures": {
     "DeviceHomePage": {
@@ -4819,5 +4822,131 @@
       "legalCheckbox": "I have taken legal advice",
       "confirmEnable": "Enable recording"
     }
+  },
+  "activity": {
+    "title": "Activity",
+    "subtitle": "Shop-wide event log, checks, and comments",
+    "exportExcel": "Export Excel",
+    "openActivity": "Open activity",
+    "high": "High",
+    "afterHours": "After hours",
+    "notChecked": "Not checked",
+    "checked": "Checked",
+    "checkedBy": "Checked by {{name}} · {{time}}",
+    "markChecked": "Mark checked",
+    "uncheck": "Uncheck",
+    "comments": "Comments",
+    "noComments": "No comments yet",
+    "addCommentPlaceholder": "Add a comment...",
+    "sendComment": "Send comment",
+    "emptyPeriod": "No activity in this period",
+    "emptyFiltered": "No events match the current filters",
+    "notCheckedSummary": "{{count}} not checked, {{high}} high",
+    "totalsStripWithAmount": "{{count}} events · Rs. {{amount}}",
+    "totalsStripCount": "{{count}} events",
+    "highCountLabel": "{{count}} high",
+    "billActivityTitle": "Bill activity",
+    "dates": {
+      "thisWeek": "This week",
+      "last7Days": "Last 7 days",
+      "thisMonth": "This month",
+      "custom": "Custom",
+      "from": "From",
+      "to": "To"
+    },
+    "types": {
+      "invoice_created": "New bill",
+      "payment": "Payment",
+      "refund": "Refund",
+      "discount": "Discount",
+      "backdated_payment": "Back-dated payment",
+      "backdated_bill": "Back-dated bill",
+      "backdated_return": "Back-dated return",
+      "return": "Return",
+      "payment_voided": "Payment voided",
+      "invoice_deleted": "Bill deleted",
+      "invoice_restored": "Bill restored",
+      "invoice_reopened": "Bill reopened",
+      "id_card_released_unpaid": "ID card released unpaid",
+      "review": "Review",
+      "customer_payment": "Customer settlement",
+      "call_promise_missed": "Promise missed",
+      "system": "System"
+    },
+    "groups": {
+      "payments": "Payments",
+      "refunds": "Refunds",
+      "discounts": "Discounts",
+      "backdated": "Back-dated",
+      "bills": "New bills",
+      "returns": "Returns",
+      "voids_deletes": "Voids / Deletes",
+      "reopened": "Reopened",
+      "id_card": "ID card",
+      "reviews": "Reviews",
+      "system": "System"
+    },
+    "charts": {
+      "activityByHour": "Activity by hour",
+      "activityByDay": "Activity by day",
+      "filteredDay": "Filtered: {{day}}",
+      "shareByType": "Share by type",
+      "whoDidWhat": "Who did what",
+      "staffBreakdown": "{{discounts}} discounts · {{backdated}} back-dated · {{refunds}} refunds"
+    },
+    "filters": {
+      "title": "Filters",
+      "customerSearch": "Customer...",
+      "billSearch": "Bill #...",
+      "amountMin": "Amount >=",
+      "staff": "Staff",
+      "unread": "Unread",
+      "highOnly": "High only",
+      "saveFilter": "Save filter",
+      "saveFilterTitle": "Save current filter",
+      "filterName": "Filter name",
+      "filterNamePlaceholder": "e.g. Big discounts this week",
+      "saved": "Saved"
+    },
+    "settings": {
+      "title": "Activity & Reason Settings",
+      "subtitle": "Manage reason lists, high-risk thresholds, role notifications, and review tags",
+      "saved": "Settings saved",
+      "tabReasons": "Reason lists",
+      "tabThresholds": "Activity thresholds",
+      "tabRoles": "Role notifications",
+      "tabReviewTags": "Review tags",
+      "list_discount": "Discount",
+      "list_backdate": "Back-dated",
+      "list_refund": "Refund",
+      "list_void": "Void",
+      "labelEn": "English label",
+      "labelSi": "Sinhala label",
+      "newReasonEn": "New reason (English)",
+      "newReasonSi": "New reason (Sinhala)",
+      "discountHighPct": "High discount (%)",
+      "discountHighAmount": "High discount amount (Rs.)",
+      "backdateHighDays": "High back-date (days)",
+      "refundHighAmount": "High refund amount (Rs.)",
+      "noRoles": "No roles found",
+      "seeAmounts": "See amounts",
+      "positiveTags": "Positive tags",
+      "negativeTags": "Negative tags"
+    }
+  },
+  "reasons": {
+    "selectReason": "Reason",
+    "otherNoteRequired": "Enter reason note (required)",
+    "optionalNote": "Optional note",
+    "noteRequiredForOther": "A short note is required for Other",
+    "discountReasonRequired": "Please select a discount reason",
+    "reasonLabel": "Reason",
+    "paymentDate": "Payment date",
+    "futureDateBlocked": "Future dates are not allowed",
+    "enteredOn": "entered {{date}}",
+    "voidPayment": "Void payment",
+    "voidPaymentTitle": "Void payment of {{amount}}",
+    "paymentVoided": "Payment voided",
+    "lateFeeLessThanToday": "Late fee Rs {{amount}} less than today"
   }
 }

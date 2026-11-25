@@ -30,6 +30,9 @@ import { todayLocalStr } from "@/lib/dates";
 import { chargeableLateDays, elapsedDays, isOpenEnded, lineOutAt, openEndedExtraDays, toYmd } from "../lib/lineCost";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { ReasonChips, isReasonValid } from "@/components/ui/ReasonChips";
+import type { ReasonValue } from "@/features/activity/types";
+import { useReturnDatePreview } from "@/features/activity/hooks/useActivityHooks";
 
 // ─── Extra-day engine (mirrors backend `processReturn`) ────────────────────────
 // A tracked line is charged only for days AFTER its due date that are also past the paid minimum
@@ -73,6 +76,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
   const [payment, setPayment] = useState<number | "">("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [handoverDate, setHandoverDate] = useState(todayLocalStr());
+  const [dateReason, setDateReason] = useState<ReasonValue | null>(null);
   const [lines, setLines] = useState<HandoverLine[]>([]);
 
   // Start fresh every time the dialog opens (and only then — a background refetch must not wipe what was typed).
@@ -111,6 +115,7 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
     setPaymentMethod("Cash");
     setReleaseId(true);
     setHandoverDate(todayLocalStr());
+    setDateReason(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, invoice?.invoice_id]);
 
@@ -132,14 +137,36 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
   );
   const balanceAfter = Math.max(0, invoiceTotals(invoice).billed + totalLateFees + stayingOutCharge - paid);
   const paymentNum = Number(payment) || 0;
-  const canConfirm = !returnMutation.isPending && (totalReturning > 0 || paymentNum > 0);
+  const todayStr = todayLocalStr();
+  const isBackdated = Boolean(handoverDate && handoverDate < todayStr);
+  const isFutureDate = Boolean(handoverDate && handoverDate > todayStr);
+  const { data: returnPreview } = useReturnDatePreview(
+    invoice?.invoice_id,
+    handoverDate,
+    isBackdated,
+    useMemo(
+      () => lines.map((l) => ({ line_id: l.line_id, good_qty: l.good_qty, defective_qty: l.defective_qty })),
+      [lines],
+    ),
+  );
+  const canConfirm =
+    !returnMutation.isPending &&
+    (totalReturning > 0 || paymentNum > 0) &&
+    !isFutureDate &&
+    (!isBackdated || isReasonValid(dateReason, true));
 
   const handleSubmit = () => {
+    if (isFutureDate) return showToast(t("reasons.futureDateBlocked"), "error");
+    if (isBackdated && !isReasonValid(dateReason, true)) {
+      return showToast(t("reasons.selectReason"), "error");
+    }
     const payload = {
       invoice_id: invoice.invoice_id,
       final_payment_amount: paymentNum,
       payment_method: paymentMethod,
       release_id_card: releaseId,
+      actual_return_date: handoverDate,
+      ...(isBackdated && dateReason ? { date_reason: dateReason } : {}),
       lines_returned: lines.map((l) => ({ ...l, actual_return_date: handoverDate, actual_return_at: handoverMoment(handoverDate).toISOString() })),
     };
     returnMutation.mutate(
@@ -194,7 +221,9 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
                 size="small"
                 value={handoverDate}
                 onChange={(e) => e.target.value && setHandoverDate(e.target.value)}
-                slotProps={{ htmlInput: { "aria-label": t("invoices.handover.handoverDate") } }}
+                error={isFutureDate}
+                helperText={isFutureDate ? t("reasons.futureDateBlocked") : undefined}
+                slotProps={{ htmlInput: { max: todayStr, "aria-label": t("invoices.handover.handoverDate") } }}
                 sx={{ "& .MuiOutlinedInput-root": { bgcolor: "white" }, "& input": { color: "#0f172a", fontVariantNumeric: "tabular-nums" } }}
               />
             </Box>
@@ -204,6 +233,30 @@ export function ReturnSettlementDialog({ open, onClose, invoice, showToast }: an
               </Button>
             )}
           </Box>
+
+          {isBackdated && (
+            <Box sx={{ bgcolor: "white", border: "1px solid #e2e8f0", borderRadius: 2.5, p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
+              {returnPreview && returnPreview.difference > 0 && (
+                <Typography
+                  data-testid="return-late-fee-diff"
+                  variant="body2"
+                  sx={{ fontWeight: 800, color: "#0369a1", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {t("reasons.lateFeeLessThanToday", {
+                    amount: Number(returnPreview.difference).toLocaleString(),
+                  })}
+                </Typography>
+              )}
+              <ReasonChips
+                list="backdate"
+                value={dateReason}
+                onChange={setDateReason}
+                required
+                surface="light"
+                error={!isReasonValid(dateReason, true)}
+              />
+            </Box>
+          )}
 
           {totalLateFees > 0 && (
             <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ borderRadius: 2 }}>
