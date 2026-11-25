@@ -25,6 +25,6 @@ export async function startFullApp(navigate: (opts: any) => unknown): Promise<bo
     }
   }
   const user = useAuthStore.getState().user;
-  navigate({ to: user ? startPathFor(user) : "/login", replace: true });
+  navigate({ to: user ? startPathFor(user) : "/login" });
   return true;
 }

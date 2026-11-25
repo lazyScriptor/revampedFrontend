@@ -32,6 +32,8 @@ import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import PrintIcon from "@mui/icons-material/Print";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HandshakeOutlinedIcon from "@mui/icons-material/HandshakeOutlined";
+import { CustomerSettlementView } from "@/features/settlement/components/CustomerSettlementView";
 
 import { PosCustomerPanel } from "@/features/invoices/components/PosCustomerPanel";
 import {
@@ -59,10 +61,10 @@ export default function InvoicesRoute() {
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage"; invoiceId?: number };
+  const search = useSearch({ strict: false }) as { mode?: "dispatch" | "manage" | "settle"; invoiceId?: number; invoice?: number | string; customer?: number };
 
-  const [posMode, setPosMode] = useState<"dispatch" | "manage">(
-    search.mode === "manage" ? "manage" : "dispatch"
+  const [posMode, setPosMode] = useState<"dispatch" | "manage" | "settle">(
+    search.mode === "manage" ? "manage" : search.mode === "settle" ? "settle" : "dispatch"
   );
   const [isTerminalOpen, setIsTerminalOpen] = useState(true);
   const [activeMobilePane, setActiveMobilePane] = useState(0);
@@ -71,6 +73,7 @@ export default function InvoicesRoute() {
   useEffect(() => {
     if (search.mode === "manage" && posMode !== "manage") setPosMode("manage");
     if (search.mode === "dispatch" && posMode !== "dispatch") setPosMode("dispatch");
+    if (search.mode === "settle" && posMode !== "settle") setPosMode("settle");
   }, [search.mode]);
 
   const refreshInvoiceData = () => {
@@ -83,7 +86,7 @@ export default function InvoicesRoute() {
     queryClient.invalidateQueries({ queryKey: POS_CATALOG_KEY });
   };
 
-  const switchPosMode = (next: "dispatch" | "manage") => {
+  const switchPosMode = (next: "dispatch" | "manage" | "settle") => {
     if (next === "manage") refreshInvoiceData();
     setPosMode(next);
     navigate({ to: "/invoices", search: { mode: next } as any, replace: true });
@@ -93,7 +96,7 @@ export default function InvoicesRoute() {
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [onBehalfOfCustomer, setOnBehalfOfCustomer] = useState<any | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [fees, setFees] = useState({ transport: 0, discount: 0, advance: 0 });
+  const [fees, setFees] = useState<{ transport: number; discount: number; advance: number; discount_reason?: any }>({ transport: 0, discount: 0, advance: 0, discount_reason: null });
   // Optional bill date/time (local "YYYY-MM-DDTHH:mm"); null means the bill is dated now.
   const [billDate, setBillDate] = useState<string | null>(null);
   const billDateIso = billDate ? new Date(billDate).toISOString() : null;
@@ -120,14 +123,16 @@ export default function InvoicesRoute() {
   const { data: activeInvoice } = useInvoiceDetails(selectedManageInvoiceId);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
-  // Deep-link from Dashboard Open Invoices: ?mode=manage&invoiceId=123
+  // Deep-link from Dashboard Open Invoices or Phone Bill Details: ?mode=manage&invoice=123 or &invoiceId=123
   useEffect(() => {
-    if (typeof search.invoiceId === "number" && search.invoiceId > 0) {
+    const rawId = search.invoice ?? search.invoiceId;
+    const parsedId = typeof rawId === "number" ? rawId : Number(rawId);
+    if (Number.isInteger(parsedId) && parsedId > 0) {
       setPosMode("manage");
-      setSelectedManageInvoiceId(search.invoiceId);
+      setSelectedManageInvoiceId(parsedId);
       navigate({ to: "/invoices", search: { mode: "manage" } as any, replace: true });
     }
-  }, [search.invoiceId, navigate]);
+  }, [search.invoice, search.invoiceId, navigate]);
 
   // ── UX State ──────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState({
@@ -175,6 +180,7 @@ export default function InvoicesRoute() {
         borrowed_on_behalf_of_customer_id: onBehalfOfCustomer?.customer_id ?? null,
         items: cartItems,
         fees: fees,
+        ...(fees.discount > 0 && fees.discount_reason ? { discount_reason: fees.discount_reason } : {}),
         ...(billDateIso ? { issued_date: billDateIso } : {}),
       });
 
@@ -548,7 +554,7 @@ export default function InvoicesRoute() {
                 ? t("invoices.newDispatch")
                 : posMode === "manage"
                 ? t("orders.title")
-                : t("invoices.InvoicePrintLogsView.billPrintingAuditLogs")}
+                : t("settlement.title", "Customer settlement")}
             </Typography>
             {posMode === "dispatch" && cartItems.length > 0 && (
               <Chip
@@ -598,7 +604,7 @@ export default function InvoicesRoute() {
               ? `${t("invoices.newDispatch")} — ${t("pages.Invoices.posSubtitle")}`
               : posMode === "manage"
               ? `${t("orders.subtitle")} — ${t("pages.Invoices.manageSubtitle")}`
-              : t("pages.Reports.completeImmutableLogOfAll")}
+              : t("settlement.subtitle", "Return machines and settle payments across open bills")}
           </Typography>
         </Box>
 
@@ -673,6 +679,37 @@ export default function InvoicesRoute() {
               {t("invoices.manageOrders")}
             </Box>
           </Box>
+          <Box
+            role="button"
+            tabIndex={0}
+            data-testid="invoices-mode-settle"
+            onClick={() => switchPosMode("settle")}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") switchPosMode("settle"); }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              px: { xs: 1.5, sm: 2.5 },
+              py: 0.9,
+              borderRadius: 2,
+              cursor: "pointer",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              bgcolor: posMode === "settle" ? "#059669" : "transparent",
+              color: posMode === "settle" ? "white" : "text.secondary",
+              fontWeight: 800,
+              fontSize: "0.8rem",
+              userSelect: "none",
+              boxShadow: posMode === "settle" ? "0 2px 8px rgba(5,150,105,0.25)" : "none",
+              "&:hover": {
+                bgcolor: posMode === "settle" ? "#047857" : "rgba(0,0,0,0.04)",
+              },
+            }}
+          >
+            <HandshakeOutlinedIcon sx={{ fontSize: 15 }} />
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              {t("settlement.title", "Customer settlement")}
+            </Box>
+          </Box>
         </Box>
       </Box>
 
@@ -681,51 +718,60 @@ export default function InvoicesRoute() {
         sx={{
           flexGrow: 1,
           minHeight: 0,
-          overflow: "hidden",
-          pb: { xs: isMobile ? "70px" : 0, lg: 0 },
+          overflow: posMode === "settle" && isMobile ? "visible" : "hidden",
+          pb: { xs: isMobile && posMode !== "settle" ? "70px" : 0, lg: 0 },
         }}
       >
-        {/* Desktop: all 3 panes side by side */}
-        {!isMobile && (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 2.5,
-              height: "100%",
-              overflow: "hidden",
-            }}
-          >
-            {pane1}
-            {pane2}
-            {pane3}
-          </Box>
-        )}
-
-        {/* Mobile: one pane at a time */}
-        {isMobile && (
-          <Box sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}>
-            {activeMobilePane === 0 && (
-              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+        {posMode === "settle" ? (
+          <CustomerSettlementView
+            initialCustomerId={search.customer}
+            showToast={showToast}
+          />
+        ) : (
+          <>
+            {/* Desktop: all 3 panes side by side */}
+            {!isMobile && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: 2.5,
+                  height: "100%",
+                  overflow: "hidden",
+                }}
+              >
                 {pane1}
-              </Box>
-            )}
-            {activeMobilePane === 1 && (
-              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
                 {pane2}
-              </Box>
-            )}
-            {activeMobilePane === 2 && (
-              <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
                 {pane3}
               </Box>
             )}
-          </Box>
+
+            {/* Mobile: one pane at a time */}
+            {isMobile && (
+              <Box sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}>
+                {activeMobilePane === 0 && (
+                  <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                    {pane1}
+                  </Box>
+                )}
+                {activeMobilePane === 1 && (
+                  <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                    {pane2}
+                  </Box>
+                )}
+                {activeMobilePane === 2 && (
+                  <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                    {pane3}
+                  </Box>
+                )}
+              </Box>
+            )}
+          </>
         )}
       </Box>
 
       {/* ── Mobile Bottom Navigation ────────────────────────────────────────────── */}
-      {isMobile && (
+      {isMobile && posMode !== "settle" && (
         <BottomNavigation
           value={activeMobilePane}
           onChange={(_, newValue) => setActiveMobilePane(newValue)}

@@ -5,6 +5,7 @@ import {
   getDeviceId,
   getDeviceTenantDb,
   getDeviceToken,
+  setDeviceToken,
 } from "@/features/signatures/lib/deviceId";
 
 export interface PhoneAssistantSetupStatus {
@@ -16,6 +17,11 @@ export interface PhoneAssistantSetupStatus {
   contactsPermission: boolean;
   callLogPermission: boolean;
   batteryOptimizationExempt: boolean;
+  /** Call recording fields are missing on app builds older than them. */
+  audioPermission?: boolean;
+  callRecordingEnabled?: boolean;
+  /** True when the paired user is an administrator. */
+  callRecordingSetupAllowed?: boolean;
   contactSyncEnabled: boolean;
   contactSyncMode?: string;
   callLoggingScope?: string;
@@ -64,6 +70,7 @@ export interface NativeAlert {
   group: string;
   eventKey?: string | null;
   invoiceId?: string | null;
+  eventId?: string | null;
   customerId?: string | null;
   link?: string | null;
 }
@@ -81,6 +88,8 @@ export interface NativeCustomerHit {
 }
 
 interface NativePluginShape {
+  syncBadge?(options: { unread: number }): Promise<void>;
+  getDeviceToken?: () => Promise<{ deviceId: string; deviceToken: string }>;
   getSyncStatus?: () => Promise<NativeSyncStatus>;
   showSampleCall?: () => Promise<{ shown: boolean }>;
   setCallTextScale?: (args: { scale: number | null }) => Promise<{ saved: boolean }>;
@@ -95,6 +104,7 @@ interface NativePluginShape {
   clearAlerts?: () => Promise<{ cleared: boolean }>;
   searchCustomers?: (args: { query: string; limit?: number }) => Promise<{ hits: NativeCustomerHit[]; cachedBriefs: number }>;
   setSignedIn?: (args: { signedIn: boolean }) => Promise<{ saved: boolean }>;
+  setStatusBarTheme?: (args: { dark: boolean; color?: string }) => Promise<{ applied: boolean }>;
   setCredentials?: (args: {
     deviceId: string;
     deviceToken: string;
@@ -109,6 +119,7 @@ interface NativePluginShape {
   requestContactsPermission?: () => Promise<PhoneAssistantSetupStatus>;
   requestCallLogPermission?: () => Promise<PhoneAssistantSetupStatus>;
   requestBatteryExemption?: () => Promise<PhoneAssistantSetupStatus>;
+  requestAudioPermission?: () => Promise<PhoneAssistantSetupStatus>;
   openVendorAutostart?: () => Promise<{ opened: boolean }>;
   syncNow?: () => Promise<PhoneAssistantSetupStatus>;
   setContactSyncEnabled?: (args: {
@@ -148,7 +159,27 @@ export const deviceApi = axios.create({
   },
 });
 
-deviceApi.interceptors.request.use((config) => {
+/**
+ * The app replaces the device token every 30 days and the old one stops working a day later,
+ * so these pages take the app's current token before using their own copy.
+ */
+export async function syncNativeDeviceToken(): Promise<void> {
+  const plugin = getNativePlugin();
+  if (!plugin?.getDeviceToken) return;
+  try {
+    const native = await plugin.getDeviceToken();
+    // A different device id means a new pairing is being handed over: leave it alone.
+    if (native?.deviceToken && native.deviceId === getDeviceId() && native.deviceToken !== getDeviceToken()) {
+      setDeviceToken(native.deviceToken);
+    }
+  } catch {
+    // Keep the stored token
+  }
+}
+void syncNativeDeviceToken();
+
+deviceApi.interceptors.request.use(async (config) => {
+  await syncNativeDeviceToken();
   const deviceId = getDeviceId();
   const token = getDeviceToken();
   const tenantDb = getDeviceTenantDb();
@@ -212,6 +243,17 @@ export async function registerDeviceWithServer(body: {
 }
 
 export const nativeBridge = {
+  /** Clears the app icon badge when nothing is unread. Older app builds don't have it. */
+  async syncBadge(unread: number): Promise<void> {
+    const plugin = getNativePlugin();
+    if (!plugin?.syncBadge) return;
+    try {
+      await plugin.syncBadge({ unread });
+    } catch {
+      // The badge is cosmetic
+    }
+  },
+
   async getSyncStatus(): Promise<NativeSyncStatus | null> {
     const plugin = getNativePlugin();
     if (!plugin?.getSyncStatus) return null;
@@ -341,6 +383,15 @@ export const nativeBridge = {
       return false;
     }
   },
+  async setStatusBarTheme(dark: boolean, color?: string): Promise<boolean> {
+    const plugin = getNativePlugin();
+    if (!plugin?.setStatusBarTheme) return false;
+    try {
+      return Boolean((await plugin.setStatusBarTheme({ dark, color })).applied);
+    } catch {
+      return false;
+    }
+  },
   async setCredentials(args: {
     deviceId: string;
     deviceToken: string;
@@ -398,6 +449,11 @@ export const nativeBridge = {
     const plugin = getNativePlugin();
     if (!plugin?.requestBatteryExemption) return null;
     return plugin.requestBatteryExemption();
+  },
+  async requestAudioPermission(): Promise<PhoneAssistantSetupStatus | null> {
+    const plugin = getNativePlugin();
+    if (!plugin?.requestAudioPermission) return null;
+    return plugin.requestAudioPermission();
   },
   async openVendorAutostart(): Promise<{ opened: boolean } | null> {
     const plugin = getNativePlugin();

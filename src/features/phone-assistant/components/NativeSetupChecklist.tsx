@@ -26,6 +26,7 @@ import {
   registerDeviceWithServer,
   type PhoneAssistantSetupStatus,
 } from "../lib/nativeBridge";
+import { RecordingSetupStep } from "./RecordingSetupStep";
 
 function formatSyncTimestamp(iso: string | null, neverLabel: string): string {
   if (!iso) return neverLabel;
@@ -388,6 +389,12 @@ export function NativeSetupChecklist() {
             )}
           </Box>
         </Stack>
+
+        <RecordingSetupStep
+          status={status}
+          busy={busyKey === "audio"}
+          onGrant={() => void runAction("audio", () => nativeBridge.requestAudioPermission())}
+        />
 
         <Divider sx={{ my: 1.5 }} />
 

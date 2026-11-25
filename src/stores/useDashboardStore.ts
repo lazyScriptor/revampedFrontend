@@ -64,16 +64,20 @@ function findFirstAvailableSlot(layout: LayoutItem[], w: number, h: number, cols
 }
 
 /**
- * Heights are not user-resizable (only the width buttons are), so every known widget always gets
- * its canonical height. The server's widget catalog still uses the old 12-column sizes (a KPI is
- * 3 wide × 2 tall), so a widget removed and added again, or a layout saved that way, came back
- * twice as tall and stayed tall at width 1. Width is kept between 1 and 4 columns.
+ * Width is kept between 1 and 4 columns; height is preserved from user-resized layouts
+ * (clamped between the widget's min_h and 12), falling back to the canonical height when absent.
  */
 export function normalizeLayoutItem(item: LayoutItem): LayoutItem {
   const canonical = FRONTEND_DEFAULT_LAYOUT.find((d) => d.i === item.i);
-  const w = Math.min(4, Math.max(1, Math.round(Number(item.w) || canonical?.w || 1)));
-  const h = canonical ? canonical.h : Math.max(1, Math.round(Number(item.h) || 1));
-  return { ...item, w, h };
+  const catalogDef = FRONTEND_WIDGET_CATALOG.find((d) => d.widget_key === item.i);
+  const minW = catalogDef?.min_w ?? 1;
+  const minH = catalogDef?.min_h ?? 1;
+  const w = Math.min(4, Math.max(minW, Math.round(Number(item.w) || canonical?.w || 1)));
+  const rawH = Math.round(Number(item.h));
+  const h = Number.isFinite(rawH) && rawH > 0
+    ? Math.min(12, Math.max(minH, rawH))
+    : (canonical?.h ?? minH);
+  return { ...item, w, h, minW, minH };
 }
 
 export function compactAndPackLayout(rawItems: LayoutItem[]): LayoutItem[] {

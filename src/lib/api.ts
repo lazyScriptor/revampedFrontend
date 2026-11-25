@@ -119,7 +119,14 @@ api.interceptors.response.use(
         }
 
         const errorMessage = error.response?.data?.message || i18n.t('errors.unexpected');
-        // Keep the HTTP status (undefined = no response, e.g. offline) so callers can react to it.
-        return Promise.reject(Object.assign(new Error(errorMessage), { status }));
+        // Keep the HTTP status (undefined = no response, e.g. offline) and response payload so callers (e.g. 409 settlement_changed) can react to it.
+        return Promise.reject(
+            Object.assign(new Error(errorMessage), {
+                status,
+                code: (error.response?.data as any)?.code,
+                data: (error.response?.data as any)?.data ?? error.response?.data,
+                response: error.response,
+            })
+        );
     }
 );

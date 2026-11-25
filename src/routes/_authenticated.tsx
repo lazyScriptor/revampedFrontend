@@ -24,6 +24,7 @@ import {
   ListItemText,
   useMediaQuery,
   Avatar,
+  Badge,
   Tooltip,
   Collapse,
   Button,
@@ -73,7 +74,11 @@ import { ForcePasswordChange } from "@/features/auth/ForcePasswordChange";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import PostAddIcon from "@mui/icons-material/PostAdd";
+import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
+import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
+import { useActivityNotCheckedCount } from "@/features/activity/hooks/useActivityHooks";
 import { isNativePhoneApp } from "@/features/phone-assistant/lib/nativeBridge";
+import { PHONE_BAR_HEIGHT, PhoneAppBar } from "@/features/phone-assistant/components/PhoneAppBar";
 import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { PairedSignatureWatcher } from "@/features/signatures/components/PairedSignatureWatcher";
 import { IncomingCallToast } from "@/features/phone-assistant/components/IncomingCallToast";
@@ -178,12 +183,13 @@ export const authenticatedRoute = createRoute({
 function AuthenticatedLayout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  // Inside the GearGrid Phone app the application always has a way back to the phone pages.
-  const inPhoneApp = isNativePhoneApp() && Boolean(getDeviceId());
+  // Inside the GearGrid Phone app the slim PhoneAppBar sits above the normal app bar.
+  const inPhoneApp = isNativePhoneApp();
   const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
   const hasPermission = useAuthStore((state) => state.hasPermission);
+  const { data: activityNotChecked = 0 } = useActivityNotCheckedCount();
   const planCheck = useMenuPlanChecker();
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
@@ -241,6 +247,22 @@ function AuthenticatedLayout() {
   // ("Inventory", "Accounting", …) and only translate the display label.
   const allNavItems: NavItem[] = [
     { text: "Dashboard", label: t("nav.dashboard"), icon: <DashboardIcon />, path: "/dashboard" },
+    {
+      text: "Activity",
+      label: t("nav.activity"),
+      icon: (
+        <Badge
+          badgeContent={activityNotChecked > 99 ? "99+" : activityNotChecked}
+          color="warning"
+          invisible={activityNotChecked === 0}
+          sx={{ "& .MuiBadge-badge": { fontSize: "0.62rem", height: 16, minWidth: 16, fontWeight: 800, fontVariantNumeric: "tabular-nums" } }}
+        >
+          <NotificationsOutlinedIcon />
+        </Badge>
+      ),
+      path: "/activity",
+      requiredPermission: "activity:view",
+    },
     {
       text: "Inventory",
       label: t("nav.inventory"),
@@ -341,6 +363,7 @@ function AuthenticatedLayout() {
         { text: "Roles", label: t("nav.roles"), path: "/admin/roles", icon: <AdminPanelSettingsIcon fontSize="small" /> },
         { text: "Permissions", label: t("nav.permissions"), path: "/permissions", icon: <SecurityIcon fontSize="small" /> },
         { text: "Phone Assistant", label: t("nav.phoneAssistant"), path: "/settings/phone-assistant", icon: <PhoneAndroidOutlinedIcon fontSize="small" />, requiredPermission: "devices:manage" },
+        { text: "Activity & Reasons", label: t("nav.activitySettings"), path: "/settings/activity", icon: <TuneOutlinedIcon fontSize="small" />, requiredPermission: "activity:view" },
       ],
     },
   ];
@@ -626,11 +649,13 @@ function AuthenticatedLayout() {
         bgcolor: "background.default",
       }}
     >
+      <PhoneAppBar />
       <MuiAppBar
         position="fixed"
         elevation={0}
         sx={{
-          bgcolor: "white",
+          top: inPhoneApp ? `${PHONE_BAR_HEIGHT}px` : 0,
+          bgcolor: "background.paper",
           borderBottom: "1px solid",
           borderColor: "divider",
           zIndex: theme.zIndex.drawer + 1,
@@ -683,16 +708,6 @@ function AuthenticatedLayout() {
             </Box>
           )}
           <Box sx={{ flexGrow: 1 }} />
-          {inPhoneApp && (
-            <Button
-              size="small"
-              startIcon={<PhoneAndroidOutlinedIcon fontSize="small" />}
-              onClick={() => navigate({ to: "/device" })}
-              sx={{ textTransform: "none", fontWeight: 700, minHeight: 40, mr: 1, whiteSpace: "nowrap" }}
-            >
-              {t("phoneShell.backToPhoneHome")}
-            </Button>
-          )}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <SinhalaTypingToggle />
             <NotificationBellSafe />
@@ -744,6 +759,7 @@ function AuthenticatedLayout() {
           overflowX: "hidden",
         }}
       >
+        {inPhoneApp && <Box sx={{ height: PHONE_BAR_HEIGHT, flexShrink: 0 }} />}
         <DrawerHeader sx={{ flexShrink: 0 }} />
         <PaymentNotice />
         <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>

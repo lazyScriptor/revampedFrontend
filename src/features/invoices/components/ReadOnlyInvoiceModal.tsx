@@ -1,5 +1,8 @@
-import { useState } from "react";
-import { formatDateTime } from "@/lib/dates";
+import { useEffect, useState } from "react";
+import { formatDisplayDate, formatDateTime } from "@/lib/dates";
+import { fetchActivityList } from "@/features/activity/api/activityApi";
+import type { ActivityEvent } from "@/features/activity/types";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { analyseLine } from "@/features/invoices/lib/lineCost";
 import { invoiceTotals, lineValueSoFar } from "@/features/invoices/lib/invoiceTotals";
 import { iterationsFor, lastBackAt, returnTracesOf } from "@/features/invoices/lib/lineTimes";
@@ -43,6 +46,7 @@ import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import type { TemplateKey } from "@/features/whatsapp/api/whatsapp.api";
 import { useTranslation } from "react-i18next";
+import { eventSentence } from "@/features/activity/lib/eventSentence";
 
 export interface ReadOnlyInvoiceModalProps {
   open: boolean;
@@ -64,6 +68,26 @@ export function ReadOnlyInvoiceModal({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isPrintOpen, setIsPrintOpen] = useState(false);
+  const canViewActivity = useAuthStore((s) => s.hasPermission("activity:view"));
+  const [fetchedEvents, setFetchedEvents] = useState<ActivityEvent[]>([]);
+
+  useEffect(() => {
+    if (!open || !invoice?.invoice_id || !canViewActivity) {
+      setFetchedEvents([]);
+      return;
+    }
+    let active = true;
+    fetchActivityList({ preset: "this_month" }, 1, 20, invoice.invoice_id)
+      .then((res) => {
+        if (active) setFetchedEvents(res.events ?? []);
+      })
+      .catch(() => {
+        if (active) setFetchedEvents([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [open, invoice?.invoice_id, canViewActivity]);
 
   if (!invoice) return null;
 
@@ -414,6 +438,12 @@ export function ReadOnlyInvoiceModal({
                   - Rs. {Number(invoice.discount_amount || 0).toLocaleString()}
                 </Typography>
               </Box>
+              {Number(invoice.discount_amount || 0) > 0 && (invoice.discount_reason_label || invoice.discount_reason_key) && (
+                <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right", mt: -0.5 }}>
+                  {t("reasons.reasonLabel")}: {invoice.discount_reason_label || invoice.discount_reason_key}
+                  {invoice.discount_reason_note ? ` — ${invoice.discount_reason_note}` : ""}
+                </Typography>
+              )}
               <Divider sx={{ my: 0.5 }} />
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a" }}>{t("invoices.grandTotal")}</Typography>
@@ -442,16 +472,22 @@ export function ReadOnlyInvoiceModal({
               </Box>
               {payments.length > 0 && (
                 <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                  {payments.slice(0, 3).map((p: any, i: number) => (
-                    <Box key={p.payment_id || i} sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {p.method || t("orders.methodCash")} ({formatDateTime(p.payment_date || p.createdAt, dayWords)})
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
-                        Rs. {Number(p.payment_amount).toLocaleString()}
-                      </Typography>
-                    </Box>
-                  ))}
+                  {payments.slice(0, 3).map((p: any, i: number) => {
+                    const paidDay = String(p.payment_date || p.createdAt || "").slice(0, 10);
+                    const enteredDay = String(p.entered_at || p.createdAt || "").slice(0, 10);
+                    const datesDiffer = paidDay && enteredDay && paidDay !== enteredDay;
+                    return (
+                      <Box key={p.payment_id || i} sx={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
+                          {p.method || t("orders.methodCash")} ({formatDateTime(p.payment_date || p.createdAt, dayWords)}
+                          {datesDiffer ? ` · ${t("reasons.enteredOn", { date: formatDisplayDate(enteredDay) })}` : ""})
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                          Rs. {Number(p.payment_amount).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
                   {payments.length > 3 && (
                     <Typography variant="caption" color="text.disabled" sx={{ fontStyle: "italic" }}>
                       {t("invoices.ReadOnlyInvoiceModal.morePayments", { value: payments.length - 3 })}
@@ -505,6 +541,31 @@ export function ReadOnlyInvoiceModal({
               )}
             </Box>
           </Box>
+
+          {/* Activity Events (with Checked state) */}
+          {(fetchedEvents.length > 0 || (invoice.activity_events?.length ?? 0) > 0) && (
+            <Box sx={{ bgcolor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 2.5, p: 2, mt: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: 0.5, display: "block", mb: 1 }}>
+                {t("activity.billActivityTitle")}
+              </Typography>
+              <Stack spacing={0.75}>
+                {(fetchedEvents.length > 0 ? fetchedEvents : invoice.activity_events || []).map((ev: any) => (
+                  <Box key={ev.event_id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+                    <Typography variant="caption" sx={{ color: "#334155", fontWeight: 600 }}>
+                      {eventSentence(ev)}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={ev.checked_at ? `✓ ${ev.checked_by_name || t("activity.checked")}` : t("activity.notChecked")}
+                      color={ev.checked_at ? "success" : "default"}
+                      variant={ev.checked_at ? "filled" : "outlined"}
+                      sx={{ height: 18, fontSize: "0.62rem", fontWeight: 700 }}
+                    />
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          )}
 
           {/* Activity / Trace Highlights (if available) */}
           {traces.length > 0 && (

@@ -25,6 +25,8 @@ import {
   WorkforceRoute,
   AccountingRoute,
   ReportsRoute,
+  CollectionsReportPage,
+  CustomerCollectionDetailPage,
   MessagesRoute,
   LockerRoute,
   ProfileRoute,
@@ -32,6 +34,8 @@ import {
   SuperAdminLogin,
   SuperAdminDashboard,
   PhoneAssistantSettingsPage,
+  ActivityPage,
+  ActivitySettingsPage,
   MobileSignPage,
   PairDevicePage,
   DeviceHomePage,
@@ -39,6 +43,7 @@ import {
   PhonePhotoPage,
   DeviceInvoicePage,
   DeviceCallsPage,
+  DeviceCallCardPage,
   DeviceAlertsPage,
   DeviceAppGatePage,
   DeviceSettingsPage,
@@ -65,13 +70,13 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    // Paired-phone start page: a phone that already has a device_id opens on its own home (/device).
+    // Paired-phone start page: a phone that already has a device_id opens on Alerts (/device/alerts).
     // This applies to the first visit of a launch only. Choosing the GearGrid tab or following a link
     // to "/" later in the same session must not bounce back (it used to trap staff on /device).
     try {
       if (getDeviceId() && !window.sessionStorage.getItem(APP_LAUNCHED_KEY)) {
         window.sessionStorage.setItem(APP_LAUNCHED_KEY, "1");
-        throw redirect({ to: "/device" });
+        throw redirect({ to: "/device/alerts" });
       }
     } catch (err: any) {
       // Rethrow TanStack Router redirects; swallow any storage errors.
@@ -148,6 +153,15 @@ const deviceCallsRoute = createRoute({
   component: () => <DeviceCallsPage />,
 });
 
+const deviceCallCardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/device/call/$callId",
+  component: function DeviceCallCardComponent() {
+    const { callId } = deviceCallCardRoute.useParams();
+    return <DeviceCallCardPage clientCallId={callId} />;
+  },
+});
+
 const deviceAlertsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/device/alerts",
@@ -222,13 +236,16 @@ const invoicesRoute = createRoute({
   path: "/invoices",
   validateSearch: (search: Record<string, unknown>) => {
     const mode =
-      search.mode === "manage" || search.mode === "dispatch"
-        ? (search.mode as "manage" | "dispatch")
+      search.mode === "manage" || search.mode === "dispatch" || search.mode === "settle"
+        ? (search.mode as "manage" | "dispatch" | "settle")
         : undefined;
     const rawInvoiceId = Number(search.invoiceId);
     const invoiceId =
       Number.isInteger(rawInvoiceId) && rawInvoiceId > 0 ? rawInvoiceId : undefined;
-    return { mode, invoiceId };
+    const rawCustomer = Number(search.customer);
+    const customer =
+      Number.isInteger(rawCustomer) && rawCustomer > 0 ? rawCustomer : undefined;
+    return { mode, invoiceId, customer };
   },
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <Invoices />,
@@ -322,8 +339,37 @@ const reportsRoute = createRoute({
       : undefined,
     report: typeof search.report === "string" ? (search.report as string) : undefined,
   }),
-  beforeLoad: () => requirePermission("inventory_permission"),
+  beforeLoad: ({ search }) => {
+    requirePermission("inventory_permission");
+    if (search.category === "customers" && search.report === "outstanding") {
+      throw redirect({ to: "/reports/customers/collections", search: { owes_money: "1" } as any });
+    }
+  },
   component: () => <ReportsRoute />,
+});
+
+const collectionsReportRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/reports/customers/collections",
+  validateSearch: (search: Record<string, unknown>) => search as Record<string, any>,
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <CollectionsReportPage />,
+});
+
+const customerCollectionDetailRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/reports/customers/collections/$customerId",
+  validateSearch: (search: Record<string, unknown>) => search as Record<string, any>,
+  beforeLoad: () => requirePermission("inventory_permission"),
+  component: () => <CustomerCollectionDetailPage />,
+});
+
+const outstandingBalancesRedirectRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/reports/customers/outstanding",
+  beforeLoad: () => {
+    throw redirect({ to: "/reports/customers/collections", search: { owes_money: "1" } as any });
+  },
 });
 
 // Personal profile (no permission gate — every authenticated user has one)
@@ -349,6 +395,25 @@ const phoneAssistantSettingsRoute = createRoute({
       : undefined,
   }),
   component: () => <FeatureGate feature="phone_assistant"><PhoneAssistantSettingsPage /></FeatureGate>,
+});
+
+// Activity feed
+const activityRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/activity",
+  beforeLoad: () => requirePermission("activity:view"),
+  component: () => <ActivityPage />,
+});
+
+// Activity & Reason Lists settings
+const activitySettingsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: "/settings/activity",
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
+  beforeLoad: () => requirePermission("activity:view"),
+  component: () => <ActivitySettingsPage />,
 });
 
 // Permissions Matrix (Admin only)
@@ -397,6 +462,7 @@ const routeTree = rootRoute.addChildren([
   signPairedRoute,
   phonePhotoRoute,
   deviceCallsRoute,
+  deviceCallCardRoute,
   deviceAlertsRoute,
   deviceAppRoute,
   deviceSettingsRoute,
@@ -418,8 +484,13 @@ const routeTree = rootRoute.addChildren([
     workforceRoute,
     accountingRoute,
     reportsRoute,
+    collectionsReportRoute,
+    customerCollectionDetailRoute,
+    outstandingBalancesRedirectRoute,
     profileRoute,
     phoneAssistantSettingsRoute,
+    activityRoute,
+    activitySettingsRoute,
     permissionsRoute,
     adminUsersRoute,
     adminRolesRoute,

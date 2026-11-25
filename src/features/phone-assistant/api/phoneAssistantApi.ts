@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { callContract } from "@/lib/callContract";
 import {
   SearchPhoneContactsContract,
@@ -10,7 +11,6 @@ import {
   UpdateMyPushPreferencesContract,
   GetDevicePushPreferencesContract,
   UpdateDevicePushPreferencesContract,
-  GetDeviceInvoiceContract,
   GetCallByIdContract,
   ListCallsContract,
   RotateDeviceTokenContract,
@@ -49,7 +49,6 @@ import {
   type PushEventCatalogEntry,
   type UserPushPreferenceItem,
   type UserPushPreferenceUpdate,
-  type DeviceInvoiceSummary,
   type ShopDeviceItem,
   type DeviceAuditLogItem,
   type PhoneAssistantPolicy,
@@ -76,7 +75,7 @@ import {
   type CallScreen,
   type PushTemplate,
 } from "@geargrid/contracts";
-import { callDeviceContract } from "../lib/nativeBridge";
+import { callDeviceContract, deviceApi } from "../lib/nativeBridge";
 
 export interface PhoneContactMatch extends ContactMatchLite {
   operator_device_id: number;
@@ -183,12 +182,110 @@ export async function updateDevicePushPreferences(
   });
 }
 
+export interface DeviceInvoiceItem {
+  line_id?: number | null;
+  name: string;
+  quantity: number;
+  borrow_date?: string | null;
+  expected_return_date?: string | null;
+  actual_return_date?: string | null;
+  good_returned_qty?: number;
+  defective_returned_qty?: number;
+  line_status?: string;
+  days_late?: number;
+  line_total: number | null;
+}
+
+export interface DeviceInvoiceSaleLine {
+  line_id?: number | null;
+  name: string;
+  quantity: number;
+  unit?: string | null;
+  unit_price?: number | null;
+  line_total: number | null;
+  returned_qty?: number;
+}
+
+export interface DeviceInvoicePayment {
+  payment_id?: number | null;
+  amount: number | null;
+  method: string;
+  payment_date: string | null;
+  entered_at: string | null;
+  staff_name?: string | null;
+  is_voided?: boolean;
+  is_refund?: boolean;
+  settlement_id?: number | null;
+}
+
+export interface DeviceInvoiceCall {
+  call_id: number;
+  started_at: string | null;
+  duration_seconds: number;
+  direction: string;
+  outcome?: string | null;
+  result?: string | null;
+  note?: string | null;
+  staff_name?: string | null;
+}
+
+export interface DeviceInvoiceHistoryItem {
+  id: string;
+  source: "activity" | "trace";
+  type: string;
+  sentence_en: string;
+  sentence_si: string;
+  occurred_at: string;
+  actor_name?: string | null;
+  risk?: "high" | "normal";
+  checked_at?: string | null;
+  checked_by_name?: string | null;
+}
+
+export interface DeviceInvoiceSummary {
+  invoice_id: number;
+  invoice_number: string;
+  status: string;
+  is_deleted?: boolean;
+  bill_kind?: "rental" | "sale" | "mixed";
+  issued_at: string;
+  created_at?: string;
+  backdated_days?: number;
+  can_see_money?: boolean;
+  customer: {
+    customer_id: number | null;
+    name: string;
+    phone: string | null;
+    is_walk_in?: boolean;
+    id_card_status?: number;
+  };
+  items: DeviceInvoiceItem[];
+  sale_lines?: DeviceInvoiceSaleLine[];
+  total_amount: number | null;
+  paid_amount: number | null;
+  balance_due: number | null;
+  rent_amount?: number | null;
+  items_amount?: number | null;
+  transport_fee?: number | null;
+  discount_amount?: number | null;
+  discount_reason_key?: string | null;
+  discount_reason_note?: string | null;
+  late_fees?: number | null;
+  returned_amount?: number | null;
+  payments?: DeviceInvoicePayment[];
+  settlement_id?: number | null;
+  calls?: DeviceInvoiceCall[];
+  history?: DeviceInvoiceHistoryItem[];
+  issued_by: string | null;
+}
+
 export async function getDeviceInvoice(
   invoiceId: number,
 ): Promise<DeviceInvoiceSummary> {
-  return callDeviceContract(GetDeviceInvoiceContract, {
-    params: { id: invoiceId },
-  });
+  const res = await deviceApi.get<{ status: string; data: DeviceInvoiceSummary }>(
+    `/device/invoices/${encodeURIComponent(String(invoiceId))}`,
+  );
+  return (res as any)?.data ?? (res as any);
 }
 
 export interface CallRecord {
@@ -252,6 +349,23 @@ export async function rotateDeviceToken(): Promise<{
   return callDeviceContract(RotateDeviceTokenContract, { body: {} });
 }
 
+// The released contract predates call recordings, and a response schema drops fields it doesn't
+// list: without these two the console's "no call recordings received" warning never shows.
+const shopDevicesData = ListShopDevicesContract.response.shape.data;
+const ListShopDevicesWithRecordings: typeof ListShopDevicesContract = {
+  ...ListShopDevicesContract,
+  response: ListShopDevicesContract.response.extend({
+    data: shopDevicesData.extend({
+      devices: z.array(
+        shopDevicesData.shape.devices.element.extend({
+          last_recording_received_at: z.string().nullable().optional(),
+          recording_missing_since: z.string().nullable().optional(),
+        }),
+      ),
+    }),
+  }),
+};
+
 export async function listShopDevices(status?: string): Promise<{
   devices: ShopDeviceItem[];
   counts: {
@@ -262,7 +376,7 @@ export async function listShopDevices(status?: string): Promise<{
     revoked: number;
   };
 }> {
-  return callContract(ListShopDevicesContract, {
+  return callContract(ListShopDevicesWithRecordings, {
     query: status ? { status } : undefined,
   });
 }

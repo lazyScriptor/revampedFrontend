@@ -23,10 +23,11 @@ export const fetchUtilizationSparkline = async (warehouseId: number | null) => {
   return res?.data ?? res;
 };
 
-export const fetchReturnsDueToday = async (warehouseId: number | null) => {
-  const res: any = await api.get('/dashboard/returns-today', {
-    params: warehouseId ? { warehouseId } : {},
-  });
+export const fetchReturnsDueToday = async (warehouseId: number | null, callFilter?: string | null) => {
+  const params: Record<string, any> = {};
+  if (warehouseId) params.warehouseId = warehouseId;
+  if (callFilter) params.callFilter = callFilter;
+  const res: any = await api.get('/dashboard/returns-today', { params });
   return res?.data ?? res;
 };
 
@@ -43,6 +44,7 @@ export const fetchOpenInvoices = async (params: {
   onlyOverdue?: boolean;
   warehouseId?: number | null;
   limit?: number;
+  callFilter?: string | null;
 }) => {
   const res: any = await api.get('/dashboard/open-invoices', {
     params: {
@@ -51,6 +53,7 @@ export const fetchOpenInvoices = async (params: {
       onlyOverdue: params.onlyOverdue ? 1 : 0,
       ...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
       ...(params.limit ? { limit: params.limit } : {}),
+      ...(params.callFilter ? { callFilter: params.callFilter } : {}),
     },
   });
   return res?.data ?? res;

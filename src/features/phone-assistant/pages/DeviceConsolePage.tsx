@@ -33,6 +33,7 @@ import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import TuneIcon from "@mui/icons-material/Tune";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import type {
   AfterCallCardPolicy,
@@ -1378,6 +1379,17 @@ export function DeviceConsolePage({ canManagePolicy = true }: DeviceConsolePageP
                             : ""}
                         </Typography>
                       )}
+
+                      {canManagePolicy &&
+                        ((d as any).recording_warning || (d as any).recording_missing_since) && (
+                          <Alert severity="warning" sx={{ mt: 0.75, py: 0.25 }}>
+                            {t("collections.recording.missingWarning", {
+                              name: d.staff_name || d.device_label || d.device_id,
+                              date: dayjs((d as any).recording_missing_since || (d as any).last_recording_received_at || d.paired_at).format("D MMM"),
+                              defaultValue: `No call recordings received from ${d.staff_name || d.device_label || d.device_id}'s phone since ${dayjs((d as any).recording_missing_since || (d as any).last_recording_received_at || d.paired_at).format("D MMM")}`,
+                            })}
+                          </Alert>
+                        )}
 
                       {/* Effective Capabilities */}
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: 1.25 }}>
