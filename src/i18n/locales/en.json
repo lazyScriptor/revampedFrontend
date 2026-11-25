@@ -4854,7 +4854,7 @@
       "enableRecording": "Enable call recording",
       "retentionDays": "Keep recordings for",
       "mobileData": "Upload on mobile data",
-      "deleteAfterUpload": "Delete from phone after upload",
+      "phoneKeepsFile": "The recording stays on the phone: Android 11 and later don't let GearGrid delete it, and the app doesn't delete it on older versions either. To clear old files, use auto-delete in the phone's own call recorder settings.",
       "termsLineEnabled": "Print call-recording notice on bill terms",
       "termsLineEn": "Receipt terms line (English)",
       "termsLineSi": "Receipt terms line (Sinhala)",
