@@ -1,14 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { Box, Button, Chip, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Chip, Dialog, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useDashboardMoney } from "@/features/accounting/utils/currency";
 import { useOpenInvoices } from "@/features/dashboard/hooks/useDashboardHooks";
 import type { OpenInvoiceAgeDays, OpenInvoiceRow } from "@/features/dashboard/types";
+import type { CallFilterKey } from "@/features/collections/types";
+import { CallFilterChips } from "@/features/collections/components/CallFilterChips";
+import { VirtualizedList } from "@/features/dashboard/components/VirtualizedList";
 import { SkeletonListRows } from "@/components/ui/loading";
 import { suggestedTemplateForOpenInvoice } from "@/features/whatsapp/lib/whatsapp";
 import { dashboardTones } from "../_tokens";
@@ -22,9 +27,11 @@ const OpenMoneyWidget: React.FC = () => {
   const money = useDashboardMoney();
   const navigate = useNavigate();
   const [olderThanDays, setOlderThanDays] = useState<OpenInvoiceAgeDays>(7);
+  const [callFilter, setCallFilter] = useState<CallFilterKey | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<OpenInvoiceRow | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
-  const { data, isLoading, isError, refetch } = useOpenInvoices("money", olderThanDays);
+  const { data, isLoading, isError, refetch } = useOpenInvoices("money", olderThanDays, false, callFilter);
 
   const selectedTemplate = useMemo(
     () =>
@@ -53,7 +60,7 @@ const OpenMoneyWidget: React.FC = () => {
     }
   })();
 
-  return (
+  const renderCardBody = (inOverlay = false) => (
     <Box
       sx={{
         height: "100%",
@@ -138,46 +145,59 @@ const OpenMoneyWidget: React.FC = () => {
           </Box>
         </Box>
 
-        {data && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, flexWrap: "wrap" }}>
-            <Chip
-              size="small"
-              label={t("dashboard.openInvoices.invoiceCount", {
-                count: data.summary.money.count,
-                defaultValue: `${data.summary.money.count} invoices`,
-              })}
-              sx={{
-                height: 20,
-                fontSize: "0.66rem",
-                fontWeight: 700,
-                fontVariantNumeric: "tabular-nums",
-                bgcolor: dashboardTones.slate.soft,
-                color: dashboardTones.slate.on,
-              }}
-            />
-            {data.summary.money.owedWithItemsOut > 0 && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, flexWrap: "wrap" }}>
+          {data && (
+            <>
               <Chip
                 size="small"
-                label={t("dashboard.openInvoices.withItemsOutAmount", {
-                  amount: money.full(data.summary.money.owedWithItemsOut),
-                  defaultValue: `${money.full(data.summary.money.owedWithItemsOut)} with items out`,
+                label={t("dashboard.openInvoices.invoiceCount", {
+                  count: data.summary.money.count,
+                  defaultValue: `${data.summary.money.count} invoices`,
                 })}
                 sx={{
                   height: 20,
                   fontSize: "0.66rem",
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontVariantNumeric: "tabular-nums",
-                  bgcolor: dashboardTones.warning.soft,
-                  color: dashboardTones.warning.on,
+                  bgcolor: dashboardTones.slate.soft,
+                  color: dashboardTones.slate.on,
                 }}
               />
-            )}
-          </Box>
-        )}
+              {data.summary.money.owedWithItemsOut > 0 && (
+                <Chip
+                  size="small"
+                  label={t("dashboard.openInvoices.withItemsOutAmount", {
+                    amount: money.full(data.summary.money.owedWithItemsOut),
+                    defaultValue: `${money.full(data.summary.money.owedWithItemsOut)} with items out`,
+                  })}
+                  sx={{
+                    height: 20,
+                    fontSize: "0.66rem",
+                    fontWeight: 800,
+                    fontVariantNumeric: "tabular-nums",
+                    bgcolor: dashboardTones.warning.soft,
+                    color: dashboardTones.warning.on,
+                  }}
+                />
+              )}
+            </>
+          )}
+          <IconButton
+            size="small"
+            onClick={() => setExpanded(!inOverlay)}
+            aria-label={inOverlay ? t("common.close", "Close") : t("dashboard.openInvoices.expand", "Expand")}
+            sx={{ width: 28, height: 28 }}
+          >
+            {inOverlay ? <CloseIcon fontSize="small" /> : <OpenInFullOutlinedIcon sx={{ fontSize: 16 }} />}
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Age Filter Chips */}
       <AgeFilterChips value={olderThanDays} onChange={setOlderThanDays} />
+
+      {/* Call Filter Chips */}
+      <CallFilterChips value={callFilter} onChange={setCallFilter} counts={data?.callCounts} />
 
       {/* Stacked Aging Bar */}
       {data && (
@@ -254,14 +274,18 @@ const OpenMoneyWidget: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          data.rows.map((row) => (
-            <OpenInvoiceRowItem
-              key={row.invoice_id}
-              row={row}
-              view="money"
-              onRowClick={() => setSelectedInvoice(row)}
-            />
-          ))
+          <VirtualizedList
+            items={data.rows}
+            estimatedItemHeight={82}
+            getKey={(row) => row.invoice_id}
+            renderItem={(row) => (
+              <OpenInvoiceRowItem
+                row={row}
+                view="money"
+                onRowClick={() => setSelectedInvoice(row)}
+              />
+            )}
+          />
         )}
       </Box>
 
@@ -290,7 +314,7 @@ const OpenMoneyWidget: React.FC = () => {
         <Button
           size="small"
           endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
-          onClick={() => navigate({ to: "/accounting", search: { tab: "receivables" } as any })}
+          onClick={() => navigate({ to: "/reports/customers/collections", search: { owes_money: "1" } as any })}
           sx={{
             textTransform: "none",
             fontWeight: 700,
@@ -302,13 +326,23 @@ const OpenMoneyWidget: React.FC = () => {
           {t("dashboard.openInvoices.seeAll", "See all")}
         </Button>
       </Box>
+    </Box>
+  );
 
+  return (
+    <>
+      {renderCardBody(false)}
+      <Dialog fullScreen open={expanded} onClose={() => setExpanded(false)}>
+        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+          {renderCardBody(true)}
+        </DialogContent>
+      </Dialog>
       <OpenInvoiceQuickModal
         invoiceId={selectedInvoice?.invoice_id ?? null}
         whatsAppTemplate={selectedTemplate}
         onClose={() => setSelectedInvoice(null)}
       />
-    </Box>
+    </>
   );
 };
 

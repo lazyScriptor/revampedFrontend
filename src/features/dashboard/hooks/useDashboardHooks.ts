@@ -49,11 +49,11 @@ export const useUtilizationSparkline = () => {
   });
 };
 
-export const useReturnsDueToday = () => {
+export const useReturnsDueToday = (callFilter?: import('@/features/collections/types').CallFilterKey | null) => {
   const warehouseId = useDashboardStore((s) => s.globalFilters.warehouseId);
   return useQuery<ReturnsData>({
-    queryKey: ['dashboard', 'returns-today', warehouseId],
-    queryFn: () => dashboardApi.fetchReturnsDueToday(warehouseId),
+    queryKey: ['dashboard', 'returns-today', warehouseId, callFilter ?? null],
+    queryFn: () => dashboardApi.fetchReturnsDueToday(warehouseId, callFilter),
     staleTime: 1000 * 60 * 5,
   });
 };
@@ -71,16 +71,18 @@ export const useOpenInvoices = (
   view: OpenInvoicesView,
   olderThanDays: OpenInvoiceAgeDays,
   onlyOverdue = false,
+  callFilter?: import('@/features/collections/types').CallFilterKey | null,
 ) => {
   const warehouseId = useDashboardStore((s) => s.globalFilters.warehouseId);
   return useQuery<OpenInvoicesData>({
-    queryKey: ['dashboard', 'open-invoices', view, olderThanDays, onlyOverdue ? 1 : 0, warehouseId],
+    queryKey: ['dashboard', 'open-invoices', view, olderThanDays, onlyOverdue ? 1 : 0, warehouseId, callFilter ?? null],
     queryFn: () =>
       dashboardApi.fetchOpenInvoices({
         view,
         olderThanDays,
         onlyOverdue,
         warehouseId,
+        ...(callFilter ? { callFilter } : {}),
       }),
     staleTime: 60_000,
     placeholderData: keepPreviousData,
