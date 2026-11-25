@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useCustomerList, useCustomerStats } from "@/features/customers/hooks/useCustomerHooks";
 import type { CustomerFilters } from "@/features/customers/hooks/useCustomerHooks";
@@ -50,6 +51,7 @@ function useDebounced<T>(value: T, delay = 300): T {
 export default function CustomersRoute() {
   const theme = useTheme();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
@@ -431,6 +433,12 @@ export default function CustomersRoute() {
               setSelectedIds([]);
             }}
             onEdit={handleOpenEdit}
+            onSettle={(row) =>
+              navigate({
+                to: "/invoices",
+                search: { mode: "settle", customer: row.customer_id } as any,
+              })
+            }
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
           />

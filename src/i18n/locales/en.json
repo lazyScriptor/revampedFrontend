@@ -4766,7 +4766,8 @@
       "addCallByHand": "Add call by hand",
       "exportCalls": "Export calls",
       "pairedPhonesOnlyNote": "Only calls from paired GearGrid phones (and calls entered by hand) appear here.",
-      "noCalls": "No calls match the selected filter."
+      "noCalls": "No calls match the selected filter.",
+      "settle": "Settle"
     },
     "calls": {
       "callsLabel": "calls",
@@ -4948,5 +4949,190 @@
     "voidPaymentTitle": "Void payment of {{amount}}",
     "paymentVoided": "Payment voided",
     "lateFeeLessThanToday": "Late fee Rs {{amount}} less than today"
+  },
+  "settlement": {
+    "title": "Customer settlement",
+    "subtitle": "Return machines and settle payments across open bills",
+    "settleCustomer": "Customer settlement",
+    "updating": "updating…",
+    "skipStep": "Skip",
+    "selectCustomerPrompt": "Select a customer to view their open bills, return machines, and settle payments.",
+    "steps": {
+      "customer": "Customer",
+      "bills": "Bills",
+      "machinesBack": "Machines back",
+      "payment": "Payment",
+      "checkAndSave": "Check & save"
+    },
+    "age": {
+      "under7": "< 7d",
+      "7to30": "7–30d",
+      "over30": "> 30d"
+    },
+    "customer": {
+      "searchPlaceholder": "Search customer by name, phone or NIC…",
+      "noMatches": "No matching customers",
+      "call": "Call",
+      "owesSummary": "Owes {{amount}} on {{bills}} bills · {{machines}} machines out",
+      "oldestUnpaid": "Oldest unpaid: {{date}}",
+      "lastPayment": "Last payment: {{amount}} ({{date}})",
+      "hasCredit": "Has {{amount}} credit",
+      "idCardsHeld": "{{count}} ID card(s) held",
+      "continueToBills": "Continue to bills"
+    },
+    "filters": {
+      "paymentDue": "Payment due",
+      "machinesOut": "Machines still out",
+      "allBack": "All machines back",
+      "completed": "Completed",
+      "all": "All",
+      "date": "Date",
+      "machine": "Machine",
+      "allMachines": "All machines"
+    },
+    "datePreset": {
+      "all": "All time",
+      "this_month": "This month",
+      "last_3_months": "Last 3 months",
+      "this_year": "This year",
+      "custom": "Custom",
+      "from": "From",
+      "to": "To"
+    },
+    "sort": {
+      "oldest": "Oldest first",
+      "biggest": "Biggest balance",
+      "newest": "Newest"
+    },
+    "bills": {
+      "pickBill": "Pick INV-{{id}}",
+      "unpickBill": "Unpick INV-{{id}}",
+      "onBehalfOf": "On behalf of {{name}}",
+      "growingPerDay": "growing +{{amount}}/day",
+      "paidOfTotal": "Paid {{paid}} of {{total}}",
+      "discountShort": "Disc {{amount}}",
+      "tapForDetails": "View bill",
+      "usingPicked": "Returning and paying across your {{count}} picked bills",
+      "usingAllOpen": "Returning and paying across all {{count}} open bills",
+      "undoPick": "Undo ({{count}} bills)",
+      "dragOrTickHint": "Tap the circle on any bill (or drag it here) to work on specific bills.",
+      "workingOnHeader": "Working on {{count}} bills · {{owed}} owed · {{machines}} machines out",
+      "noneFound": "No bills match these filters.",
+      "showMoreRendered": "Show {{count}} more loaded bills",
+      "loadMore": "Load more bills"
+    },
+    "machines": {
+      "noMachinesOut": "No machines are currently out for this customer.",
+      "outOnBills": "{{count}} out on {{bills}} bills",
+      "showAllBills": "Show all bills",
+      "notOnPicked": "Not on these bills, show all bills?",
+      "returnedCount": "Came back",
+      "decreaseReturned": "Decrease returned",
+      "returnedInput": "Returned quantity",
+      "increaseReturned": "Increase returned",
+      "allBack": "All",
+      "damagedCount": "Damaged",
+      "decreaseDamaged": "Decrease damaged",
+      "damagedInput": "Damaged quantity",
+      "increaseDamaged": "Increase damaged",
+      "good": "good",
+      "damagedShort": "damaged",
+      "returnDate": "Return date",
+      "cheaperForCustomer": "Cheaper for customer: saves {{amount}}",
+      "backdateReason": "Reason for back-dated return",
+      "placementHint": "Placement across bills (oldest first by default; use +/− to move units while keeping total fixed):",
+      "allMachinesBack": "all machines back",
+      "continueToPayment": "Continue to payment"
+    },
+    "payment": {
+      "payingToday": "Paying today",
+      "bucketSummary": "{{total}} to share · {{left}} left",
+      "amountLabel": "Amount (Rs)",
+      "amountInput": "Payment amount",
+      "payEverything": "Pay everything",
+      "date": "Payment date",
+      "backdateReason": "Reason for back-dated payment",
+      "addSecondMethod": "Add second method",
+      "useCredit": "Use {{amount}} credit",
+      "leftoverLabel": "Leftover {{amount}}:",
+      "keepAsCredit": "Keep as credit",
+      "giveChange": "Give change",
+      "queueOrder": "Share order:",
+      "balanceWas": "Owed {{amount}}",
+      "allBackTag": "All back",
+      "payThisFirst": "Pay this first",
+      "payBillOff": "Pay this bill off",
+      "discount": "Discount",
+      "discountAmount": "Discount value",
+      "applyDiscount": "Apply discount",
+      "continueToReview": "Check & save",
+      "method": {
+        "Cash": "Cash",
+        "Card": "Card",
+        "Transfer": "Transfer",
+        "Cheque": "Cheque",
+        "Wallet": "Wallet"
+      }
+    },
+    "splitRule": {
+      "oldestFirst": "Oldest first",
+      "cheaper": "Cheaper"
+    },
+    "queueRule": {
+      "fullyBack": "Fully back first",
+      "biggest": "Biggest balance first",
+      "even": "Split evenly"
+    },
+    "review": {
+      "paidOffStamp": "✓ Paid off",
+      "readyToCloseStamp": "Ready to close",
+      "owed": "owed",
+      "nothingToReview": "Return machines or enter a payment to see what changes.",
+      "conflictChanged": "Bills changed while you were reviewing. Check the updated numbers below and tap Confirm & save again.",
+      "savedSuccess": "Settlement #S-{{id}} saved.",
+      "savedToast": "Settlement saved",
+      "saveFailed": "Failed to save settlement",
+      "owedLabel": "Owed",
+      "machinesOutLabel": "Machines out",
+      "noChangesYet": "No changes on any bill yet.",
+      "hideUnchanged": "Hide unchanged bills",
+      "showUnchanged": "Show the other {{count}} bills",
+      "confirmAgain": "Confirm & save",
+      "save": "Save",
+      "giveBackIdCard": "Give back the ID card",
+      "closeTheseBills": "Close these bills ({{count}})",
+      "billsClosedCount": "{{count}} bill(s) closed",
+      "billsClosedToast": "Bills closed",
+      "closeFailed": "Failed to close bills",
+      "receiptAndWhatsApp": "Receipt & WhatsApp"
+    },
+    "receipt": {
+      "title": "Settlement Receipt #S-{{id}}",
+      "thermal": "Thermal (80mm)",
+      "a4": "A4",
+      "header": "CUSTOMER SETTLEMENT",
+      "whatsappPreview": "WhatsApp message (same before → after layout)",
+      "copyWhatsApp": "Copy WhatsApp",
+      "sendWhatsApp": "Send WhatsApp",
+      "print": "Print"
+    },
+    "viewMenu": {
+      "button": "View",
+      "title": "View & defaults",
+      "cardSize": "Card size",
+      "compact": "Compact",
+      "normal": "Normal",
+      "detailed": "Detailed",
+      "showFields": "Show on cards",
+      "machineIcons": "Machine icons",
+      "paymentHistory": "Payment history",
+      "discount": "Discount",
+      "runningCharge": "Running charge",
+      "dates": "Dates",
+      "groupByMonth": "Group bills by month",
+      "defaultSplitRule": "Default return split",
+      "defaultQueueRule": "Default payment queue",
+      "defaultFilter": "Default bill filter"
+    }
   }
 }

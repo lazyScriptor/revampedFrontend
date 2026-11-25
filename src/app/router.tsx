@@ -226,13 +226,16 @@ const invoicesRoute = createRoute({
   path: "/invoices",
   validateSearch: (search: Record<string, unknown>) => {
     const mode =
-      search.mode === "manage" || search.mode === "dispatch"
-        ? (search.mode as "manage" | "dispatch")
+      search.mode === "manage" || search.mode === "dispatch" || search.mode === "settle"
+        ? (search.mode as "manage" | "dispatch" | "settle")
         : undefined;
     const rawInvoiceId = Number(search.invoiceId);
     const invoiceId =
       Number.isInteger(rawInvoiceId) && rawInvoiceId > 0 ? rawInvoiceId : undefined;
-    return { mode, invoiceId };
+    const rawCustomer = Number(search.customer);
+    const customer =
+      Number.isInteger(rawCustomer) && rawCustomer > 0 ? rawCustomer : undefined;
+    return { mode, invoiceId, customer };
   },
   beforeLoad: () => requirePermission("inventory_permission"),
   component: () => <Invoices />,
