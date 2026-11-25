@@ -46,6 +46,7 @@ import { WhatsAppButton } from "@/features/whatsapp/components/WhatsAppButton";
 import { suggestedTemplate } from "@/features/whatsapp/lib/whatsapp";
 import type { TemplateKey } from "@/features/whatsapp/api/whatsapp.api";
 import { useTranslation } from "react-i18next";
+import { eventSentence } from "@/features/activity/lib/eventSentence";
 
 export interface ReadOnlyInvoiceModalProps {
   open: boolean;
@@ -551,7 +552,7 @@ export function ReadOnlyInvoiceModal({
                 {(fetchedEvents.length > 0 ? fetchedEvents : invoice.activity_events || []).map((ev: any) => (
                   <Box key={ev.event_id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
                     <Typography variant="caption" sx={{ color: "#334155", fontWeight: 600 }}>
-                      {ev.data?.sentence || ev.type}
+                      {eventSentence(ev)}
                     </Typography>
                     <Chip
                       size="small"

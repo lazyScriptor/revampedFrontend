@@ -16,6 +16,7 @@ import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import SendIcon from "@mui/icons-material/Send";
 import { useTranslation } from "react-i18next";
+import { eventSentence } from "@/features/activity/lib/eventSentence";
 import { ACTIVITY_TYPE_META } from "../constants";
 import type { ActivityEvent } from "../types";
 import { ActivityTypeIcon } from "./ActivityTypeIcon";
@@ -41,7 +42,7 @@ export function ActivityEventRow({
   onOpenBill,
   onMarkRead,
 }: ActivityEventRowProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -55,11 +56,7 @@ export function ActivityEventRow({
   const addComment = useAddActivityComment(event.event_id);
 
   const meta = ACTIVITY_TYPE_META[event.type] ?? ACTIVITY_TYPE_META.system;
-  const isSi = i18n.language?.startsWith("si");
-  const sentence =
-    (isSi ? event.data?.sentence_si : event.data?.sentence_en) ||
-    event.data?.sentence ||
-    t(meta.labelKey);
+  const sentence = eventSentence(event, t(meta.labelKey));
 
   const isUnread = !event.is_read;
   const isChecked = Boolean(event.checked_at);

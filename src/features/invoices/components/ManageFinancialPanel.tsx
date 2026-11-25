@@ -63,6 +63,7 @@ import { DeleteInvoiceDialog } from "./DeleteInvoiceDialog";
 import { InvoicePrintHistoryDialog } from "./InvoicePrintHistoryDialog";
 import { ReceiptPrintDialog } from "./ReceiptPrintDialog";
 import { CompletionRatingDialog } from "@/features/reviews/components/CompletionRatingDialog";
+import { eventSentence } from "@/features/activity/lib/eventSentence";
 
 const MONO = "'JetBrains Mono', monospace";
 // PAYMENT_METHODS / METHOD_LABELS: shared with the checkout and the handover dialog.
@@ -722,7 +723,7 @@ export function ManageFinancialPanel({ invoice, showToast, isCollapsed, onToggle
               {(invoiceActivity?.events || invoice.activity_events || []).map((ev: any) => (
                 <Box key={ev.event_id} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
                   <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600 }}>
-                    {ev.data?.sentence || ev.type}
+                    {eventSentence(ev)}
                   </Typography>
                   <Chip
                     size="small"
