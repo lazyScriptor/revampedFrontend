@@ -75,6 +75,11 @@ export const useCustomerList = (
         queryKey: ['customers', page, limit, filters],
         queryFn: () => fetchCustomers(page, limit, filters),
         placeholderData: keepPreviousData,
+        // Customers change rarely and every save in the shop refreshes this (data:changed),
+        // so the list is kept for 30 minutes; the plain first page is also saved in the browser.
+        staleTime: 30 * 60 * 1000,
+        gcTime: 24 * 60 * 60 * 1000,
+        meta: { persist: page === 1 && Object.values(filters).every((v) => v === undefined || v === null || v === '') },
     });
 };
 
@@ -178,7 +183,9 @@ export const useCustomerStats = () => {
                 linkedToParent: Number(payload?.linkedToParent || 0),
             };
         },
-        staleTime: 1000 * 30,
+        staleTime: 30 * 60 * 1000,
+        gcTime: 24 * 60 * 60 * 1000,
+        meta: { persist: true },
     });
 };
 

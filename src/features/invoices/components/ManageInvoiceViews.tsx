@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { prefetchInvoiceDetails } from "../hooks/useInvoiceHooks";
 import {
   Box,
   Typography,
@@ -98,6 +100,19 @@ export function ManageSearchPanel({
   const retailEnabled = useRetailEnabled();
   const dayWords = { today: t("time.today"), yesterday: t("time.yesterday") };
   const [searchInput, setSearchInput] = useState("");
+  // Resting the pointer on a row for a moment starts loading that bill, so the click feels
+  // instant. Sweeping across rows doesn't fire a request per row.
+  const queryClient = useQueryClient();
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearHover = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+  };
+  const hoverInvoice = (id: number) => {
+    clearHover();
+    hoverTimer.current = setTimeout(() => void prefetchInvoiceDetails(queryClient, id).catch(() => {}), 200);
+  };
+  useEffect(() => clearHover, []);
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Completed">("All");
   const [billKind, setBillKind] = useState<"all" | "rental" | "sale" | "mixed">("all");
   const [pageSize, setPageSize] = useState(25);
@@ -276,7 +291,12 @@ export function ManageSearchPanel({
             return (
               <Box
                 key={inv.invoice_id}
-                onClick={() => onSelectInvoice(inv.invoice_id)}
+                onClick={() => {
+                  clearHover();
+                  onSelectInvoice(inv.invoice_id);
+                }}
+                onMouseEnter={() => hoverInvoice(inv.invoice_id)}
+                onMouseLeave={clearHover}
                 sx={{
                   px: 2,
                   py: 1.5,

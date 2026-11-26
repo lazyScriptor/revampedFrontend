@@ -70,7 +70,10 @@ export const usePosEquipmentCatalog = ({ search, categoryId, inStockOnly, enable
     getNextPageParam: (last) => (last.currentPage < last.totalPages ? last.currentPage + 1 : undefined),
     placeholderData: keepPreviousData,
     enabled,
-    staleTime: 30 * 1000,
+    // Kept for 30 minutes: any stock movement in the shop (dispatch, return, edit, damage, import)
+    // refreshes it at once through the server's data:changed notice (realtimeInvalidation.ts).
+    staleTime: 30 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
     // Kept on this device (IndexedDB) so the till opens instantly. Only the plain browse view is
     // kept, not every typed search, so the stored copy stays small.
     meta: { persist: debounced.length === 0 },

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData, type QueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { callContract } from '@/lib/callContract';
 import { VaultToggleContract } from '@geargrid/contracts';
@@ -10,7 +10,8 @@ export const useInvoiceList = (page: number, limit: number, status?: string, ...
     return useQuery({
         // CRITICAL: Add status / billKind to the queryKey so changing tabs triggers a refetch
         queryKey: ['invoices', page, limit, status, billKind],
-        queryFn: async () => {
+        placeholderData: keepPreviousData,
+        queryFn: async ({ signal }) => {
             // Build the params object. If status/billKind is "All", we just don't send it.
             const params: any = { page, limit };
             if (status && status !== 'All') {
@@ -20,7 +21,7 @@ export const useInvoiceList = (page: number, limit: number, status?: string, ...
                 params.bill_kind = billKind;
             }
 
-            const response: any = await api.get('/invoices', { params });
+            const response: any = await api.get('/invoices', { params, signal });
             return response?.data || response || { invoices: [], totalItems: 0, counts: { all: 0, active: 0, completed: 0 } };
         },
     });
@@ -31,9 +32,10 @@ export const useInvoiceSearch = (searchTerm: string) => {
     const debouncedSearch = useDebounce(searchTerm, 300);
     return useQuery({
         queryKey: ['invoice-search', debouncedSearch],
-        queryFn: async () => {
+        staleTime: 30 * 1000,
+        queryFn: async ({ signal }) => {
             if (!debouncedSearch) return [];
-            const response: any = await api.get('/invoices', { params: { search: debouncedSearch, limit: 10 } });
+            const response: any = await api.get('/invoices', { params: { search: debouncedSearch, limit: 10 }, signal });
 
             // BULLETPROOF: Check multiple levels of the response object
             return response.data?.data?.invoices || response.data?.invoices || response?.invoices || [];
@@ -43,19 +45,52 @@ export const useInvoiceSearch = (searchTerm: string) => {
 };
 
 // 3. Deep Fetch a Single Invoice
+/** The same bill as a row of an already-loaded invoice list or search, if any. */
+export const findInvoiceInListCache = (queryClient: QueryClient, invoiceId: number | null) => {
+    if (!invoiceId) return undefined;
+    for (const [, data] of queryClient.getQueriesData<any>({ queryKey: ['invoices'] })) {
+        const hit = (data?.invoices || [])?.find?.((inv: any) => inv?.invoice_id === invoiceId);
+        if (hit) return hit;
+    }
+    for (const [, data] of queryClient.getQueriesData<any>({ queryKey: ['invoice-search'] })) {
+        const hit = Array.isArray(data) ? data.find((inv: any) => inv?.invoice_id === invoiceId) : undefined;
+        if (hit) return hit;
+    }
+    return undefined;
+};
+
+export const fetchInvoiceDetails = async (invoiceId: number, signal?: AbortSignal) => {
+    const response: any = await api.get(`/invoices/${invoiceId}`, { signal });
+    // BULLETPROOF: Check multiple levels of the response object
+    return response.data?.data?.invoice || response.data?.invoice || response?.invoice || null;
+};
+
+export const INVOICE_DETAIL_STALE_MS = 2 * 60 * 1000;
+
 export const useInvoiceDetails = (invoiceId: number | null) => {
+    const queryClient = useQueryClient();
     return useQuery({
         queryKey: ['invoice', invoiceId],
-        queryFn: async () => {
-            if (!invoiceId) return null;
-            const response: any = await api.get(`/invoices/${invoiceId}`);
-
-            // BULLETPROOF: Check multiple levels of the response object
-            return response.data?.data?.invoice || response.data?.invoice || response?.invoice || null;
-        },
+        // `signal`: switching to another bill cancels this request, so a run of quick clicks
+        // doesn't leave the server answering bills nobody is looking at any more.
+        queryFn: ({ signal }) => (invoiceId ? fetchInvoiceDetails(invoiceId, signal) : null),
         enabled: !!invoiceId,
+        // A bill opened in the last 2 minutes shows at once; saves and data:changed notices
+        // refresh it sooner.
+        staleTime: INVOICE_DETAIL_STALE_MS,
+        // Show the bill's list row straight away while the full copy loads. The caller sees
+        // `isPlaceholderData` and keeps actions locked until the real copy arrives.
+        placeholderData: () => findInvoiceInListCache(queryClient, invoiceId),
     });
 };
+
+/** Start loading a bill before it is clicked (row hover). */
+export const prefetchInvoiceDetails = (queryClient: QueryClient, invoiceId: number) =>
+    queryClient.prefetchQuery({
+        queryKey: ['invoice', invoiceId],
+        queryFn: ({ signal }) => fetchInvoiceDetails(invoiceId, signal),
+        staleTime: INVOICE_DETAIL_STALE_MS,
+    });
 
 // 4. Existing Return Hook
 export const useProcessReturn = () => {

@@ -306,6 +306,12 @@
             "showingOf": "Showing {{shown}} of {{total}}",
             "seeAll": "See all",
             "expand": "Expand"
+        },
+        "freshness": {
+            "justNow": "Updated just now",
+            "minutesAgo_one": "Updated {{count}} min ago",
+            "minutesAgo_other": "Updated {{count}} min ago",
+            "newData": "New data available. Refresh"
         }
     },
     "equipment": {
@@ -1372,6 +1378,9 @@
             "willShow": "This bill will be dated {{when}}",
             "applyToLines": "Set all lines to this date",
             "useNow": "Use now"
+        },
+        "lockWhileLoading": {
+            "loading": "Loading the latest bill"
         }
     },
     "orders": {

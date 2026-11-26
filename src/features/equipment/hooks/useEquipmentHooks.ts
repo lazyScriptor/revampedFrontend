@@ -19,6 +19,7 @@ export const useEquipmentList = (
     queryKey: ['equipment', page, limit, filters],
     queryFn: () => fetchEquipment(page, limit, filters),
     placeholderData: keepPreviousData, // Keeps the old rows visible while fetching the next page (amazing UX)
+    staleTime: 10 * 60 * 1000, // stock movements refresh it sooner (data:changed)
   });
 };
 
@@ -110,6 +111,8 @@ export const useEquipmentStats = () => {
         maintenanceUnits: Number(payload?.maintenanceUnits || 0),
       };
     },
-    staleTime: 1000 * 30,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    meta: { persist: true },
   });
 };

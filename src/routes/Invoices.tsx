@@ -75,6 +75,7 @@ import { useBillDiscountGate } from "@/features/retail/pos/useBillDiscountGate";
 import { mixedCartTotals } from "@/features/invoices/lib/mixedBill";
 import type { SaleSubmitParams } from "@/features/retail/pos/SaleCheckoutSection";
 import { PriceChangedDialog } from "@/features/retail/pos/PriceChangedDialog";
+import { LockWhileLoading } from "@/features/invoices/components/LockWhileLoading";
 
 export default function InvoicesRoute() {
   const theme = useTheme();
@@ -139,7 +140,11 @@ export default function InvoicesRoute() {
 
   // ── Manage State ──────────────────────────────────────────────────────────────
   const [selectedManageInvoiceId, setSelectedManageInvoiceId] = useState<number | null>(null);
-  const { data: activeInvoice } = useInvoiceDetails(selectedManageInvoiceId);
+  const {
+    data: activeInvoice,
+    isPlaceholderData: isInvoicePreview,
+    isFetching: isInvoiceFetching,
+  } = useInvoiceDetails(selectedManageInvoiceId);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
   // Deep-link from Dashboard Open Invoices or Phone Bill Details: ?mode=manage&invoice=123 or &invoiceId=123
@@ -768,10 +773,12 @@ export default function InvoicesRoute() {
             showToast={showToast}
           />
         ) : (
-          <ManageLedgerPanel
-            invoice={activeInvoice}
-            onOpenReturn={() => setIsReturnModalOpen(true)}
-          />
+          <LockWhileLoading locked={isInvoicePreview} loading={isInvoiceFetching}>
+            <ManageLedgerPanel
+              invoice={activeInvoice}
+              onOpenReturn={() => setIsReturnModalOpen(true)}
+            />
+          </LockWhileLoading>
         )}
       </Box>
     </Paper>
@@ -815,13 +822,15 @@ export default function InvoicesRoute() {
           onApplyBillDateToLines={applyBillDateToLines}
         />
       ) : (
-        <ManageFinancialPanel
-          invoice={activeInvoice}
-          showToast={showToast}
-          isCollapsed={!isTerminalOpen}
-          onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
-          onInvoiceDeleted={() => setSelectedManageInvoiceId(null)}
-        />
+        <LockWhileLoading locked={isInvoicePreview} loading={isInvoiceFetching} dark>
+          <ManageFinancialPanel
+            invoice={activeInvoice}
+            showToast={showToast}
+            isCollapsed={!isTerminalOpen}
+            onToggleCollapse={() => setIsTerminalOpen(!isTerminalOpen)}
+            onInvoiceDeleted={() => setSelectedManageInvoiceId(null)}
+          />
+        </LockWhileLoading>
       )}
     </Paper>
   );

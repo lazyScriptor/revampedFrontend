@@ -306,6 +306,12 @@
             "showingOf": "{{total}}න් {{shown}}ක් පෙන්වයි",
             "seeAll": "සියල්ල බලන්න",
             "expand": "විශාල කරන්න"
+        },
+        "freshness": {
+            "justNow": "දැන් යාවත්කාලීන කළා",
+            "minutesAgo_one": "මිනිත්තු {{count}}කට පෙර යාවත්කාලීන කළා",
+            "minutesAgo_other": "මිනිත්තු {{count}}කට පෙර යාවත්කාලීන කළා",
+            "newData": "නව දත්ත ඇත. නැවුම් කරන්න"
         }
     },
     "equipment": {
@@ -1372,6 +1378,9 @@
             "willShow": "මෙම බිල්පත {{when}} ලෙස දින දමනු ලැබේ",
             "applyToLines": "සියලු පේළි මෙම දිනයට සකසන්න",
             "useNow": "දැන් භාවිත කරන්න"
+        },
+        "lockWhileLoading": {
+            "loading": "නවතම බිල පූරණය වෙමින්"
         }
     },
     "orders": {

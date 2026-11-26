@@ -18,6 +18,7 @@ import {
   Check,
 } from "@mui/icons-material";
 import { useQueryClient } from "@tanstack/react-query";
+import { useDashboardFreshness } from "./hooks/useDashboardFreshness";
 import { useTranslation } from "react-i18next";
 import { useDashboardStore } from "@/stores/useDashboardStore";
 import { useWarehouseOptions } from "@/features/warehouses/hooks/useWarehouseOptions";
@@ -72,6 +73,14 @@ const MasterFilterBar: React.FC = () => {
     }
     setCustomAnchorEl(null);
   };
+
+  const { minutesAgo, hasNewData } = useDashboardFreshness();
+  const freshnessLabel =
+    minutesAgo === null
+      ? null
+      : minutesAgo < 1
+        ? t("dashboard.freshness.justNow", "Updated just now")
+        : t("dashboard.freshness.minutesAgo", { count: minutesAgo, defaultValue: "Updated {{count}} min ago" });
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -318,12 +327,48 @@ const MasterFilterBar: React.FC = () => {
         </Box>
       </Popover>
 
-      {/* Refresh Icon Button */}
-      <Tooltip title={t("dashboard.refresh", "Refresh data")}>
+      {/* How old the cached cards are (kept 30 min, see DASHBOARD_CACHE) */}
+      {freshnessLabel && (
+        <Typography
+          variant="caption"
+          sx={{
+            color: dt.color.foregroundMuted,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            fontVariantNumeric: "tabular-nums",
+            display: { xs: "none", sm: "block" },
+          }}
+        >
+          {freshnessLabel}
+        </Typography>
+      )}
+
+      {/* Refresh Icon Button: a dot means something changed in the shop since the cards loaded */}
+      <Tooltip
+        title={
+          hasNewData
+            ? t("dashboard.freshness.newData", "New data available. Refresh")
+            : t("dashboard.refresh", "Refresh data")
+        }
+      >
         <IconButton
           size="small"
           onClick={handleRefresh}
+          aria-label={hasNewData ? t("dashboard.freshness.newData", "New data available. Refresh") : t("dashboard.refresh", "Refresh data")}
           sx={{
+            position: "relative",
+            "&::after": hasNewData
+              ? {
+                  content: '""',
+                  position: "absolute",
+                  top: 5,
+                  right: 5,
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  bgcolor: dt.color.primary,
+                }
+              : undefined,
             width: 34,
             height: 34,
             borderRadius: dt.radius.md,
