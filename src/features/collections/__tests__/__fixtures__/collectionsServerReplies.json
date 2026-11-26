@@ -1,0 +1,1164 @@
+{
+ "list": {
+  "rows": [
+   {
+    "customer_id": 55,
+    "name": "Customer 1",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 2,
+    "complete_count": 0,
+    "revenue": 47640,
+    "paid": 1190,
+    "balance": 46450,
+    "units_out": 3,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-11-23",
+    "oldest_unpaid_bill": "2026-11-02",
+    "oldest_due_date": "2026-11-01",
+    "last_payment_date": "2026-11-23",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 57,
+      "name": "Electrik breaker - small 4",
+      "count": 1,
+      "longest_days": 24,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 203,
+      "name": "Hilti bit 5",
+      "count": 1,
+      "longest_days": 3,
+      "overdue_days": 0,
+      "age_color": "neutral"
+     },
+     {
+      "equipment_id": 217,
+      "name": "Planer - 1",
+      "count": 1,
+      "longest_days": 3,
+      "overdue_days": 0,
+      "age_color": "neutral"
+     }
+    ]
+   },
+   {
+    "customer_id": 31,
+    "name": "Customer 2",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 1,
+    "complete_count": 1,
+    "revenue": 24600,
+    "paid": 600,
+    "balance": 24000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-31",
+    "oldest_unpaid_bill": "2026-10-31",
+    "oldest_due_date": "2026-10-31",
+    "last_payment_date": "2026-11-01",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 64,
+      "name": "Miter Saw - small 1",
+      "count": 1,
+      "longest_days": 26,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 8,
+    "name": "Customer 3",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 21500,
+    "paid": 0,
+    "balance": 21500,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-13",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 112,
+      "name": "Welding Plant ( inverter ) -8",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 20,
+    "name": "Customer 4",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 3,
+    "not_complete_count": 2,
+    "complete_count": 1,
+    "revenue": 19100,
+    "paid": 550,
+    "balance": 18550,
+    "units_out": 3,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-11-02",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-22",
+    "last_payment_date": "2026-11-01",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 156,
+      "name": "Grinder ( 4 1/2 inch ) -9",
+      "count": 1,
+      "longest_days": 24,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 151,
+      "name": "Grinder ( 4 inch ) -4",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 134,
+      "name": "Wire code ( 50 feet )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 9,
+    "name": "Customer 5",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 2,
+    "complete_count": 0,
+    "revenue": 16500,
+    "paid": 0,
+    "balance": 16500,
+    "units_out": 2,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-23",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 179,
+      "name": "Compressor ( 1 piston ) - 12",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 187,
+      "name": "Spray gun -1  ( with compressor )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 17,
+    "name": "Customer 6",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 2,
+    "complete_count": 0,
+    "revenue": 15600,
+    "paid": 0,
+    "balance": 15600,
+    "units_out": 9,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-19",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 91,
+      "name": "Scaffolding ( 4 * 5 )",
+      "count": 6,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 8,
+      "name": "Steel Scaffolding Plank",
+      "count": 2,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 92,
+      "name": "Scaffolding ( 4 * 3 )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 23,
+    "name": "Customer 7",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 15000,
+    "paid": 0,
+    "balance": 15000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-26",
+    "oldest_unpaid_bill": "2026-10-26",
+    "oldest_due_date": "2026-10-26",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 182,
+      "name": "Hilti - 1",
+      "count": 1,
+      "longest_days": 31,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 51,
+    "name": "Customer 8",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 12000,
+    "paid": 0,
+    "balance": 12000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-11-01",
+    "oldest_unpaid_bill": "2026-11-01",
+    "oldest_due_date": "2026-11-01",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 195,
+      "name": "Spray gun -5  ( with compressor )",
+      "count": 1,
+      "longest_days": 25,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 6,
+    "name": "Customer 9",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 12000,
+    "paid": 0,
+    "balance": 12000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-08",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 153,
+      "name": "Grinder ( 4 inch ) -6",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 15,
+    "name": "Customer 10",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 5,
+    "not_complete_count": 2,
+    "complete_count": 3,
+    "revenue": 12600,
+    "paid": 1200,
+    "balance": 11400,
+    "units_out": 3,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-29",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-21",
+    "last_payment_date": "2026-10-31",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 152,
+      "name": "Grinder ( 7 inch ) - 3",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 90,
+      "name": "Scaffolding ( 3 * 5 )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 8,
+      "name": "Steel Scaffolding Plank",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   }
+  ],
+  "totals": {
+   "customer_count": 47,
+   "revenue": 326014,
+   "paid": 89394,
+   "balance": 251720,
+   "units_out": 38,
+   "overdue_units_out": 0,
+   "overdue_amount": 1300
+  },
+  "optionCounts": {
+   "owes_money": 21,
+   "not_returned": 18,
+   "late": 3,
+   "everyone": 47
+  },
+  "pagination": {
+   "page": 1,
+   "limit": 10,
+   "total": 47,
+   "totalPages": 5
+  },
+  "dateRange": {
+   "preset": "all_time",
+   "date_basis": "bill_date",
+   "from": null,
+   "to": null
+  }
+ },
+ "filtered": {
+  "rows": [
+   {
+    "customer_id": 55,
+    "name": "Customer 1",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 2,
+    "complete_count": 0,
+    "revenue": 47640,
+    "paid": 1190,
+    "balance": 46450,
+    "units_out": 3,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-11-23",
+    "oldest_unpaid_bill": "2026-11-02",
+    "oldest_due_date": "2026-11-01",
+    "last_payment_date": "2026-11-23",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 57,
+      "name": "Electrik breaker - small 4",
+      "count": 1,
+      "longest_days": 24,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 203,
+      "name": "Hilti bit 5",
+      "count": 1,
+      "longest_days": 3,
+      "overdue_days": 0,
+      "age_color": "neutral"
+     },
+     {
+      "equipment_id": 217,
+      "name": "Planer - 1",
+      "count": 1,
+      "longest_days": 3,
+      "overdue_days": 0,
+      "age_color": "neutral"
+     }
+    ]
+   },
+   {
+    "customer_id": 31,
+    "name": "Customer 2",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 1,
+    "complete_count": 1,
+    "revenue": 24600,
+    "paid": 600,
+    "balance": 24000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-31",
+    "oldest_unpaid_bill": "2026-10-31",
+    "oldest_due_date": "2026-10-31",
+    "last_payment_date": "2026-11-01",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 64,
+      "name": "Miter Saw - small 1",
+      "count": 1,
+      "longest_days": 26,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 8,
+    "name": "Customer 3",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 21500,
+    "paid": 0,
+    "balance": 21500,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-13",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 112,
+      "name": "Welding Plant ( inverter ) -8",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 20,
+    "name": "Customer 4",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 3,
+    "not_complete_count": 2,
+    "complete_count": 1,
+    "revenue": 19100,
+    "paid": 550,
+    "balance": 18550,
+    "units_out": 3,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-11-02",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-22",
+    "last_payment_date": "2026-11-01",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 156,
+      "name": "Grinder ( 4 1/2 inch ) -9",
+      "count": 1,
+      "longest_days": 24,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 151,
+      "name": "Grinder ( 4 inch ) -4",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 134,
+      "name": "Wire code ( 50 feet )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 9,
+    "name": "Customer 5",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 2,
+    "complete_count": 0,
+    "revenue": 16500,
+    "paid": 0,
+    "balance": 16500,
+    "units_out": 2,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-23",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 179,
+      "name": "Compressor ( 1 piston ) - 12",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 187,
+      "name": "Spray gun -1  ( with compressor )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 17,
+    "name": "Customer 6",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 2,
+    "not_complete_count": 2,
+    "complete_count": 0,
+    "revenue": 15600,
+    "paid": 0,
+    "balance": 15600,
+    "units_out": 9,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-19",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 91,
+      "name": "Scaffolding ( 4 * 5 )",
+      "count": 6,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 8,
+      "name": "Steel Scaffolding Plank",
+      "count": 2,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 92,
+      "name": "Scaffolding ( 4 * 3 )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 23,
+    "name": "Customer 7",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 15000,
+    "paid": 0,
+    "balance": 15000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-26",
+    "oldest_unpaid_bill": "2026-10-26",
+    "oldest_due_date": "2026-10-26",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 182,
+      "name": "Hilti - 1",
+      "count": 1,
+      "longest_days": 31,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 51,
+    "name": "Customer 8",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 12000,
+    "paid": 0,
+    "balance": 12000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-11-01",
+    "oldest_unpaid_bill": "2026-11-01",
+    "oldest_due_date": "2026-11-01",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 195,
+      "name": "Spray gun -5  ( with compressor )",
+      "count": 1,
+      "longest_days": 25,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 6,
+    "name": "Customer 9",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 1,
+    "not_complete_count": 1,
+    "complete_count": 0,
+    "revenue": 12000,
+    "paid": 0,
+    "balance": 12000,
+    "units_out": 1,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-23",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-08",
+    "last_payment_date": null,
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 153,
+      "name": "Grinder ( 4 inch ) -6",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   },
+   {
+    "customer_id": 15,
+    "name": "Customer 10",
+    "customer_type": "Individual",
+    "nic_number": "000000000V",
+    "phone_number": "0770000000",
+    "status": "Active",
+    "is_blacklisted": false,
+    "rating": 5,
+    "invoice_count": 5,
+    "not_complete_count": 2,
+    "complete_count": 3,
+    "revenue": 12600,
+    "paid": 1200,
+    "balance": 11400,
+    "units_out": 3,
+    "overdue": {
+     "units_out": 0,
+     "longest_days": 0,
+     "late_money": 0
+    },
+    "last_bill_date": "2026-10-29",
+    "oldest_unpaid_bill": "2026-10-23",
+    "oldest_due_date": "2026-10-21",
+    "last_payment_date": "2026-10-31",
+    "last_call": null,
+    "machines_out": [
+     {
+      "equipment_id": 152,
+      "name": "Grinder ( 7 inch ) - 3",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 90,
+      "name": "Scaffolding ( 3 * 5 )",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     },
+     {
+      "equipment_id": 8,
+      "name": "Steel Scaffolding Plank",
+      "count": 1,
+      "longest_days": 34,
+      "overdue_days": 0,
+      "age_color": "amber"
+     }
+    ]
+   }
+  ],
+  "totals": {
+   "customer_count": 18,
+   "revenue": 260040,
+   "paid": 9620,
+   "balance": 250420,
+   "units_out": 38,
+   "overdue_units_out": 0,
+   "overdue_amount": 0
+  },
+  "optionCounts": {
+   "owes_money": 21,
+   "not_returned": 18,
+   "late": 3,
+   "everyone": 47
+  },
+  "pagination": {
+   "page": 1,
+   "limit": 10,
+   "total": 18,
+   "totalPages": 2
+  },
+  "dateRange": {
+   "preset": "all_time",
+   "date_basis": "bill_date",
+   "from": null,
+   "to": null
+  }
+ },
+ "detail": {
+  "filters_on": true,
+  "dateRange": {
+   "preset": "all_time",
+   "date_basis": "bill_date",
+   "from": null,
+   "to": null
+  },
+  "customer": {
+   "customer_id": 55,
+   "name": "Customer 1",
+   "customer_type": "Individual",
+   "phone_number": "0770000000",
+   "nic_number": "000000000V",
+   "status": "Active",
+   "is_blacklisted": false,
+   "rating": 5,
+   "machines_out": [
+    {
+     "equipment_id": 217,
+     "name": "Planer - 1",
+     "count": 1,
+     "longest_days": 0
+    },
+    {
+     "equipment_id": 203,
+     "name": "Hilti bit 5",
+     "count": 1,
+     "longest_days": 0
+    },
+    {
+     "equipment_id": 57,
+     "name": "Electrik breaker - small 4",
+     "count": 1,
+     "longest_days": 0
+    }
+   ],
+   "invoice_count": 2,
+   "revenue": 47640,
+   "paid": 1190,
+   "balance": 46450,
+   "units_out": 3
+  },
+  "both_totals": {
+   "filtered": {
+    "invoice_count": 2,
+    "revenue": 47640,
+    "paid": 1190,
+    "balance": 46450,
+    "units_out": 3
+   },
+   "all": {
+    "invoice_count": 2,
+    "revenue": 47640,
+    "paid": 1190,
+    "balance": 46450,
+    "units_out": 3
+   }
+  },
+  "timeline": [
+   {
+    "invoice_id": 79,
+    "invoice_number": "#79",
+    "issued_date": "2026-11-23",
+    "status": "Active",
+    "owed": 450,
+    "units_out": 2,
+    "state": "open_owing"
+   },
+   {
+    "invoice_id": 68,
+    "invoice_number": "#68",
+    "issued_date": "2026-11-02",
+    "status": "Active",
+    "owed": 46000,
+    "units_out": 1,
+    "state": "open_owing"
+   }
+  ],
+  "not_complete_bills": [
+   {
+    "invoice_id": 79,
+    "invoice_number": "#79",
+    "issued_date": "2026-11-23",
+    "status": "Active",
+    "subtotal": 1640,
+    "discount_amount": 0,
+    "live_total": 1640,
+    "paid": 1190,
+    "owed": 450,
+    "accrued_charges": 0,
+    "units_out": 2,
+    "overdue_units_out": 0,
+    "days_overdue": 0,
+    "earliest_due_date": "2026-11-24",
+    "is_late": false,
+    "lines": [
+     {
+      "line_id": 99,
+      "equipment_id": 217,
+      "equipment_name": "Planer - 1",
+      "borrow_quantity": 1,
+      "good_returned_qty": 0,
+      "defective_returned_qty": 0,
+      "units_out": 1,
+      "line_status": "Active",
+      "expected_return_date": "2026-11-24",
+      "actual_return_date": null,
+      "accrued_charge": 0,
+      "line_total_amount": 400,
+      "days_late": 0
+     },
+     {
+      "line_id": 100,
+      "equipment_id": 203,
+      "equipment_name": "Hilti bit 5",
+      "borrow_quantity": 1,
+      "good_returned_qty": 0,
+      "defective_returned_qty": 0,
+      "units_out": 1,
+      "line_status": "Active",
+      "expected_return_date": "2026-11-24",
+      "actual_return_date": null,
+      "accrued_charge": 0,
+      "line_total_amount": 50,
+      "days_late": 0
+     }
+    ],
+    "payments": [
+     {
+      "payment_id": 88,
+      "amount": 1190,
+      "method": "Cash",
+      "is_advance": true,
+      "payment_date": "2026-11-23"
+     }
+    ]
+   },
+   {
+    "invoice_id": 68,
+    "invoice_number": "#68",
+    "issued_date": "2026-11-02",
+    "status": "Active",
+    "subtotal": 2000,
+    "discount_amount": 0,
+    "live_total": 46000,
+    "paid": 0,
+    "owed": 46000,
+    "accrued_charges": 44000,
+    "units_out": 1,
+    "overdue_units_out": 0,
+    "days_overdue": 0,
+    "earliest_due_date": "2026-11-01",
+    "is_late": false,
+    "lines": [
+     {
+      "line_id": 90,
+      "equipment_id": 57,
+      "equipment_name": "Electrik breaker - small 4",
+      "borrow_quantity": 1,
+      "good_returned_qty": 0,
+      "defective_returned_qty": 0,
+      "units_out": 1,
+      "line_status": "Active",
+      "expected_return_date": "2026-11-01",
+      "actual_return_date": null,
+      "accrued_charge": 44000,
+      "line_total_amount": 2000,
+      "days_late": 0
+     }
+    ],
+    "payments": []
+   }
+  ],
+  "complete_bills": [],
+  "calls_section": {
+   "summary": {
+    "total_calls": 0,
+    "answered_count": 0,
+    "no_answer_count": 0,
+    "unreachable_count": 0,
+    "unnoted_count": 0,
+    "by_staff": [],
+    "promises_count": 0,
+    "promise_total": 0,
+    "promises_kept": 0,
+    "promises_missed": 0
+   },
+   "calls": []
+  }
+ },
+ "calls": {
+  "rows": [],
+  "totals": {
+   "total_calls": 0,
+   "answered_count": 0,
+   "no_answer_count": 0,
+   "unreachable_count": 0,
+   "promises_count": 0,
+   "promise_amount_total": 0,
+   "promises_kept": 0,
+   "promises_missed": 0
+  },
+  "by_staff": [],
+  "pagination": {
+   "page": 1,
+   "limit": 50,
+   "total": 0,
+   "totalPages": 1
+  },
+  "dateRange": {
+   "preset": "all_time",
+   "from": null,
+   "to": null
+  }
+ }
+}

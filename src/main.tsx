@@ -36,15 +36,8 @@ installNativeAuthBridge(useAuthStore.subscribe as any, useAuthStore.getState as 
     syncLanguageFromAuth(user.language ?? null, tenantDefault).catch(() => {});
   }
   if (isAuthenticated) {
-    import("@/lib/api").then(({ api }) => {
-      api.get("/me").then((res) => {
-        if (res.data?.data?.permissions) {
-          updateUserPartial({
-            permissions: res.data.data.permissions,
-          });
-        }
-      }).catch(() => {});
-    });
+    void updateUserPartial;
+    import("@/features/auth/lib/refreshPermissions").then(({ refreshPermissions }) => refreshPermissions());
   }
 })();
 

@@ -1,4 +1,6 @@
 import { api } from "@/lib/api";
+import { normalizeCallsReport, normalizeCollectionDetail, normalizeCollectionsList, toServerCallsParams } from "./normalizeCollectionDetail";
+import { toServerCollectionsParams } from "./collectionsParams";
 import type {
   CallRecordingSettings,
   CallResultOption,
@@ -61,16 +63,16 @@ export async function setCallDisputeHold(callId: number, disputeHold: boolean) {
 }
 
 export async function fetchCollectionsReport(params: CollectionsQueryParams) {
-  const res: any = await api.get("/reports/customers/collections", { params });
-  return unwrap<CollectionsListResponse>(res);
+  const res: any = await api.get("/reports/customers/collections", { params: toServerCollectionsParams(params) });
+  return normalizeCollectionsList(unwrap<unknown>(res)) as CollectionsListResponse;
 }
 
 export async function fetchCustomerCollectionDetail(
   customerId: number,
   params: CollectionsQueryParams & { filters_on?: boolean },
 ) {
-  const res: any = await api.get(`/reports/customers/collections/${customerId}`, { params });
-  return unwrap<CustomerCollectionDetailResponse>(res);
+  const res: any = await api.get(`/reports/customers/collections/${customerId}`, { params: toServerCollectionsParams(params) });
+  return normalizeCollectionDetail(unwrap<unknown>(res)) as CustomerCollectionDetailResponse;
 }
 
 export async function fetchCallsReport(params: {
@@ -81,8 +83,8 @@ export async function fetchCallsReport(params: {
   search?: string;
   promise_status?: string;
 }) {
-  const res: any = await api.get("/reports/calls", { params });
-  return unwrap<CallsReportResponse>(res);
+  const res: any = await api.get("/reports/calls", { params: toServerCallsParams(params) });
+  return normalizeCallsReport(unwrap<unknown>(res)) as CallsReportResponse;
 }
 
 export async function fetchCollectionsSettings() {

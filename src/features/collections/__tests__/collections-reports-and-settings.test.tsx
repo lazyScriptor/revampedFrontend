@@ -127,7 +127,7 @@ describe("Slice 2 Collections Report, Customer Page, Settings & Receipt", () => 
       expect(api.get).toHaveBeenCalledWith(
         "/reports/customers/collections",
         expect.objectContaining({
-          params: expect.objectContaining({ not_returned: true }),
+          params: expect.objectContaining({ options: expect.stringContaining("not_returned") }),
         }),
       );
     });

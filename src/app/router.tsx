@@ -55,12 +55,16 @@ import { getDeviceId } from "@/features/signatures/lib/deviceId";
 import { useTranslation } from "react-i18next";
 import { startPathFor } from "@/app/startPage";
 import { canOpenStock } from "@/features/retail/stockAccess";
+import { refreshPermissions } from "@/features/auth/lib/refreshPermissions";
 
 // --- 1. Helper Functions ---
-const requirePermission = (permissionCode: string) => {
+const requirePermission = async (permissionCode: string) => {
   const user = useAuthStore.getState().user;
-  if (!user?.permissions?.includes(permissionCode)) {
-    // If they don't have permission, bounce them back to the dashboard
+  if (user?.permissions?.includes(permissionCode)) return;
+  // Permissions are saved at login; one added by a newer release is missing until they are
+  // re-read. Check the server once before bouncing the user back to the dashboard.
+  const fresh = await refreshPermissions();
+  if (!fresh?.includes(permissionCode)) {
     throw redirect({ to: "/dashboard" });
   }
 };
@@ -351,8 +355,8 @@ const reportsRoute = createRoute({
       : undefined,
     report: typeof search.report === "string" ? (search.report as string) : undefined,
   }),
-  beforeLoad: ({ search }) => {
-    requirePermission("inventory_permission");
+  beforeLoad: async ({ search }) => {
+    await requirePermission("inventory_permission");
     if (search.category === "customers" && search.report === "outstanding") {
       throw redirect({ to: "/reports/customers/collections", search: { owes_money: "1" } as any });
     }
